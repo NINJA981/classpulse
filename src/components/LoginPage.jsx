@@ -101,7 +101,7 @@ export const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => selectRoleAndFill('student')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
                     selectedRole === 'student'
                       ? 'bg-emerald-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
                       : 'bg-white text-slate-800 hover:bg-emerald-50'
@@ -115,7 +115,7 @@ export const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => selectRoleAndFill('teacher')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
                     selectedRole === 'teacher'
                       ? 'bg-sky-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
                       : 'bg-white text-slate-800 hover:bg-sky-50'
@@ -129,7 +129,7 @@ export const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => selectRoleAndFill('admin')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
                     selectedRole === 'admin'
                       ? 'bg-yellow-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
                       : 'bg-white text-slate-800 hover:bg-yellow-50'
