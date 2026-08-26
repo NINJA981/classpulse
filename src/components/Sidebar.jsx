@@ -76,18 +76,18 @@ export const Sidebar = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition border-2 border-slate-900 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-mono font-black transition border-2 border-slate-900 cursor-pointer ${
                   isActive
-                    ? 'bg-yellow-300 text-slate-900 shadow-zine-sm font-extrabold translate-x-1'
-                    : 'bg-white text-slate-800 hover:bg-yellow-50'
+                    ? 'bg-yellow-300 text-slate-900 shadow-zine-sm translate-x-1'
+                    : 'bg-white text-slate-900 hover:bg-yellow-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className="w-4 h-4 text-slate-900" />
-                  <span>{item.label}</span>
+                  <Icon className="w-4 h-4 text-slate-900 stroke-[2.5]" />
+                  <span className="font-mono font-black text-xs">{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-slate-900 text-yellow-300 border border-slate-900 uppercase">
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-black rounded bg-slate-900 text-yellow-300 border border-slate-900 uppercase leading-none">
                     {item.badge}
                   </span>
                 )}
