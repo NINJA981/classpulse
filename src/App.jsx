@@ -19,7 +19,7 @@ const MainContent = () => {
       {activeTab === 'teacher-dash' && <TeacherDashboard />}
       {activeTab === 'student-dash' && <StudentDashboard />}
       {activeTab === 'analytics' && <AnalyticsView />}
-      {activeTab === 'quiz' && <QuizWorkbench />}
+      {activeTab === 'quiz' && (userRole === 'admin' ? <ManagementView /> : <QuizWorkbench />)}
       {activeTab === 'projector' && <ProjectorKiosk />}
     </main>
   );

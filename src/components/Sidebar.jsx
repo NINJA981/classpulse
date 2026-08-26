@@ -21,8 +21,7 @@ export const Sidebar = () => {
   // Navigation items based on logged in role
   const adminNavItems = [
     { id: 'management', label: 'Admin Control Hub', icon: School, badge: 'CORE' },
-    { id: 'analytics', label: 'Class Analytics', icon: BarChart3 },
-    { id: 'quiz', label: 'AI Quiz Workbench', icon: BrainCircuit }
+    { id: 'analytics', label: 'Class Analytics', icon: BarChart3 }
   ];
 
   const teacherNavItems = [
