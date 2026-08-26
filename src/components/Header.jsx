@@ -49,7 +49,7 @@ export const Header = () => {
             onChange={handleRoleChange}
             className="bg-yellow-200 border-2 border-slate-900 text-xs font-bold text-slate-900 px-2 py-1 rounded-lg cursor-pointer focus:outline-none"
           >
-            <option value="admin">🔐 Admin (HyperCard Stack)</option>
+            <option value="admin">🔐 Admin (Control Center)</option>
             <option value="teacher">👨‍🏫 Teacher (Workbench)</option>
             <option value="student">🎓 Student (Portal)</option>
           </select>

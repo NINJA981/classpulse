@@ -211,61 +211,48 @@ export const ManagementView = () => {
         <div className="bg-[#d5cfbf] border-b-2 border-black px-4 py-2 flex items-center justify-between font-mono text-xs font-bold select-none">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 border-2 border-black bg-white flex items-center justify-center font-bold text-[9px]">■</div>
-            <span className="font-hypercard-header uppercase tracking-wider text-black">HYPERCARD STACK v2.0 • ADMIN SHOEBOX INDEX</span>
+            <span className="font-hypercard-header uppercase tracking-wider text-black">ADMIN CONTROL</span>
           </div>
 
           <div className="mac-title-bar h-3.5 w-32 border border-black hidden sm:block"></div>
 
-          <div className="flex items-center gap-2 font-hypercard-pixel text-sm">
-            <span>CARD {currentCardIndex + 1} OF 7</span>
+          <div className="flex items-center gap-2 font-mono text-xs font-bold text-black">
+            <span>ADMINISTRATOR PORTAL</span>
           </div>
         </div>
 
         {/* HyperCard Shoebox Header Controls */}
         <div className="p-5 bg-[#f7f4ed] space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-black pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="font-hypercard-pixel text-lg bg-black text-white px-2 py-0.5 rounded inline-block mb-1">
-                🗂️ CLASSROOM ADMINISTRATION STACK
-              </span>
               <h2 className="text-2xl font-black text-black font-hypercard-header uppercase tracking-tight flex items-center gap-2">
-                HyperCard Admin Index
+                Admin Control
               </h2>
-              <p className="text-xs font-mono font-bold text-slate-800">
-                Organized Shoebox Stack: Control access permissions, add classrooms & users, assign rosters and configure weekly timetables.
-              </p>
             </div>
 
-            {/* Shoebox Stack Pagination & Home Controller */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={prevCard}
-                disabled={currentCardIndex === 0}
-                className="px-3 py-1.5 hypercard-btn text-xs flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Previous Card in Stack"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Prev Card</span>
-              </button>
-
-              <div className="px-3 py-1.5 bg-white border-2 border-black text-xs font-hypercard-pixel font-bold shadow-[2px_2px_0px_0px_#000]">
-                {currentCardIndex + 1} / 7
+            {/* Shoebox Stack Section Dropdown Controller */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 bg-yellow-200 border-2 border-black px-3 py-1.5 rounded-lg shadow-[2px_2px_0px_0px_#000]">
+                <span className="font-mono text-xs font-bold text-black uppercase shrink-0">
+                  🗂️ Select Admin Section:
+                </span>
+                <select
+                  value={activeSubTab}
+                  onChange={(e) => setActiveSubTab(e.target.value)}
+                  className="bg-white border-2 border-black text-xs font-mono font-bold text-black px-3 py-1 rounded cursor-pointer shadow-[1px_1px_0px_0px_#000] focus:outline-none"
+                >
+                  {cardsList.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              <button
-                onClick={nextCard}
-                disabled={currentCardIndex === cardsList.length - 1}
-                className="px-3 py-1.5 hypercard-btn text-xs flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Next Card in Stack"
-              >
-                <span>Next Card</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
 
               {['classrooms', 'students', 'teachers'].includes(activeSubTab) && (
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="px-4 py-1.5 hypercard-btn-primary text-xs flex items-center gap-1.5 cursor-pointer ml-2"
+                  className="px-4 py-1.5 hypercard-btn-primary text-xs flex items-center gap-1.5 cursor-pointer ml-1"
                 >
                   <Plus className="w-4 h-4" />
                   <span>
@@ -277,41 +264,12 @@ export const ManagementView = () => {
               )}
             </div>
           </div>
-
-          {/* HyperCard Index Tabs Bar (Shoebox Card Headers) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1">
-            {cardsList.map((card) => {
-              const Icon = card.icon;
-              const isActive = activeSubTab === card.id;
-              return (
-                <button
-                  key={card.id}
-                  onClick={() => setActiveSubTab(card.id)}
-                  className={`px-3.5 py-2 rounded-t-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                    isActive ? 'hypercard-tab-active' : 'hypercard-tab-inactive'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>Card {card.num}: {card.label}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
 
       {/* ----------------- CARD 1: CONTROL ACCESS ----------------- */}
       {activeSubTab === 'access' && (
         <div className="space-y-6">
-          <div className="hypercard-card-yellow p-5 space-y-2">
-            <div className="flex items-center gap-2 font-hypercard-header text-sm text-black">
-              <Lock className="w-4 h-4 text-black" />
-              <span>HyperCard Access Permission Matrix (RBAC)</span>
-            </div>
-            <p className="text-xs font-mono font-bold text-slate-800">
-              Configure system privileges for each role. Checkboxes update permissions live in the index stack.
-            </p>
-          </div>
 
           {/* Role Permissions Matrix Table */}
           <div className="hypercard-card overflow-hidden">

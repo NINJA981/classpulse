@@ -21,7 +21,7 @@ export const Sidebar = () => {
   // Navigation items based on logged in role
   // Notice: AI Quiz Workbench is REMOVED from Admin navigation!
   const adminNavItems = [
-    { id: 'management', label: 'HyperCard Admin Stack', icon: Layers, badge: 'STACK v2' },
+    { id: 'management', label: 'Admin Control', icon: Layers, badge: 'CORE' },
     { id: 'analytics', label: 'Class Analytics', icon: BarChart3 }
   ];
 
