@@ -128,7 +128,7 @@ const INITIAL_ACCESS_CONTROLS = {
 
 export const ClassPulseProvider = ({ children }) => {
   // Authentication & Role State
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Default logged in as Admin initially
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Default false so app launches on Login Page
   const [userRole, setUserRole] = useState('admin'); // 'admin' | 'teacher' | 'student'
   const [currentUser, setCurrentUser] = useState({
     id: 'usr-admin-01',

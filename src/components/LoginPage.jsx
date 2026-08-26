@@ -33,6 +33,7 @@ export const LoginPage = () => {
     } else {
       setEmailInput('ananya@classpulse.edu');
     }
+    login(role);
   };
 
   return (
