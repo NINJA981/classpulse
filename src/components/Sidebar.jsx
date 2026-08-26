@@ -1,7 +1,6 @@
 import React from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
-  LayoutDashboard,
   School,
   BrainCircuit,
   BarChart3,
@@ -12,15 +11,17 @@ import {
   Sparkles,
   BookOpen,
   Calendar,
-  Lock
+  Lock,
+  Layers
 } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { activeTab, setActiveTab, userRole, currentUser } = useClassPulse();
+  const { activeTab, setActiveTab, userRole } = useClassPulse();
 
   // Navigation items based on logged in role
+  // Notice: AI Quiz Workbench is REMOVED from Admin navigation!
   const adminNavItems = [
-    { id: 'management', label: 'Admin Control Hub', icon: School, badge: 'CORE' },
+    { id: 'management', label: 'HyperCard Admin Stack', icon: Layers, badge: 'STACK v2' },
     { id: 'analytics', label: 'Class Analytics', icon: BarChart3 }
   ];
 
@@ -103,7 +104,7 @@ export const Sidebar = () => {
             <Sparkles className="w-3.5 h-3.5 text-slate-900" /> ClassPulse v2.5
           </div>
           <p className="text-[11px] font-handwriting text-slate-800 leading-tight">
-            Polished, hand-drawn zine interface for modern school management.
+            Hand-drawn Zine interface shell with embedded HyperCard Admin Stack.
           </p>
         </div>
       </div>

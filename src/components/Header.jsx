@@ -2,93 +2,78 @@ import React from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
   School,
-  LogOut,
   ShieldCheck,
   UserCheck,
   GraduationCap,
-  Sparkles,
+  LogOut,
   ChevronDown,
-  RefreshCw
+  Sparkles
 } from 'lucide-react';
 
 export const Header = () => {
-  const { currentUser, userRole, logout, classrooms, login } = useClassPulse();
+  const { userRole, currentUser, login, logout } = useClassPulse();
+
+  const handleRoleChange = (e) => {
+    login(e.target.value);
+  };
 
   return (
-    <header className="bg-white border-b-2 border-slate-900 px-4 sm:px-6 py-3 flex items-center justify-between z-10 shadow-zine-sm">
-      {/* Left: Active Classroom Context Selector */}
+    <header className="bg-white border-b-2 border-slate-900 px-6 py-3 flex items-center justify-between z-10 select-none shadow-zine-sm">
+      {/* Brand Title & Zine Callout */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-yellow-100 px-3 py-1.5 rounded-xl border-2 border-slate-900 shadow-zine-sm">
-          <School className="w-4 h-4 text-slate-900" />
-          <select className="bg-transparent text-xs font-bold text-slate-900 outline-none cursor-pointer">
-            {classrooms.map(cls => (
-              <option key={cls.id} value={cls.id} className="bg-white text-slate-900 font-bold">
-                {cls.name} ({cls.room})
-              </option>
-            ))}
-          </select>
+        <div className="w-9 h-9 rounded-xl bg-slate-900 border-2 border-slate-900 text-yellow-300 flex items-center justify-center font-extrabold text-sm shadow-zine-sm">
+          <School className="w-5 h-5 text-yellow-300" />
         </div>
-
-        {/* Zine Role Badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-slate-900 text-xs font-mono font-bold uppercase tracking-wider shadow-zine-sm font-handwriting ${
-          userRole === 'admin' ? 'bg-yellow-200' : userRole === 'teacher' ? 'bg-sky-200' : 'bg-emerald-200'
-        }">
-          {userRole === 'admin' && <ShieldCheck className="w-4 h-4 text-slate-900" />}
-          {userRole === 'teacher' && <UserCheck className="w-4 h-4 text-slate-900" />}
-          {userRole === 'student' && <GraduationCap className="w-4 h-4 text-slate-900" />}
-          <span>ROLE: {userRole.toUpperCase()}</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-extrabold text-slate-900 font-zine-title tracking-tight">
+              ClassPulse Hub
+            </h1>
+            <span className="px-2 py-0.5 rounded bg-yellow-200 text-slate-900 text-[10px] font-mono font-bold uppercase tracking-wider border border-slate-900">
+              Zine Edition
+            </span>
+          </div>
+          <p className="text-[11px] font-handwriting text-slate-600 hidden sm:block">
+            Smart Classroom & Administration Workbench
+          </p>
         </div>
       </div>
 
-      {/* Right: Logged-in Profile & Logout */}
+      {/* Right Controls: Role Selector Dropdown & Quick User Status */}
       <div className="flex items-center gap-3">
-        {/* Role Quick Switcher dropdown button */}
-        <div className="relative group hidden md:block">
-          <button className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-yellow-200 border-2 border-slate-900 rounded-xl text-xs font-extrabold cursor-pointer transition">
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Switch Role</span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-          <div className="absolute right-0 top-full mt-1 w-44 bg-white border-2 border-slate-900 rounded-xl shadow-zine p-1 hidden group-hover:block z-50">
-            <button
-              onClick={() => login('admin')}
-              className="w-full text-left px-3 py-1.5 text-xs font-bold hover:bg-yellow-200 rounded-lg flex items-center gap-1.5 cursor-pointer"
-            >
-              🔐 Admin View
-            </button>
-            <button
-              onClick={() => login('teacher')}
-              className="w-full text-left px-3 py-1.5 text-xs font-bold hover:bg-sky-200 rounded-lg flex items-center gap-1.5 cursor-pointer"
-            >
-              👨‍🏫 Teacher View
-            </button>
-            <button
-              onClick={() => login('student')}
-              className="w-full text-left px-3 py-1.5 text-xs font-bold hover:bg-emerald-200 rounded-lg flex items-center gap-1.5 cursor-pointer"
-            >
-              🎓 Student View
-            </button>
-          </div>
-        </div>
-
-        {/* User Card */}
-        <div className="flex items-center gap-2 pl-3 border-l-2 border-slate-900">
-          <div className="w-9 h-9 rounded-xl bg-yellow-300 border-2 border-slate-900 flex items-center justify-center font-extrabold text-xs text-slate-900 shadow-zine-sm">
-            {currentUser?.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'CP'}
-          </div>
-          <div className="hidden md:block leading-tight">
-            <span className="text-xs font-extrabold text-slate-900 block">{currentUser?.name || 'Admin User'}</span>
-            <span className="text-[10px] font-handwriting font-bold text-slate-600 capitalize">{userRole} Portal</span>
-          </div>
-
-          <button
-            onClick={logout}
-            className="ml-1 p-2 bg-rose-100 hover:bg-rose-200 text-slate-900 rounded-xl border-2 border-slate-900 shadow-zine-sm transition cursor-pointer"
-            title="Log Out to Login Screen"
+        {/* Role Selector Dropdown */}
+        <div className="flex items-center gap-1.5 bg-slate-100 border-2 border-slate-900 px-3 py-1.5 rounded-xl shadow-zine-sm">
+          <span className="text-xs font-bold text-slate-900 font-mono uppercase">Role:</span>
+          <select
+            value={userRole}
+            onChange={handleRoleChange}
+            className="bg-yellow-200 border-2 border-slate-900 text-xs font-bold text-slate-900 px-2 py-1 rounded-lg cursor-pointer focus:outline-none"
           >
-            <LogOut className="w-4 h-4" />
-          </button>
+            <option value="admin">🔐 Admin (HyperCard Stack)</option>
+            <option value="teacher">👨‍🏫 Teacher (Workbench)</option>
+            <option value="student">🎓 Student (Portal)</option>
+          </select>
         </div>
+
+        {/* User Account Pill */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border-2 border-slate-900 rounded-xl shadow-zine-sm">
+          <div className="w-6 h-6 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs">
+            {currentUser?.name ? currentUser.name[0] : 'A'}
+          </div>
+          <div className="text-left text-xs font-bold leading-none">
+            <div className="text-slate-900">{currentUser?.name || 'Administrator'}</div>
+            <div className="text-[9px] text-slate-500 font-mono uppercase">{userRole}</div>
+          </div>
+        </div>
+
+        {/* Quick Logout Button */}
+        <button
+          onClick={logout}
+          className="p-2 bg-slate-100 hover:bg-rose-100 text-slate-900 font-bold border-2 border-slate-900 rounded-xl transition shadow-zine-sm cursor-pointer"
+          title="Switch Role / Logout"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );
