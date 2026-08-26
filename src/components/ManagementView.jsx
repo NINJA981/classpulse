@@ -467,7 +467,7 @@ export const ManagementView = () => {
                             className="w-full py-2 hypercard-btn-primary text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer uppercase"
                           >
                             <Users className="w-4 h-4" />
-                            <span>View Roster & Assign Teacher →</span>
+                            <span>View Classroom →</span>
                           </button>
                         </div>
                       </div>
