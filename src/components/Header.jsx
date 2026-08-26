@@ -29,8 +29,8 @@ export const Header = () => {
             <h1 className="text-lg font-extrabold text-slate-900 font-zine-title tracking-tight">
               ClassPulse Hub
             </h1>
-            <span className="px-2 py-0.5 rounded bg-yellow-200 text-slate-900 text-[10px] font-mono font-bold uppercase tracking-wider border border-slate-900">
-              Zine Edition
+            <span className="px-2 py-0.5 rounded bg-yellow-200 text-slate-900 text-[10px] font-mono font-black uppercase tracking-wider border border-slate-900">
+              System Edition
             </span>
           </div>
           <p className="text-[11px] font-handwriting text-slate-600 hidden sm:block">

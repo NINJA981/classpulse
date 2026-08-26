@@ -52,14 +52,14 @@ export const Sidebar = () => {
               <h1 className="font-extrabold text-lg tracking-tight text-slate-900 font-zine-title leading-tight">
                 Class<span className="text-indigo-900">Pulse</span>
               </h1>
-              <p className="text-[10px] font-mono font-bold text-slate-700 uppercase tracking-wider">ZINE EXPLAINER UI</p>
+              <p className="text-[10px] font-mono font-extrabold text-slate-900 uppercase tracking-wider">SMART SYSTEM</p>
             </div>
           </div>
         </div>
 
-        {/* Zine Role Indicator Callout */}
-        <div className="mb-4 p-2.5 rounded-xl bg-slate-100 border-2 border-slate-900 text-xs font-handwriting space-y-0.5">
-          <span className="font-bold text-slate-900 block font-mono text-[10px] uppercase tracking-wider">Logged In Mode:</span>
+        {/* Role Indicator Callout */}
+        <div className="mb-4 p-2.5 rounded-xl bg-slate-100 border-2 border-slate-900 text-xs font-mono font-bold space-y-0.5 shadow-zine-sm">
+          <span className="font-black text-slate-900 block font-mono text-[10px] uppercase tracking-wider">Logged In Mode:</span>
           <span className="font-extrabold text-slate-900 flex items-center gap-1">
             {userRole === 'admin' && '🔐 System Administrator'}
             {userRole === 'teacher' && '👨‍🏫 Classroom Teacher'}
@@ -103,8 +103,8 @@ export const Sidebar = () => {
           <div className="font-bold text-slate-900 flex items-center gap-1 font-mono text-[11px]">
             <Sparkles className="w-3.5 h-3.5 text-slate-900" /> ClassPulse v2.5
           </div>
-          <p className="text-[11px] font-handwriting text-slate-800 leading-tight">
-            Hand-drawn Zine interface shell with embedded HyperCard Admin Stack.
+          <p className="text-[11px] font-mono font-bold text-slate-800 leading-tight">
+            ClassPulse Administration System & Learning Workbench.
           </p>
         </div>
       </div>
