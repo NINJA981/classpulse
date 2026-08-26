@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Impeccable & Scratch artifacts
+.impeccable
+.impeccable/
+scratch/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

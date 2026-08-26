@@ -1,0 +1,30 @@
+name: classpulse-admin
+
+services:
+  # ================================================
+  # Production Service (Nginx Web Server on port 8080)
+  # ================================================
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: classpulse_prod
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # ================================================
+  # Development Service (Vite Live-Reload on port 5173)
+  # ================================================
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: classpulse_dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
