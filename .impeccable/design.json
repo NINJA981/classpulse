@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-26T18:03:00.000Z",
+  "title": "Design System: ClassPulse Zine Explainer",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Charcoal Ink", "canonical": "#0f172a", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#cbd5e1", "#f8fafc"] },
+      "accent-yellow": { "role": "accent", "displayName": "Highlighter Yellow", "canonical": "#fde047", "tonalRamp": ["#713f12", "#a16207", "#ca8a04", "#eab308", "#facc15", "#fde047", "#fef08a", "#fef9c3"] },
+      "accent-sky": { "role": "accent", "displayName": "Paper Sky", "canonical": "#bae6fd", "tonalRamp": ["#0c4a6e", "#0369a1", "#0284c7", "#38bdf8", "#7dd3fc", "#bae6fd", "#e0f2fe", "#f0f9ff"] },
+      "accent-mint": { "role": "accent", "displayName": "Paper Mint", "canonical": "#dcfce7", "tonalRamp": ["#14532d", "#15803d", "#16a34a", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7", "#f0fdf4"] },
+      "accent-pink": { "role": "accent", "displayName": "Paper Pink", "canonical": "#fce7f3", "tonalRamp": ["#831843", "#be185d", "#db2777", "#f472b6", "#fbcfe8", "#fce7f3", "#fdf2f8", "#fff1f2"] },
+      "neutral-bg": { "role": "neutral", "displayName": "Newsprint Canvas", "canonical": "#faf7f2", "tonalRamp": ["#44403c", "#78716c", "#a8a29e", "#d6d3d1", "#e7e5e4", "#f5f5f4", "#faf7f2", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Title", "purpose": "Zine section titles and main page banners." },
+      "body": { "displayName": "Body Copy", "purpose": "Explainer copy, table data, and form text." },
+      "label": { "displayName": "Zine Badge & Mono", "purpose": "Step callouts, roll numbers, and timestamps." }
+    },
+    "shadows": [
+      { "name": "shadow-zine-sm", "value": "2px 2px 0px 0px #0f172a", "purpose": "Small sticker tags and badges." },
+      { "name": "shadow-zine", "value": "3px 3px 0px 0px #0f172a", "purpose": "Default zine container elevation." },
+      { "name": "shadow-zine-lg", "value": "5px 5px 0px 0px #0f172a", "purpose": "Hover state elevation and primary banners." }
+    ],
+    "motion": [
+      { "name": "tactile-click", "value": "transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Physical offset shift on active click." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Zine Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Tactile yellow primary action button with sketchy ink border.",
+      "html": "<button class=\"ds-btn-zine-primary\">CONFIRM ACTION</button>",
+      "css": ".ds-btn-zine-primary { background: #fde047; color: #0f172a; font-weight: 800; font-size: 14px; padding: 10px 20px; border: 2px solid #0f172a; border-radius: 12px; box-shadow: 3px 3px 0px 0px #0f172a; cursor: pointer; transition: all 0.15s ease; } .ds-btn-zine-primary:hover { background: #facc15; transform: translate(-2px, -2px); box-shadow: 5px 5px 0px 0px #0f172a; } .ds-btn-zine-primary:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #0f172a; }"
+    },
+    {
+      "name": "Secondary Zine Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "White paper button with sketchy ink border.",
+      "html": "<button class=\"ds-btn-zine-secondary\">CANCEL</button>",
+      "css": ".ds-btn-zine-secondary { background: #ffffff; color: #0f172a; font-weight: 700; font-size: 14px; padding: 10px 20px; border: 2px solid #0f172a; border-radius: 12px; box-shadow: 3px 3px 0px 0px #0f172a; cursor: pointer; transition: all 0.15s ease; } .ds-btn-zine-secondary:hover { background: #f8fafc; transform: translate(-2px, -2px); box-shadow: 5px 5px 0px 0px #0f172a; } .ds-btn-zine-secondary:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #0f172a; }"
+    },
+    {
+      "name": "Zine Input Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "High-contrast text field with ink border.",
+      "html": "<input class=\"ds-input-zine\" type=\"text\" placeholder=\"Enter name...\" />",
+      "css": ".ds-input-zine { background: #ffffff; color: #0f172a; font-weight: 700; font-size: 14px; padding: 10px 14px; border: 2px solid #0f172a; border-radius: 12px; box-shadow: 2px 2px 0px 0px #0f172a; outline: none; } .ds-input-zine:focus { box-shadow: 3px 3px 0px 0px #0f172a; }"
+    },
+    {
+      "name": "Zine Card",
+      "kind": "card",
+      "refersTo": "zine-card",
+      "description": "White paper container card with hard shadow and sketchy ink outline.",
+      "html": "<div class=\"ds-card-zine\"><h3>Classroom Section</h3><p>Grade 10-A • Science Lab</p></div>",
+      "css": ".ds-card-zine { background: #ffffff; color: #0f172a; padding: 20px; border: 2px solid #0f172a; border-radius: 12px; box-shadow: 4px 4px 0px 0px #0f172a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Classroom Explainer Zine",
+    "overview": "ClassPulse delivers a distinct, highly readable DIY Zine visual style for classroom administration. Moving away from generic dark-mode dashboards and sterile flat UI, ClassPulse presents information as an engaging, hand-drawn explainer publication.",
+    "keyCharacteristics": [
+      "Warm Newsprint Canvas (#faf7f2) with subtle 40px grid dot patterns.",
+      "Sketchy Ink Borders (2px solid #0f172a) around containers, buttons, and inputs.",
+      "Tactile Zine Drop Shadows (3px to 5px solid offset shadows #0f172a).",
+      "Paper Stickers & Tape in highlighter yellow, sky, mint, and pink.",
+      "Hand-Drawn Typography pairing Kalam, Architects Daughter, Outfit, and JetBrains Mono."
+    ],
+    "rules": [
+      { "name": "The Hard-Shadow Ink Rule", "body": "Every card and interactive container must feature a 2px solid #0f172a ink border and a hard offset shadow (3px 3px 0px 0px #0f172a). Soft blurred shadows are strictly prohibited.", "section": "elevation" },
+      { "name": "The Explainer Callout Rule", "body": "Step-by-step instructions and badges must use monospace or handwriting fonts with dark high-contrast sticker fills.", "section": "typography" },
+      { "name": "The Tactile Click Rule", "body": "Buttons and interactive cards must physically shift down and right on active click to flatten their hard offset shadow completely.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use 2px solid #0f172a ink borders around cards, tables, inputs, and buttons.",
+      "Do use tactile pastel highlighter fills (bg-yellow-200, bg-sky-200, bg-mint-200, bg-pink-200) for step callouts and category cards.",
+      "Do maintain high text-to-background contrast and explicit step labels."
+    ],
+    "donts": [
+      "Don't use soft ambient blur drop shadows or glassy dark backdrop filters.",
+      "Don't use neon glowing gradients or pitch-black dark mode backgrounds.",
+      "Don't cram low-level backend telemetry into user-facing admin views."
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+### Critique Report: ClassPulse Zine Explainer
+
+Method: dual-agent (A: in-thread-design-review · B: detector-cli-scan)
+
+#### Design Health Score
+
+| # | Heuristic | Score | Key Issue |
+|---|-----------|-------|-----------|
+| 1 | Visibility of System Status | 4 | Active role badge, live sub-tab highlights |
+| 2 | Match System / Real World | 4 | Human-centric terms (Classrooms, Teachers, Timetables) |
+| 3 | User Control and Freedom | 4 | Role dropdown switcher & quick logout |
+| 4 | Consistency and Standards | 3 | Minor typography token mismatch in DESIGN.md |
+| 5 | Error Prevention | 3 | Immediate deletion without confirmation dialog |
+| 6 | Recognition Rather Than Recall | 4 | Numbered step-by-step explainer callouts |
+| 7 | Flexibility and Efficiency | 3 | Preset one-click logins, needs keyboard shortcuts |
+| 8 | Aesthetic and Minimalist Design | 4 | Polished, clean Zine Explainer UI |
+| 9 | Error Recovery | 3 | Graceful empty states on empty timetables |
+| 10 | Help and Documentation | 3 | Embedded zine step-by-step guide callouts |
+| **Total** | | **35/40** | **Good (87.5%)** |
+
+#### Design Specificity Verdict
+
+**LLM assessment**: The Hand-Drawn Zine Explainer UI is highly authored, distinctive, and tailor-made for ClassPulse. It successfully transforms complex classroom management into an inviting, tactile publication.
+
+**Deterministic scan**: Detected 15 advisories/warnings across `src/`, primarily around font token declarations (`Architects Daughter`, `Caveat`) in `DESIGN.md` and color ramp variations.
+
+#### Priority Issues
+
+1. **[P1] Deletion Confirmation Guard**
+   - *Why it matters*: Clicking the trash icon deletes a classroom, teacher, or student immediately without a confirmation prompt.
+   - *Fix*: Add a confirmation modal before deleting entries.
+   - *Suggested command*: `/impeccable harden`
+
+2. **[P2] Keyboard Modal Dismissal**
+   - *Why it matters*: Users cannot close the creation modal with the `Escape` key.
+   - *Fix*: Add `keydown` event listener for `Escape` key on modal dialogs.
+   - *Suggested command*: `/impeccable adapt`
+
+3. **[P2] Design System Font Token Alignment**
+   - *Why it matters*: `Architects Daughter` and `Caveat` fonts are used in CSS but missing in `DESIGN.md` typography YAML block.
+   - *Fix*: Add handwriting font token family into `DESIGN.md`.
+   - *Suggested command*: `/impeccable document`
+
+#### Persona Red Flags
+- **Alex (Power User)**: Lacks keyboard shortcuts (`Esc` to close modal, `Ctrl+K` search).
+- **Jordan (First-Timer)**: Excellent experience with explicit numbered tabs (1–7) and zine callout guides.
+- **Sam (Accessibility)**: Good contrast (`#0f172a` on `#faf7f2`), but focus-visible rings can be enhanced.
