@@ -16,104 +16,131 @@ import {
   Users,
   TrendingUp,
   Brain,
-  Sparkles
+  Sparkles,
+  Layers,
+  HardDrive
 } from 'lucide-react';
 
 export const AnalyticsView = () => {
   const { analytics } = useClassPulse();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-8">
-      {/* Top Zine Header Banner */}
-      <div className="zine-card-yellow p-6 space-y-2 zine-tape-top">
-        <div className="inline-flex items-center gap-2 bg-slate-900 text-yellow-300 px-2.5 py-0.5 rounded font-mono text-[11px] font-bold uppercase tracking-wider">
-          <BarChart3 className="w-3.5 h-3.5 text-yellow-300" />
-          <span>CLASSROOM PERFORMANCE ANALYTICS</span>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* HyperCard Window Title Bar & Shoebox Stack Header */}
+      <div className="hypercard-stack overflow-hidden">
+        {/* Macintosh Window Title Bar */}
+        <div className="bg-[#d5cfbf] border-b-2 border-black px-4 py-2 flex items-center justify-between font-mono text-xs font-bold select-none">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-black bg-white flex items-center justify-center font-bold text-[9px]">■</div>
+            <span className="font-hypercard-header uppercase tracking-wider text-black">HYPERCARD STACK v2.0 • ANALYTICS SHOEBOX INDEX</span>
+          </div>
+
+          <div className="mac-title-bar h-3.5 w-32 border border-black hidden sm:block"></div>
+
+          <div className="flex items-center gap-2 font-mono text-xs font-bold text-black">
+            <span>PERFORMANCE INDEX</span>
+          </div>
         </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 font-zine-title tracking-tight flex items-center gap-2">
-          Class Performance & Comprehension Analytics
-        </h2>
-        <p className="text-xs font-handwriting text-slate-700 font-bold max-w-2xl">
-          Real-time insights on student comprehension, quiz response times, and topic mastery across class periods.
-        </p>
+
+        {/* HyperCard Shoebox Header Controls */}
+        <div className="p-5 bg-[#f7f4ed] space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="font-hypercard-pixel text-lg bg-black text-white px-2 py-0.5 rounded inline-block mb-1">
+                🗂️ CLASS PERFORMANCE ANALYTICAL STACK
+              </span>
+              <h2 className="text-2xl font-black text-black font-hypercard-header uppercase tracking-tight flex items-center gap-2">
+                Class Analytics Index
+              </h2>
+              <p className="text-xs font-mono font-bold text-slate-800">
+                Organized Analytical Index: Real-time insights on student comprehension, quiz speed, and topic mastery across class periods.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 font-mono text-xs font-bold bg-yellow-200 border-2 border-black px-3 py-1.5 rounded-lg shadow-[2px_2px_0px_0px_#000] shrink-0">
+              <HardDrive className="w-4 h-4 text-black" />
+              <span>LIVE TELEMETRY STREAM</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Top Stats Overview Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
         {/* Card 1: Accuracy */}
-        <div className="zine-card p-5 space-y-2 bg-white">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700 font-mono">
+        <div className="hypercard-card p-5 space-y-2 bg-white">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
             <span>Class Accuracy</span>
-            <div className="p-1.5 rounded-lg bg-emerald-200 border border-slate-900">
-              <Target className="w-4 h-4 text-slate-900" />
+            <div className="p-1 rounded bg-yellow-200 border border-black">
+              <Target className="w-4 h-4 text-black" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 font-zine-title">82.4%</p>
-          <span className="text-[11px] text-emerald-900 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-slate-900 inline-flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-emerald-700" /> +6.8% vs last week
+          <p className="text-3xl font-hypercard-header font-black text-black">82.4%</p>
+          <span className="text-[10px] text-black font-bold bg-emerald-200 px-2 py-0.5 border border-black inline-flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-black" /> +6.8% vs last week
           </span>
         </div>
 
         {/* Card 2: Engagement */}
-        <div className="zine-card-sky p-5 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-900 font-mono">
+        <div className="hypercard-card-sky p-5 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-black">
             <span>Student Engagement</span>
-            <div className="p-1.5 rounded-lg bg-white border border-slate-900">
-              <Users className="w-4 h-4 text-slate-900" />
+            <div className="p-1 rounded bg-white border border-black">
+              <Users className="w-4 h-4 text-black" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 font-zine-title">91.2%</p>
-          <span className="text-[11px] text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-900 inline-block font-mono">
+          <p className="text-3xl font-hypercard-header font-black text-black">91.2%</p>
+          <span className="text-[10px] text-black font-bold bg-white px-2 py-0.5 border border-black inline-block">
             38 / 40 Active Students
           </span>
         </div>
 
-        {/* Card 3: Topics Taught */}
-        <div className="zine-card-mint p-5 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-900 font-mono">
+        {/* Card 3: Topics Covered */}
+        <div className="hypercard-card-mint p-5 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-black">
             <span>Topics Covered</span>
-            <div className="p-1.5 rounded-lg bg-white border border-slate-900">
-              <Brain className="w-4 h-4 text-slate-900" />
+            <div className="p-1 rounded bg-white border border-black">
+              <Brain className="w-4 h-4 text-black" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 font-zine-title">5 Topics</p>
-          <span className="text-[11px] text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-900 inline-block font-handwriting">
+          <p className="text-3xl font-hypercard-header font-black text-black">5 Topics</p>
+          <span className="text-[10px] text-black font-bold bg-white px-2 py-0.5 border border-black inline-block">
             Fully Transcribed Today
           </span>
         </div>
 
         {/* Card 4: Response Speed */}
-        <div className="zine-card-pink p-5 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-900 font-mono">
+        <div className="hypercard-card p-5 space-y-2 bg-[#fff1f2]">
+          <div className="flex items-center justify-between text-xs font-bold text-black">
             <span>Avg Quiz Speed</span>
-            <div className="p-1.5 rounded-lg bg-white border border-slate-900">
-              <Sparkles className="w-4 h-4 text-slate-900" />
+            <div className="p-1 rounded bg-white border border-black">
+              <Sparkles className="w-4 h-4 text-black" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 font-zine-title">6.4 sec</p>
-          <span className="text-[11px] text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-900 inline-block font-mono">
-            Real-time Quiz Response
+          <p className="text-3xl font-hypercard-header font-black text-black">6.4 sec</p>
+          <span className="text-[10px] text-black font-bold bg-white px-2 py-0.5 border border-black inline-block">
+            Real-time Response Time
           </span>
         </div>
       </div>
 
       {/* Chart 1: Per-Period Engagement & Accuracy Stream */}
-      <div className="zine-card p-6 space-y-4 bg-white zine-tape-corner">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-slate-900 pb-3">
+      <div className="hypercard-card p-6 space-y-4 bg-white font-mono">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-black pb-3">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 font-zine-title flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-indigo-900" />
+            <h3 className="text-base font-hypercard-header text-black flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-black" />
               Per-Topic Accuracy & Engagement Stream
             </h3>
-            <p className="text-xs font-handwriting text-slate-600 font-bold">
-              Tracking comprehension trends and quiz participation across lesson intervals.
+            <p className="text-xs text-slate-800">
+              Tracking comprehension trends and quiz participation across 40-minute lesson intervals.
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs font-mono font-bold">
-            <span className="flex items-center gap-1.5 bg-yellow-200 text-slate-900 px-2.5 py-1 rounded border border-slate-900">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-900" /> Accuracy %
+            <span className="flex items-center gap-1.5 bg-yellow-200 text-black px-2 py-1 border border-black">
+              <span className="w-2.5 h-2.5 rounded-full bg-black" /> Accuracy %
             </span>
-            <span className="flex items-center gap-1.5 bg-sky-200 text-slate-900 px-2.5 py-1 rounded border border-slate-900">
+            <span className="flex items-center gap-1.5 bg-sky-200 text-black px-2 py-1 border border-black">
               <span className="w-2.5 h-2.5 rounded-full bg-sky-600" /> Engagement %
             </span>
           </div>
@@ -124,29 +151,29 @@ export const AnalyticsView = () => {
             <AreaChart data={analytics.periodAccuracy} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#fde047" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#fef9c3" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor="#fde047" stopOpacity={0.85} />
+                  <stop offset="95%" stopColor="#fffbeb" stopOpacity={0.2} />
                 </linearGradient>
                 <linearGradient id="colorEng" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#bae6fd" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#e0f2fe" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor="#bae6fd" stopOpacity={0.85} />
+                  <stop offset="95%" stopColor="#f0f9ff" stopOpacity={0.2} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-              <XAxis dataKey="period" stroke="#0f172a" fontSize={11} fontWeight={700} />
-              <YAxis stroke="#0f172a" fontSize={11} fontWeight={700} domain={[40, 100]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#000000" strokeOpacity={0.15} />
+              <XAxis dataKey="period" stroke="#000000" fontSize={11} fontWeight={700} />
+              <YAxis stroke="#000000" fontSize={11} fontWeight={700} domain={[40, 100]} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#faf7f2',
-                  border: '2px solid #0f172a',
-                  borderRadius: '10px',
+                  backgroundColor: '#ffffff',
+                  border: '2px solid #000000',
+                  borderRadius: '6px',
                   fontSize: '12px',
                   fontWeight: 'bold',
-                  color: '#0f172a',
-                  boxShadow: '3px 3px 0px 0px #0f172a'
+                  color: '#000000',
+                  boxShadow: '3px 3px 0px 0px #000000'
                 }}
               />
-              <Area type="monotone" dataKey="accuracy" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorAccuracy)" />
+              <Area type="monotone" dataKey="accuracy" stroke="#000000" strokeWidth={3} fillOpacity={1} fill="url(#colorAccuracy)" />
               <Area type="monotone" dataKey="engagement" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#colorEng)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -154,12 +181,12 @@ export const AnalyticsView = () => {
       </div>
 
       {/* Grid: Topic Mastery + Live Student Leaderboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 font-mono">
         {/* Topic Mastery Bars */}
-        <div className="lg:col-span-7 zine-card p-6 space-y-4 bg-white">
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2">
-            <h3 className="text-base font-extrabold text-slate-900 font-zine-title">Topic Mastery Breakdown</h3>
-            <span className="text-xs font-mono font-bold bg-yellow-200 px-2 py-0.5 rounded border border-slate-900">
+        <div className="lg:col-span-7 hypercard-card p-6 space-y-4 bg-white">
+          <div className="flex items-center justify-between border-b-2 border-black pb-2">
+            <h3 className="text-base font-hypercard-header text-black">Topic Mastery Breakdown</h3>
+            <span className="text-xs font-bold bg-yellow-200 px-2 py-0.5 border border-black">
               5 Key Modules
             </span>
           </div>
@@ -167,13 +194,13 @@ export const AnalyticsView = () => {
           <div className="space-y-4">
             {analytics.topicMastery.map((item, idx) => (
               <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-900">
-                  <span className="font-extrabold text-slate-900">{item.topic}</span>
-                  <span className="font-mono bg-yellow-200 px-2 py-0.5 rounded border border-slate-900 text-slate-900">{item.mastery}%</span>
+                <div className="flex justify-between text-xs font-bold text-black">
+                  <span>{item.topic}</span>
+                  <span className="font-mono bg-yellow-200 px-2 py-0.5 border border-black text-black">{item.mastery}%</span>
                 </div>
-                <div className="h-3.5 bg-slate-100 rounded-lg overflow-hidden border-2 border-slate-900 p-0.5">
+                <div className="h-3.5 bg-[#f7f4ed] border-2 border-black rounded p-0.5 shadow-[1px_1px_0px_0px_#000]">
                   <div
-                    className={`h-full rounded transition-all duration-500 border border-slate-900 ${
+                    className={`h-full rounded border border-black transition-all duration-500 ${
                       item.mastery >= 80
                         ? 'bg-emerald-300'
                         : item.mastery >= 70
@@ -189,13 +216,13 @@ export const AnalyticsView = () => {
         </div>
 
         {/* Student Nickname Leaderboard */}
-        <div className="lg:col-span-5 zine-card-yellow p-6 space-y-4">
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-2">
-            <h3 className="text-base font-extrabold text-slate-900 font-zine-title flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-700" />
+        <div className="lg:col-span-5 hypercard-card-yellow p-6 space-y-4">
+          <div className="flex items-center justify-between border-b-2 border-black pb-2">
+            <h3 className="text-base font-hypercard-header text-black flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-black" />
               Live Quiz Leaderboard
             </h3>
-            <span className="text-[10px] font-mono font-bold bg-slate-900 text-white px-2 py-0.5 rounded uppercase">
+            <span className="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded uppercase">
               Nicknames Only
             </span>
           </div>
@@ -204,26 +231,26 @@ export const AnalyticsView = () => {
             {analytics.studentRankings.map((student) => (
               <div
                 key={student.rank}
-                className="p-3 rounded-xl bg-white border-2 border-slate-900 flex items-center justify-between text-xs font-bold shadow-zine-sm"
+                className="p-3 rounded-lg bg-white border-2 border-black flex items-center justify-between text-xs font-bold shadow-[2px_2px_0px_0px_#000]"
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono font-extrabold text-xs border-2 border-slate-900 ${
+                    className={`w-7 h-7 rounded border-2 border-black flex items-center justify-center font-hypercard-header text-xs ${
                       student.rank === 1
-                        ? 'bg-yellow-300 text-slate-900 shadow-zine-sm'
+                        ? 'bg-yellow-300 text-black shadow-[1px_1px_0px_0px_#000]'
                         : student.rank === 2
-                        ? 'bg-sky-200 text-slate-900'
+                        ? 'bg-sky-200 text-black'
                         : student.rank === 3
-                        ? 'bg-pink-200 text-slate-900'
-                        : 'bg-slate-100 text-slate-700'
+                        ? 'bg-rose-200 text-black'
+                        : 'bg-[#f7f4ed] text-slate-700'
                     }`}
                   >
                     #{student.rank}
                   </span>
-                  <span className="text-slate-900 font-extrabold">{student.avatar} {student.name}</span>
+                  <span className="text-black font-bold">{student.avatar} {student.name}</span>
                 </div>
 
-                <span className="font-mono text-slate-900 font-extrabold bg-emerald-200 px-2 py-0.5 rounded border border-slate-900">
+                <span className="font-mono text-black font-bold bg-emerald-200 px-2 py-0.5 border border-black">
                   {student.score} pts
                 </span>
               </div>
