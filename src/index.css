@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen&family=Space+Mono:wght@400;700&family=Architects+Daughter&family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -9,166 +9,172 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #eae5d9;
+  background-color: #faf7f2;
   background-image: 
-    radial-gradient(#c2bbb0 1px, transparent 1px),
-    radial-gradient(#c2bbb0 1px, #eae5d9 1px);
-  background-size: 32px 32px;
-  background-position: 0 0, 16px 16px;
-  color: #000000;
+    radial-gradient(#e2d9cd 1px, transparent 1px),
+    radial-gradient(#e2d9cd 1px, #faf7f2 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  color: #0f172a;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* HyperCard Stack Typography Utilities */
-.font-hypercard-pixel {
-  font-family: 'VT323', monospace;
-  font-size: 1.25rem;
-  letter-spacing: 0.05em;
-}
-
-.font-hypercard-header {
-  font-family: 'Space Mono', 'VT323', monospace;
-  font-weight: 700;
-}
-
-.font-hypercard-title {
-  font-family: 'Silkscreen', 'VT323', monospace;
-}
-
+/* Zine Typography Utilities */
 .font-handwriting {
   font-family: 'Architects Daughter', 'Kalam', cursive;
+}
+
+.font-zine-title {
+  font-family: 'Kalam', 'Outfit', sans-serif;
+}
+
+.font-zine-accent {
+  font-family: 'Caveat', cursive;
 }
 
 .font-mono-code {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* HyperCard Stack Container & Card Aesthetics */
-.hypercard-stack {
-  background-color: #f7f4ed;
-  border: 3px solid #000000;
-  box-shadow: 
-    5px 5px 0px 0px #000000,
-    10px 10px 0px 0px #d5cfbf,
-    11px 11px 0px 0px #000000;
-  border-radius: 8px;
+/* Zine Borders & Shadows */
+.border-zine {
+  border: 2px solid #0f172a;
 }
 
-.hypercard-card {
-  background-color: #ffffff;
-  border: 2px solid #000000;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 8px;
+.border-zine-dashed {
+  border: 2px dashed #0f172a;
 }
 
-.hypercard-card-yellow {
-  background-color: #fffbeb;
-  border: 2px solid #000000;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 8px;
+.shadow-zine {
+  box-shadow: 3px 3px 0px 0px #0f172a;
 }
 
-.hypercard-card-sky {
-  background-color: #f0f9ff;
-  border: 2px solid #000000;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 8px;
+.shadow-zine-lg {
+  box-shadow: 5px 5px 0px 0px #0f172a;
 }
 
-.hypercard-card-mint {
-  background-color: #f0fdf4;
-  border: 2px solid #000000;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 8px;
+.shadow-zine-sm {
+  box-shadow: 2px 2px 0px 0px #0f172a;
 }
 
-/* HyperCard Index Tabs */
-.hypercard-tab-active {
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid #000000;
-  border-bottom: 2px solid #ffffff;
-  box-shadow: 3px -3px 0px 0px #000000;
-  font-weight: 800;
+.shadow-zine-interactive {
+  box-shadow: 3px 3px 0px 0px #0f172a;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.hypercard-tab-inactive {
-  background-color: #dcd6c7;
-  color: #333333;
-  border: 2px solid #000000;
-  box-shadow: 2px 2px 0px 0px #000000;
+.shadow-zine-interactive:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px #0f172a;
 }
 
-.hypercard-tab-inactive:hover {
-  background-color: #f0ebd9;
-}
-
-/* HyperCard Buttons & Actions */
-.hypercard-btn {
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px 0px #000000;
-  font-weight: 700;
-  transition: all 0.1s ease;
-}
-
-.hypercard-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px 0px #000000;
-  background-color: #f7f4ed;
-}
-
-.hypercard-btn:active {
+.shadow-zine-interactive:active {
   transform: translate(2px, 2px);
-  box-shadow: 0px 0px 0px 0px #000000;
+  box-shadow: 0px 0px 0px 0px #0f172a;
 }
 
-.hypercard-btn-primary {
-  background-color: #000000;
-  color: #f7f4ed;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px 0px #888888;
-  font-weight: 800;
-  transition: all 0.1s ease;
+/* Zine Cards */
+.zine-card {
+  background-color: #ffffff;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 12px;
 }
 
-.hypercard-btn-primary:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px 0px #000000;
-  background-color: #1e1e1e;
+.zine-card-yellow {
+  background-color: #fef9c3;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 12px;
 }
 
-.hypercard-btn-primary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0px 0px 0px 0px #000000;
+.zine-card-pink {
+  background-color: #fce7f3;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 12px;
 }
 
-/* Classic Macintosh Title Bar Stripes */
-.mac-title-bar {
-  background-image: repeating-linear-gradient(
-    0deg,
-    #000000,
-    #000000 1px,
-    transparent 1px,
-    transparent 3px
-  );
+.zine-card-sky {
+  background-color: #e0f2fe;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 12px;
 }
 
-/* Scrollbar for HyperCard Stack */
+.zine-card-mint {
+  background-color: #dcfce7;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 12px;
+}
+
+/* Tape strip effect */
+.zine-tape-top {
+  position: relative;
+}
+.zine-tape-top::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 90px;
+  height: 24px;
+  background-color: rgba(254, 240, 138, 0.75);
+  border: 1px dashed rgba(15, 23, 42, 0.4);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.zine-tape-corner {
+  position: relative;
+}
+.zine-tape-corner::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  transform: rotate(35deg);
+  width: 60px;
+  height: 20px;
+  background-color: rgba(224, 242, 254, 0.85);
+  border: 1px dashed rgba(15, 23, 42, 0.3);
+  z-index: 10;
+}
+
+/* Highlighter effect */
+.highlight-yellow {
+  background: linear-gradient(100deg, rgba(254, 240, 138, 0) 1%, rgba(254, 240, 138, 0.85) 2.5%, rgba(254, 240, 138, 0.7) 98%);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.highlight-mint {
+  background: linear-gradient(100deg, rgba(187, 247, 208, 0) 1%, rgba(187, 247, 208, 0.85) 2.5%, rgba(187, 247, 208, 0.7) 98%);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.highlight-pink {
+  background: linear-gradient(100deg, rgba(251, 207, 232, 0) 1%, rgba(251, 207, 232, 0.85) 2.5%, rgba(251, 207, 232, 0.7) 98%);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Custom scrollbar for Zine theme */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #ded7c7;
-  border-left: 2px solid #000000;
+  background: #f4efe6;
+  border-left: 2px solid #0f172a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #000000;
-  border-radius: 0px;
+  background: #0f172a;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #333333;
+  background: #334155;
 }

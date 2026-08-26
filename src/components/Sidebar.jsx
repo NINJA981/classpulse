@@ -1,6 +1,7 @@
 import React from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
+  LayoutDashboard,
   School,
   BrainCircuit,
   BarChart3,
@@ -9,18 +10,19 @@ import {
   UserCheck,
   GraduationCap,
   Sparkles,
-  Layers,
-  HardDrive
+  BookOpen,
+  Calendar,
+  Lock
 } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { activeTab, setActiveTab, userRole } = useClassPulse();
+  const { activeTab, setActiveTab, userRole, currentUser } = useClassPulse();
 
   // Navigation items based on logged in role
-  // Notice: AI Quiz Workbench is REMOVED from Admin navigation!
   const adminNavItems = [
-    { id: 'management', label: 'HyperCard Admin Stack', icon: Layers, badge: 'STACK v2' },
-    { id: 'analytics', label: 'Class Analytics', icon: BarChart3 }
+    { id: 'management', label: 'Admin Control Hub', icon: School, badge: 'CORE' },
+    { id: 'analytics', label: 'Class Analytics', icon: BarChart3 },
+    { id: 'quiz', label: 'AI Quiz Workbench', icon: BrainCircuit }
   ];
 
   const teacherNavItems = [
@@ -38,30 +40,30 @@ export const Sidebar = () => {
   const navItems = userRole === 'admin' ? adminNavItems : userRole === 'teacher' ? teacherNavItems : studentNavItems;
 
   return (
-    <aside className="w-64 bg-[#f4f0e6] border-r-3 border-black flex flex-col justify-between p-4 z-20 select-none shadow-[4px_0px_0px_0px_#000]">
+    <aside className="w-64 bg-white border-r-2 border-slate-900 flex flex-col justify-between p-4 z-20 select-none shadow-zine-sm">
       <div>
-        {/* Logo & HyperCard Stack Header */}
-        <div className="hypercard-card-yellow p-3 mb-5 space-y-1">
+        {/* Logo & Zine Brand Header */}
+        <div className="zine-card-yellow p-3 mb-6 relative zine-tape-top space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded bg-black flex items-center justify-center border-2 border-black text-yellow-300 shadow-[2px_2px_0px_0px_#888]">
-              <Layers className="w-5 h-5 text-yellow-300" />
+            <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center border-2 border-slate-900 shadow-zine-sm">
+              <School className="w-5 h-5 text-yellow-300" />
             </div>
             <div>
-              <h1 className="font-extrabold text-lg tracking-tight text-black font-hypercard-header leading-tight uppercase">
-                Hyper<span className="text-slate-800">Card</span>
+              <h1 className="font-extrabold text-lg tracking-tight text-slate-900 font-zine-title leading-tight">
+                Class<span className="text-indigo-900">Pulse</span>
               </h1>
-              <p className="text-[10px] font-mono font-bold text-slate-800 uppercase tracking-wider">SHOEBOX INDEX</p>
+              <p className="text-[10px] font-mono font-bold text-slate-700 uppercase tracking-wider">ZINE EXPLAINER UI</p>
             </div>
           </div>
         </div>
 
-        {/* HyperCard Role Indicator Callout */}
-        <div className="mb-4 p-2.5 rounded bg-white border-2 border-black text-xs font-mono space-y-0.5 shadow-[2px_2px_0px_0px_#000]">
-          <span className="font-bold text-black block text-[10px] uppercase tracking-wider">Current Stack Mode:</span>
-          <span className="font-bold text-black flex items-center gap-1">
-            {userRole === 'admin' && '🔐 Admin Shoebox Stack'}
-            {userRole === 'teacher' && '👨‍🏫 Teacher Workbench'}
-            {userRole === 'student' && '🎓 Student Learning Stack'}
+        {/* Zine Role Indicator Callout */}
+        <div className="mb-4 p-2.5 rounded-xl bg-slate-100 border-2 border-slate-900 text-xs font-handwriting space-y-0.5">
+          <span className="font-bold text-slate-900 block font-mono text-[10px] uppercase tracking-wider">Logged In Mode:</span>
+          <span className="font-extrabold text-slate-900 flex items-center gap-1">
+            {userRole === 'admin' && '🔐 System Administrator'}
+            {userRole === 'teacher' && '👨‍🏫 Classroom Teacher'}
+            {userRole === 'student' && '🎓 Enrolled Student'}
           </span>
         </div>
 
@@ -74,20 +76,18 @@ export const Sidebar = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded text-xs font-mono font-bold transition border-2 border-black cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition border-2 border-slate-900 cursor-pointer ${
                   isActive
-                    ? 'bg-black text-yellow-300 shadow-[3px_3px_0px_0px_#888] translate-x-1'
-                    : 'bg-white text-black hover:bg-yellow-50 shadow-[2px_2px_0px_0px_#000]'
+                    ? 'bg-yellow-300 text-slate-900 shadow-zine-sm font-extrabold translate-x-1'
+                    : 'bg-white text-slate-800 hover:bg-yellow-50'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-yellow-300' : 'text-black'}`} />
+                  <Icon className="w-4 h-4 text-slate-900" />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded uppercase border ${
-                    isActive ? 'bg-yellow-300 text-black border-black' : 'bg-black text-white border-black'
-                  }`}>
+                  <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-slate-900 text-yellow-300 border border-slate-900 uppercase">
                     {item.badge}
                   </span>
                 )}
@@ -97,14 +97,14 @@ export const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Footer HyperCard Stack System Card */}
-      <div className="pt-4 border-t-2 border-black space-y-2 font-mono">
-        <div className="hypercard-card-sky p-3 text-xs space-y-1">
-          <div className="font-bold text-black flex items-center gap-1 font-mono text-[11px]">
-            <HardDrive className="w-3.5 h-3.5 text-black" /> HyperCard 2.0
+      {/* Footer System Info Card */}
+      <div className="pt-4 border-t-2 border-slate-900 space-y-2">
+        <div className="zine-card-pink p-3 text-xs space-y-1">
+          <div className="font-bold text-slate-900 flex items-center gap-1 font-mono text-[11px]">
+            <Sparkles className="w-3.5 h-3.5 text-slate-900" /> ClassPulse v2.5
           </div>
-          <p className="text-[10px] text-slate-800 leading-tight">
-            Classic Apple HyperCard Shoebox Stack UI for Smart Classroom Management.
+          <p className="text-[11px] font-handwriting text-slate-800 leading-tight">
+            Polished, hand-drawn zine interface for modern school management.
           </p>
         </div>
       </div>
