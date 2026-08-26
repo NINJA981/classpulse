@@ -199,42 +199,6 @@ export const LoginPage = () => {
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </button>
           </form>
-
-          {/* Quick 1-Click Direct Role Login Buttons */}
-          <div className="pt-4 border-t-2 border-slate-900 space-y-2">
-            <span className="text-[11px] font-black text-slate-800 block uppercase tracking-wider font-mono">
-              ⚡ Quick 1-Click Direct Logins:
-            </span>
-            <div className="grid grid-cols-3 gap-2 font-mono">
-              <button
-                type="button"
-                onClick={() => quickLoginRole('admin')}
-                className={`p-2 rounded-lg border-2 border-slate-900 text-xs font-black text-center transition cursor-pointer shadow-[2px_2px_0px_0px_#000] ${
-                  selectedRole === 'admin' ? 'bg-yellow-300' : 'bg-white hover:bg-yellow-100'
-                }`}
-              >
-                🔐 Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLoginRole('teacher')}
-                className={`p-2 rounded-lg border-2 border-slate-900 text-xs font-black text-center transition cursor-pointer shadow-[2px_2px_0px_0px_#000] ${
-                  selectedRole === 'teacher' ? 'bg-sky-300' : 'bg-white hover:bg-sky-100'
-                }`}
-              >
-                👨‍🏫 Teacher
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLoginRole('student')}
-                className={`p-2 rounded-lg border-2 border-slate-900 text-xs font-black text-center transition cursor-pointer shadow-[2px_2px_0px_0px_#000] ${
-                  selectedRole === 'student' ? 'bg-emerald-300' : 'bg-white hover:bg-emerald-100'
-                }`}
-              >
-                🎓 Student
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer info */}
