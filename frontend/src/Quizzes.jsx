@@ -1,332 +1,97 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+const initialQuizzes = [
+  {
+    id: 1,
+    title: "Photosynthesis Quiz",
+    subject: "Science",
+    grade: "Grade 8",
+    questions: 10,
+    status: "Published",
+  },
+  {
+    id: 2,
+    title: "Algebra Basics",
+    subject: "Mathematics",
+    grade: "Grade 8",
+    questions: 15,
+    status: "Published",
+  },
+  {
+    id: 3,
+    title: "Fractions Practice",
+    subject: "Mathematics",
+    grade: "Grade 7",
+    questions: 12,
+    status: "Draft",
+  },
+];
 
 function Quizzes() {
-  const navigate = useNavigate();
+  const [quizzes, setQuizzes] = useState(initialQuizzes);
+  const [showForm, setShowForm] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [grade, setGrade] = useState("");
-  const [duration, setDuration] = useState("30");
+  const [subject, setSubject] = useState("Mathematics");
+  const [grade, setGrade] = useState("Grade 8");
+  const [questions, setQuestions] = useState("10");
 
-  const [questions, setQuestions] = useState([
-    {
-      question: "",
-      options: ["", "", "", ""],
-      answer: "",
-    },
-  ]);
+  const createQuiz = (event) => {
+    event.preventDefault();
 
-  const [error, setError] = useState("");
-
-  // =========================
-  // ADD QUESTION
-  // =========================
-
-  const addQuestion = () => {
-    setQuestions((currentQuestions) => [
-      ...currentQuestions,
-      {
-        question: "",
-        options: ["", "", "", ""],
-        answer: "",
-      },
-    ]);
-
-    setError("");
-  };
-
-  // =========================
-  // REMOVE QUESTION
-  // =========================
-
-  const removeQuestion = (index) => {
-    if (questions.length <= 1) {
-      setError("At least one question is required.");
+    if (!title.trim()) {
       return;
     }
-
-    setQuestions((currentQuestions) =>
-      currentQuestions.filter((_, questionIndex) => {
-        return questionIndex !== index;
-      })
-    );
-
-    setError("");
-  };
-
-  // =========================
-  // UPDATE QUESTION
-  // =========================
-
-  const updateQuestion = (index, value) => {
-    setQuestions((currentQuestions) =>
-      currentQuestions.map((item, questionIndex) => {
-        if (questionIndex !== index) {
-          return item;
-        }
-
-        return {
-          ...item,
-          question: value,
-        };
-      })
-    );
-
-    setError("");
-  };
-
-  // =========================
-  // UPDATE OPTION
-  // =========================
-
-  const updateOption = (
-    questionIndex,
-    optionIndex,
-    value
-  ) => {
-    setQuestions((currentQuestions) =>
-      currentQuestions.map((item, currentIndex) => {
-        if (currentIndex !== questionIndex) {
-          return item;
-        }
-
-        const updatedOptions = [...item.options];
-
-        updatedOptions[optionIndex] = value;
-
-        return {
-          ...item,
-          options: updatedOptions,
-        };
-      })
-    );
-
-    setError("");
-  };
-
-  // =========================
-  // UPDATE CORRECT ANSWER
-  // =========================
-
-  const updateAnswer = (questionIndex, value) => {
-    setQuestions((currentQuestions) =>
-      currentQuestions.map((item, currentIndex) => {
-        if (currentIndex !== questionIndex) {
-          return item;
-        }
-
-        return {
-          ...item,
-          answer: value,
-        };
-      })
-    );
-
-    setError("");
-  };
-
-  // =========================
-  // SAVE QUIZ
-  // =========================
-
-  const saveQuiz = () => {
-    const cleanTitle = title.trim();
-
-    if (!cleanTitle) {
-      setError("Please enter the quiz title.");
-      return;
-    }
-
-    if (!subject) {
-      setError("Please select a subject.");
-      return;
-    }
-
-    if (!grade) {
-      setError("Please select a grade.");
-      return;
-    }
-
-    if (!duration) {
-      setError("Please select a duration.");
-      return;
-    }
-
-    if (!Array.isArray(questions) || questions.length === 0) {
-      setError("Please add at least one question.");
-      return;
-    }
-
-    // Validate every question
-    for (let i = 0; i < questions.length; i += 1) {
-      const currentQuestion = questions[i];
-
-      if (!currentQuestion.question.trim()) {
-        setError(
-          `Please enter Question ${i + 1}.`
-        );
-        return;
-      }
-
-      if (
-        !Array.isArray(currentQuestion.options) ||
-        currentQuestion.options.length !== 4
-      ) {
-        setError(
-          `Question ${i + 1} must have exactly 4 options.`
-        );
-        return;
-      }
-
-      for (let j = 0; j < 4; j += 1) {
-        if (!currentQuestion.options[j].trim()) {
-          const optionLetter = String.fromCharCode(
-            65 + j
-          );
-
-          setError(
-            `Please enter Option ${optionLetter} for Question ${i + 1}.`
-          );
-          return;
-        }
-      }
-
-      if (!currentQuestion.answer) {
-        setError(
-          `Please select the correct answer for Question ${i + 1}.`
-        );
-        return;
-      }
-    }
-
-    // =========================
-    // CREATE QUIZ OBJECT
-    // =========================
 
     const newQuiz = {
-      id: Date.now().toString(),
-
-      title: cleanTitle,
-
-      subject: subject,
-
-      grade: grade,
-
-      duration: `${duration} minutes`,
-
-      questions: questions.map((item) => {
-        return {
-          question: item.question.trim(),
-
-          options: item.options.map((option) =>
-            option.trim()
-          ),
-
-          answer: item.answer,
-        };
-      }),
-
-      createdAt: new Date().toISOString(),
+      id: Date.now(),
+      title: title.trim(),
+      subject,
+      grade,
+      questions: Number(questions) || 10,
+      status: "Draft",
     };
 
-    // =========================
-    // LOAD EXISTING QUIZZES
-    // =========================
+    setQuizzes((current) => [...current, newQuiz]);
 
-    let existingQuizzes = [];
+    setTitle("");
+    setSubject("Mathematics");
+    setGrade("Grade 8");
+    setQuestions("10");
+    setShowForm(false);
+  };
 
-    try {
-      const savedQuizzes = localStorage.getItem(
-        "teacherGuideQuizzes"
-      );
+  const deleteQuiz = (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this quiz?"
+    );
 
-      if (savedQuizzes) {
-        const parsedQuizzes =
-          JSON.parse(savedQuizzes);
-
-        if (Array.isArray(parsedQuizzes)) {
-          existingQuizzes = parsedQuizzes;
-        }
-      }
-    } catch (storageError) {
-      console.error(
-        "Unable to read existing quizzes:",
-        storageError
-      );
-
-      existingQuizzes = [];
+    if (!confirmed) {
+      return;
     }
 
-    // =========================
-    // SAVE QUIZ
-    // =========================
-
-    const updatedQuizzes = [
-      ...existingQuizzes,
-      newQuiz,
-    ];
-
-    try {
-      localStorage.setItem(
-        "teacherGuideQuizzes",
-        JSON.stringify(updatedQuizzes)
-      );
-
-      // Verify saved data
-      const savedData = localStorage.getItem(
-        "teacherGuideQuizzes"
-      );
-
-      if (!savedData) {
-        setError(
-          "Quiz could not be saved. Please try again."
-        );
-        return;
-      }
-
-      // Verify JSON can be parsed
-      const verification = JSON.parse(savedData);
-
-      if (!Array.isArray(verification)) {
-        setError(
-          "Quiz data could not be verified."
-        );
-        return;
-      }
-
-      // Go to quiz management page
-      navigate("/quizzes");
-    } catch (storageError) {
-      console.error(
-        "Unable to save quiz:",
-        storageError
-      );
-
-      setError(
-        "Quiz could not be saved. Please try again."
-      );
-    }
+    setQuizzes((current) =>
+      current.filter((quiz) => quiz.id !== id)
+    );
   };
 
   return (
-    <div className="app">
+    <div className="workspace-page">
+      {/* HEADER */}
+      <header className="workspace-header">
+        <div>
+          <Link to="/" className="workspace-brand">
+            TEACHER GUIDE
+          </Link>
 
-      {/* =========================
-          NAVBAR
-      ========================= */}
-
-      <header className="navbar">
-
-        <div className="logo">
-          TEACHER GUIDE
+          <div className="workspace-subtitle">
+            TEACHER WORKSPACE
+          </div>
         </div>
 
-        <nav>
-
-          <Link to="/">
-            Dashboard
-          </Link>
+        <nav className="workspace-navigation">
+          <Link to="/">Dashboard</Link>
 
           <Link to="/saved-plans">
             Lesson Plans
@@ -347,438 +112,522 @@ function Quizzes() {
           <Link to="/analytics">
             Analytics
           </Link>
-
         </nav>
-
-        <div className="teacher">
-          Teacher
-        </div>
-
       </header>
 
-      {/* =========================
-          MAIN CONTENT
-      ========================= */}
+      {/* MAIN */}
+      <main className="workspace-container">
 
-      <main className="dashboard">
+        {/* PAGE HEADING */}
+        <section className="workspace-heading">
+          <div>
+            <p className="workspace-eyebrow">
+              ASSESSMENT CENTER
+            </p>
 
-        {/* =========================
-            HERO
-        ========================= */}
+            <h1>
+              Quizzes
+            </h1>
 
-        <section className="hero">
-
-          <p className="eyebrow">
-            QUIZ BUILDER
-          </p>
-
-          <h1>
-            Create.
-            <br />
-            Assess.
-          </h1>
-
-          <p className="hero-text">
-            Create engaging quizzes for your
-            students and organize assessments
-            in one place.
-          </p>
-
-        </section>
-
-        {/* =========================
-            QUIZ INFORMATION
-        ========================= */}
-
-        <section className="quiz-form-section">
-
-          <div className="form-heading">
-
-            <span className="number">
-              01
-            </span>
-
-            <h2>
-              Quiz Information
-            </h2>
-
+            <p>
+              Create assessments and track student performance.
+            </p>
           </div>
-
-          <div className="form-grid">
-
-            {/* QUIZ TITLE */}
-
-            <div className="form-group">
-
-              <label htmlFor="quiz-title">
-                Quiz Title
-              </label>
-
-              <input
-                id="quiz-title"
-                type="text"
-                placeholder="Example: Algebra Basics"
-                value={title}
-                onChange={(event) => {
-                  setTitle(event.target.value);
-                  setError("");
-                }}
-              />
-
-            </div>
-
-            {/* SUBJECT */}
-
-            <div className="form-group">
-
-              <label htmlFor="quiz-subject">
-                Subject
-              </label>
-
-              <select
-                id="quiz-subject"
-                value={subject}
-                onChange={(event) => {
-                  setSubject(event.target.value);
-                  setError("");
-                }}
-              >
-
-                <option value="">
-                  Select Subject
-                </option>
-
-                <option value="Mathematics">
-                  Mathematics
-                </option>
-
-                <option value="Science">
-                  Science
-                </option>
-
-                <option value="English">
-                  English
-                </option>
-
-                <option value="Computer Science">
-                  Computer Science
-                </option>
-
-                <option value="Social Science">
-                  Social Science
-                </option>
-
-              </select>
-
-            </div>
-
-            {/* GRADE */}
-
-            <div className="form-group">
-
-              <label htmlFor="quiz-grade">
-                Grade
-              </label>
-
-              <select
-                id="quiz-grade"
-                value={grade}
-                onChange={(event) => {
-                  setGrade(event.target.value);
-                  setError("");
-                }}
-              >
-
-                <option value="">
-                  Select Grade
-                </option>
-
-                <option value="Grade 6">
-                  Grade 6
-                </option>
-
-                <option value="Grade 7">
-                  Grade 7
-                </option>
-
-                <option value="Grade 8">
-                  Grade 8
-                </option>
-
-                <option value="Grade 9">
-                  Grade 9
-                </option>
-
-                <option value="Grade 10">
-                  Grade 10
-                </option>
-
-              </select>
-
-            </div>
-
-            {/* DURATION */}
-
-            <div className="form-group">
-
-              <label htmlFor="quiz-duration">
-                Duration
-              </label>
-
-              <select
-                id="quiz-duration"
-                value={duration}
-                onChange={(event) => {
-                  setDuration(event.target.value);
-                  setError("");
-                }}
-              >
-
-                <option value="15">
-                  15 minutes
-                </option>
-
-                <option value="30">
-                  30 minutes
-                </option>
-
-                <option value="45">
-                  45 minutes
-                </option>
-
-                <option value="60">
-                  60 minutes
-                </option>
-
-              </select>
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* =========================
-            QUESTIONS
-        ========================= */}
-
-        <section className="quiz-form-section">
-
-          <div className="form-heading">
-
-            <span className="number">
-              02
-            </span>
-
-            <h2>
-              Questions
-            </h2>
-
-          </div>
-
-          {questions.map(
-            (item, questionIndex) => {
-
-              return (
-                <div
-                  className="question-box"
-                  key={`question-${questionIndex}`}
-                >
-
-                  {/* QUESTION HEADER */}
-
-                  <div className="question-header">
-
-                    <strong>
-                      Question {questionIndex + 1}
-                    </strong>
-
-                    {questions.length > 1 && (
-                      <button
-                        type="button"
-                        className="delete-question"
-                        onClick={() =>
-                          removeQuestion(
-                            questionIndex
-                          )
-                        }
-                      >
-                        Delete
-                      </button>
-                    )}
-
-                  </div>
-
-                  {/* QUESTION TEXT */}
-
-                  <div className="form-group">
-
-                    <label
-                      htmlFor={`question-${questionIndex}`}
-                    >
-                      Question
-                    </label>
-
-                    <textarea
-                      id={`question-${questionIndex}`}
-                      rows="4"
-                      placeholder="Enter your question..."
-                      value={item.question}
-                      onChange={(event) =>
-                        updateQuestion(
-                          questionIndex,
-                          event.target.value
-                        )
-                      }
-                    />
-
-                  </div>
-
-                  {/* OPTIONS */}
-
-                  <div className="options-grid">
-
-                    {item.options.map(
-                      (option, optionIndex) => {
-
-                        const letter =
-                          String.fromCharCode(
-                            65 + optionIndex
-                          );
-
-                        return (
-                          <div
-                            className="form-group"
-                            key={`option-${questionIndex}-${optionIndex}`}
-                          >
-
-                            <label
-                              htmlFor={`option-${questionIndex}-${optionIndex}`}
-                            >
-                              Option {letter}
-                            </label>
-
-                            <input
-                              id={`option-${questionIndex}-${optionIndex}`}
-                              type="text"
-                              placeholder={`Enter option ${letter}`}
-                              value={option}
-                              onChange={(event) =>
-                                updateOption(
-                                  questionIndex,
-                                  optionIndex,
-                                  event.target.value
-                                )
-                              }
-                            />
-
-                          </div>
-                        );
-                      }
-                    )}
-
-                  </div>
-
-                  {/* CORRECT ANSWER */}
-
-                  <div className="form-group">
-
-                    <label
-                      htmlFor={`answer-${questionIndex}`}
-                    >
-                      Correct Answer
-                    </label>
-
-                    <select
-                      id={`answer-${questionIndex}`}
-                      value={item.answer}
-                      onChange={(event) =>
-                        updateAnswer(
-                          questionIndex,
-                          event.target.value
-                        )
-                      }
-                    >
-
-                      <option value="">
-                        Select Correct Answer
-                      </option>
-
-                      <option value="A">
-                        Option A
-                      </option>
-
-                      <option value="B">
-                        Option B
-                      </option>
-
-                      <option value="C">
-                        Option C
-                      </option>
-
-                      <option value="D">
-                        Option D
-                      </option>
-
-                    </select>
-
-                  </div>
-
-                </div>
-              );
-            }
-          )}
-
-          {/* ADD QUESTION */}
 
           <button
             type="button"
-            className="secondary-button"
-            onClick={addQuestion}
+            className="primary-action"
+            onClick={() => setShowForm((current) => !current)}
           >
-            + Add Another Question
+            + Create Quiz
           </button>
-
         </section>
 
-        {/* =========================
-            ERROR MESSAGE
-        ========================= */}
+        {/* SUMMARY */}
+        <section className="workspace-summary">
+          <div>
+            <span>
+              TOTAL QUIZZES
+            </span>
 
-        {error && (
-          <div
-            className="quiz-error"
-            role="alert"
-          >
-            {error}
+            <strong>
+              {quizzes.length}
+            </strong>
+
+            <p>
+              Assessments created
+            </p>
           </div>
+
+          <div>
+            <span>
+              PUBLISHED
+            </span>
+
+            <strong>
+              {
+                quizzes.filter(
+                  (quiz) => quiz.status === "Published"
+                ).length
+              }
+            </strong>
+
+            <p>
+              Ready for students
+            </p>
+          </div>
+
+          <div>
+            <span>
+              DRAFTS
+            </span>
+
+            <strong>
+              {
+                quizzes.filter(
+                  (quiz) => quiz.status === "Draft"
+                ).length
+              }
+            </strong>
+
+            <p>
+              Still being prepared
+            </p>
+          </div>
+        </section>
+
+        {/* CREATE FORM */}
+        {showForm && (
+          <section className="quiz-form-card">
+            <div className="quiz-form-header">
+              <div>
+                <p className="workspace-eyebrow">
+                  NEW ASSESSMENT
+                </p>
+
+                <h2>
+                  Create a Quiz
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="close-button"
+                onClick={() => setShowForm(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={createQuiz}>
+              <div className="quiz-form-grid">
+
+                <div className="form-field">
+                  <label htmlFor="quiz-title">
+                    Quiz Title
+                  </label>
+
+                  <input
+                    id="quiz-title"
+                    type="text"
+                    value={title}
+                    onChange={(event) =>
+                      setTitle(event.target.value)
+                    }
+                    placeholder="Example: Algebra Basics"
+                    required
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="quiz-subject">
+                    Subject
+                  </label>
+
+                  <select
+                    id="quiz-subject"
+                    value={subject}
+                    onChange={(event) =>
+                      setSubject(event.target.value)
+                    }
+                  >
+                    <option>
+                      Mathematics
+                    </option>
+
+                    <option>
+                      Science
+                    </option>
+
+                    <option>
+                      English
+                    </option>
+
+                    <option>
+                      Computer Science
+                    </option>
+
+                    <option>
+                      Social Science
+                    </option>
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="quiz-grade">
+                    Class
+                  </label>
+
+                  <select
+                    id="quiz-grade"
+                    value={grade}
+                    onChange={(event) =>
+                      setGrade(event.target.value)
+                    }
+                  >
+                    <option>
+                      Grade 6
+                    </option>
+
+                    <option>
+                      Grade 7
+                    </option>
+
+                    <option>
+                      Grade 8
+                    </option>
+
+                    <option>
+                      Grade 9
+                    </option>
+
+                    <option>
+                      Grade 10
+                    </option>
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="quiz-questions">
+                    Number of Questions
+                  </label>
+
+                  <input
+                    id="quiz-questions"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={questions}
+                    onChange={(event) =>
+                      setQuestions(event.target.value)
+                    }
+                  />
+                </div>
+
+              </div>
+
+              <div className="quiz-form-actions">
+                <button
+                  type="button"
+                  className="secondary-action"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="primary-action"
+                >
+                  Create Quiz
+                </button>
+              </div>
+            </form>
+          </section>
         )}
 
-        {/* =========================
-            ACTION BUTTONS
-        ========================= */}
+        {/* QUIZ LIBRARY */}
+        <section className="quiz-library">
 
-        <section className="quiz-actions">
+          <div className="library-heading">
+            <div>
+              <p className="workspace-eyebrow">
+                QUIZ LIBRARY
+              </p>
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={saveQuiz}
-          >
-            Save Quiz
-          </button>
+              <h2>
+                Your assessments
+              </h2>
+            </div>
 
-          <Link
-            to="/quizzes"
-            className="secondary-button"
-          >
-            Cancel
-          </Link>
+            <span className="library-count">
+              {quizzes.length} quizzes
+            </span>
+          </div>
 
+          {quizzes.length === 0 ? (
+            <section className="empty-state">
+
+              <div className="empty-icon">
+                +
+              </div>
+
+              <p className="workspace-eyebrow">
+                EMPTY LIBRARY
+              </p>
+
+              <h2>
+                No quizzes yet
+              </h2>
+
+              <p>
+                Create your first quiz and it will appear here.
+              </p>
+
+              <button
+                type="button"
+                className="primary-action"
+                onClick={() => setShowForm(true)}
+              >
+                Create Your First Quiz
+              </button>
+
+            </section>
+          ) : (
+            <div className="quiz-grid">
+
+              {quizzes.map((quiz, index) => (
+                <article
+                  className="quiz-card"
+                  key={quiz.id}
+                >
+
+                  <div className="quiz-card-top">
+
+                    <span className="quiz-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span
+                      className={
+                        quiz.status === "Published"
+                          ? "quiz-status published"
+                          : "quiz-status"
+                      }
+                    >
+                      {quiz.status}
+                    </span>
+
+                  </div>
+
+                  <div className="quiz-icon">
+                    ✓
+                  </div>
+
+                  <h2>
+                    {quiz.title}
+                  </h2>
+
+                  <p className="quiz-description">
+                    {quiz.subject} · {quiz.grade}
+                  </p>
+
+                  <div className="quiz-details">
+
+                    <div>
+                      <span>
+                        Subject
+                      </span>
+
+                      <strong>
+                        {quiz.subject}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Class
+                      </span>
+
+                      <strong>
+                        {quiz.grade}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Questions
+                      </span>
+
+                      <strong>
+                        {quiz.questions}
+                      </strong>
+                    </div>
+
+                  </div>
+
+                  <div className="quiz-card-footer">
+
+                    <button
+                      type="button"
+                      className="quiz-open-button"
+                    >
+                      Open Quiz →
+                    </button>
+
+                    <button
+                      type="button"
+                      className="quiz-delete-button"
+                      onClick={() =>
+                        deleteQuiz(quiz.id)
+                      }
+                    >
+                      Delete
+                    </button>
+
+                  </div>
+
+                </article>
+              ))}
+
+            </div>
+          )}
         </section>
+
+        {/* QUICK ACTIONS */}
+        <section className="quick-actions-section">
+
+          <div className="library-heading">
+            <div>
+              <p className="workspace-eyebrow">
+                QUICK ACTIONS
+              </p>
+
+              <h2>
+                Continue teaching
+              </h2>
+            </div>
+          </div>
+
+          <div className="quick-actions-grid">
+
+            <Link
+              to="/lesson-plan"
+              className="quick-action-card"
+            >
+              <span>
+                01
+              </span>
+
+              <strong>
+                Create Lesson Plan
+              </strong>
+
+              <p>
+                Plan your next structured lesson.
+              </p>
+
+              <b>
+                →
+              </b>
+            </Link>
+
+            <Link
+              to="/classes"
+              className="quick-action-card"
+            >
+              <span>
+                02
+              </span>
+
+              <strong>
+                Manage Classes
+              </strong>
+
+              <p>
+                View students and class progress.
+              </p>
+
+              <b>
+                →
+              </b>
+            </Link>
+
+            <Link
+              to="/resources"
+              className="quick-action-card"
+            >
+              <span>
+                03
+              </span>
+
+              <strong>
+                Browse Resources
+              </strong>
+
+              <p>
+                Find teaching materials.
+              </p>
+
+              <b>
+                →
+              </b>
+            </Link>
+
+            <Link
+              to="/analytics"
+              className="quick-action-card"
+            >
+              <span>
+                04
+              </span>
+
+              <strong>
+                View Analytics
+              </strong>
+
+              <p>
+                Track student performance.
+              </p>
+
+              <b>
+                →
+              </b>
+            </Link>
+
+          </div>
+        </section>
+
+        {/* BACK */}
+        <div className="workspace-back-container">
+          <Link
+            to="/"
+            className="workspace-back"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
 
       </main>
 
+      {/* FOOTER */}
+      <footer className="workspace-footer">
+
+        <div>
+          <strong>
+            TEACHER GUIDE
+          </strong>
+
+          <span>
+            Intelligent workspace for modern teaching.
+          </span>
+        </div>
+
+        <Link to="/">
+          Dashboard
+        </Link>
+
+      </footer>
     </div>
   );
 }

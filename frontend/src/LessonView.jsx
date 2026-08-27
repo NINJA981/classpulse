@@ -1,250 +1,194 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React from "react";
+import { Link, useParams } from "react-router-dom";
 
 function LessonView() {
   const { id } = useParams();
+  const [plan, setPlan] = React.useState(null);
 
-  const [plan, setPlan] = useState(null);
+  React.useEffect(() => {
+    try {
+      const savedPlans =
+        JSON.parse(localStorage.getItem("teacherGuideLessonPlans")) || [];
 
-  useEffect(() => {
-    const savedPlans =
-      JSON.parse(localStorage.getItem("teacherGuidePlans")) || [];
+      const foundPlan = savedPlans.find(
+        (item) => String(item.id) === String(id)
+      );
 
-    const selectedPlan = savedPlans.find(
-      (item) => String(item.id) === String(id)
-    );
-
-    setPlan(selectedPlan);
+      setPlan(foundPlan || null);
+    } catch (error) {
+      console.error("Unable to load lesson plan:", error);
+      setPlan(null);
+    }
   }, [id]);
 
   if (!plan) {
     return (
-      <div className="lesson-page">
-
-        <header className="topbar">
-
-          <div className="logo">
-            TEACHER GUIDE
-          </div>
-
-          <nav>
-            <Link to="/">Dashboard</Link>
-            <Link to="/saved-plans">Lesson Plans</Link>
-            <a href="#">My Classes</a>
-            <a href="#">Resources</a>
-          </nav>
-
-          <button className="profile">
-            Teacher
-          </button>
-
-        </header>
-
-        <main className="lesson-main">
-
-          <div className="page-heading">
-
-            <p className="eyebrow">
-              LESSON PLAN
-            </p>
-
-            <h1>
-              Plan Not Found
-            </h1>
-
-            <p className="page-description">
-              This lesson plan could not be found.
-            </p>
-
-          </div>
-
-          <Link
-            to="/saved-plans"
-            className="generate"
-          >
-            ← Back to Lesson Plans
+      <div className="tg-page">
+        <header className="tg-header">
+          <Link to="/" className="tg-brand">
+            <span className="tg-logo">TG</span>
+            <span className="tg-brand-text">
+              <strong>TEACHER GUIDE</strong>
+              <small>TEACHER WORKSPACE</small>
+            </span>
           </Link>
 
-        </main>
+          <nav className="tg-nav">
+            <Link to="/">Dashboard</Link>
+            <Link to="/saved-plans">Lesson Plans</Link>
+            <Link to="/classes">My Classes</Link>
+            <Link to="/resources">Resources</Link>
+            <Link to="/quizzes">Quizzes</Link>
+            <Link to="/analytics">Analytics</Link>
+          </nav>
+        </header>
 
+        <main className="tg-content">
+          <div className="tg-not-found">
+            <span>404</span>
+            <h1>Lesson plan not found.</h1>
+            <p>
+              This lesson plan may have been deleted or does not exist.
+            </p>
+
+            <Link to="/saved-plans" className="tg-primary">
+              ← Back to Lesson Plans
+            </Link>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="lesson-page">
+    <div className="tg-page">
+      <header className="tg-header">
+        <Link to="/" className="tg-brand">
+          <span className="tg-logo">TG</span>
 
-      {/* HEADER */}
+          <span className="tg-brand-text">
+            <strong>TEACHER GUIDE</strong>
+            <small>TEACHER WORKSPACE</small>
+          </span>
+        </Link>
 
-      <header className="topbar">
-
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
-
-        <nav>
+        <nav className="tg-nav">
           <Link to="/">Dashboard</Link>
-
-          <Link to="/saved-plans">
+          <Link className="active" to="/saved-plans">
             Lesson Plans
           </Link>
-
-          <a href="#">
-            My Classes
-          </a>
-
-          <a href="#">
-            Resources
-          </a>
+          <Link to="/classes">My Classes</Link>
+          <Link to="/resources">Resources</Link>
+          <Link to="/quizzes">Quizzes</Link>
+          <Link to="/analytics">Analytics</Link>
         </nav>
 
-        <button className="profile">
-          Teacher
-        </button>
-
+        <div className="tg-profile">
+          <span className="tg-avatar">T</span>
+          <span>
+            <strong>Teacher</strong>
+            <small>Administrator</small>
+          </span>
+        </div>
       </header>
 
+      <main className="tg-content">
+        <section className="tg-lesson-hero">
+          <p className="tg-eyebrow">LESSON PLAN</p>
 
-      {/* MAIN */}
+          <h1>{plan.title || "Untitled Lesson"}</h1>
 
-      <main className="lesson-main">
+          <p className="tg-subtitle">
+            {plan.subject || "Subject"} ·{" "}
+            {plan.grade || "Class"} ·{" "}
+            {plan.duration
+              ? `${plan.duration} minutes`
+              : "Duration not specified"}
+          </p>
 
-        <section className="generated-plan">
-
-          {/* TITLE */}
-
-          <div className="page-heading">
-
-            <p className="eyebrow">
-              SAVED LESSON PLAN
-            </p>
-
-            <h1>
-              {plan.topic}
-            </h1>
-
-            <p className="page-description">
-              {plan.subject} · {plan.grade} · {plan.duration}
-            </p>
-
+          <div className="tg-actions">
+            <Link to="/saved-plans" className="tg-secondary">
+              ← Back to Lesson Plans
+            </Link>
           </div>
-
-
-          {/* LESSON SECTIONS */}
-
-          <div className="plan-grid">
-
-            {/* OBJECTIVES */}
-
-            <div className="plan-section">
-
-              <span className="number">
-                01
-              </span>
-
-              <h2>
-                Learning Objectives
-              </h2>
-
-              <p>
-                {plan.objectives}
-              </p>
-
-            </div>
-
-
-            {/* INTRODUCTION */}
-
-            <div className="plan-section">
-
-              <span className="number">
-                02
-              </span>
-
-              <h2>
-                Introduction
-              </h2>
-
-              <p>
-                {plan.introduction}
-              </p>
-
-            </div>
-
-
-            {/* ACTIVITIES */}
-
-            <div className="plan-section">
-
-              <span className="number">
-                03
-              </span>
-
-              <h2>
-                Teaching Activities
-              </h2>
-
-              <p>
-                {plan.activities}
-              </p>
-
-            </div>
-
-
-            {/* ASSESSMENT */}
-
-            <div className="plan-section">
-
-              <span className="number">
-                04
-              </span>
-
-              <h2>
-                Assessment
-              </h2>
-
-              <p>
-                {plan.assessment}
-              </p>
-
-            </div>
-
-
-            {/* HOMEWORK */}
-
-            <div className="plan-section">
-
-              <span className="number">
-                05
-              </span>
-
-              <h2>
-                Homework
-              </h2>
-
-              <p>
-                {plan.homework}
-              </p>
-
-            </div>
-
-          </div>
-
-
-          {/* BACK BUTTON */}
-
-          <Link
-            to="/saved-plans"
-            className="generate"
-          >
-            ← Back to Lesson Plans
-          </Link>
-
         </section>
 
+        <section className="tg-lesson-grid">
+          <LessonSection
+            number="01"
+            title="Lesson Details"
+            value={plan.topic}
+          />
+
+          <LessonSection
+            number="02"
+            title="Learning Objectives"
+            value={plan.objectives}
+          />
+
+          <LessonSection
+            number="03"
+            title="Teaching Activities"
+            value={plan.activities}
+          />
+
+          <LessonSection
+            number="04"
+            title="Resources"
+            value={plan.resources}
+          />
+
+          <LessonSection
+            number="05"
+            title="Assessment"
+            value={plan.assessment}
+          />
+
+          <LessonSection
+            number="06"
+            title="Teacher Notes"
+            value={plan.notes}
+          />
+        </section>
       </main>
 
+      <footer className="tg-footer">
+        <div>
+          <strong>TEACHER GUIDE</strong>
+          <span>Plan better. Teach smarter. Track progress.</span>
+        </div>
+
+        <span>© 2026</span>
+      </footer>
     </div>
+  );
+}
+
+function LessonSection({ number, title, value }) {
+  return (
+    <section className="tg-lesson-card">
+      <div className="tg-card-number">{number}</div>
+
+      <div>
+        <p className="tg-eyebrow">{title}</p>
+
+        <div className="tg-card-content">
+          {value ? (
+            Array.isArray(value) ? (
+              <ul>
+                {value.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{value}</p>
+            )
+          ) : (
+            <p className="tg-empty">No information added.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

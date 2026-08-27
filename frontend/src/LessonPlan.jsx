@@ -1,477 +1,836 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const EMPTY_FORM = {
+  title: "",
+  subject: "",
+  grade: "",
+  duration: "45",
+  topic: "",
+  objectives: "",
+  activities: "",
+  resources: "",
+  assessment: "",
+  notes: "",
+};
 
 function LessonPlan() {
-  const [subject, setSubject] = useState("");
-  const [grade, setGrade] = useState("");
-  const [topic, setTopic] = useState("");
-  const [duration, setDuration] = useState("45 minutes");
-  const [objectives, setObjectives] = useState("");
+  const navigate = useNavigate();
 
-  const [generated, setGenerated] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const getObjectives = () => {
-    const value = topic.trim().toLowerCase();
+  function handleChange(event) {
+    const name = event.target.name;
+    const value = event.target.value;
 
-    if (value.includes("algebra") || value.includes("equation")) {
-      return "Students will be able to identify variables and constants, simplify basic algebraic expressions, and solve simple equations.";
-    }
-
-    if (value.includes("photosynthesis") || value.includes("plant")) {
-      return "Students will be able to explain photosynthesis, identify the materials required, and describe the products formed during the process.";
-    }
-
-    if (value.includes("water cycle")) {
-      return "Students will be able to explain evaporation, condensation, precipitation, and collection and describe how water continuously moves through the environment.";
-    }
-
-    if (value.includes("cell") || value.includes("biology")) {
-      return `Students will be able to understand the key concepts of ${topic}, identify important structures or processes, and explain their functions using examples.`;
-    }
-
-    if (
-      value.includes("computer") ||
-      value.includes("programming") ||
-      value.includes("python")
-    ) {
-      return `Students will be able to understand the main concepts of ${topic}, explain their purpose, and apply their knowledge through a simple practical activity.`;
-    }
-
-    return `Students will be able to understand the key concepts of ${topic}, explain the main ideas in their own words, and apply their knowledge through practical activities.`;
-  };
-
-  const getLessonContent = () => {
-    const value = topic.trim().toLowerCase();
-
-    if (value.includes("algebra") || value.includes("equation")) {
+    setForm(function (current) {
       return {
-        introduction:
-          "Begin by asking students where they encounter unknown values in everyday situations. Introduce variables as symbols that represent unknown numbers and connect the idea to familiar mathematical examples.",
-
-        activities:
-          "Introduce variables, constants, and coefficients using simple expressions. Demonstrate how to simplify expressions and solve basic equations step by step. Allow students to solve practice problems individually and discuss their answers with the class.",
-
-        assessment:
-          "Ask students to identify variables, constants, and coefficients in given expressions. Provide a few simple equations and ask students to solve them independently.",
-
-        homework:
-          "Complete a short worksheet containing algebraic expressions and simple equations. Ask students to write one real-life situation that can be represented using an algebraic expression.",
+        ...current,
+        [name]: value,
       };
-    }
-
-    if (value.includes("photosynthesis") || value.includes("plant")) {
-      return {
-        introduction:
-          "Begin by asking students how plants obtain the food they need to grow. Discuss the roles of sunlight, water, carbon dioxide, and chlorophyll.",
-
-        activities:
-          "Explain photosynthesis using a simple diagram. Discuss the materials required and the products formed. Ask students to create a labelled diagram showing the main stages of photosynthesis.",
-
-        assessment:
-          "Ask students to explain photosynthesis in their own words and identify the main materials required and products formed.",
-
-        homework:
-          "Draw and label the process of photosynthesis and write a short explanation of how plants make food.",
-      };
-    }
-
-    if (value.includes("water cycle")) {
-      return {
-        introduction:
-          "Begin by asking students what happens to water after rain falls. Introduce the water cycle as the continuous movement of water between the Earth's surface and atmosphere.",
-
-        activities:
-          "Explain evaporation, condensation, precipitation, and collection using a simple diagram. Ask students to arrange the stages in order and create their own labelled water-cycle diagram.",
-
-        assessment:
-          "Ask students to explain each stage of the water cycle and identify examples of evaporation, condensation, and precipitation.",
-
-        homework:
-          "Draw and label the complete water cycle. Write a short explanation of why the water cycle is important for life on Earth.",
-      };
-    }
-
-    return {
-      introduction: `Begin the lesson by introducing ${topic}. Ask students a few questions to understand what they already know and connect the topic with their previous learning.`,
-
-      activities: `Explain the key concepts of ${topic} using clear examples and interactive activities. Encourage students to participate, ask questions, and complete a short individual or group activity.`,
-
-      assessment: `Ask students short questions about ${topic}. Give them a small activity related to the lesson and use their responses to identify areas that need additional explanation.`,
-
-      homework: `Give students a short practice activity related to ${topic}. Ask them to apply what they learned and prepare one question to discuss in the next class.`,
-    };
-  };
-
-  const generateLessonPlan = () => {
-    if (!subject.trim() || !grade.trim() || !topic.trim()) {
-      alert("Please fill in Subject, Class / Grade and Topic.");
-      return;
-    }
+    });
 
     setSaved(false);
-    setGenerated(true);
-  };
+    setError("");
+  }
 
-  const saveLessonPlan = () => {
-    if (!subject.trim() || !grade.trim() || !topic.trim()) {
-      alert("Please fill in all required details.");
-      return;
-    }
-
-    const content = getLessonContent();
-
-    const lessonPlan = {
-      id: Date.now(),
-      subject: subject.trim(),
-      grade: grade.trim(),
-      topic: topic.trim(),
-      duration,
-      objectives: objectives.trim() || getObjectives(),
-      introduction: content.introduction,
-      activities: content.activities,
-      assessment: content.assessment,
-      homework: content.homework,
-      savedAt: new Date().toISOString(),
-    };
-
+  function getSavedPlans() {
     try {
-      const stored = localStorage.getItem("teacherGuidePlans");
+      const stored = localStorage.getItem("teacherGuideLessonPlans");
 
-      let existingPlans = [];
-
-      if (stored) {
-        const parsed = JSON.parse(stored);
-
-        if (Array.isArray(parsed)) {
-          existingPlans = parsed;
-        }
+      if (!stored) {
+        return [];
       }
 
-      const updatedPlans = [...existingPlans, lessonPlan];
+      const parsed = JSON.parse(stored);
+
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    if (saving) {
+      return;
+    }
+
+    setError("");
+    setSaved(false);
+
+    if (!form.title.trim()) {
+      setError("Please enter the lesson title.");
+      return;
+    }
+
+    if (!form.subject) {
+      setError("Please select a subject.");
+      return;
+    }
+
+    if (!form.grade) {
+      setError("Please select a grade or class.");
+      return;
+    }
+
+    if (!form.topic.trim()) {
+      setError("Please enter the main topic.");
+      return;
+    }
+
+    if (!form.objectives.trim()) {
+      setError("Please enter the learning objectives.");
+      return;
+    }
+
+    if (!form.activities.trim()) {
+      setError("Please enter the teaching activities.");
+      return;
+    }
+
+    if (!form.assessment.trim()) {
+      setError("Please enter the assessment method.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const plans = getSavedPlans();
+
+      const newPlan = {
+        id: String(Date.now()) + "-" + String(Math.random()).slice(2, 8),
+        title: form.title.trim(),
+        subject: form.subject,
+        grade: form.grade,
+        duration: form.duration,
+        topic: form.topic.trim(),
+        objectives: form.objectives.trim(),
+        activities: form.activities.trim(),
+        resources: form.resources.trim(),
+        assessment: form.assessment.trim(),
+        notes: form.notes.trim(),
+        createdAt: new Date().toISOString(),
+      };
 
       localStorage.setItem(
-        "teacherGuidePlans",
-        JSON.stringify(updatedPlans)
+        "teacherGuideLessonPlans",
+        JSON.stringify(plans.concat(newPlan))
       );
 
+      localStorage.removeItem("teacherGuidePlans");
+
       setSaved(true);
+
+      window.setTimeout(function () {
+        navigate("/saved-plans");
+      }, 700);
     } catch (error) {
-      console.error("Error saving lesson plan:", error);
-      alert("Unable to save the lesson plan. Please try again.");
+      console.error(error);
+      setError("Unable to save the lesson plan.");
+    } finally {
+      setSaving(false);
     }
-  };
+  }
 
-  const createAnother = () => {
-    setSubject("");
-    setGrade("");
-    setTopic("");
-    setDuration("45 minutes");
-    setObjectives("");
-    setGenerated(false);
+  function clearForm() {
+    if (saving) {
+      return;
+    }
+
+    setForm(EMPTY_FORM);
     setSaved(false);
-  };
+    setError("");
+  }
 
-  const content = getLessonContent();
-  const finalObjectives = objectives.trim() || getObjectives();
+  function cancelForm() {
+    if (saving) {
+      return;
+    }
+
+    navigate("/");
+  }
 
   return (
     <div className="lesson-page">
-      {/* HEADER */}
-      <header className="topbar">
-        <div className="logo">TEACHER GUIDE</div>
+      <header className="lesson-topbar">
+        <Link to="/" className="lesson-brand">
+          <span className="lesson-logo">TG</span>
 
-        <nav>
-          <Link to="/">Dashboard</Link>
+          <span className="lesson-brand-text">
+            <strong>TEACHER GUIDE</strong>
+            <small>TEACHER WORKSPACE</small>
+          </span>
+        </Link>
 
-          <Link to="/saved-plans">Lesson Plans</Link>
-
-          <Link to="/classes">My Classes</Link>
-
-          <Link to="/resources">Resources</Link>
-
-          <Link to="/quizzes">Quizzes</Link>
-
-          <Link to="/analytics">Analytics</Link>
-        </nav>
-
-        <button
-          type="button"
-          className="profile"
-        >
-          Teacher
-        </button>
+        <Link to="/" className="lesson-back">
+          ← Back to Dashboard
+        </Link>
       </header>
 
-      {/* MAIN */}
-      <main className="lesson-main">
-        {!generated ? (
-          <>
-            {/* PAGE HEADER */}
-            <div className="page-heading">
-              <p className="eyebrow">LESSON PLANNER</p>
+      <main className="lesson-container">
+        <section className="lesson-hero">
+          <div>
+            <p className="lesson-eyebrow">LESSON PLANNER</p>
 
-              <h1>
-                Create a
-                <br />
-                Lesson Plan.
-              </h1>
+            <h1>Create Lesson Plan</h1>
 
-              <p className="page-description">
-                Build a structured lesson plan by entering
-                the basic details of your class and topic.
-              </p>
+            <p>
+              Build a structured lesson with clear objectives,
+              engaging activities, useful resources and assessment.
+            </p>
+          </div>
+
+          <div className="lesson-status">
+            <span className="status-dot"></span>
+            {saved ? "Saved" : "Draft"}
+          </div>
+        </section>
+
+        {error && (
+          <div className="lesson-error">
+            {error}
+          </div>
+        )}
+
+        {saved && (
+          <div className="lesson-success">
+            <strong>Lesson plan saved successfully.</strong>
+            <span>Opening Saved Lesson Plans...</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">01</span>
+
+              <div>
+                <p>LESSON DETAILS</p>
+                <h2>Start with the basics</h2>
+                <span>
+                  Add the basic information students need to
+                  understand the lesson.
+                </span>
+              </div>
             </div>
 
-            {/* FORM */}
-            <section className="lesson-form">
-              {/* SUBJECT + GRADE */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="subject">
-                    Subject
-                  </label>
+            <div className="lesson-form-grid">
+              <div className="lesson-field full">
+                <label htmlFor="title">Lesson title</label>
 
-                  <input
-                    id="subject"
-                    type="text"
-                    value={subject}
-                    onChange={(event) =>
-                      setSubject(event.target.value)
-                    }
-                    placeholder="e.g. Mathematics"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="grade">
-                    Class / Grade
-                  </label>
-
-                  <input
-                    id="grade"
-                    type="text"
-                    value={grade}
-                    onChange={(event) =>
-                      setGrade(event.target.value)
-                    }
-                    placeholder="e.g. Grade 8"
-                  />
-                </div>
-              </div>
-
-              {/* TOPIC + DURATION */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="topic">
-                    Topic
-                  </label>
-
-                  <input
-                    id="topic"
-                    type="text"
-                    value={topic}
-                    onChange={(event) =>
-                      setTopic(event.target.value)
-                    }
-                    placeholder="e.g. Algebra"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="duration">
-                    Duration
-                  </label>
-
-                  <select
-                    id="duration"
-                    value={duration}
-                    onChange={(event) =>
-                      setDuration(event.target.value)
-                    }
-                  >
-                    <option value="30 minutes">
-                      30 minutes
-                    </option>
-
-                    <option value="45 minutes">
-                      45 minutes
-                    </option>
-
-                    <option value="60 minutes">
-                      60 minutes
-                    </option>
-
-                    <option value="90 minutes">
-                      90 minutes
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              {/* OBJECTIVES */}
-              <div className="form-group">
-                <label htmlFor="objectives">
-                  Learning Objectives
-                </label>
-
-                <textarea
-                  id="objectives"
-                  rows="5"
-                  value={objectives}
-                  onChange={(event) =>
-                    setObjectives(event.target.value)
-                  }
-                  placeholder="Optional — Teacher Guide will generate objectives automatically."
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Example: Introduction to Algebra"
                 />
               </div>
 
-              {/* ACTIONS */}
-              <div className="form-actions">
-                <Link
-                  to="/"
-                  className="cancel"
+              <div className="lesson-field">
+                <label htmlFor="subject">Subject</label>
+
+                <select
+                  id="subject"
+                  name="subject"
+                  value={form.subject}
+                  onChange={handleChange}
                 >
-                  Cancel
-                </Link>
-
-                <button
-                  type="button"
-                  className="generate"
-                  onClick={generateLessonPlan}
-                >
-                  Generate Lesson Plan →
-                </button>
-              </div>
-            </section>
-          </>
-        ) : (
-          <>
-            {/* GENERATED PLAN */}
-            <section className="generated-plan">
-              {/* HEADER */}
-              <div className="page-heading">
-                <p className="eyebrow">
-                  GENERATED LESSON PLAN
-                </p>
-
-                <h1>{topic}</h1>
-
-                <p className="page-description">
-                  {subject} · {grade} · {duration}
-                </p>
+                  <option value="">Select subject</option>
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Science">Science</option>
+                  <option value="English">English</option>
+                  <option value="Computer Science">
+                    Computer Science
+                  </option>
+                  <option value="Social Science">
+                    Social Science
+                  </option>
+                  <option value="Physics">Physics</option>
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Biology">Biology</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
-              {/* PLAN CONTENT */}
-              <div className="plan-grid">
-                {/* OBJECTIVES */}
-                <div className="plan-section">
-                  <span className="number">
-                    01
-                  </span>
+              <div className="lesson-field">
+                <label htmlFor="grade">Grade / Class</label>
 
-                  <h2>
-                    Learning Objectives
-                  </h2>
-
-                  <p>{finalObjectives}</p>
-                </div>
-
-                {/* INTRODUCTION */}
-                <div className="plan-section">
-                  <span className="number">
-                    02
-                  </span>
-
-                  <h2>
-                    Introduction
-                  </h2>
-
-                  <p>
-                    {content.introduction}
-                  </p>
-                </div>
-
-                {/* ACTIVITIES */}
-                <div className="plan-section">
-                  <span className="number">
-                    03
-                  </span>
-
-                  <h2>
-                    Teaching Activities
-                  </h2>
-
-                  <p>
-                    {content.activities}
-                  </p>
-                </div>
-
-                {/* ASSESSMENT */}
-                <div className="plan-section">
-                  <span className="number">
-                    04
-                  </span>
-
-                  <h2>
-                    Assessment
-                  </h2>
-
-                  <p>
-                    {content.assessment}
-                  </p>
-                </div>
-
-                {/* HOMEWORK */}
-                <div className="plan-section">
-                  <span className="number">
-                    05
-                  </span>
-
-                  <h2>
-                    Homework
-                  </h2>
-
-                  <p>
-                    {content.homework}
-                  </p>
-                </div>
+                <select
+                  id="grade"
+                  name="grade"
+                  value={form.grade}
+                  onChange={handleChange}
+                >
+                  <option value="">Select class</option>
+                  <option value="Grade 6">Grade 6</option>
+                  <option value="Grade 7">Grade 7</option>
+                  <option value="Grade 8">Grade 8</option>
+                  <option value="Grade 9">Grade 9</option>
+                  <option value="Grade 10">Grade 10</option>
+                  <option value="Grade 11">Grade 11</option>
+                  <option value="Grade 12">Grade 12</option>
+                  <option value="College">College</option>
+                </select>
               </div>
 
-              {/* ACTIONS */}
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="generate"
-                  onClick={saveLessonPlan}
-                  disabled={saved}
-                >
-                  {saved
-                    ? "✓ Lesson Plan Saved"
-                    : "Save Lesson Plan"}
-                </button>
+              <div className="lesson-field">
+                <label htmlFor="duration">Duration</label>
 
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={createAnother}
+                <select
+                  id="duration"
+                  name="duration"
+                  value={form.duration}
+                  onChange={handleChange}
                 >
-                  ← Create Another
-                </button>
-
-                {saved && (
-                  <Link
-                    to="/saved-plans"
-                    className="secondary"
-                  >
-                    View Saved Plans →
-                  </Link>
-                )}
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="90">90 minutes</option>
+                  <option value="120">120 minutes</option>
+                </select>
               </div>
-            </section>
-          </>
-        )}
+
+              <div className="lesson-field">
+                <label htmlFor="topic">Main topic</label>
+
+                <input
+                  id="topic"
+                  name="topic"
+                  type="text"
+                  value={form.topic}
+                  onChange={handleChange}
+                  placeholder="Example: Linear equations"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">02</span>
+
+              <div>
+                <p>LEARNING OBJECTIVES</p>
+                <h2>What will students learn?</h2>
+                <span>
+                  Define the knowledge or skills students should gain.
+                </span>
+              </div>
+            </div>
+
+            <div className="lesson-field">
+              <label htmlFor="objectives">
+                Learning objectives
+              </label>
+
+              <textarea
+                id="objectives"
+                name="objectives"
+                value={form.objectives}
+                onChange={handleChange}
+                placeholder="Students will be able to identify, explain and solve basic linear equations."
+                rows={6}
+              />
+            </div>
+          </section>
+
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">03</span>
+
+              <div>
+                <p>TEACHING ACTIVITIES</p>
+                <h2>Plan the lesson flow</h2>
+                <span>
+                  Describe how you will introduce, teach and
+                  reinforce the topic.
+                </span>
+              </div>
+            </div>
+
+            <div className="lesson-field">
+              <label htmlFor="activities">Activities</label>
+
+              <textarea
+                id="activities"
+                name="activities"
+                value={form.activities}
+                onChange={handleChange}
+                placeholder={"1. Warm-up question\n2. Explain the concept\n3. Guided practice\n4. Individual activity\n5. Class discussion"}
+                rows={8}
+              />
+            </div>
+          </section>
+
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">04</span>
+
+              <div>
+                <p>RESOURCES</p>
+                <h2>Teaching materials</h2>
+                <span>
+                  Add books, worksheets, presentations or other materials.
+                </span>
+              </div>
+            </div>
+
+            <div className="lesson-field">
+              <label htmlFor="resources">Resources</label>
+
+              <textarea
+                id="resources"
+                name="resources"
+                value={form.resources}
+                onChange={handleChange}
+                placeholder="Example: Textbook chapter, worksheet, presentation slides."
+                rows={6}
+              />
+            </div>
+          </section>
+
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">05</span>
+
+              <div>
+                <p>ASSESSMENT</p>
+                <h2>Check student understanding</h2>
+                <span>
+                  Describe how you will evaluate learning during
+                  or after the lesson.
+                </span>
+              </div>
+            </div>
+
+            <div className="lesson-field">
+              <label htmlFor="assessment">
+                Assessment method
+              </label>
+
+              <textarea
+                id="assessment"
+                name="assessment"
+                value={form.assessment}
+                onChange={handleChange}
+                placeholder="Example: Five-question exit quiz and observation during guided practice."
+                rows={6}
+              />
+            </div>
+          </section>
+
+          <section className="lesson-card">
+            <div className="lesson-card-heading">
+              <span className="lesson-step">06</span>
+
+              <div>
+                <p>TEACHER NOTES</p>
+                <h2>Additional notes</h2>
+                <span>
+                  Keep reminders, differentiation ideas or follow-up actions.
+                </span>
+              </div>
+            </div>
+
+            <div className="lesson-field">
+              <label htmlFor="notes">Notes</label>
+
+              <textarea
+                id="notes"
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                placeholder="Add any additional notes for this lesson..."
+                rows={6}
+              />
+            </div>
+          </section>
+
+          <div className="lesson-actions">
+            <button
+              type="button"
+              className="lesson-secondary"
+              onClick={clearForm}
+              disabled={saving}
+            >
+              Clear
+            </button>
+
+            <button
+              type="button"
+              className="lesson-secondary"
+              onClick={cancelForm}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="lesson-primary"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Lesson Plan"}
+              <span>→</span>
+            </button>
+          </div>
+        </form>
       </main>
+
+      <footer className="lesson-footer">
+        <strong>TEACHER GUIDE</strong>
+
+        <span>
+          Plan better. Teach smarter. Track progress.
+        </span>
+      </footer>
+
+      <style>{`
+        .lesson-page {
+          min-height: 100vh;
+          background: #f5f5f2;
+          color: #111;
+        }
+
+        .lesson-topbar {
+          min-height: 76px;
+          padding: 0 42px;
+          background: #fff;
+          border-bottom: 1px solid #d7d7d2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .lesson-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .lesson-logo {
+          width: 40px;
+          height: 40px;
+          border: 1px solid #111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .lesson-brand-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .lesson-brand-text strong {
+          font-size: 15px;
+          letter-spacing: 1px;
+        }
+
+        .lesson-brand-text small {
+          color: #777;
+          font-size: 8px;
+          letter-spacing: 1.7px;
+        }
+
+        .lesson-back {
+          font-size: 11px;
+          font-weight: 800;
+          border-bottom: 1px solid #111;
+          padding-bottom: 4px;
+        }
+
+        .lesson-container {
+          width: min(1050px, calc(100% - 40px));
+          margin: 0 auto;
+          padding: 55px 0 70px;
+        }
+
+        .lesson-hero {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 30px;
+          margin-bottom: 30px;
+        }
+
+        .lesson-eyebrow {
+          margin: 0 0 12px;
+          color: #777;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 2px;
+        }
+
+        .lesson-hero h1 {
+          margin: 0;
+          font-size: clamp(44px, 7vw, 72px);
+          line-height: .92;
+          letter-spacing: -4px;
+        }
+
+        .lesson-hero p:last-child {
+          max-width: 650px;
+          margin: 20px 0 0;
+          color: #666;
+          font-size: 13px;
+          line-height: 1.7;
+        }
+
+        .lesson-status {
+          min-width: 90px;
+          height: 38px;
+          padding: 0 13px;
+          border: 1px solid #cfcfca;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .status-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #111;
+        }
+
+        .lesson-error,
+        .lesson-success {
+          margin-bottom: 18px;
+          padding: 14px 17px;
+          background: #fff;
+          border: 1px solid #111;
+          font-size: 11px;
+        }
+
+        .lesson-success {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .lesson-success span {
+          color: #777;
+        }
+
+        .lesson-card {
+          margin-bottom: 16px;
+          padding: 30px;
+          background: #fff;
+          border: 1px solid #d6d6d1;
+        }
+
+        .lesson-card-heading {
+          display: flex;
+          gap: 18px;
+          padding-bottom: 20px;
+          margin-bottom: 25px;
+          border-bottom: 1px solid #e5e5e0;
+        }
+
+        .lesson-step {
+          color: #888;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+        }
+
+        .lesson-card-heading p {
+          margin: 0 0 7px;
+          color: #777;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 1.8px;
+        }
+
+        .lesson-card-heading h2 {
+          margin: 0 0 7px;
+          font-size: 21px;
+          letter-spacing: -.5px;
+        }
+
+        .lesson-card-heading span:not(.lesson-step) {
+          color: #777;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .lesson-form-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 18px;
+        }
+
+        .lesson-field {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .lesson-field.full {
+          grid-column: 1 / -1;
+        }
+
+        .lesson-field label {
+          color: #444;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+
+        .lesson-field input,
+        .lesson-field select,
+        .lesson-field textarea {
+          width: 100%;
+          padding: 12px 13px;
+          border: 1px solid #cfcfc9;
+          background: #fff;
+          color: #111;
+          outline: none;
+          font-size: 12px;
+        }
+
+        .lesson-field input,
+        .lesson-field select {
+          height: 44px;
+        }
+
+        .lesson-field textarea {
+          min-height: 130px;
+          resize: vertical;
+          line-height: 1.55;
+        }
+
+        .lesson-field input:focus,
+        .lesson-field select:focus,
+        .lesson-field textarea:focus {
+          border-color: #111;
+          box-shadow: 4px 4px 0 #ddd;
+        }
+
+        .lesson-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 24px;
+        }
+
+        .lesson-primary,
+        .lesson-secondary {
+          min-height: 44px;
+          padding: 0 20px;
+          border: 1px solid #111;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .lesson-primary {
+          background: #111;
+          color: #fff;
+          display: inline-flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .lesson-primary:hover {
+          background: #333;
+        }
+
+        .lesson-secondary {
+          background: #fff;
+          color: #111;
+        }
+
+        .lesson-secondary:hover {
+          background: #eee;
+        }
+
+        .lesson-primary:disabled,
+        .lesson-secondary:disabled {
+          opacity: .55;
+          cursor: not-allowed;
+        }
+
+        .lesson-footer {
+          min-height: 85px;
+          padding: 20px 42px;
+          background: #fff;
+          border-top: 1px solid #d7d7d2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .lesson-footer strong {
+          font-size: 10px;
+          letter-spacing: 1.5px;
+        }
+
+        .lesson-footer span {
+          color: #777;
+          font-size: 10px;
+        }
+
+        @media (max-width: 800px) {
+          .lesson-topbar {
+            padding: 15px 20px;
+          }
+
+          .lesson-container {
+            width: calc(100% - 30px);
+            padding-top: 35px;
+          }
+
+          .lesson-hero {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .lesson-form-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .lesson-field.full {
+            grid-column: auto;
+          }
+
+          .lesson-card {
+            padding: 22px;
+          }
+
+          .lesson-actions {
+            flex-direction: column;
+          }
+
+          .lesson-actions button {
+            width: 100%;
+          }
+
+          .lesson-footer {
+            padding: 20px;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 8px;
+          }
+        }
+      `}</style>
     </div>
   );
 }

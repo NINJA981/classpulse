@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Analytics() {
-  const [analytics, setAnalytics] = useState({
+  const [stats, setStats] = useState({
     students: 0,
     classes: 0,
     lessonPlans: 0,
@@ -12,180 +12,131 @@ function Analytics() {
     averageScore: 0,
   });
 
-  const readStorage = (key) => {
+  const readArray = (key) => {
     try {
-      const data = localStorage.getItem(key);
-
-      if (!data) {
-        return [];
-      }
-
-      const parsed = JSON.parse(data);
-
-      return Array.isArray(parsed) ? parsed : [];
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error(`Error reading ${key}:`, error);
       return [];
     }
   };
 
-  const loadAnalytics = () => {
-    try {
-      // ==============================
-      // CLASSES
-      // ==============================
+  const loadAnalytics = useCallback(() => {
+    const classes = readArray("teacherGuideClasses");
+    const lessonPlans = readArray("teacherGuideLessonPlans");
+    const resources = readArray("teacherGuideResources");
+    const quizzes = readArray("teacherGuideQuizzes");
+    const attempts = readArray("teacherGuideQuizAttempts");
 
-      const classes = readStorage("teacherGuideClasses");
+    // -----------------------------------------
+    // TOTAL STUDENTS
+    // -----------------------------------------
 
-      const totalStudents = classes.reduce(
-        (total, currentClass) => {
-          const studentCount = Number(currentClass?.students) || 0;
+    const students = classes.reduce(
+      (total, item) => {
+        return total + Number(item.students || 0);
+      },
+      0
+    );
 
-          return total + studentCount;
-        },
+    // -----------------------------------------
+    // AVERAGE QUIZ SCORE
+    // -----------------------------------------
+
+    let averageScore = 0;
+
+    if (attempts.length > 0) {
+      const percentages = attempts.map((attempt) => {
+        // New format
+        if (
+          attempt.percentage !== undefined &&
+          attempt.percentage !== null
+        ) {
+          return Number(attempt.percentage) || 0;
+        }
+
+        // Fallback for older attempts
+        const score = Number(attempt.score || 0);
+        const total = Number(attempt.total || 0);
+
+        if (total > 0) {
+          return (score / total) * 100;
+        }
+
+        return 0;
+      });
+
+      const totalPercentage = percentages.reduce(
+        (total, percentage) => total + percentage,
         0
       );
 
-      // ==============================
-      // LESSON PLANS
-      // ==============================
-
-      const lessonPlans = readStorage(
-        "teacherGuidePlans"
+      averageScore = Math.round(
+        totalPercentage / percentages.length
       );
-
-      // ==============================
-      // RESOURCES
-      // ==============================
-
-      const resources = readStorage(
-        "teacherGuideResources"
-      );
-
-      // ==============================
-      // QUIZZES
-      // ==============================
-
-      const quizzes = readStorage(
-        "teacherGuideQuizzes"
-      );
-
-      // ==============================
-      // QUIZ ATTEMPTS
-      // ==============================
-
-      const attempts = readStorage(
-        "teacherGuideQuizAttempts"
-      );
-
-      // ==============================
-      // AVERAGE SCORE
-      // ==============================
-
-      let averageScore = 0;
-
-      if (attempts.length > 0) {
-        const validScores = attempts
-          .map((attempt) => {
-            const percentage = Number(
-              attempt?.percentage
-            );
-
-            return Number.isFinite(percentage)
-              ? percentage
-              : null;
-          })
-          .filter((score) => score !== null);
-
-        if (validScores.length > 0) {
-          const totalScore = validScores.reduce(
-            (total, score) => total + score,
-            0
-          );
-
-          averageScore = Math.round(
-            totalScore / validScores.length
-          );
-        }
-      }
-
-      // ==============================
-      // UPDATE
-      // ==============================
-
-      setAnalytics({
-        students: totalStudents,
-        classes: classes.length,
-        lessonPlans: lessonPlans.length,
-        resources: resources.length,
-        quizzes: quizzes.length,
-        quizAttempts: attempts.length,
-        averageScore: averageScore,
-      });
-    } catch (error) {
-      console.error(
-        "Unable to load analytics:",
-        error
-      );
-
-      setAnalytics({
-        students: 0,
-        classes: 0,
-        lessonPlans: 0,
-        resources: 0,
-        quizzes: 0,
-        quizAttempts: 0,
-        averageScore: 0,
-      });
     }
-  };
 
-  // ==============================
+    // -----------------------------------------
+    // UPDATE STATE
+    // -----------------------------------------
+
+    setStats({
+      students,
+      classes: classes.length,
+      lessonPlans: lessonPlans.length,
+      resources: resources.length,
+      quizzes: quizzes.length,
+      quizAttempts: attempts.length,
+      averageScore,
+    });
+  }, []);
+
+  // -----------------------------------------
   // LOAD ANALYTICS
-  // ==============================
+  // -----------------------------------------
 
   useEffect(() => {
     loadAnalytics();
 
-    const handleStorageChange = () => {
-      loadAnalytics();
-    };
+    // Runs when localStorage changes
+    window.addEventListener("storage", loadAnalytics);
 
-    const handleFocus = () => {
-      loadAnalytics();
-    };
+    // Runs when returning to this page/tab
+    window.addEventListener("focus", loadAnalytics);
 
-    window.addEventListener(
-      "storage",
-      handleStorageChange
-    );
-
-    window.addEventListener(
-      "focus",
-      handleFocus
+    // Runs when page becomes visible again
+    document.addEventListener(
+      "visibilitychange",
+      loadAnalytics
     );
 
     return () => {
       window.removeEventListener(
         "storage",
-        handleStorageChange
+        loadAnalytics
       );
 
       window.removeEventListener(
         "focus",
-        handleFocus
+        loadAnalytics
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        loadAnalytics
       );
     };
-  }, []);
+  }, [loadAnalytics]);
 
   return (
-    <div className="lesson-page">
+    <div className="app">
 
-      {/* =====================================
-          HEADER
-      ===================================== */}
+      {/* =========================================
+          NAVBAR
+      ========================================= */}
 
-      <header className="topbar">
+      <header className="navbar">
 
         <div className="logo">
           TEACHER GUIDE
@@ -219,24 +170,24 @@ function Analytics() {
 
         </nav>
 
-        <div className="profile">
+        <div className="teacher">
           Teacher
         </div>
 
       </header>
 
 
-      {/* =====================================
+      {/* =========================================
           MAIN
-      ===================================== */}
+      ========================================= */}
 
-      <main className="lesson-main">
+      <main className="dashboard">
 
-        {/* =====================================
-            PAGE HEADER
-        ===================================== */}
+        {/* =========================================
+            HERO
+        ========================================= */}
 
-        <section className="page-heading">
+        <section className="hero">
 
           <p className="eyebrow">
             TEACHER ANALYTICS
@@ -248,235 +199,203 @@ function Analytics() {
             Understand.
           </h1>
 
-          <p className="page-description">
-            Monitor classroom activity, assessments
-            and teaching resources from one place.
+          <p className="hero-text">
+            Monitor classroom activity, assessments and
+            teaching resources from one place.
           </p>
 
         </section>
 
 
-        {/* =====================================
-            ANALYTICS
-        ===================================== */}
+        {/* =========================================
+            STATISTICS
+        ========================================= */}
 
-        <section className="saved-plans-grid">
+        <section className="feature-grid">
 
           {/* STUDENTS */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                01
-              </span>
-
-            </div>
+            <span className="number">
+              01
+            </span>
 
             <h2>
               Students
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Students registered across your classes.
             </p>
 
-            <p className="analytics-number">
-              {analytics.students}
-            </p>
+            <span className="analytics-value">
+              {stats.students}
+            </span>
 
-          </article>
+          </div>
 
 
           {/* CLASSES */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                02
-              </span>
-
-            </div>
+            <span className="number">
+              02
+            </span>
 
             <h2>
               Classes
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Classes currently managed in Teacher Guide.
             </p>
 
-            <p className="analytics-number">
-              {analytics.classes}
-            </p>
+            <span className="analytics-value">
+              {stats.classes}
+            </span>
 
-          </article>
+          </div>
 
 
           {/* LESSON PLANS */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                03
-              </span>
-
-            </div>
+            <span className="number">
+              03
+            </span>
 
             <h2>
               Lesson Plans
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Lesson plans created and saved.
             </p>
 
-            <p className="analytics-number">
-              {analytics.lessonPlans}
-            </p>
+            <span className="analytics-value">
+              {stats.lessonPlans}
+            </span>
 
-          </article>
+          </div>
 
 
           {/* RESOURCES */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                04
-              </span>
-
-            </div>
+            <span className="number">
+              04
+            </span>
 
             <h2>
               Resources
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Teaching materials available.
             </p>
 
-            <p className="analytics-number">
-              {analytics.resources}
-            </p>
+            <span className="analytics-value">
+              {stats.resources}
+            </span>
 
-          </article>
+          </div>
 
 
           {/* QUIZZES */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                05
-              </span>
-
-            </div>
+            <span className="number">
+              05
+            </span>
 
             <h2>
               Quizzes
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Assessments created for students.
             </p>
 
-            <p className="analytics-number">
-              {analytics.quizzes}
-            </p>
+            <span className="analytics-value">
+              {stats.quizzes}
+            </span>
 
-          </article>
+          </div>
 
 
-          {/* QUIZ ATTEMPTS */}
+          {/* ATTEMPTS */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                06
-              </span>
-
-            </div>
+            <span className="number">
+              06
+            </span>
 
             <h2>
               Quiz Attempts
             </h2>
 
-            <p className="plan-meta">
+            <p>
               Completed quiz attempts recorded.
             </p>
 
-            <p className="analytics-number">
-              {analytics.quizAttempts}
-            </p>
+            <span className="analytics-value">
+              {stats.quizAttempts}
+            </span>
 
-          </article>
+          </div>
 
 
           {/* AVERAGE SCORE */}
 
-          <article className="saved-plan-card">
+          <div className="feature-card">
 
-            <div className="saved-plan-top">
-
-              <span className="number">
-                07
-              </span>
-
-            </div>
+            <span className="number">
+              07
+            </span>
 
             <h2>
               Average Score
             </h2>
 
-            <p className="plan-meta">
-              Average score from completed quizzes.
+            <p>
+              Average percentage from completed quizzes.
             </p>
 
-            <p className="analytics-number">
-              {analytics.averageScore}%
-            </p>
+            <span className="analytics-value">
+              {stats.averageScore}%
+            </span>
 
-          </article>
+          </div>
 
         </section>
 
 
-        {/* =====================================
+        {/* =========================================
             CLASSROOM OVERVIEW
-        ===================================== */}
+        ========================================= */}
 
-        <section className="analytics-overview">
+        <section className="quiz-section">
 
-          <div className="page-heading">
+          <p className="section-number">
+            CLASSROOM OVERVIEW
+          </p>
 
-            <p className="eyebrow">
-              CLASSROOM OVERVIEW
-            </p>
-
-            <h2>
-              Teaching Activity
-            </h2>
-
-          </div>
+          <h2>
+            Teaching Activity
+          </h2>
 
 
-          <section className="saved-plans-grid">
+          <div className="feature-grid">
 
             {/* LESSON PLANNING */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 01
@@ -486,20 +405,20 @@ function Analytics() {
                 Lesson Planning
               </h2>
 
-              <p className="plan-meta">
-                {analytics.lessonPlans}{" "}
-                {analytics.lessonPlans === 1
-                  ? "plan"
-                  : "plans"}{" "}
-                created
+              <p>
+                {stats.lessonPlans} plans created
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.lessonPlans}
+              </span>
+
+            </div>
 
 
             {/* CLASSROOM MANAGEMENT */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 02
@@ -509,20 +428,20 @@ function Analytics() {
                 Classroom Management
               </h2>
 
-              <p className="plan-meta">
-                {analytics.classes}{" "}
-                {analytics.classes === 1
-                  ? "class"
-                  : "classes"}{" "}
-                managed
+              <p>
+                {stats.classes} classes managed
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.classes}
+              </span>
+
+            </div>
 
 
             {/* TEACHING MATERIALS */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 03
@@ -532,20 +451,20 @@ function Analytics() {
                 Teaching Materials
               </h2>
 
-              <p className="plan-meta">
-                {analytics.resources}{" "}
-                {analytics.resources === 1
-                  ? "resource"
-                  : "resources"}{" "}
-                available
+              <p>
+                {stats.resources} resources available
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.resources}
+              </span>
+
+            </div>
 
 
             {/* STUDENT MANAGEMENT */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 04
@@ -555,17 +474,20 @@ function Analytics() {
                 Student Management
               </h2>
 
-              <p className="plan-meta">
-                {analytics.students} students
-                registered
+              <p>
+                {stats.students} students registered
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.students}
+              </span>
+
+            </div>
 
 
             {/* ASSESSMENTS */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 05
@@ -575,20 +497,20 @@ function Analytics() {
                 Assessments
               </h2>
 
-              <p className="plan-meta">
-                {analytics.quizzes}{" "}
-                {analytics.quizzes === 1
-                  ? "quiz"
-                  : "quizzes"}{" "}
-                created
+              <p>
+                {stats.quizzes} quizzes created
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.quizzes}
+              </span>
+
+            </div>
 
 
             {/* STUDENT PERFORMANCE */}
 
-            <article className="saved-plan-card">
+            <div className="feature-card">
 
               <span className="number">
                 06
@@ -598,25 +520,28 @@ function Analytics() {
                 Student Performance
               </h2>
 
-              <p className="plan-meta">
-                {analytics.averageScore}%
-                average score
+              <p>
+                {stats.averageScore}% average score
               </p>
 
-            </article>
+              <span className="analytics-value">
+                {stats.averageScore}%
+              </span>
 
-          </section>
+            </div>
+
+          </div>
 
         </section>
 
 
-        {/* =====================================
+        {/* =========================================
             QUICK ACTIONS
-        ===================================== */}
+        ========================================= */}
 
         <section className="quick-actions">
 
-          <div className="page-heading">
+          <div className="quick-actions-header">
 
             <p className="eyebrow">
               QUICK ACTIONS
@@ -629,114 +554,99 @@ function Analytics() {
           </div>
 
 
-          <section className="saved-plans-grid">
-
-            {/* CREATE LESSON PLAN */}
+          <div className="quick-actions-grid">
 
             <Link
               to="/lesson-plan"
-              className="saved-plan-card quick-action-card"
+              className="quick-action"
             >
-
-              <span className="number">
-                01
+              <span>
+                Create Lesson Plan
               </span>
 
-              <h2>
-                Create Lesson Plan
-              </h2>
-
-              <p className="plan-meta">
-                Plan your next lesson →
-              </p>
-
+              <strong>
+                01
+              </strong>
             </Link>
 
-
-            {/* MANAGE CLASSES */}
 
             <Link
               to="/classes"
-              className="saved-plan-card quick-action-card"
+              className="quick-action"
             >
-
-              <span className="number">
-                02
+              <span>
+                Manage Classes
               </span>
 
-              <h2>
-                Manage Classes
-              </h2>
-
-              <p className="plan-meta">
-                View your classes →
-              </p>
-
+              <strong>
+                02
+              </strong>
             </Link>
 
-
-            {/* MANAGE QUIZZES */}
 
             <Link
               to="/quizzes"
-              className="saved-plan-card quick-action-card"
+              className="quick-action"
             >
-
-              <span className="number">
-                03
+              <span>
+                Manage Quizzes
               </span>
 
-              <h2>
-                Manage Quizzes
-              </h2>
-
-              <p className="plan-meta">
-                Create and review assessments →
-              </p>
-
+              <strong>
+                03
+              </strong>
             </Link>
 
-
-            {/* MANAGE RESOURCES */}
 
             <Link
               to="/resources"
-              className="saved-plan-card quick-action-card"
+              className="quick-action"
             >
-
-              <span className="number">
-                04
+              <span>
+                Manage Resources
               </span>
 
-              <h2>
-                Manage Resources
-              </h2>
-
-              <p className="plan-meta">
-                View teaching materials →
-              </p>
-
+              <strong>
+                04
+              </strong>
             </Link>
 
-          </section>
+          </div>
 
         </section>
 
 
-        {/* =====================================
+        {/* =========================================
             BACK TO DASHBOARD
-        ===================================== */}
+        ========================================= */}
 
-        <div className="new-plan-container">
+        <div className="analytics-back">
 
           <Link
             to="/"
-            className="generate"
+            className="secondary-button"
           >
             ← Back to Dashboard
           </Link>
 
         </div>
+
+
+        {/* =========================================
+            FOOTER
+        ========================================= */}
+
+        <footer className="dashboard-footer">
+
+          <div>
+            TEACHER GUIDE
+          </div>
+
+          <p>
+            Intelligent workspace for modern teaching.
+          </p>
+
+        </footer>
 
       </main>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Resources() {
@@ -7,55 +7,54 @@ function Resources() {
 
   const [form, setForm] = useState({
     title: "",
-    type: "",
-    subject: "",
-    grade: "",
+    type: "Worksheet",
+    subject: "Mathematics",
     description: "",
-    link: ""
   });
 
   useEffect(() => {
-    const savedResources =
-      JSON.parse(localStorage.getItem("teacherGuideResources")) || [];
-
-    setResources(savedResources);
+    loadResources();
   }, []);
 
-  const handleChange = (e) => {
+  const loadResources = () => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("teacherGuideResources") || "[]"
+      );
+
+      setResources(Array.isArray(saved) ? saved : []);
+    } catch (error) {
+      console.error("Error loading resources:", error);
+      setResources([]);
+    }
+  };
+
+  const handleChange = (event) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [event.target.name]: event.target.value,
     });
   };
 
-  const addResource = (e) => {
-    e.preventDefault();
+  const addResource = (event) => {
+    event.preventDefault();
 
-    if (
-      !form.title ||
-      !form.type ||
-      !form.subject ||
-      !form.grade
-    ) {
-      alert("Please fill in all required fields.");
+    if (!form.title.trim()) {
+      alert("Please enter a resource title.");
       return;
     }
 
     const newResource = {
-      id: Date.now(),
-      title: form.title,
+      id: Date.now().toString(),
+      title: form.title.trim(),
       type: form.type,
       subject: form.subject,
-      grade: form.grade,
-      description: form.description,
-      link: form.link,
-      createdAt: new Date().toLocaleDateString()
+      description:
+        form.description.trim() || "Teaching material",
+      createdAt: new Date().toISOString(),
     };
 
-    const updatedResources = [
-      ...resources,
-      newResource
-    ];
+    const updatedResources = [newResource, ...resources];
 
     localStorage.setItem(
       "teacherGuideResources",
@@ -66,22 +65,22 @@ function Resources() {
 
     setForm({
       title: "",
-      type: "",
-      subject: "",
-      grade: "",
+      type: "Worksheet",
+      subject: "Mathematics",
       description: "",
-      link: ""
     });
 
     setShowForm(false);
   };
 
   const deleteResource = (id) => {
-    const confirmDelete = window.confirm(
+    const confirmed = window.confirm(
       "Are you sure you want to delete this resource?"
     );
 
-    if (!confirmDelete) return;
+    if (!confirmed) {
+      return;
+    }
 
     const updatedResources = resources.filter(
       (resource) => resource.id !== id
@@ -96,13 +95,29 @@ function Resources() {
   };
 
   return (
-    <div className="lesson-page">
+    <div className="dashboard-page">
+
+      {/* HEADER */}
 
       <header className="topbar">
 
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
+        <Link to="/" className="brand-area">
+
+          <div className="brand-mark">
+            TG
+          </div>
+
+          <div>
+            <div className="brand">
+              TEACHER GUIDE
+            </div>
+
+            <div className="brand-subtitle">
+              TEACHER WORKSPACE
+            </div>
+          </div>
+
+        </Link>
 
         <nav>
 
@@ -118,203 +133,306 @@ function Resources() {
             My Classes
           </Link>
 
-          <Link to="/resources">
+          <Link
+            to="/resources"
+            className="active"
+          >
             Resources
+          </Link>
+
+          <Link to="/quizzes">
+            Quizzes
+          </Link>
+
+          <Link to="/analytics">
+            Analytics
           </Link>
 
         </nav>
 
-        <button className="profile">
-          Teacher
-        </button>
+        <div className="profile">
+
+          <div className="profile-avatar">
+            H
+          </div>
+
+          <div className="profile-info">
+
+            <strong>
+              Teacher
+            </strong>
+
+            <span>
+              Administrator
+            </span>
+
+          </div>
+
+        </div>
 
       </header>
 
+      {/* MAIN */}
 
-      <main className="lesson-main">
+      <main className="dashboard-content">
 
-        <div className="page-heading">
+        <section className="welcome-section">
 
-          <p className="eyebrow">
-            TEACHING MATERIALS
-          </p>
+          <div className="welcome-copy">
 
-          <h1>
-            Resources.
-          </h1>
+            <p className="eyebrow">
+              RESOURCE LIBRARY
+            </p>
 
-          <p className="page-description">
-            Manage your worksheets, notes,
-            presentations and teaching materials.
-          </p>
+            <h1>
+              Teaching
+              <br />
+              <span>Resources.</span>
+            </h1>
 
-        </div>
+            <p className="welcome-text">
+              Keep worksheets, notes, documents and other
+              teaching materials organized in one place.
+            </p>
 
-
-        <div className="new-plan-container">
+          </div>
 
           <button
-            className="generate"
+            type="button"
+            className="primary-button"
             onClick={() => setShowForm(!showForm)}
           >
-            {showForm
-              ? "× Close"
-              : "+ Add New Resource"}
+            <span>＋</span>
+            Add Resource
           </button>
 
-        </div>
+        </section>
 
+        {/* SUMMARY */}
+
+        <section className="stats-grid">
+
+          <div className="stat-card">
+
+            <div className="stat-top">
+              <div className="stat-icon">
+                □
+              </div>
+            </div>
+
+            <div className="stat-label">
+              TOTAL RESOURCES
+            </div>
+
+            <div className="stat-value">
+              {resources.length}
+            </div>
+
+            <div className="stat-detail">
+              Teaching materials
+            </div>
+
+          </div>
+
+          <div className="stat-card">
+
+            <div className="stat-top">
+              <div className="stat-icon">
+                ▤
+              </div>
+            </div>
+
+            <div className="stat-label">
+              WORKSHEETS
+            </div>
+
+            <div className="stat-value">
+              {
+                resources.filter(
+                  (item) => item.type === "Worksheet"
+                ).length
+              }
+            </div>
+
+            <div className="stat-detail">
+              Practice materials
+            </div>
+
+          </div>
+
+          <div className="stat-card">
+
+            <div className="stat-top">
+              <div className="stat-icon">
+                ▣
+              </div>
+            </div>
+
+            <div className="stat-label">
+              NOTES
+            </div>
+
+            <div className="stat-value">
+              {
+                resources.filter(
+                  (item) => item.type === "Notes"
+                ).length
+              }
+            </div>
+
+            <div className="stat-detail">
+              Subject notes
+            </div>
+
+          </div>
+
+          <div className="stat-card">
+
+            <div className="stat-top">
+              <div className="stat-icon">
+                ✓
+              </div>
+            </div>
+
+            <div className="stat-label">
+              LIBRARY STATUS
+            </div>
+
+            <div className="stat-value">
+              {resources.length > 0 ? "ON" : "—"}
+            </div>
+
+            <div className="stat-detail">
+              Stored in this browser
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* ADD FORM */}
 
         {showForm && (
 
-          <section className="class-form-section">
+          <section className="panel resource-form-panel">
 
-            <p className="eyebrow">
-              NEW RESOURCE
-            </p>
+            <div className="panel-header">
 
-            <h2>
-              Add a Resource
-            </h2>
+              <div>
 
-            <form onSubmit={addResource}>
+                <p className="eyebrow">
+                  NEW RESOURCE
+                </p>
 
-              <div className="form-grid">
+                <h2>
+                  Add teaching material.
+                </h2>
 
-                <div className="form-group">
+              </div>
 
-                  <label>
-                    Resource Title *
-                  </label>
+            </div>
+
+            <form
+              className="resource-form"
+              onSubmit={addResource}
+            >
+
+              <div className="resource-form-grid">
+
+                <label>
+                  <span>
+                    RESOURCE TITLE
+                  </span>
 
                   <input
                     type="text"
                     name="title"
-                    placeholder="Example: Algebra Worksheet"
                     value={form.title}
                     onChange={handleChange}
+                    placeholder="Example: Algebra Worksheet"
                   />
+                </label>
 
-                </div>
-
-
-                <div className="form-group">
-
-                  <label>
-                    Resource Type *
-                  </label>
+                <label>
+                  <span>
+                    TYPE
+                  </span>
 
                   <select
                     name="type"
                     value={form.type}
                     onChange={handleChange}
                   >
-
-                    <option value="">
-                      Select Type
-                    </option>
-
-                    <option value="Worksheet">
+                    <option>
                       Worksheet
                     </option>
 
-                    <option value="Notes">
+                    <option>
                       Notes
                     </option>
 
-                    <option value="Presentation">
+                    <option>
+                      Document
+                    </option>
+
+                    <option>
                       Presentation
                     </option>
 
-                    <option value="Assignment">
-                      Assignment
+                    <option>
+                      Other
                     </option>
-
-                    <option value="Reference">
-                      Reference
-                    </option>
-
                   </select>
+                </label>
 
-                </div>
-
-
-                <div className="form-group">
-
-                  <label>
-                    Subject *
-                  </label>
+                <label>
+                  <span>
+                    SUBJECT
+                  </span>
 
                   <input
                     type="text"
                     name="subject"
-                    placeholder="Example: Mathematics"
                     value={form.subject}
                     onChange={handleChange}
+                    placeholder="Mathematics"
                   />
+                </label>
 
-                </div>
-
-
-                <div className="form-group">
-
-                  <label>
-                    Class / Grade *
-                  </label>
+                <label>
+                  <span>
+                    DESCRIPTION
+                  </span>
 
                   <input
                     type="text"
-                    name="grade"
-                    placeholder="Example: Grade 8"
-                    value={form.grade}
+                    name="description"
+                    value={form.description}
                     onChange={handleChange}
+                    placeholder="Short description"
                   />
-
-                </div>
-
-              </div>
-
-
-              <div className="form-group">
-
-                <label>
-                  Description
                 </label>
 
-                <textarea
-                  name="description"
-                  placeholder="Describe this teaching resource..."
-                  value={form.description}
-                  onChange={handleChange}
-                  rows="5"
-                />
-
               </div>
 
+              <div className="resource-form-actions">
 
-              <div className="form-group">
+                <button
+                  type="submit"
+                  className="primary-button"
+                >
+                  Save Resource
+                </button>
 
-                <label>
-                  Resource Link
-                </label>
-
-                <input
-                  type="url"
-                  name="link"
-                  placeholder="https://example.com"
-                  value={form.link}
-                  onChange={handleChange}
-                />
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
 
               </div>
-
-
-              <button
-                type="submit"
-                className="primary-form-button"
-              >
-                Save Resource →
-              </button>
 
             </form>
 
@@ -322,90 +440,165 @@ function Resources() {
 
         )}
 
+        {/* RESOURCE LIST */}
 
-        {resources.length === 0 ? (
+        <section className="section">
 
-          <section className="empty-plans">
+          <div className="section-heading">
 
-            <h2>
-              No resources added yet.
-            </h2>
+            <div>
 
-            <p>
-              Add your first teaching resource
-              to organize your materials.
-            </p>
+              <p className="eyebrow">
+                YOUR LIBRARY
+              </p>
 
-          </section>
+              <h2>
+                Available teaching materials.
+              </h2>
 
-        ) : (
+            </div>
 
-          <section className="saved-plans-grid">
+          </div>
 
-            {resources.map((resource, index) => (
+          {resources.length === 0 ? (
 
-              <div
-                className="saved-plan-card"
-                key={resource.id}
-              >
+            <section className="empty-state">
 
-                <div className="saved-plan-top">
-
-                  <span className="number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <span className="saved-date">
-                    {resource.createdAt}
-                  </span>
-
-                </div>
-
-
-                <h2>
-                  {resource.title}
-                </h2>
-
-
-                <p className="plan-meta">
-                  {resource.type} · {resource.subject}
-                </p>
-
-
-                <p className="plan-duration">
-                  {resource.grade}
-                </p>
-
-
-                <div className="saved-plan-actions">
-
-                  <Link
-                    to={`/resource-view/${resource.id}`}
-                    className="view-button"
-                  >
-                    View →
-                  </Link>
-
-                  <button
-                    className="delete-button"
-                    onClick={() =>
-                      deleteResource(resource.id)
-                    }
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
+              <div className="empty-icon">
+                □
               </div>
 
-            ))}
+              <p className="eyebrow">
+                EMPTY LIBRARY
+              </p>
 
-          </section>
+              <h2>
+                No resources yet.
+              </h2>
 
-        )}
+              <p>
+                Add your first worksheet, note or teaching
+                material to build your resource library.
+              </p>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => setShowForm(true)}
+              >
+                ＋ Add First Resource
+              </button>
+
+            </section>
+
+          ) : (
+
+            <div className="resource-grid">
+
+              {resources.map((resource, index) => (
+
+                <article
+                  className="resource-card"
+                  key={resource.id}
+                >
+
+                  <div className="resource-card-top">
+
+                    <span className="resource-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span className="status">
+                      {resource.type}
+                    </span>
+
+                  </div>
+
+                  <div className="resource-icon">
+                    □
+                  </div>
+
+                  <h3>
+                    {resource.title}
+                  </h3>
+
+                  <p className="resource-subject">
+                    {resource.subject}
+                  </p>
+
+                  <p className="resource-description">
+                    {resource.description}
+                  </p>
+
+                  <div className="resource-footer">
+
+                    <span>
+                      Added
+                    </span>
+
+                    <button
+                      type="button"
+                      className="delete-button"
+                      onClick={() =>
+                        deleteResource(resource.id)
+                      }
+                    >
+                      Delete
+                    </button>
+
+                  </div>
+
+                </article>
+
+              ))}
+
+            </div>
+
+          )}
+
+        </section>
+
+        <div className="workspace-back-container">
+          <Link
+            to="/"
+            className="workspace-back"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
 
       </main>
+
+      <footer className="footer">
+
+        <div className="footer-brand">
+
+          <div className="footer-mark">
+            TG
+          </div>
+
+          <div>
+
+            <strong>
+              Teacher Guide
+            </strong>
+
+            <p>
+              Intelligent workspace for modern teaching.
+            </p>
+
+          </div>
+
+        </div>
+
+        <Link
+          to="/analytics"
+          className="footer-button"
+        >
+          Explore Analytics →
+        </Link>
+
+      </footer>
 
     </div>
   );

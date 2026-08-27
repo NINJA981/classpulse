@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -9,100 +8,63 @@ function TakeQuiz() {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  // --------------------------------------------------
-  // LOAD QUIZ
-  // --------------------------------------------------
 
   useEffect(() => {
     try {
-      const savedQuizzes = JSON.parse(
+      const saved = JSON.parse(
         localStorage.getItem("teacherGuideQuizzes") || "[]"
       );
 
-      const foundQuiz = savedQuizzes.find(
+      const found = saved.find(
         (item) => String(item.id) === String(id)
       );
 
-      setQuiz(foundQuiz || null);
+      setQuiz(found || null);
     } catch (error) {
-      console.error("Error loading quiz:", error);
+      console.error("Quiz loading error:", error);
       setQuiz(null);
-    } finally {
-      setLoading(false);
     }
   }, [id]);
 
-  // --------------------------------------------------
-  // SELECT ANSWER
-  // --------------------------------------------------
-
-  const handleAnswer = (questionIndex, answer) => {
+  const selectAnswer = (questionIndex, letter) => {
     if (submitted) return;
 
-    setAnswers((previousAnswers) => ({
-      ...previousAnswers,
-      [questionIndex]: answer,
+    setAnswers((previous) => ({
+      ...previous,
+      [questionIndex]: letter,
     }));
   };
 
-  // --------------------------------------------------
-  // CHECK ANSWER
-  // Supports:
-  // answer: "A"
-  // OR
-  // answer: "Correct option text"
-  // --------------------------------------------------
-
-  const checkAnswer = (question, selectedAnswer) => {
-    if (!question || selectedAnswer === undefined) {
-      return false;
+  const getOptions = (question) => {
+    // New quiz format
+    if (Array.isArray(question.options)) {
+      return question.options;
     }
 
-    const options = Array.isArray(question.options)
-      ? question.options
-      : [];
-
-    const correctAnswer =
-      question.answer !== undefined && question.answer !== null
-        ? String(question.answer).trim()
-        : "";
-
-    const selected = String(selectedAnswer).trim();
-
-    if (!correctAnswer || !selected) {
-      return false;
-    }
-
-    // If answer is stored as A, B, C or D
-    if (/^[A-D]$/i.test(correctAnswer)) {
-      return selected.toUpperCase() === correctAnswer.toUpperCase();
-    }
-
-    // If answer is stored as the actual option text
-    const selectedIndex = options.findIndex((option, index) => {
-      const letter = String.fromCharCode(65 + index);
-
-      return (
-        selected === letter ||
-        selected === String(option).trim()
-      );
-    });
-
-    if (selectedIndex === -1) {
-      return false;
-    }
-
-    return (
-      String(options[selectedIndex]).trim().toLowerCase() ===
-      correctAnswer.toLowerCase()
-    );
+    // Your Quiz.jsx format
+    return [
+      question.optionA || "",
+      question.optionB || "",
+      question.optionC || "",
+      question.optionD || "",
+    ].filter((option) => option.trim() !== "");
   };
 
-  // --------------------------------------------------
-  // SUBMIT QUIZ
-  // --------------------------------------------------
+  const getCorrectAnswer = (question) => {
+    // New format
+    if (question.answer !== undefined) {
+      return String(question.answer).trim();
+    }
+
+    // Your Quiz.jsx format
+    if (question.correctAnswer !== undefined) {
+      return String(question.correctAnswer)
+        .replace("Option ", "")
+        .trim();
+    }
+
+    return "";
+  };
 
   const submitQuiz = () => {
     if (!quiz) return;
@@ -116,40 +78,31 @@ function TakeQuiz() {
       return;
     }
 
-    // Check unanswered questions
-    const unanswered = questions.some(
-      (_, index) => answers[index] === undefined
-    );
-
-    if (unanswered) {
-      alert(
-        "Please answer all questions before submitting the quiz."
-      );
-      return;
+    for (let i = 0; i < questions.length; i++) {
+      if (answers[i] === undefined) {
+        alert(`Please answer Question ${i + 1}.`);
+        return;
+      }
     }
 
-    // Calculate score
-    let calculatedScore = 0;
+    let totalScore = 0;
 
     questions.forEach((question, index) => {
-      if (checkAnswer(question, answers[index])) {
-        calculatedScore += 1;
+      const selected = answers[index];
+      const correct = getCorrectAnswer(question);
+
+      if (
+        selected &&
+        correct &&
+        selected.toUpperCase() === correct.toUpperCase()
+      ) {
+        totalScore++;
       }
     });
 
-    const totalQuestions = questions.length;
-
     const percentage = Math.round(
-      (calculatedScore / totalQuestions) * 100
+      (totalScore / questions.length) * 100
     );
-
-    // Update screen
-    setScore(calculatedScore);
-    setSubmitted(true);
-
-    // --------------------------------------------------
-    // SAVE QUIZ ATTEMPT
-    // --------------------------------------------------
 
     const attempt = {
       id: Date.now().toString(),
@@ -157,46 +110,32 @@ function TakeQuiz() {
       quizTitle: quiz.title || "Untitled Quiz",
       subject: quiz.subject || "",
       grade: quiz.grade || "",
-      score: calculatedScore,
-      total: totalQuestions,
+      score: totalScore,
+      total: questions.length,
       percentage,
       submittedAt: new Date().toISOString(),
     };
 
     try {
-      const existingAttempts = JSON.parse(
+      const existing = JSON.parse(
         localStorage.getItem("teacherGuideQuizAttempts") || "[]"
       );
 
-      const safeAttempts = Array.isArray(existingAttempts)
-        ? existingAttempts
+      const attempts = Array.isArray(existing)
+        ? existing
         : [];
-
-      const updatedAttempts = [
-        ...safeAttempts,
-        attempt,
-      ];
 
       localStorage.setItem(
         "teacherGuideQuizAttempts",
-        JSON.stringify(updatedAttempts)
+        JSON.stringify([...attempts, attempt])
       );
-
-      // Save latest result for this quiz
-      localStorage.setItem(
-        `teacherGuideQuizResult_${quiz.id}`,
-        JSON.stringify(attempt)
-      );
-
-      console.log("Quiz attempt saved:", attempt);
     } catch (error) {
-      console.error("Error saving quiz attempt:", error);
+      console.error("Could not save attempt:", error);
     }
-  };
 
-  // --------------------------------------------------
-  // RETAKE QUIZ
-  // --------------------------------------------------
+    setScore(totalScore);
+    setSubmitted(true);
+  };
 
   const retakeQuiz = () => {
     setAnswers({});
@@ -204,132 +143,32 @@ function TakeQuiz() {
     setSubmitted(false);
   };
 
-  // --------------------------------------------------
-  // LOADING
-  // --------------------------------------------------
-
-  if (loading) {
-    return (
-      <div className="app">
-
-        <header className="navbar">
-
-          <div className="logo">
-            TEACHER GUIDE
-          </div>
-
-          <nav>
-            <Link to="/">Dashboard</Link>
-
-            <Link to="/saved-plans">
-              Lesson Plans
-            </Link>
-
-            <Link to="/classes">
-              My Classes
-            </Link>
-
-            <Link to="/resources">
-              Resources
-            </Link>
-
-            <Link to="/quizzes">
-              Quizzes
-            </Link>
-
-            <Link to="/analytics">
-              Analytics
-            </Link>
-          </nav>
-
-          <div className="teacher">
-            Teacher
-          </div>
-
-        </header>
-
-        <main className="dashboard">
-
-          <section className="empty-state">
-
-            <div className="empty-number">
-              ...
-            </div>
-
-            <h2>
-              Loading quiz...
-            </h2>
-
-            <p>
-              Please wait while the quiz is loading.
-            </p>
-
-          </section>
-
-        </main>
-
-      </div>
-    );
-  }
-
-  // --------------------------------------------------
-  // QUIZ NOT FOUND
-  // --------------------------------------------------
-
   if (!quiz) {
     return (
       <div className="app">
-
         <header className="navbar">
-
-          <div className="logo">
-            TEACHER GUIDE
-          </div>
+          <div className="logo">TEACHER GUIDE</div>
 
           <nav>
             <Link to="/">Dashboard</Link>
-
-            <Link to="/saved-plans">
-              Lesson Plans
-            </Link>
-
-            <Link to="/classes">
-              My Classes
-            </Link>
-
-            <Link to="/resources">
-              Resources
-            </Link>
-
-            <Link to="/quizzes">
-              Quizzes
-            </Link>
-
-            <Link to="/analytics">
-              Analytics
-            </Link>
+            <Link to="/saved-plans">Lesson Plans</Link>
+            <Link to="/classes">My Classes</Link>
+            <Link to="/resources">Resources</Link>
+            <Link to="/quizzes">Quizzes</Link>
+            <Link to="/analytics">Analytics</Link>
           </nav>
 
-          <div className="teacher">
-            Teacher
-          </div>
-
+          <div className="teacher">Teacher</div>
         </header>
 
         <main className="dashboard">
-
           <section className="empty-state">
+            <div className="empty-number">404</div>
 
-            <div className="empty-number">
-              404
-            </div>
-
-            <h2>
-              Quiz not found.
-            </h2>
+            <h2>Quiz not found.</h2>
 
             <p>
-              This quiz may have been deleted or does not exist anymore.
+              The selected quiz could not be found.
             </p>
 
             <Link
@@ -338,89 +177,38 @@ function TakeQuiz() {
             >
               ← Back to Quizzes
             </Link>
-
           </section>
-
         </main>
-
       </div>
     );
   }
-
-  // --------------------------------------------------
-  // QUESTIONS
-  // --------------------------------------------------
 
   const questions = Array.isArray(quiz.questions)
     ? quiz.questions
     : [];
 
-  const percentage =
-    questions.length > 0
-      ? Math.round((score / questions.length) * 100)
-      : 0;
-
-  // --------------------------------------------------
-  // MAIN UI
-  // --------------------------------------------------
-
   return (
     <div className="app">
 
-      {/* NAVBAR */}
-
       <header className="navbar">
-
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
+        <div className="logo">TEACHER GUIDE</div>
 
         <nav>
-
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-          <Link to="/analytics">
-            Analytics
-          </Link>
-
+          <Link to="/">Dashboard</Link>
+          <Link to="/saved-plans">Lesson Plans</Link>
+          <Link to="/classes">My Classes</Link>
+          <Link to="/resources">Resources</Link>
+          <Link to="/quizzes">Quizzes</Link>
+          <Link to="/analytics">Analytics</Link>
         </nav>
 
-        <div className="teacher">
-          Teacher
-        </div>
-
+        <div className="teacher">Teacher</div>
       </header>
-
-
-      {/* MAIN */}
 
       <main className="dashboard">
 
-        {/* QUIZ HEADER */}
-
         <section className="hero">
-
-          <p className="eyebrow">
-            TAKE QUIZ
-          </p>
+          <p className="eyebrow">TAKE QUIZ</p>
 
           <h1>
             {quiz.title || "Untitled Quiz"}
@@ -432,23 +220,16 @@ function TakeQuiz() {
             {quiz.duration || "30 minutes"}
           </p>
 
-          {!submitted && (
-            <Link
-              to="/quizzes"
-              className="secondary-button"
-            >
-              ← Back to Quizzes
-            </Link>
-          )}
-
+          <Link
+            to="/quizzes"
+            className="secondary-button"
+          >
+            ← Back to Quizzes
+          </Link>
         </section>
 
-
-        {/* RESULT */}
-
-        {submitted && (
-
-          <section className="quiz-result">
+        {submitted ? (
+          <section className="quiz-section">
 
             <p className="eyebrow">
               QUIZ RESULT
@@ -458,14 +239,19 @@ function TakeQuiz() {
               Quiz Submitted Successfully!
             </h2>
 
-            <div className="result-score">
+            <div className="analytics-value">
               {score} / {questions.length}
             </div>
 
-            <p>
-              You scored{" "}
+            <p className="hero-text">
+              Your score:{" "}
               <strong>
-                {percentage}%
+                {questions.length > 0
+                  ? Math.round(
+                      (score / questions.length) * 100
+                    )
+                  : 0}
+                %
               </strong>
             </p>
 
@@ -496,89 +282,47 @@ function TakeQuiz() {
             </div>
 
           </section>
+        ) : (
+          <section className="quiz-section">
 
-        )}
-
-
-        {/* QUESTIONS */}
-
-        {!submitted && (
-
-          <section className="quiz-form-section">
-
-            <div className="form-heading">
-
-              <span className="number">
-                {String(questions.length).padStart(2, "0")}
-              </span>
-
-              <h2>
-                Questions
-              </h2>
-
+            <div className="section-number">
+              01
             </div>
 
+            <h2>
+              Questions
+            </h2>
 
-            {questions.length === 0 ? (
+            {questions.map((question, questionIndex) => {
 
-              <section className="empty-state">
+              const options = getOptions(question);
 
-                <h2>
-                  No questions available.
-                </h2>
-
-                <p>
-                  This quiz does not contain any questions.
-                </p>
-
-                <Link
-                  to="/quizzes"
-                  className="primary-button"
+              return (
+                <article
+                  className="question-card"
+                  key={questionIndex}
                 >
-                  ← Back to Quizzes
-                </Link>
 
-              </section>
+                  <div className="question-header">
+                    <h3>
+                      QUESTION {questionIndex + 1}
+                    </h3>
+                  </div>
 
-            ) : (
+                  <h2>
+                    {question.question ||
+                      "Question"}
+                  </h2>
 
-              questions.map((question, questionIndex) => {
+                  {options.length === 0 ? (
+                    <p>
+                      No answer options available.
+                    </p>
+                  ) : (
+                    <div className="take-quiz-options">
 
-                const options = Array.isArray(question.options)
-                  ? question.options
-                  : [];
-
-                return (
-                  <article
-                    className="question-box"
-                    key={questionIndex}
-                  >
-
-                    <div className="question-header">
-
-                      <strong>
-                        QUESTION {questionIndex + 1}
-                      </strong>
-
-                    </div>
-
-
-                    <h2>
-                      {question.question || "Question"}
-                    </h2>
-
-
-                    {options.length === 0 ? (
-
-                      <p>
-                        No answer options available for this question.
-                      </p>
-
-                    ) : (
-
-                      <div className="take-quiz-options">
-
-                        {options.map((option, optionIndex) => {
+                      {options.map(
+                        (option, optionIndex) => {
 
                           const letter =
                             String.fromCharCode(
@@ -586,7 +330,8 @@ function TakeQuiz() {
                             );
 
                           const selected =
-                            answers[questionIndex] === letter;
+                            answers[questionIndex] ===
+                            letter;
 
                           return (
                             <label
@@ -604,7 +349,7 @@ function TakeQuiz() {
                                 value={letter}
                                 checked={selected}
                                 onChange={() =>
-                                  handleAnswer(
+                                  selectAnswer(
                                     questionIndex,
                                     letter
                                   )
@@ -621,26 +366,18 @@ function TakeQuiz() {
 
                             </label>
                           );
+                        }
+                      )}
 
-                        })}
+                    </div>
+                  )}
 
-                      </div>
-
-                    )}
-
-                  </article>
-                );
-
-              })
-
-            )}
-
-
-            {/* SUBMIT BUTTON */}
+                </article>
+              );
+            })}
 
             {questions.length > 0 && (
-
-              <section className="quiz-actions">
+              <div className="quiz-actions">
 
                 <button
                   type="button"
@@ -657,19 +394,15 @@ function TakeQuiz() {
                   Cancel
                 </Link>
 
-              </section>
-
+              </div>
             )}
 
           </section>
-
         )}
 
       </main>
-
     </div>
   );
 }
 
 export default TakeQuiz;
-
