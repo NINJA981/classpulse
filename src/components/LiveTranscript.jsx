@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
-import {
-  MessageSquareText,
-  Search,
-  Languages,
-  Tag,
-  ShieldCheck,
-  Sparkles,
-  Filter
-} from 'lucide-react';
 
 export const LiveTranscript = () => {
   const { transcripts, detectedTopics } = useClassPulse();
@@ -25,57 +16,55 @@ export const LiveTranscript = () => {
   });
 
   return (
-    <div className="glass-card rounded-2xl p-5 border border-slate-200 flex flex-col h-[520px]">
+    <div className="cp-panel flex flex-col h-[520px]">
       {/* Component Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+      <div className="cp-panel-header flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-indigo-100 text-indigo-600">
-            <MessageSquareText className="w-5 h-5" />
-          </div>
+          <div className="cp-icon-box is-lg shrink-0" aria-hidden="true">▤</div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <span className="cp-eyebrow is-tight">Speech-to-text</span>
+            <h3 className="cp-h3 flex items-center gap-2 flex-wrap">
               Live Speech Transcript Stream
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+              <span className="cp-badge is-outline">
                 Tamil-English Bilingual
               </span>
             </h3>
-            <p className="text-xs text-slate-500">Real-time Speech-to-Text • Audio auto-deleted after transcription</p>
+            <p className="cp-caption mt-1">Real-time Speech-to-Text • Audio auto-deleted after transcription</p>
           </div>
         </div>
 
         {/* Translation Toggle */}
         <button
           onClick={() => setShowTamil(!showTamil)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50 transition cursor-pointer shadow-xs"
+          className={`cp-toggle inline-flex items-center gap-1.5 ${showTamil ? 'is-on' : ''}`}
         >
-          <Languages className="w-3.5 h-3.5 text-indigo-600" />
           <span>{showTamil ? 'Bilingual View' : 'English Only'}</span>
         </button>
       </div>
 
       {/* Search & Topic Filters */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+      <div className="flex items-center gap-2 mb-4 flex-wrap sm:flex-nowrap">
+        <div className="flex-1 min-w-[200px]">
           <input
             type="text"
+            aria-label="Search spoken transcript"
             placeholder="Search spoken transcript..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full glass-input pl-9 pr-3 py-1.5 rounded-xl text-xs bg-white text-slate-900 border border-slate-300 focus:border-indigo-500"
+            className="cp-input is-sm"
           />
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Filter className="w-3.5 h-3.5 text-slate-500" />
           <select
             value={selectedTopic}
             onChange={(e) => setSelectedTopic(e.target.value)}
-            className="glass-input px-3 py-1.5 rounded-xl text-xs bg-white text-slate-800 border border-slate-300 cursor-pointer font-medium"
+            aria-label="Filter by topic"
+            className="cp-select is-sm"
           >
-            <option value="ALL" className="bg-white text-slate-900">All Topics</option>
+            <option value="ALL">All Topics</option>
             {detectedTopics.map((topic, i) => (
-              <option key={i} value={topic} className="bg-white text-slate-900">
+              <option key={i} value={topic}>
                 {topic}
               </option>
             ))}
@@ -84,57 +73,55 @@ export const LiveTranscript = () => {
       </div>
 
       {/* Transcript Stream List */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+      <div className="flex-1 overflow-y-auto pr-1">
         {filteredTranscripts.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
-            No matching transcript snippets found.
+          <div className="cp-empty is-sm h-full">
+            <p>No matching transcript snippets found.</p>
           </div>
         ) : (
-          filteredTranscripts.map((t) => (
-            <div
-              key={t.id}
-              className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-indigo-300 transition glass-card-hover"
-            >
-              {/* Entry Metadata Header */}
-              <div className="flex items-center justify-between text-xs mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-indigo-700">{t.speaker}</span>
-                  <span className="text-[11px] font-mono text-slate-500">{t.timestamp}</span>
+          <div className="cp-list-bordered">
+            {filteredTranscripts.map((t) => (
+              <div key={t.id} className="cp-row is-interactive block py-4">
+                {/* Entry Metadata Header */}
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="cp-row-title">{t.speaker}</span>
+                    <span className="cp-caption-2">{t.timestamp}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="cp-badge is-ink inline-flex items-center gap-1">
+                      {t.topicTag}
+                    </span>
+
+                    <span className="cp-caption-2 inline-flex items-center gap-1 font-bold">
+                      <span aria-hidden="true">✓</span>
+                      Audio Deleted
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-                    <Tag className="w-2.5 h-2.5" />
-                    {t.topicTag}
-                  </span>
+                {/* Spoken Tamil-English Text */}
+                {showTamil && (
+                  <p className="text-body text-ink font-bold leading-relaxed mb-2 bg-surface-sunken border border-line p-2.5">
+                    {t.tamilText}
+                  </p>
+                )}
 
-                  <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                    Audio Deleted
-                  </span>
+                {/* Translated English Output */}
+                <div className="flex items-start gap-1.5 text-body text-muted-4 leading-relaxed">
+                  <span className="text-ink shrink-0" aria-hidden="true">→</span>
+                  <p>{t.englishText}</p>
+                </div>
+
+                {/* Footer confidence score */}
+                <div className="mt-2 cp-caption-2 flex items-center gap-3 uppercase tracking-label">
+                  <span>Confidence: {(t.confidence * 100).toFixed(0)}%</span>
+                  <span>Noise Filtered: Yes</span>
                 </div>
               </div>
-
-              {/* Spoken Tamil-English Text */}
-              {showTamil && (
-                <p className="text-xs text-slate-900 font-medium leading-relaxed mb-1.5 bg-white p-2.5 rounded-lg border border-slate-200">
-                  {t.tamilText}
-                </p>
-              )}
-
-              {/* Translated English Output */}
-              <div className="flex items-start gap-1.5 text-xs text-slate-700 leading-relaxed font-normal">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <p>{t.englishText}</p>
-              </div>
-
-              {/* Footer confidence score */}
-              <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-3 font-mono">
-                <span>Confidence: {(t.confidence * 100).toFixed(0)}%</span>
-                <span>Noise Filtered: Yes</span>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

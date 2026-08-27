@@ -2,35 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
-import {
-  ShieldCheck,
-  Building,
-  UserCheck,
-  GraduationCap,
-  Calendar,
-  Plus,
-  Search,
-  Trash2,
-  X,
-  Mail,
-  Link,
-  Users,
-  CheckCircle2,
-  Lock,
-  Clock,
-  AlertTriangle,
-  UserPlus,
-  ArrowLeft,
-  ChevronRight,
-  Sliders,
-  Check,
-  Ban,
-  Activity,
-  Layers,
-  Sparkles,
-  ExternalLink,
-  Filter
-} from 'lucide-react';
+import { ClassroomCard } from './ClassroomCard';
 
 export const ManagementView = () => {
   const {
@@ -72,11 +44,11 @@ export const ManagementView = () => {
 
   // Enterprise Tab Configuration
   const tabsList = [
-    { id: 'access', label: 'Access Control (RBAC)', icon: ShieldCheck, badge: 'Security' },
-    { id: 'classrooms', label: 'Classrooms Directory', icon: Building, count: classrooms.length },
-    { id: 'teachers', label: 'Faculty Directory', icon: UserCheck, count: teachers.length },
-    { id: 'students', label: 'Student Roster', icon: GraduationCap, count: students.length },
-    { id: 'timetables', label: 'Schedules & Timetables', icon: Calendar }
+    { id: 'access', label: 'Access Control (RBAC)', badge: 'Security' },
+    { id: 'classrooms', label: 'Classrooms Directory', count: classrooms.length },
+    { id: 'teachers', label: 'Faculty Directory', count: teachers.length },
+    { id: 'students', label: 'Student Roster', count: students.length },
+    { id: 'timetables', label: 'Schedules & Timetables' }
   ];
 
   useEffect(() => {
@@ -169,77 +141,110 @@ export const ManagementView = () => {
 
   const selectedClassroomObj = classrooms.find(c => c.id === selectedClassroomId);
 
+  const activeTabObj = tabsList.find(t => t.id === activeSubTab);
+
+  const handleTabChange = (value) => {
+    setActiveSubTab(value);
+    if (value !== 'classrooms') setSelectedClassroomId(null);
+  };
+
+  const permissionRows = [
+    { key: 'manageClassrooms', label: 'Create & Manage Classrooms Stream' },
+    { key: 'manageTeachers', label: 'Add & Manage Faculty Profiles' },
+    { key: 'manageStudents', label: 'Add & Roster Student Accounts' },
+    { key: 'assignTimetables', label: 'Create & Edit Weekly Schedules' },
+    { key: 'controlAccess', label: 'Modify Access Control Policies' },
+    { key: 'launchQuizzes', label: 'Launch AI Interactive Quizzes' },
+    { key: 'viewAnalytics', label: 'View Performance Analytics & Logs' }
+  ];
+
+  const modalTitle =
+    activeSubTab === 'classrooms' ? 'Classroom' : activeSubTab === 'students' ? 'Student' : activeSubTab === 'teachers' ? 'Teacher' : 'Timetable Slot';
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans select-none text-slate-900 animate-portal-enter">
-      {/* Executive Header Banner */}
-      <div className="bg-white border border-slate-300 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
-                Executive Administration
-              </span>
-              <span className="text-xs font-medium text-slate-500">• Live Service Port 5173</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              System Operations & Control
-            </h1>
-            <p className="text-xs font-normal text-slate-500 max-w-2xl">
+    <>
+      {/* Executive Header */}
+      <section className="cp-page-header">
+          <div>
+            <span className="cp-eyebrow">
+              Executive Administration <span className="text-muted-2">• Live Service Port 5173</span>
+            </span>
+            <h1 className="cp-display">System Operations & Control</h1>
+            <p className="cp-lead">
               Central executive control for user privileges, classroom streams, faculty assignments, student rosters, and timetables.
             </p>
           </div>
-        </div>
-
-        {/* System Overview Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-medium text-slate-500 block">Classrooms Managed</span>
-            <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-2">
-              <span>{classrooms.length}</span>
-              <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300">Active</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-medium text-slate-500 block">Faculty Members</span>
-            <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-2">
-              <span>{teachers.length}</span>
-              <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">Verified</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-medium text-slate-500 block">Enrolled Students</span>
-            <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-2">
-              <span>{students.length}</span>
-              <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300">Roster</span>
-            </div>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-medium text-slate-500 block">Security Status</span>
-            <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-2">
-              <span className="text-sky-700 flex items-center gap-1 text-sm font-semibold">
-                <Activity className="w-4 h-4 text-sky-600" /> 100% Enforced
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Section Dropdown Controller Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-2.5 rounded-xl shadow-sm flex-1 max-w-md">
-            <Sliders className="w-4 h-4 text-slate-700 shrink-0" />
-            <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider shrink-0">
-              Select Admin View:
+          <div className="cp-page-actions">
+            <span className="cp-badge is-ink">
+              Active Section: {activeTabObj?.label}
             </span>
+          </div>
+      </section>
+
+      {/* System Overview Metrics Row */}
+      <section className="cp-grid-stats">
+          <div className="cp-stat">
+            <div className="cp-stat-top">
+              <span className="cp-icon-box" aria-hidden="true">▣</span>
+              <span className="cp-badge">Active</span>
+            </div>
+            <span className="cp-stat-label">Classrooms Managed</span>
+            <span className="cp-stat-value">{classrooms.length}</span>
+          </div>
+          <div className="cp-stat">
+            <div className="cp-stat-top">
+              <span className="cp-icon-box" aria-hidden="true">□</span>
+              <span className="cp-badge">Verified</span>
+            </div>
+            <span className="cp-stat-label">Faculty Members</span>
+            <span className="cp-stat-value">{teachers.length}</span>
+          </div>
+          <div className="cp-stat">
+            <div className="cp-stat-top">
+              <span className="cp-icon-box" aria-hidden="true">□</span>
+              <span className="cp-badge">Roster</span>
+            </div>
+            <span className="cp-stat-label">Enrolled Students</span>
+            <span className="cp-stat-value">{students.length}</span>
+          </div>
+          <div className="cp-stat">
+            <div className="cp-stat-top">
+              <span className="cp-icon-box" aria-hidden="true">↗</span>
+            </div>
+            <span className="cp-stat-label">Security Status</span>
+            <span className="cp-stat-value is-sm">100% Enforced</span>
+          </div>
+      </section>
+
+      {/* Section Controller: index tabs + select, followed by the active section */}
+      <section className="cp-stack">
+          <div className="cp-tabs hidden md:flex">
+            {tabsList.map((tab) => {
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  aria-current={activeSubTab === tab.id ? 'page' : undefined}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`cp-tab ${activeSubTab === tab.id ? 'is-active' : ''}`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && <span className="cp-badge">{tab.count}</span>}
+                  {tab.badge && <span className="cp-badge is-ink">{tab.badge}</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="cp-field max-w-md md:hidden">
+            <label className="cp-label" htmlFor="admin-view-select">
+              Select Admin View:
+            </label>
             <select
+              id="admin-view-select"
               value={activeSubTab}
-              onChange={(e) => {
-                setActiveSubTab(e.target.value);
-                if (e.target.value !== 'classrooms') setSelectedClassroomId(null);
-              }}
-              className="bg-white border border-slate-300 text-xs font-bold text-slate-900 px-3.5 py-2 rounded-lg cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-700 w-full"
+              onChange={(e) => handleTabChange(e.target.value)}
+              className="cp-select is-sm"
             >
               {tabsList.map((tab) => (
                 <option key={tab.id} value={tab.id}>
@@ -249,203 +254,134 @@ export const ManagementView = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-300 px-3.5 py-2 rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-sky-600" />
-            <span>Active Section: {tabsList.find(t => t.id === activeSubTab)?.label}</span>
-          </div>
-        </div>
-      </div>
-
       {/* ----------------- SECTION 1: ACCESS CONTROL (RBAC MATRIX) ----------------- */}
       {activeSubTab === 'access' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-300 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-              <div className="space-y-0.5">
-                <h3 className="text-sm font-semibold flex items-center gap-2 text-sky-300">
-                  <Lock className="w-4 h-4 text-sky-300" />
-                  Role-Based Access Control (RBAC) Matrix
-                </h3>
-                <p className="text-xs text-slate-300 font-normal">
-                  Configure feature privileges across Admin, Teacher, and Student user roles.
-                </p>
-              </div>
-              <span className="px-2.5 py-1 bg-slate-800 text-sky-300 text-xs font-medium rounded-lg border border-slate-700">
-                Security Enforced
-              </span>
+        <div className="cp-panel">
+          <div className="cp-panel-header">
+            <div>
+              <span className="cp-eyebrow is-tight">Security</span>
+              <h3>
+                Role-Based Access Control (RBAC) Matrix
+              </h3>
+              <p className="cp-caption mt-1">
+                Configure feature privileges across Admin, Teacher, and Student user roles.
+              </p>
             </div>
+            <span className="cp-badge is-ink">Security Enforced</span>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
-                  <tr>
-                    <th className="px-6 py-4">Permission Capability</th>
-                    <th className="px-6 py-4 text-center bg-slate-100/50">🔐 Admin</th>
-                    <th className="px-6 py-4 text-center bg-slate-100/50">👨‍🏫 Teacher</th>
-                    <th className="px-6 py-4 text-center bg-slate-100/50">🎓 Student</th>
+          <div className="cp-table-wrap">
+            <table className="cp-table">
+              <thead>
+                <tr>
+                  <th>Permission Capability</th>
+                  <th className="text-center">🔐 Admin</th>
+                  <th className="text-center">👨‍🏫 Teacher</th>
+                  <th className="text-center">🎓 Student</th>
+                </tr>
+              </thead>
+              <tbody>
+                {permissionRows.map((perm) => (
+                  <tr key={perm.key}>
+                    <td className="font-bold text-ink">{perm.label}</td>
+                    {['Admin', 'Teacher', 'Student'].map((role) => {
+                      const isGranted = accessControls.roles[role]?.permissions[perm.key];
+                      return (
+                        <td key={role} className="text-center">
+                          <label className={`cp-toggle cursor-pointer ${isGranted ? 'is-on' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={!!isGranted}
+                              onChange={() => toggleUserPermission(role, perm.key)}
+                              className="cursor-pointer"
+                            />
+                            <span>{isGranted ? 'Granted' : 'Restricted'}</span>
+                          </label>
+                        </td>
+                      );
+                    })}
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {[
-                    { key: 'manageClassrooms', label: 'Create & Manage Classrooms Stream' },
-                    { key: 'manageTeachers', label: 'Add & Manage Faculty Profiles' },
-                    { key: 'manageStudents', label: 'Add & Roster Student Accounts' },
-                    { key: 'assignTimetables', label: 'Create & Edit Weekly Schedules' },
-                    { key: 'controlAccess', label: 'Modify Access Control Policies' },
-                    { key: 'launchQuizzes', label: 'Launch AI Interactive Quizzes' },
-                    { key: 'viewAnalytics', label: 'View Performance Analytics & Logs' }
-                  ].map((perm) => (
-                    <tr key={perm.key} className="hover:bg-slate-50/80 transition">
-                      <td className="px-6 py-4 text-slate-900 font-medium">
-                        {perm.label}
-                      </td>
-                      {['Admin', 'Teacher', 'Student'].map((role) => {
-                        const isGranted = accessControls.roles[role]?.permissions[perm.key];
-                        return (
-                          <td key={role} className="px-6 py-4 text-center">
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={!!isGranted}
-                                onChange={() => toggleUserPermission(role, perm.key)}
-                                className="w-4 h-4 rounded border-slate-300 text-slate-800 focus:ring-slate-700 cursor-pointer"
-                              />
-                              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
-                                isGranted 
-                                  ? 'bg-slate-100 text-slate-800 border-slate-300' 
-                                  : 'bg-slate-100/60 text-slate-400 border-slate-200'
-                              }`}>
-                                {isGranted ? 'Granted' : 'Restricted'}
-                              </span>
-                            </label>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* ----------------- SECTION 2: CLASSROOMS DIRECTORY ----------------- */}
       {activeSubTab === 'classrooms' && (
-        <div className="space-y-6">
+        <div className="cp-stack">
           {!selectedClassroomId && (
-            <div className="space-y-4">
-              {/* Classroom Directory Action Header Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 border border-slate-300 rounded-2xl shadow-sm">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Search classrooms by name or room number..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700"
-                  />
+            <div className="cp-stack">
+              {/* Classroom Directory heading + action bar */}
+              <div className="cp-section-heading flex-wrap gap-4">
+                <div>
+                  <span className="cp-eyebrow">Directory</span>
+                  <h2>Classrooms Directory</h2>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-xs font-medium text-slate-500">
-                    Showing <strong className="text-slate-900">{classrooms.length}</strong> classrooms
+                <div className="flex items-center gap-4">
+                  <div className="cp-caption">
+                    Showing <strong className="text-ink">{classrooms.length}</strong> classrooms
                   </div>
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
+                    className="cp-btn cp-btn-primary shrink-0"
                   >
-                    <Plus className="w-4 h-4" />
+                    <span aria-hidden="true">＋</span>
                     <span>Add Classroom</span>
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="cp-card">
+                <div className="cp-field max-w-md">
+                  <input
+                    type="text"
+                    aria-label="Search classrooms by name or room number"
+                    placeholder="Search classrooms by name or room number..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="cp-input"
+                  />
+                </div>
+              </div>
+
+              <div className="cp-grid-3">
                 {classrooms
                   .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.room.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map((cls) => {
-                    const enrolledCount = students.filter(s => s.className === cls.name).length;
-                    return (
-                      <div
-                        key={cls.id}
-                        onClick={() => setSelectedClassroomId(cls.id)}
-                        className="bg-white border border-slate-300 rounded-2xl p-6 space-y-4 cursor-pointer shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col justify-between"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <span className="text-[11px] font-semibold bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
-                                {cls.room}
-                              </span>
-                              <h3 className="text-xl font-bold text-slate-900 mt-1">{cls.name}</h3>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                requestDelete('classroom', cls.id, cls.name);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                              title="Delete Classroom"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          <div className="space-y-2 text-xs text-slate-600">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Lead Instructor:</span>
-                              <span className="font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-300">
-                                👨‍🏫 {cls.leadTeacher}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Enrolled Roster:</span>
-                              <span className="font-semibold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-300 flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5 text-sky-600" />
-                                {enrolledCount} Students
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-100">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedClassroomId(cls.id);
-                            }}
-                            className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-2"
-                          >
-                            <span>Inspect Roster & Lead Teacher</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  .map((cls) => (
+                    <ClassroomCard
+                      key={cls.id}
+                      classroom={cls}
+                      enrolledCount={students.filter(s => s.className === cls.name).length}
+                      onOpen={() => setSelectedClassroomId(cls.id)}
+                      onDelete={() => requestDelete('classroom', cls.id, cls.name)}
+                      actionLabel="Inspect Roster & Lead Teacher"
+                    />
+                  ))}
               </div>
             </div>
           )}
 
           {/* Drill-down View */}
           {selectedClassroomId && selectedClassroomObj && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 border border-slate-300 rounded-2xl shadow-sm">
+            <div className="cp-stack">
+              <div className="cp-section-heading flex-wrap gap-4">
                 <button
                   onClick={() => setSelectedClassroomId(null)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center gap-2 rounded-xl border border-slate-300 transition"
+                  className="cp-btn cp-btn-ghost cp-btn-sm"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <span aria-hidden="true">←</span>
                   <span>Back to Classrooms Grid</span>
                 </button>
 
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-500">Switch Stream:</span>
+                <div className="cp-field flex-row items-center gap-3">
+                  <label className="cp-label mb-0 shrink-0" htmlFor="switch-stream-select">Switch Stream:</label>
                   <select
+                    id="switch-stream-select"
                     value={selectedClassroomId}
                     onChange={(e) => setSelectedClassroomId(e.target.value)}
-                    className="p-2 bg-slate-50 border border-slate-300 font-semibold text-slate-900 rounded-xl focus:outline-none"
+                    className="cp-select is-sm"
                   >
                     {classrooms.map(c => (
                       <option key={c.id} value={c.id}>
@@ -456,25 +392,30 @@ export const ManagementView = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-6 border border-slate-300 rounded-2xl shadow-sm space-y-4">
-                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-                  🎓 Enrolled Roster for {selectedClassroomObj.name} ({selectedClassroomObj.room})
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-sans">
-                    <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
+              <div className="cp-panel">
+                <div className="cp-panel-header">
+                  <div>
+                    <span className="cp-eyebrow is-tight">Classroom Inspection</span>
+                    <h3>
+                      🎓 Enrolled Roster for {selectedClassroomObj.name} ({selectedClassroomObj.room})
+                    </h3>
+                  </div>
+                </div>
+                <div className="cp-table-wrap">
+                  <table className="cp-table">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-3">Roll No</th>
-                        <th className="px-4 py-3">Student Name</th>
-                        <th className="px-4 py-3">Email</th>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Email</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
+                    <tbody>
                       {students.filter(s => s.className === selectedClassroomObj.name).map((s) => (
-                        <tr key={s.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-mono font-medium text-slate-900">{s.rollNo}</td>
-                          <td className="px-4 py-3 font-semibold text-slate-900">{s.name}</td>
-                          <td className="px-4 py-3 text-slate-500">{s.email}</td>
+                        <tr key={s.id}>
+                          <td className="font-bold text-ink tracking-label">{s.rollNo}</td>
+                          <td className="font-bold text-ink">{s.name}</td>
+                          <td className="text-muted">{s.email}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -488,64 +429,73 @@ export const ManagementView = () => {
 
       {/* ----------------- SECTION 3: FACULTY DIRECTORY ----------------- */}
       {activeSubTab === 'teachers' && (
-        <div className="space-y-4">
-          {/* Faculty Directory Action Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 border border-slate-300 rounded-2xl shadow-sm">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                placeholder="Search faculty members by name or department..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700"
-              />
+        <div className="cp-stack">
+          {/* Faculty Directory heading + action bar */}
+          <div className="cp-section-heading flex-wrap gap-4">
+            <div>
+              <span className="cp-eyebrow">Directory</span>
+              <h2>Faculty Directory</h2>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-xs font-medium text-slate-500">
-                Total Faculty: <strong className="text-slate-900">{teachers.length}</strong>
+            <div className="flex items-center gap-4">
+              <div className="cp-caption">
+                Total Faculty: <strong className="text-ink">{teachers.length}</strong>
               </div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
+                className="cp-btn cp-btn-primary shrink-0"
               >
-                <Plus className="w-4 h-4" />
+                <span aria-hidden="true">＋</span>
                 <span>Add Teacher</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="cp-card">
+            <div className="cp-field max-w-md">
+              <input
+                type="text"
+                aria-label="Search faculty members by name or department"
+                placeholder="Search faculty members by name or department..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="cp-input"
+              />
+            </div>
+          </div>
+
+          <div className="cp-grid-3">
             {teachers
               .filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.department.toLowerCase().includes(searchTerm.toLowerCase()))
               .map((t) => (
-                <div key={t.id} className="bg-white border border-slate-300 rounded-2xl p-6 space-y-4 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                <div key={t.id} className="cp-card space-y-4">
+                  <div className="flex items-start justify-between gap-3 pb-4 border-b border-line-faint">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-300 text-slate-800 flex items-center justify-center font-bold text-sm">
+                      <div className="cp-row-icon font-black text-body">
                         {t.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900">{t.name}</h3>
-                        <span className="text-[11px] font-mono text-slate-500">{t.staffId}</span>
+                        <h3 className="cp-h4">{t.name}</h3>
+                        <span className="cp-caption-2 tracking-label">{t.staffId}</span>
                       </div>
                     </div>
                     <button
                       onClick={() => requestDelete('teacher', t.id, t.name)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                      className="cp-icon-btn shrink-0"
+                      title="Delete Teacher"
+                      aria-label="Delete Teacher"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <span aria-hidden="true">×</span>
                     </button>
                   </div>
 
-                  <div className="space-y-2 text-xs text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Department:</span>
-                      <span className="font-semibold text-slate-900 bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200">{t.department}</span>
+                  <div>
+                    <div className="cp-kv">
+                      <span>Department:</span>
+                      <strong className="cp-badge">{t.department}</strong>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Email:</span>
-                      <span className="font-medium text-slate-800">{t.email}</span>
+                    <div className="cp-kv">
+                      <span>Email:</span>
+                      <strong className="text-ink">{t.email}</strong>
                     </div>
                   </div>
                 </div>
@@ -556,52 +506,52 @@ export const ManagementView = () => {
 
       {/* ----------------- SECTION 4: STUDENT ROSTER DIRECTORY ----------------- */}
       {activeSubTab === 'students' && (
-        <div className="bg-white border border-slate-300 rounded-2xl overflow-hidden shadow-sm p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="cp-panel">
+          <div className="cp-panel-header flex-wrap">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <GraduationCap className="w-4.5 h-4.5 text-sky-600" />
+              <span className="cp-eyebrow is-tight">Roster</span>
+              <h3>
                 Student Roster Registry ({students.length} Accounts)
               </h3>
-              <p className="text-xs text-slate-500">Active student profile listings across all classroom streams.</p>
+              <p className="cp-caption mt-1">Active student profile listings across all classroom streams.</p>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
+              className="cp-btn cp-btn-primary shrink-0"
             >
-              <Plus className="w-4 h-4" />
+              <span aria-hidden="true">＋</span>
               <span>Add Student</span>
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-sans">
-              <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
+          <div className="cp-table-wrap">
+            <table className="cp-table">
+              <thead>
                 <tr>
-                  <th className="px-5 py-3.5">Roll No</th>
-                  <th className="px-5 py-3.5">Student Name</th>
-                  <th className="px-5 py-3.5">Assigned Stream</th>
-                  <th className="px-5 py-3.5">Email Address</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th>Roll No</th>
+                  <th>Student Name</th>
+                  <th>Assigned Stream</th>
+                  <th>Email Address</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody>
                 {students.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50 transition">
-                    <td className="px-5 py-3.5 font-mono font-medium text-slate-900">{s.rollNo}</td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-900">{s.name}</td>
-                    <td className="px-5 py-3.5">
-                      <span className="bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-md font-medium">
-                        {s.className}
-                      </span>
+                  <tr key={s.id}>
+                    <td className="font-bold text-ink tracking-label">{s.rollNo}</td>
+                    <td className="font-bold text-ink">{s.name}</td>
+                    <td>
+                      <span className="cp-badge">{s.className}</span>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-500">{s.email}</td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="text-muted">{s.email}</td>
+                    <td className="text-right">
                       <button
                         onClick={() => requestDelete('student', s.id, s.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        className="cp-btn cp-btn-ghost cp-btn-sm"
+                        title="Delete Student"
+                        aria-label="Delete Student"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <span aria-hidden="true">×</span>
                       </button>
                     </td>
                   </tr>
@@ -614,21 +564,24 @@ export const ManagementView = () => {
 
       {/* ----------------- SECTION 5: TIMETABLE & SCHEDULES ----------------- */}
       {activeSubTab === 'timetables' && (
-        <div className="bg-white p-6 border border-slate-300 rounded-2xl shadow-sm space-y-6">
+        <div className="cp-panel">
           {/* Top Timetable Header with Stream Selector & Add Slot Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-sky-600" />
-              Schedule Management: {selectedTimetableClass}
-            </h3>
+          <div className="cp-panel-header flex-wrap">
+            <div>
+              <span className="cp-eyebrow is-tight">Schedules</span>
+              <h3>
+                Schedule Management: {selectedTimetableClass}
+              </h3>
+            </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-500">Select Stream:</span>
+            <div className="flex items-end gap-4 flex-wrap">
+              <div className="cp-field">
+                <label className="cp-label" htmlFor="timetable-stream-select">Select Stream:</label>
                 <select
+                  id="timetable-stream-select"
                   value={selectedTimetableClass}
                   onChange={(e) => setSelectedTimetableClass(e.target.value)}
-                  className="p-2 bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 rounded-xl focus:outline-none"
+                  className="cp-select is-sm"
                 >
                   {classrooms.map(c => (
                     <option key={c.id} value={c.name}>{c.name}</option>
@@ -638,62 +591,64 @@ export const ManagementView = () => {
 
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
+                className="cp-btn cp-btn-primary shrink-0"
               >
-                <Plus className="w-4 h-4" />
+                <span aria-hidden="true">＋</span>
                 <span>Add Timetable Slot</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-              <button
-                key={day}
-                onClick={() => setSelectedTimetableDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer border ${
-                  selectedTimetableDay === day
-                    ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-300'
-                }`}
-              >
-                {day}
-              </button>
-            ))}
-          </div>
+          <div className="cp-stack">
+            <div className="cp-segment flex-wrap">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
+                <button
+                  key={day}
+                  onClick={() => setSelectedTimetableDay(day)}
+                  className={`cp-segment-item ${selectedTimetableDay === day ? 'is-active' : ''}`}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
 
-          <div className="space-y-3">
-            {(timetables[selectedTimetableClass]?.[selectedTimetableDay] || []).map((slot, idx) => (
-              <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 font-semibold text-slate-900 text-sm">
-                    <Clock className="w-4 h-4 text-sky-600" />
-                    <span>{slot.time}</span>
-                    <span className="bg-slate-100 text-slate-800 px-2 py-0.5 border border-slate-300 text-xs rounded-md">{slot.subject}</span>
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Instructor: {slot.teacher} • Location: {slot.room}
+            <div className="cp-list-bordered">
+              {(timetables[selectedTimetableClass]?.[selectedTimetableDay] || []).map((slot, idx) => (
+                <div key={idx} className="cp-row">
+                  <span className="cp-row-icon" aria-hidden="true">□</span>
+                  <div className="cp-row-content">
+                    <div className="cp-row-title flex items-center gap-2 flex-wrap">
+                      <span>{slot.time}</span>
+                      <span className="cp-badge">{slot.subject}</span>
+                    </div>
+                    <p className="cp-row-sub">
+                      Instructor: {slot.teacher} • Location: {slot.room}
+                    </p>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
+      </section>
 
       {/* ----------------- CREATION MODAL ----------------- */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 shadow-2xl rounded-2xl max-w-lg w-full p-6 space-y-5 animate-portal-enter">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">
-                Create New {activeSubTab === 'classrooms' ? 'Classroom' : activeSubTab === 'students' ? 'Student' : activeSubTab === 'teachers' ? 'Teacher' : 'Timetable Slot'}
-              </h3>
+        <div className="cp-overlay">
+          <div className="cp-modal">
+            <div className="cp-modal-header flex items-center justify-between gap-4">
+              <div>
+                <span className="cp-eyebrow is-tight">Management</span>
+                <h2>Create New {modalTitle}</h2>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+                className="cp-icon-btn shrink-0"
+                title="Close"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <span aria-hidden="true">×</span>
               </button>
             </div>
 
@@ -702,52 +657,54 @@ export const ManagementView = () => {
                 e.preventDefault();
                 addClassroom(classroomForm);
                 setIsModalOpen(false);
-              }} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Classroom Stream Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={classroomForm.name}
-                    onChange={(e) => setClassroomForm({...classroomForm, name: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Grade 10-C"
-                  />
+              }}>
+                <div className="cp-modal-body space-y-4">
+                  <div className="cp-field">
+                    <label className="cp-label">Classroom Stream Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={classroomForm.name}
+                      onChange={(e) => setClassroomForm({...classroomForm, name: e.target.value})}
+                      className="cp-input"
+                      placeholder="Grade 10-C"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Room / Location</label>
+                    <input
+                      type="text"
+                      required
+                      value={classroomForm.room}
+                      onChange={(e) => setClassroomForm({...classroomForm, room: e.target.value})}
+                      className="cp-input"
+                      placeholder="Room 402"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Lead Teacher</label>
+                    <select
+                      value={classroomForm.leadTeacher}
+                      onChange={(e) => setClassroomForm({...classroomForm, leadTeacher: e.target.value})}
+                      className="cp-select"
+                    >
+                      {teachers.map(t => (
+                        <option key={t.id} value={t.name}>{t.name} ({t.department})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Room / Location</label>
-                  <input
-                    type="text"
-                    required
-                    value={classroomForm.room}
-                    onChange={(e) => setClassroomForm({...classroomForm, room: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Room 402"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Lead Teacher</label>
-                  <select
-                    value={classroomForm.leadTeacher}
-                    onChange={(e) => setClassroomForm({...classroomForm, leadTeacher: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                  >
-                    {teachers.map(t => (
-                      <option key={t.id} value={t.name}>{t.name} ({t.department})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="pt-3 flex justify-end gap-2">
+                <div className="cp-modal-footer">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-slate-300 text-xs font-medium text-slate-700 rounded-xl"
+                    className="cp-btn cp-btn-ghost"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-xl shadow-sm"
+                    className="cp-btn cp-btn-primary"
                   >
                     Save Classroom
                   </button>
@@ -760,52 +717,54 @@ export const ManagementView = () => {
                 e.preventDefault();
                 addStudent(studentForm);
                 setIsModalOpen(false);
-              }} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Student Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={studentForm.name}
-                    onChange={(e) => setStudentForm({...studentForm, name: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Ananya Harish"
-                  />
+              }}>
+                <div className="cp-modal-body space-y-4">
+                  <div className="cp-field">
+                    <label className="cp-label">Student Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={studentForm.name}
+                      onChange={(e) => setStudentForm({...studentForm, name: e.target.value})}
+                      className="cp-input"
+                      placeholder="Ananya Harish"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Roll No</label>
+                    <input
+                      type="text"
+                      required
+                      value={studentForm.rollNo}
+                      onChange={(e) => setStudentForm({...studentForm, rollNo: e.target.value})}
+                      className="cp-input"
+                      placeholder="STU-1005"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Assigned Stream</label>
+                    <select
+                      value={studentForm.className}
+                      onChange={(e) => setStudentForm({...studentForm, className: e.target.value})}
+                      className="cp-select"
+                    >
+                      {classrooms.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Roll No</label>
-                  <input
-                    type="text"
-                    required
-                    value={studentForm.rollNo}
-                    onChange={(e) => setStudentForm({...studentForm, rollNo: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="STU-1005"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Stream</label>
-                  <select
-                    value={studentForm.className}
-                    onChange={(e) => setStudentForm({...studentForm, className: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                  >
-                    {classrooms.map(c => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="pt-3 flex justify-end gap-2">
+                <div className="cp-modal-footer">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-slate-300 text-xs font-medium text-slate-700 rounded-xl"
+                    className="cp-btn cp-btn-ghost"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-xl shadow-sm"
+                    className="cp-btn cp-btn-primary"
                   >
                     Save Student
                   </button>
@@ -818,51 +777,53 @@ export const ManagementView = () => {
                 e.preventDefault();
                 addTeacher(teacherForm);
                 setIsModalOpen(false);
-              }} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Teacher Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={teacherForm.name}
-                    onChange={(e) => setTeacherForm({...teacherForm, name: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Dr. Anitha"
-                  />
+              }}>
+                <div className="cp-modal-body space-y-4">
+                  <div className="cp-field">
+                    <label className="cp-label">Teacher Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={teacherForm.name}
+                      onChange={(e) => setTeacherForm({...teacherForm, name: e.target.value})}
+                      className="cp-input"
+                      placeholder="Dr. Anitha"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Staff ID</label>
+                    <input
+                      type="text"
+                      required
+                      value={teacherForm.staffId}
+                      onChange={(e) => setTeacherForm({...teacherForm, staffId: e.target.value})}
+                      className="cp-input"
+                      placeholder="TCH-505"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Department</label>
+                    <input
+                      type="text"
+                      required
+                      value={teacherForm.department}
+                      onChange={(e) => setTeacherForm({...teacherForm, department: e.target.value})}
+                      className="cp-input"
+                      placeholder="Computer Science"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Staff ID</label>
-                  <input
-                    type="text"
-                    required
-                    value={teacherForm.staffId}
-                    onChange={(e) => setTeacherForm({...teacherForm, staffId: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="TCH-505"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                  <input
-                    type="text"
-                    required
-                    value={teacherForm.department}
-                    onChange={(e) => setTeacherForm({...teacherForm, department: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Computer Science"
-                  />
-                </div>
-                <div className="pt-3 flex justify-end gap-2">
+                <div className="cp-modal-footer">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-slate-300 text-xs font-medium text-slate-700 rounded-xl"
+                    className="cp-btn cp-btn-ghost"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-xl shadow-sm"
+                    className="cp-btn cp-btn-primary"
                   >
                     Save Teacher
                   </button>
@@ -875,52 +836,54 @@ export const ManagementView = () => {
                 e.preventDefault();
                 addTimetableSlot(selectedTimetableClass, selectedTimetableDay, newSlotForm);
                 setIsModalOpen(false);
-              }} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Time Interval</label>
-                  <input
-                    type="text"
-                    required
-                    value={newSlotForm.time}
-                    onChange={(e) => setNewSlotForm({...newSlotForm, time: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="02:30 - 03:30 PM"
-                  />
+              }}>
+                <div className="cp-modal-body space-y-4">
+                  <div className="cp-field">
+                    <label className="cp-label">Time Interval</label>
+                    <input
+                      type="text"
+                      required
+                      value={newSlotForm.time}
+                      onChange={(e) => setNewSlotForm({...newSlotForm, time: e.target.value})}
+                      className="cp-input"
+                      placeholder="02:30 - 03:30 PM"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Subject</label>
+                    <input
+                      type="text"
+                      required
+                      value={newSlotForm.subject}
+                      onChange={(e) => setNewSlotForm({...newSlotForm, subject: e.target.value})}
+                      className="cp-input"
+                      placeholder="Biology Lab"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Assigned Teacher</label>
+                    <select
+                      value={newSlotForm.teacher}
+                      onChange={(e) => setNewSlotForm({...newSlotForm, teacher: e.target.value})}
+                      className="cp-select"
+                    >
+                      {teachers.map(t => (
+                        <option key={t.id} value={t.name}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Subject</label>
-                  <input
-                    type="text"
-                    required
-                    value={newSlotForm.subject}
-                    onChange={(e) => setNewSlotForm({...newSlotForm, subject: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                    placeholder="Biology Lab"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Teacher</label>
-                  <select
-                    value={newSlotForm.teacher}
-                    onChange={(e) => setNewSlotForm({...newSlotForm, teacher: e.target.value})}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
-                  >
-                    {teachers.map(t => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="pt-3 flex justify-end gap-2">
+                <div className="cp-modal-footer">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-slate-300 text-xs font-medium text-slate-700 rounded-xl"
+                    className="cp-btn cp-btn-ghost"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-xl shadow-sm"
+                    className="cp-btn cp-btn-primary"
                   >
                     Add Slot
                   </button>
@@ -933,25 +896,31 @@ export const ManagementView = () => {
 
       {/* ----------------- DELETION CONFIRMATION MODAL ----------------- */}
       {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 shadow-2xl rounded-2xl max-w-md w-full p-6 space-y-4 animate-portal-enter">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-3 text-rose-600">
-              <AlertTriangle className="w-5 h-5" />
-              <h3 className="text-base font-bold text-slate-900">Confirm Deletion</h3>
+        <div className="cp-overlay">
+          <div className="cp-modal">
+            <div className="cp-modal-header">
+              <div>
+                <span className="cp-eyebrow is-tight">Destructive action</span>
+                <h2>
+                  Confirm Deletion
+                </h2>
+              </div>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Are you sure you want to delete <strong className="text-slate-900">{deleteConfirm.name}</strong>?
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="cp-modal-body">
+              <p className="cp-lead text-ink">
+                Are you sure you want to delete <strong className="font-black">{deleteConfirm.name}</strong>?
+              </p>
+            </div>
+            <div className="cp-modal-footer">
               <button
                 onClick={() => setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' })}
-                className="px-4 py-2 border border-slate-300 text-xs font-medium text-slate-700 rounded-xl"
+                className="cp-btn cp-btn-ghost"
               >
                 Cancel
               </button>
               <button
                 onClick={executeDelete}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-xl shadow-sm"
+                className="cp-btn cp-btn-danger"
               >
                 Delete Resource
               </button>
@@ -959,6 +928,6 @@ export const ManagementView = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

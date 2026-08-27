@@ -3,8 +3,7 @@
 import React from 'react';
 import { ClassPulseProvider, useClassPulse } from './context/ClassPulseContext';
 import { LoginPage } from './components/LoginPage';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
+import { Topbar, AppFooter } from './components/Topbar';
 import { ManagementView } from './components/ManagementView';
 import { TeacherClassroomView } from './components/TeacherClassroomView';
 import { TeacherDashboard } from './components/TeacherDashboard';
@@ -18,9 +17,7 @@ const MainContent = () => {
   const isAdmin = userRole === 'admin';
 
   return (
-    <main className={`flex-1 p-4 sm:p-6 overflow-y-auto animate-portal-enter ${
-      isAdmin ? 'bg-[#f4f0e6]' : 'bg-[#faf7f2]'
-    }`}>
+    <main className="cp-content">
       {activeTab === 'management' && (isAdmin ? <ManagementView /> : <TeacherClassroomView />)}
       {activeTab === 'teacher-dash' && <TeacherDashboard />}
       {activeTab === 'student-dash' && <StudentDashboard />}
@@ -32,22 +29,17 @@ const MainContent = () => {
 };
 
 const AppInner = () => {
-  const { isLoggedIn, userRole } = useClassPulse();
-  const isAdmin = userRole === 'admin';
+  const { isLoggedIn } = useClassPulse();
 
   if (!isLoggedIn) {
     return <LoginPage />;
   }
 
   return (
-    <div className={`flex h-screen text-slate-900 overflow-hidden font-mono ${
-      isAdmin ? 'bg-[#f4f0e6]' : 'bg-[#faf7f2]'
-    }`}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header />
-        <MainContent />
-      </div>
+    <div className="cp-page font-sans">
+      <Topbar />
+      <MainContent />
+      <AppFooter />
     </div>
   );
 };

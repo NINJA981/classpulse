@@ -4,13 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_APP_ROLE=academic-login PORT=5172 next dev -p 5172",
+    "dev": "cross-env NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
     "dev:admin-login": "cross-env NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
-    "dev:academic-login": "cross-env NEXT_PUBLIC_APP_ROLE=academic-login PORT=5172 next dev -p 5172",
-    "dev:login": "cross-env NEXT_PUBLIC_APP_ROLE=academic-login PORT=5172 next dev -p 5172",
     "dev:admin": "cross-env NEXT_PUBLIC_APP_ROLE=admin PORT=5173 next dev -p 5173",
-    "dev:teacher": "cross-env NEXT_PUBLIC_APP_ROLE=teacher PORT=5174 next dev -p 5174",
-    "dev:student": "cross-env NEXT_PUBLIC_APP_ROLE=student PORT=5175 next dev -p 5175",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

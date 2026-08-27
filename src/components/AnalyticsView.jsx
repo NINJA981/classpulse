@@ -4,208 +4,171 @@ import React from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid
 } from 'recharts';
-import {
-  BarChart3,
-  Trophy,
-  Target,
-  Users,
-  TrendingUp,
-  Brain,
-  Sparkles,
-  Layers,
-  Activity,
-  Zap,
-  CheckCircle2
-} from 'lucide-react';
+
+// Monochrome chart recipe: ink / mid-grey bars, hairline horizontal rules, 9px uppercase ticks.
+const CHART = { ink: '#111', series2: '#555', muted: '#888', grid: '#e8e8e3', axis: '#d7d7d2', surface: '#fff' };
+
+const TICK_STYLE = { fill: CHART.muted, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 };
+
+const TOOLTIP_STYLE = {
+  background: CHART.surface,
+  border: `1px solid ${CHART.ink}`,
+  borderRadius: 0,
+  fontSize: 11,
+  fontWeight: 700,
+  color: CHART.ink,
+  boxShadow: 'none'
+};
 
 export const AnalyticsView = () => {
   const { analytics } = useClassPulse();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans select-none text-slate-900 animate-portal-enter">
+    <>
       {/* Executive Telemetry Header Banner */}
-      <div className="bg-white border border-slate-300 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
-                Performance Telemetry Engine
-              </span>
-              <span className="text-xs font-medium text-slate-500">• Real-Time Analytics</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              Classroom Analytics & Insights
-            </h1>
-            <p className="text-xs font-normal text-slate-500 max-w-2xl">
-              Real-time comprehension trends, AI topic mastery, response speed metrics, and engagement telemetry across 40-minute lesson intervals.
-            </p>
-          </div>
+      <section className="cp-page-header select-none">
+        <div>
+          <span className="cp-eyebrow">Performance Telemetry Engine • Real-Time Analytics</span>
+          <h1 className="cp-display">
+            Classroom Analytics & Insights
+          </h1>
+          <p className="cp-lead">
+            Real-time comprehension trends, AI topic mastery, response speed metrics, and engagement telemetry across 40-minute lesson intervals.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-2 font-semibold text-xs text-slate-800 bg-slate-100 border border-slate-300 px-3.5 py-2 rounded-xl shrink-0">
-            <Activity className="w-4 h-4 text-sky-600 animate-pulse" />
+        <div className="cp-page-actions">
+          <div className="cp-status">
+            <span className="cp-dot is-live" />
             <span>Telemetry Active</span>
           </div>
         </div>
+      </section>
 
-        {/* Executive Metrics Overview Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Accuracy */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>Class Accuracy</span>
-              <div className="p-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-300">
-                <Target className="w-4 h-4 text-sky-600" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-slate-900">82.4%</div>
-            <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 inline-flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-sky-600" /> +6.8% vs last week
-            </span>
+      {/* Executive Metrics Overview Grid */}
+      <section className="cp-grid-stats select-none">
+        {/* Card 1: Accuracy */}
+        <div className="cp-stat">
+          <div className="cp-stat-top">
+            <span className="cp-icon-box" aria-hidden="true">✓</span>
+            <span className="cp-stat-arrow" aria-hidden="true">↗</span>
           </div>
-
-          {/* Card 2: Engagement */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>Student Engagement</span>
-              <div className="p-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200">
-                <Users className="w-4 h-4 text-sky-600" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-slate-900">91.2%</div>
-            <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 inline-block">
-              38 / 40 Active Students
-            </span>
-          </div>
-
-          {/* Card 3: Topics Covered */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>Topics Covered</span>
-              <div className="p-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-300">
-                <Brain className="w-4 h-4 text-slate-800" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-slate-900">5 Modules</div>
-            <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 inline-block">
-              Transcribed Today
-            </span>
-          </div>
-
-          {/* Card 4: Response Speed */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-              <span>Avg Response Speed</span>
-              <div className="p-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200">
-                <Zap className="w-4 h-4 text-sky-600" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-slate-900">6.4 sec</div>
-            <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 inline-block">
-              Fast Response Rate
-            </span>
-          </div>
+          <span className="cp-stat-label">Class Accuracy</span>
+          <span className="cp-stat-value">82.4%</span>
+          <span className="cp-stat-detail">
+            ↗ +6.8% vs last week
+          </span>
         </div>
-      </div>
+
+        {/* Card 2: Engagement */}
+        <div className="cp-stat">
+          <div className="cp-stat-top">
+            <span className="cp-icon-box" aria-hidden="true">□</span>
+          </div>
+          <span className="cp-stat-label">Student Engagement</span>
+          <span className="cp-stat-value">91.2%</span>
+          <span className="cp-stat-detail">
+            38 / 40 Active Students
+          </span>
+        </div>
+
+        {/* Card 3: Topics Covered */}
+        <div className="cp-stat">
+          <div className="cp-stat-top">
+            <span className="cp-icon-box" aria-hidden="true">▤</span>
+          </div>
+          <span className="cp-stat-label">Topics Covered</span>
+          <span className="cp-stat-value is-sm">5 Modules</span>
+          <span className="cp-stat-detail">
+            Transcribed Today
+          </span>
+        </div>
+
+        {/* Card 4: Response Speed */}
+        <div className="cp-stat">
+          <div className="cp-stat-top">
+            <span className="cp-icon-box" aria-hidden="true">▣</span>
+          </div>
+          <span className="cp-stat-label">Avg Response Speed</span>
+          <span className="cp-stat-value is-sm">6.4 sec</span>
+          <span className="cp-stat-detail">
+            Fast Response Rate
+          </span>
+        </div>
+      </section>
 
       {/* Chart: Per-Period Engagement & Accuracy Stream */}
-      <div className="bg-white border border-slate-300 rounded-2xl p-6 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <section className="cp-panel select-none">
+        <div className="cp-panel-header">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-sky-600" />
+            <span className="cp-eyebrow is-tight">Telemetry stream</span>
+            <h3>
               Per-Topic Accuracy & Engagement Stream
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="cp-caption mt-1">
               Comprehension trends and quiz participation telemetry across 40-minute lesson intervals.
             </p>
           </div>
-          <div className="flex items-center gap-3 text-xs font-medium">
-            <span className="flex items-center gap-1.5 bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-md font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-800" /> Accuracy %
+          <div className="flex items-center gap-2">
+            <span className="cp-badge is-ink inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-white" /> Accuracy %
             </span>
-            <span className="flex items-center gap-1.5 bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded-md font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-600" /> Engagement %
+            <span className="cp-badge inline-flex items-center gap-1.5">
+              <span className="w-2 h-2" style={{ background: CHART.series2 }} /> Engagement %
             </span>
           </div>
         </div>
 
         <div className="h-64 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={analytics.periodAccuracy} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1e293b" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#1e293b" stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id="colorEng" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="period" stroke="#64748b" fontSize={11} fontWeight={500} />
-              <YAxis stroke="#64748b" fontSize={11} fontWeight={500} domain={[40, 100]} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: '#0f172a',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Area type="monotone" dataKey="accuracy" stroke="#1e293b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAccuracy)" />
-              <Area type="monotone" dataKey="engagement" stroke="#0284c7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEng)" />
-            </AreaChart>
+            <LineChart data={analytics.periodAccuracy} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={CHART.grid} strokeDasharray="0" />
+              <XAxis dataKey="period" stroke={CHART.axis} tick={TICK_STYLE} tickLine={false} axisLine={{ stroke: CHART.axis }} />
+              <YAxis stroke={CHART.axis} tick={TICK_STYLE} domain={[40, 100]} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: CHART.ink, strokeWidth: 1 }} />
+              <Line type="linear" dataKey="accuracy" stroke={CHART.ink} strokeWidth={2} dot={{ r: 3, fill: CHART.ink, strokeWidth: 0 }} activeDot={{ r: 4, fill: CHART.ink, strokeWidth: 0 }} isAnimationActive={false} />
+              <Line type="linear" dataKey="engagement" stroke={CHART.series2} strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3, fill: CHART.series2, strokeWidth: 0 }} activeDot={{ r: 4, fill: CHART.series2, strokeWidth: 0 }} isAnimationActive={false} />
+            </LineChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </section>
 
       {/* Grid: Topic Mastery + Live Student Leaderboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section className="cp-columns select-none">
         {/* Topic Mastery Bars */}
-        <div className="lg:col-span-7 bg-white border border-slate-300 rounded-2xl p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="cp-panel">
+          <div className="cp-panel-header">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Brain className="w-4 h-4 text-slate-800" />
+              <span className="cp-eyebrow is-tight">Mastery</span>
+              <h3>
                 Topic Mastery Breakdown
               </h3>
-              <p className="text-xs text-slate-500">Student comprehension percentages by module.</p>
+              <p className="cp-caption mt-1">Student comprehension percentages by module.</p>
             </div>
-            <span className="text-xs font-semibold bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-300">
+            <span className="cp-badge">
               5 Key Modules
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {analytics.topicMastery.map((item, idx) => (
-              <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold text-slate-900">
+              <div key={idx}>
+                <div className="flex justify-between items-center text-body font-bold text-ink mb-2">
                   <span>{item.topic}</span>
-                  <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                  <span className={`cp-badge ${item.mastery >= 80 ? 'is-ink' : item.mastery >= 70 ? '' : 'is-muted'}`}>
                     {item.mastery}%
                   </span>
                 </div>
-                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      item.mastery >= 80
-                        ? 'bg-slate-800'
-                        : item.mastery >= 70
-                        ? 'bg-sky-600'
-                        : 'bg-slate-400'
-                    }`}
-                    style={{ width: `${item.mastery}%` }}
+                <div className="cp-progress is-thick">
+                  <span
+                    style={{ width: `${item.mastery}%`, opacity: item.mastery >= 80 ? 1 : item.mastery >= 70 ? 0.7 : 0.4 }}
                   />
                 </div>
               </div>
@@ -214,51 +177,47 @@ export const AnalyticsView = () => {
         </div>
 
         {/* Student Leaderboard */}
-        <div className="lg:col-span-5 bg-white border border-slate-300 rounded-2xl p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="cp-panel">
+          <div className="cp-panel-header">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-sky-600" />
+              <span className="cp-eyebrow is-tight">Leaderboard</span>
+              <h3>
                 Quiz Score Rankings
               </h3>
-              <p className="text-xs text-slate-500">Anonymized student score leaderboard.</p>
+              <p className="cp-caption mt-1">Anonymized student score leaderboard.</p>
             </div>
-            <span className="text-[11px] font-semibold bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200 uppercase">
+            <span className="cp-badge is-ink">
               Top Performers
             </span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="cp-list cp-list-bordered">
             {analytics.studentRankings.map((student) => (
               <div
                 key={student.rank}
-                className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between text-xs font-medium"
+                className={`cp-row ${student.rank === 1 ? 'is-selected' : ''}`}
+                style={{ minHeight: 56 }}
               >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
-                      student.rank === 1
-                        ? 'bg-slate-900 text-yellow-300 border border-slate-800 font-bold'
-                        : student.rank === 2
-                        ? 'bg-slate-200 text-slate-800 border border-slate-300 font-bold'
-                        : student.rank === 3
-                        ? 'bg-sky-100 text-sky-800 border border-sky-300 font-bold'
-                        : 'bg-white text-slate-600 border border-slate-200'
-                    }`}
-                  >
-                    #{student.rank}
-                  </span>
-                  <span className="text-slate-900 font-semibold">{student.avatar} {student.name}</span>
-                </div>
-
-                <span className="font-mono text-slate-800 font-bold bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-300">
-                  {student.score} pts
+                <span
+                  className={`cp-chip-letter shrink-0 w-8 h-8 ${
+                    student.rank <= 3 ? 'bg-ink text-white border-line-strong' : ''
+                  }`}
+                >
+                  #{student.rank}
                 </span>
+                <div className="cp-row-content">
+                  <span className="cp-row-title">{student.avatar} {student.name}</span>
+                </div>
+                <div className="cp-row-actions">
+                  <span className="cp-badge">
+                    {student.score} pts
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 };

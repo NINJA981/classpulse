@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-React 19, Vite 8, TailwindCSS v4, Recharts, Lucide Icons
+React 19, Next.js 15 (App Router), TailwindCSS 3.4, Recharts. No icon library — glyphs are Unicode text.
 
 ## Users
 
@@ -37,12 +37,12 @@ Live physical and hybrid classroom lectures (Science labs, Physics/Chemistry lab
 
 ## Brand Commitments
 
-Name: ClassPulse. Clean, human-centric, high-legibility Light Mode educational SaaS aesthetic (crisp white panels, soft slate borders `#e2e8f0`, dark slate typography `#0f172a`, indigo accents `#4f46e5`).
+Name: ClassPulse. Editorial Brutalist / Swiss monochrome aesthetic (canvas `#f6f6f3`, white surfaces, ink typography `#111`, secondary text `#777`, 1px `#d7d7d2` rules, zero border-radius, hard offset shadows, Inter). See DESIGN.md for the full system.
 
 ## Evidence on Hand
 
-- React 19 + Vite 8 production scaffold in `src/`.
-- Modular components: `Sidebar.jsx`, `Header.jsx`, `AudioVisualizer.jsx`, `LiveTranscript.jsx`, `QuizWorkbench.jsx`, `ProjectorKiosk.jsx`, `FleetManager.jsx`, `AnalyticsView.jsx`.
+- React 19 + Next.js 15 production scaffold (`app/` entry, components in `src/`).
+- Modular components: `Topbar.jsx` (sticky topbar shell + `AppFooter`), `AudioVisualizer.jsx`, `LiveTranscript.jsx`, `QuizWorkbench.jsx`, `ProjectorKiosk.jsx`, `FleetManager.jsx`, `AnalyticsView.jsx`.
 - Context provider in `ClassPulseContext.jsx`.
 
 ## Product Principles
@@ -54,5 +54,5 @@ Name: ClassPulse. Clean, human-centric, high-legibility Light Mode educational S
 
 ## Accessibility & Inclusion
 
-- High contrast text (`#0f172a` on `#ffffff` / `#f8fafc`).
+- High contrast text (`#111` on `#ffffff` / `#f6f6f3`).
 - Bilingual support (Tamil & English) for inclusive learning environments.

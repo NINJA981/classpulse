@@ -4,14 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
-import {
-  Tv2,
-  Users,
-  Clock,
-  Trophy,
-  ArrowRight,
-  CheckCircle
-} from 'lucide-react';
+
+// Celebration stays inside the monochrome system.
+const CONFETTI_COLORS = ['#111', '#555', '#999', '#cfcfca'];
 
 export const ProjectorKiosk = () => {
   const { quizState } = useClassPulse();
@@ -43,7 +38,8 @@ export const ProjectorKiosk = () => {
           confetti({
             particleCount: 100,
             spread: 70,
-            origin: { y: 0.6 }
+            origin: { y: 0.6 },
+            colors: CONFETTI_COLORS
           });
           return 0;
         }
@@ -54,53 +50,50 @@ export const ProjectorKiosk = () => {
     return () => clearInterval(timer);
   }, [isFinished]);
 
-  return (
-    <div className="min-h-[82vh] rounded-3xl bg-white p-6 md:p-8 border border-slate-200 text-slate-900 flex flex-col justify-between relative overflow-hidden shadow-sm">
-      {/* Background Subtle Accent */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50/50 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-100/60 rounded-full blur-3xl pointer-events-none" />
+  const isUrgent = timeLeft <= 10;
 
+  return (
+    <div className="cp-card min-h-[82vh] p-6 md:p-8 flex flex-col justify-between gap-[14px]">
       {/* Top Header Bar for Projector */}
-      <div className="flex items-center justify-between pb-6 border-b border-slate-200 z-10">
-        <div className="flex items-center gap-4">
-          <div className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-extrabold text-sm tracking-wide flex items-center gap-2 shadow-xs">
-            <Tv2 className="w-4 h-4" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-line">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="cp-badge is-ink inline-flex items-center gap-2 h-9 px-3">
             <span>Classroom Projector View</span>
-          </div>
-          <h2 className="text-lg font-bold text-slate-900">{currentQuiz.title}</h2>
+          </span>
+          <h2 className="cp-h3">{currentQuiz.title}</h2>
         </div>
 
         {/* Live Timer & Connected Students Counter */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 text-slate-800">
-            <Users className="w-5 h-5 text-indigo-600" />
-            <span className="font-mono font-bold text-base">{quizState.connectedStudents} Connected</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="cp-status inline-flex items-center gap-2">
+            <span aria-hidden="true">□</span>
+            <span className="font-extrabold text-lead text-ink">{quizState.connectedStudents} Connected</span>
           </div>
 
           <div
-            className={`flex items-center gap-2 px-5 py-2 rounded-2xl border font-mono font-extrabold text-lg ${
-              timeLeft <= 10
-                ? 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse'
-                : 'bg-indigo-50 text-indigo-800 border-indigo-200'
+            className={`inline-flex items-center gap-2 border px-4 h-11 font-black tracking-tightest transition ${
+              isUrgent
+                ? 'bg-ink text-white border-line-strong text-3xl'
+                : 'bg-surface-sunken text-ink border-line text-2xl'
             }`}
           >
-            <Clock className="w-5 h-5" />
+            <span className={`cp-dot ${isUrgent ? 'is-live bg-white' : ''}`} />
             <span>00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}</span>
           </div>
         </div>
       </div>
 
       {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-auto py-6 z-10 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-[14px] my-auto items-stretch">
         {/* Question & Options Area (Left 8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-widest">
+        <div className="lg:col-span-8 cp-stack">
+          <div className="cp-card-ink p-8 md:p-10">
+            <div className="cp-eyebrow flex items-center gap-2 flex-wrap">
               <span>Question {activeQuestionIndex + 1} of {currentQuiz.questions.length}</span>
               <span>•</span>
               <span>10 Points</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-snug">
+            <h1 className="cp-h2 text-white">
               {currentQ.question}
             </h1>
           </div>
@@ -111,38 +104,34 @@ export const ProjectorKiosk = () => {
               const letter = String.fromCharCode(65 + i);
               const responseCount = quizState.studentAnswers[`Q${activeQuestionIndex + 1}`]?.[letter] || 8;
               const isCorrect = i === currentQ.correctAnswer;
+              const revealed = isFinished && isCorrect;
 
               return (
                 <div
                   key={i}
-                  className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
-                    isFinished && isCorrect
-                      ? 'bg-emerald-50 border-emerald-600 text-emerald-950 shadow-md'
-                      : 'bg-slate-50/80 border-slate-200 text-slate-900 hover:border-slate-300'
-                  }`}
+                  className={`cp-option flex-col items-stretch gap-4 p-5 ${revealed ? 'is-correct shadow-hard' : 'border-line'}`}
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-xl font-extrabold text-sm flex items-center justify-center ${isFinished && isCorrect ? 'bg-emerald-700 text-white' : 'bg-indigo-600 text-white'}`}>
+                      <span className="cp-chip-letter shrink-0 w-9 h-9 text-lead">
                         {letter}
                       </span>
-                      <span className={`text-base font-bold ${isFinished && isCorrect ? 'text-emerald-950' : 'text-slate-900'}`}>{opt}</span>
+                      <span className="text-lg font-bold text-ink">{opt}</span>
                     </div>
 
-                    {isFinished && isCorrect && (
-                      <CheckCircle className="w-5 h-5 text-emerald-700" />
+                    {revealed && (
+                      <span className="text-lead font-black shrink-0" role="img" aria-label="Correct answer">✓</span>
                     )}
                   </div>
 
                   {/* Live Response Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-slate-600 font-mono font-medium">
+                  <div className="space-y-1.5">
+                    <div className="cp-progress-meta mt-0 text-caption">
                       <span>Live Votes</span>
                       <span>{responseCount} students ({Math.round((responseCount / 38) * 100)}%)</span>
                     </div>
-                    <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
-                      <div
-                        className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                    <div className="cp-progress is-thick">
+                      <span
                         style={{ width: `${(responseCount / 38) * 100}%` }}
                       />
                     </div>
@@ -154,44 +143,41 @@ export const ProjectorKiosk = () => {
         </div>
 
         {/* QR Code & Join Kiosk Card (Right 4 Cols) */}
-        <div className="lg:col-span-4 bg-slate-50 rounded-3xl p-6 border border-slate-200 text-center space-y-4 flex flex-col items-center justify-center shadow-xs">
-          <div className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold border border-indigo-200">
+        <div className="lg:col-span-4 cp-card cp-card-sunken text-center space-y-5 flex flex-col items-center justify-center">
+          <span className="cp-badge is-ink">
             Scan QR Code to Join
-          </div>
+          </span>
 
           {/* Rendered QR Code */}
           {qrCanvasUrl ? (
-            <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-200">
-              <img src={qrCanvasUrl} alt="ClassPulse Join QR Code" className="w-44 h-44 rounded-xl" />
+            <div className="cp-card cp-card-static p-3 bg-white">
+              <img src={qrCanvasUrl} alt="ClassPulse Join QR Code" className="w-44 h-44 max-w-full" />
             </div>
           ) : (
-            <div className="w-44 h-44 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs">
+            <div className="cp-empty is-sm w-44 h-44 min-h-0 p-0 text-caption text-muted">
               Generating QR...
             </div>
           )}
 
-          <div className="space-y-1">
-            <p className="text-xs text-slate-500 font-medium">Join URL on phone browser:</p>
-            <div className="px-4 py-2 bg-white rounded-xl border border-slate-200 font-mono font-extrabold text-lg text-indigo-700 tracking-wider shadow-xs">
-              classpulse.live/j/<span className="text-emerald-600">CP-8492</span>
+          <div className="space-y-2 w-full">
+            <p className="cp-caption font-bold">Join URL on phone browser:</p>
+            <div className="cp-card px-4 py-4 bg-white text-ink break-all">
+              <span className="block text-caption font-bold text-muted tracking-label">classpulse.live/j/</span>
+              <span className="cp-code is-sm block">CP-8492</span>
             </div>
-            <p className="text-[11px] text-slate-500">Enter nickname to participate</p>
+            <p className="cp-caption-2">Enter nickname to participate</p>
           </div>
         </div>
       </div>
 
       {/* Footer Question Switcher */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200 z-10">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 border-t border-line">
+        <div className="cp-segment flex flex-wrap">
           {currentQuiz.questions.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setActiveQuestionIndex(idx)}
-              className={`w-9 h-9 rounded-xl font-bold text-xs transition cursor-pointer ${
-                activeQuestionIndex === idx
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-              }`}
+              className={`cp-segment-item ${activeQuestionIndex === idx ? 'is-active' : ''}`}
             >
               Q{idx + 1}
             </button>
@@ -202,14 +188,14 @@ export const ProjectorKiosk = () => {
           {activeQuestionIndex < currentQuiz.questions.length - 1 ? (
             <button
               onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-sm"
+              className="cp-btn cp-btn-primary flex items-center gap-2"
             >
               <span>Next Question</span>
-              <ArrowRight className="w-4 h-4" />
+              <span aria-hidden="true">→</span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-emerald-700 text-xs font-bold">
-              <Trophy className="w-4 h-4 text-emerald-600" />
+            <div className="cp-badge is-ink inline-flex items-center gap-2 h-9 px-3">
+              <span aria-hidden="true">✓</span>
               <span>Session Completed</span>
             </div>
           )}

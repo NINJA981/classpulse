@@ -131,7 +131,7 @@ const INITIAL_ACCESS_CONTROLS = {
 export const ClassPulseProvider = ({ children }) => {
   // Authentication & Role State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState('admin'); // 'admin' | 'teacher' | 'student'
+  const [userRole, setUserRole] = useState('admin'); // only 'admin' can sign in to this app
   const [currentPort, setCurrentPort] = useState('5173');
   const [currentUser, setCurrentUser] = useState({
     id: 'usr-admin-01',
@@ -143,73 +143,40 @@ export const ClassPulseProvider = ({ children }) => {
 
   const [activeTab, setActiveTab] = useState('management');
 
-  // Login handler with role selection
-  const login = (role, customUser = null) => {
-    setUserRole(role);
-    setIsLoggedIn(true);
-    if (customUser) {
-      setCurrentUser(customUser);
-    } else {
-      if (role === 'admin') {
-        setCurrentUser({
-          id: 'usr-admin-01',
-          name: 'Principal Administrator',
-          email: 'admin@classpulse.edu',
-          role: 'admin',
-          staffId: 'ADM-101'
-        });
-        setActiveTab('management');
-      } else if (role === 'teacher') {
-        setCurrentUser({
-          id: 'usr-tch-01',
-          name: 'Dr. Anitha',
-          email: 'anitha@classpulse.edu',
-          role: 'teacher',
-          staffId: 'TCH-501',
-          department: 'Science & Biology'
-        });
-        setActiveTab('teacher-dash');
-      } else {
-        setCurrentUser({
-          id: 'usr-stu-01',
-          name: 'Ananya Harish',
-          email: 'ananya@classpulse.edu',
-          role: 'student',
-          rollNo: 'STU-1001',
-          className: 'Grade 10-A'
-        });
-        setActiveTab('student-dash');
-      }
-    }
+  // Login handler — only administrators can sign in to this application.
+  const ADMIN_USER = {
+    id: 'usr-admin-01',
+    name: 'Principal Administrator',
+    email: 'admin@classpulse.edu',
+    role: 'admin',
+    staffId: 'ADM-101'
   };
 
-  // Smart Port-based & URL-based Auto Detection for Dedicated Port Services
-  // Port 5171 -> Admin Dedicated Login Portal
-  // Port 5172 -> Academic User Dedicated Login Portal
-  // Port 5173 -> Admin Portal (ManagementView)
-  // Port 5174 -> Teacher Workbench (TeacherDashboard)
-  // Port 5175 -> Student Portal (StudentDashboard)
+  const login = (customUser = null) => {
+    setUserRole('admin');
+    setIsLoggedIn(true);
+    setCurrentUser(customUser || ADMIN_USER);
+    setActiveTab('management');
+  };
+
+  // Port-based & URL-based Auto Detection for the Admin services
+  // Port 5171 -> Admin Dedicated Login Portal (logged out, shows LoginPage)
+  // Port 5173 -> Admin Control Center (ManagementView, auto-logged-in admin)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const port = window.location.port || '5172';
+    const port = window.location.port || '5171';
     const search = window.location.search;
-    const envRole = typeof process !== 'undefined' && process.env 
+    const envRole = typeof process !== 'undefined' && process.env
       ? (process.env.NEXT_PUBLIC_APP_ROLE || process.env.VITE_APP_ROLE || process.env.APP_ROLE)
       : undefined;
     setCurrentPort(port);
 
-    if (port === '5171' || envRole === 'admin-login') {
+    if (port === '5173' || search.includes('role=admin') || envRole === 'admin') {
+      login();
+    } else {
+      // Dedicated Admin Login Portal (Port 5171 / admin-login) or any other entry point
       setUserRole('admin');
-      setIsLoggedIn(false); // Dedicated Admin Login Portal on Port 5171
-    } else if (port === '5172' || envRole === 'academic-login') {
-      setUserRole('teacher');
-      setIsLoggedIn(false); // Dedicated Academic Login Portal on Port 5172
-    } else if (port === '5174' || search.includes('role=teacher') || envRole === 'teacher') {
-      login('teacher');
-    } else if (port === '5175' || search.includes('role=student') || envRole === 'student') {
-      login('student');
-    } else if (port === '5173' || search.includes('role=admin') || envRole === 'admin') {
-      login('admin');
+      setIsLoggedIn(false);
     }
   }, []);
 
