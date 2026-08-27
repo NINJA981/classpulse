@@ -2,7 +2,61 @@ name: classpulse-admin
 
 services:
   # ================================================
-  # Production Service (Nginx Web Server on port 8080)
+  # 1. Admin Portal Service (Port 5173)
+  # ================================================
+  admin_portal:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: classpulse_admin_5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_APP_ROLE=admin
+    command: npm run dev:admin
+
+  # ================================================
+  # 2. Teacher Workbench Service (Port 5174)
+  # ================================================
+  teacher_portal:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: classpulse_teacher_5174
+    ports:
+      - "5174:5174"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_APP_ROLE=teacher
+    command: npm run dev:teacher
+
+  # ================================================
+  # 3. Student Learning Portal Service (Port 5175)
+  # ================================================
+  student_portal:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: classpulse_student_5175
+    ports:
+      - "5175:5175"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_APP_ROLE=student
+    command: npm run dev:student
+
+  # ================================================
+  # 4. Production Web Server (Port 8080)
   # ================================================
   prod:
     build:
@@ -12,19 +66,3 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
-
-  # ================================================
-  # Development Service (Vite Live-Reload on port 5173)
-  # ================================================
-  dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: classpulse_dev
-    ports:
-      - "5173:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development

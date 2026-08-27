@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import QRCode from 'qrcode';

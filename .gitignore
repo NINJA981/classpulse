@@ -17,6 +17,12 @@ dist-ssr
 .impeccable/
 scratch/
 
+# Next.js build directories
+.next
+.next*
+.next/
+.next-*/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

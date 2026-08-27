@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
@@ -7,201 +9,336 @@ import {
   Sparkles,
   ArrowRight,
   School,
-  CheckCircle2,
   Lock,
-  Zap,
-  BookOpen
+  KeyRound,
+  User,
+  Activity,
+  CheckCircle2,
+  Building,
+  CloudRain
 } from 'lucide-react';
 
 export const LoginPage = () => {
-  const { login } = useClassPulse();
-  const [selectedRole, setSelectedRole] = useState('admin');
-  const [emailInput, setEmailInput] = useState('admin@classpulse.edu');
-  const [passwordInput, setPasswordInput] = useState('');
+  const roleEnv = process.env.NEXT_PUBLIC_APP_ROLE || 'academic-login';
+  const isAdminLoginOnly = roleEnv === 'admin-login' || roleEnv === 'admin';
+  
+  const [academicRole, setAcademicRole] = useState('teacher'); // 'teacher' | 'student'
+  
+  const [adminEmail, setAdminEmail] = useState('admin@classpulse.edu');
+  const [adminPassword, setAdminPassword] = useState('');
 
-  const handleRoleLogin = (e) => {
-    e.preventDefault();
-    login(selectedRole);
+  const [academicEmail, setAcademicEmail] = useState('anitha@classpulse.edu');
+  const [academicPassword, setAcademicPassword] = useState('');
+
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navTargetLabel, setNavTargetLabel] = useState('');
+
+  const redirectToRolePort = (role) => {
+    const portMap = {
+      admin: '5173',
+      teacher: '5174',
+      student: '5175'
+    };
+    const roleLabels = {
+      admin: '🔐 Admin Control Center (Port 5173)',
+      teacher: '👨‍🏫 Teacher Workbench (Port 5174)',
+      student: '🎓 Student Portal (Port 5175)'
+    };
+    const targetPort = portMap[role] || '5173';
+    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    
+    setIsNavigating(true);
+    setNavTargetLabel(roleLabels[role] || role.toUpperCase());
+
+    window.location.replace(`http://${host}:${targetPort}/`);
   };
 
-  const selectRoleAndFill = (role) => {
-    setSelectedRole(role);
-    if (role === 'admin') {
-      setEmailInput('admin@classpulse.edu');
-    } else if (role === 'teacher') {
-      setEmailInput('anitha@classpulse.edu');
+  const handleAdminSubmit = (e) => {
+    e.preventDefault();
+    redirectToRolePort('admin');
+  };
+
+  const handleAcademicSubmit = (e) => {
+    e.preventDefault();
+    redirectToRolePort(academicRole);
+  };
+
+  const handleAcademicRoleToggle = (role) => {
+    setAcademicRole(role);
+    if (role === 'teacher') {
+      setAcademicEmail('anitha@classpulse.edu');
     } else {
-      setEmailInput('ananya@classpulse.edu');
+      setAcademicEmail('ananya@classpulse.edu');
     }
   };
 
-  const quickLoginRole = (role) => {
-    selectRoleAndFill(role);
-    login(role);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f7f4ed] flex flex-col items-center justify-center p-4 sm:p-6 select-none relative overflow-hidden">
-      {/* Background Decorative Cards */}
-      <div className="absolute top-8 left-8 transform -rotate-3 hidden lg:block">
-        <div className="bg-yellow-200 border-2 border-slate-900 shadow-[3px_3px_0px_0px_#000] p-4 w-56 rounded-xl font-mono text-xs space-y-1 text-slate-900">
-          <div className="font-extrabold text-sm underline text-slate-900">ACCESSIBLE PORTAL</div>
-          <p className="font-bold">Welcome to ClassPulse System!</p>
-          <p className="text-[11px] text-slate-800 font-medium">Select your role card below to enter your workspace.</p>
-        </div>
-      </div>
-
-      <div className="absolute bottom-8 right-8 transform rotate-3 hidden lg:block">
-        <div className="bg-sky-200 border-2 border-slate-900 shadow-[3px_3px_0px_0px_#000] p-4 w-60 rounded-xl font-mono text-xs space-y-1 text-slate-900">
-          <div className="font-extrabold text-sm text-slate-900 flex items-center gap-1">
-            <Sparkles className="w-4 h-4 text-slate-900" /> 3 System Roles
+  // ================================================
+  // 1. ADMIN LOGIN PORTAL (PORT 5171) - STORMY MORNING UI
+  // ================================================
+  if (isAdminLoginOnly) {
+    return (
+      <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center p-4 sm:p-6 select-none font-sans text-slate-900 relative overflow-hidden animate-portal-enter">
+        {/* Smooth Navigation Overlay */}
+        {isNavigating && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-portal-enter">
+            <div className="bg-white border border-slate-300 shadow-2xl p-8 rounded-2xl max-w-sm w-full text-center space-y-4 font-sans">
+              <div className="w-12 h-12 rounded-2xl bg-slate-800 text-white flex items-center justify-center mx-auto shadow-sm animate-bounce">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  AUTHORIZING SESSION...
+                </span>
+                <p className="text-sm font-bold text-slate-900">
+                  {navTargetLabel}
+                </p>
+              </div>
+              <div className="w-full bg-slate-200 h-2 rounded-full border border-slate-300 overflow-hidden">
+                <div className="bg-slate-800 h-full w-full animate-pulse" />
+              </div>
+            </div>
           </div>
-          <ul className="list-disc pl-4 space-y-0.5 text-[11px] font-bold">
-            <li><strong>Admin:</strong> Control access, add classrooms & timetables.</li>
-            <li><strong>Teacher:</strong> Manage active class & quizzes.</li>
-            <li><strong>Student:</strong> View timetable & join live quiz.</li>
-          </ul>
+        )}
+
+        <div className="max-w-md w-full space-y-6">
+          {/* Stormy Morning Brand Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold">
+              <span>ClassPulse Executive Gateway • Port 5171</span>
+            </div>
+            
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                Class<span className="text-sky-700">Pulse</span> Admin Portal
+              </h1>
+              <p className="text-xs text-slate-500 font-normal max-w-xs mx-auto">
+                Authorized Administrator Authentication & Control Gateway
+              </p>
+            </div>
+          </div>
+
+          {/* Stormy Morning Corporate Login Card */}
+          <div className="bg-white border border-slate-300 rounded-2xl p-7 space-y-6 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-800 border border-slate-300 flex items-center justify-center font-bold text-sm">
+                  🔐
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Administrator Sign In</h2>
+                  <p className="text-[11px] text-slate-500 font-medium">Port 5171 Control Authentication</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+                System Active
+              </span>
+            </div>
+
+            {/* Info Notice Box */}
+            <div className="p-3.5 bg-slate-100/70 rounded-xl border border-slate-300/80 text-xs space-y-1">
+              <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-xs">
+                <Lock className="w-3.5 h-3.5 text-sky-600" />
+                <span>Redirects to Admin Control Center (Port 5173)</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-normal">
+                Access RBAC access controls, classroom streams, faculty assignments, and analytics.
+              </p>
+            </div>
+
+            <form onSubmit={handleAdminSubmit} className="space-y-4 text-xs font-sans">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Admin Email or Staff ID</span>
+                </label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700"
+                  placeholder="admin@classpulse.edu"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <KeyRound className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Security PIN / Password</span>
+                </label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700"
+                  placeholder="••••••••••••"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-xl shadow-sm transition cursor-pointer flex items-center justify-center gap-2 mt-2"
+              >
+                <span>Sign In & Launch Admin Control</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+
+          <div className="text-center text-xs text-slate-500 space-y-1">
+            <p>© ClassPulse Executive Education System</p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Main Login Card Container */}
-      <div className="max-w-md w-full space-y-6">
+  // ================================================
+  // 2. ACADEMIC LOGIN PORTAL (PORT 5172) - TACTILE ZINE UI
+  // ================================================
+  return (
+    <div className="min-h-screen bg-[#f7f4ed] flex flex-col items-center justify-center p-4 sm:p-6 select-none font-mono text-slate-900 relative overflow-hidden animate-portal-enter">
+      {/* Smooth Navigation Overlay */}
+      {isNavigating && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-portal-enter">
+          <div className="bg-[#fffbeb] border-3 border-slate-900 shadow-[8px_8px_0px_0px_#000] p-8 rounded-2xl max-w-sm w-full text-center space-y-4 font-mono">
+            <div className="w-12 h-12 rounded-full bg-yellow-300 border-2 border-slate-900 flex items-center justify-center mx-auto shadow-[3px_3px_0px_0px_#000] animate-bounce">
+              <Sparkles className="w-6 h-6 text-slate-900 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                REDIRECTING TO WORKBENCH...
+              </span>
+              <p className="text-sm font-black text-slate-900 font-zine-title">
+                {navTargetLabel}
+              </p>
+            </div>
+            <div className="w-full bg-slate-200 h-3 rounded-full border-2 border-slate-900 overflow-hidden shadow-[2px_2px_0px_0px_#000]">
+              <div className="bg-yellow-400 h-full w-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-xl w-full space-y-6">
         {/* Header Banner */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 bg-yellow-300 border-2 border-slate-900 px-3.5 py-1 rounded-full shadow-[2px_2px_0px_0px_#000] text-xs font-mono font-black uppercase tracking-wider text-slate-900">
             <School className="w-4 h-4 text-slate-900" />
-            <span>ClassPulse Portal • System Access</span>
+            <span>ClassPulse • Academic Login (Port 5172)</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 font-zine-title tracking-tight flex items-center justify-center gap-2">
-            Sign In to ClassPulse
+            Class<span className="text-indigo-900">Pulse</span> Academic Gateway
           </h1>
-          <p className="text-sm font-extrabold text-slate-800 max-w-xs mx-auto">
-            Clean & organized smart classroom management system
+          <p className="text-sm font-extrabold text-slate-800 max-w-sm mx-auto">
+            Dedicated portal for Classroom Teachers and Students
           </p>
         </div>
 
-        {/* Login Box with Soft Light Background */}
-        <div className="bg-[#fefce8] border-2 border-slate-900 rounded-2xl p-6 sm:p-8 space-y-6 relative z-10 shadow-[6px_6px_0px_0px_#000]">
+        {/* Academic Login Card */}
+        <div className="bg-[#f0f9ff] border-2 border-slate-900 rounded-2xl p-6 sm:p-8 space-y-6 relative z-10 shadow-[6px_6px_0px_0px_#000] animate-fadeIn">
           <div className="flex items-center justify-between border-b-2 border-slate-900 pb-3">
-            <span className="text-xs font-black font-mono uppercase tracking-wider bg-slate-900 text-yellow-300 px-2.5 py-1 rounded">
-              SELECT YOUR LOGIN ROLE
+            <div className="flex items-center gap-2">
+              <School className="w-5 h-5 text-slate-900 stroke-[2.5]" />
+              <span className="text-xs font-black font-mono uppercase tracking-wider bg-slate-900 text-sky-300 px-2.5 py-1 rounded">
+                ACADEMIC USER LOGIN
+              </span>
+            </div>
+            <span className="text-xs font-mono font-black bg-sky-200 px-2.5 py-1 rounded border border-slate-900">
+              PORT 5172
             </span>
           </div>
 
-          <form onSubmit={handleRoleLogin} className="space-y-5">
-            {/* Button-based Preset Role Selector (No Dropdown!) */}
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-900 uppercase tracking-wider flex items-center justify-between">
-                <span>Choose Role to Sign In:</span>
-                <span className="text-[11px] font-mono text-slate-700 font-bold">1-Click Select</span>
+          {/* Role Toggle */}
+          <div className="space-y-2">
+            <label className="block text-xs font-black text-slate-900 uppercase tracking-wider font-mono">
+              Select Role:
+            </label>
+
+            <div className="grid grid-cols-2 gap-3 font-mono">
+              <button
+                type="button"
+                onClick={() => handleAcademicRoleToggle('teacher')}
+                className={`p-3 rounded-xl border-2 border-slate-900 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer ${
+                  academicRole === 'teacher'
+                    ? 'bg-sky-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
+                    : 'bg-white text-slate-700 hover:bg-sky-100'
+                }`}
+              >
+                <span className="text-lg">👨‍🏫</span>
+                <span>Teacher Login</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAcademicRoleToggle('student')}
+                className={`p-3 rounded-xl border-2 border-slate-900 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer ${
+                  academicRole === 'student'
+                    ? 'bg-emerald-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
+                    : 'bg-white text-slate-700 hover:bg-emerald-100'
+                }`}
+              >
+                <span className="text-lg">🎓</span>
+                <span>Student Login</span>
+              </button>
+            </div>
+          </div>
+
+          <div className={`p-3.5 rounded-xl border-2 border-slate-900 text-xs space-y-1 transition-all shadow-[2px_2px_0px_0px_#000] ${
+            academicRole === 'teacher' ? 'bg-sky-200' : 'bg-emerald-200'
+          }`}>
+            <div className="flex items-center justify-between font-black text-slate-900">
+              <span className="flex items-center gap-1.5 uppercase tracking-wider font-mono text-xs">
+                {academicRole === 'teacher' ? <UserCheck className="w-4 h-4 text-slate-900 stroke-[2.5]" /> : <GraduationCap className="w-4 h-4 text-slate-900 stroke-[2.5]" />}
+                REDIRECTS TO {academicRole === 'teacher' ? 'TEACHER WORKBENCH (5174)' : 'STUDENT PORTAL (5175)'}
+              </span>
+            </div>
+            <p className="text-slate-900 font-bold leading-relaxed text-xs">
+              {academicRole === 'teacher' && 'Access assigned classroom streams, launch live AI quizzes, and review class timetables.'}
+              {academicRole === 'student' && 'View classroom timetables, check assigned instructors, and join live quizzes.'}
+            </p>
+          </div>
+
+          <form onSubmit={handleAcademicSubmit} className="space-y-4 font-mono">
+            <div>
+              <label className="block text-xs font-black text-slate-900 mb-1 flex items-center gap-1">
+                <User className="w-3.5 h-3.5" />
+                <span>{academicRole === 'teacher' ? 'Teacher Email / Staff ID' : 'Student Email / Roll No'}</span>
               </label>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {/* Student Role Card */}
-                <button
-                  type="button"
-                  onClick={() => selectRoleAndFill('student')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
-                    selectedRole === 'student'
-                      ? 'bg-emerald-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
-                      : 'bg-white text-slate-800 hover:bg-emerald-50'
-                  }`}
-                >
-                  <span className="text-xl">🎓</span>
-                  <span>Student</span>
-                </button>
-
-                {/* Teacher Role Card */}
-                <button
-                  type="button"
-                  onClick={() => selectRoleAndFill('teacher')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
-                    selectedRole === 'teacher'
-                      ? 'bg-sky-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
-                      : 'bg-white text-slate-800 hover:bg-sky-50'
-                  }`}
-                >
-                  <span className="text-xl">👨‍🏫</span>
-                  <span>Teacher</span>
-                </button>
-
-                {/* Admin Role Card */}
-                <button
-                  type="button"
-                  onClick={() => selectRoleAndFill('admin')}
-                  className={`p-3 rounded-xl border-2 border-slate-900 font-mono text-xs font-black flex flex-col items-center justify-center gap-1 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-black ${
-                    selectedRole === 'admin'
-                      ? 'bg-yellow-300 text-slate-900 shadow-[3px_3px_0px_0px_#000] -translate-y-0.5'
-                      : 'bg-white text-slate-800 hover:bg-yellow-50'
-                  }`}
-                >
-                  <span className="text-xl">🔐</span>
-                  <span>Admin</span>
-                </button>
-              </div>
+              <input
+                type="email"
+                value={academicEmail}
+                onChange={(e) => setAcademicEmail(e.target.value)}
+                className="w-full p-3 bg-white border-2 border-slate-900 rounded-xl text-xs font-black text-slate-900 outline-none shadow-[2px_2px_0px_0px_#000]"
+                placeholder={academicRole === 'teacher' ? 'anitha@classpulse.edu' : 'ananya@classpulse.edu'}
+              />
             </div>
 
-            {/* Role Privilege Summary Box */}
-            <div className={`p-3.5 rounded-xl border-2 border-slate-900 text-xs space-y-1 transition-all shadow-[2px_2px_0px_0px_#000] ${
-              selectedRole === 'admin' ? 'bg-yellow-200' : selectedRole === 'teacher' ? 'bg-sky-200' : 'bg-emerald-200'
-            }`}>
-              <div className="flex items-center justify-between font-black text-slate-900">
-                <span className="flex items-center gap-1.5 uppercase tracking-wider font-mono text-xs">
-                  {selectedRole === 'admin' && <ShieldCheck className="w-4 h-4 text-slate-900 stroke-[2.5]" />}
-                  {selectedRole === 'teacher' && <UserCheck className="w-4 h-4 text-slate-900 stroke-[2.5]" />}
-                  {selectedRole === 'student' && <GraduationCap className="w-4 h-4 text-slate-900 stroke-[2.5]" />}
-                  {selectedRole.toUpperCase()} ACCESS PRIVILEGES
-                </span>
-                <span className="px-1.5 py-0.5 bg-white border border-slate-900 text-[10px] font-black rounded uppercase">
-                  SELECTED
-                </span>
-              </div>
-              <p className="text-slate-900 font-bold leading-relaxed text-xs">
-                {selectedRole === 'admin' && 'Access Control, Add/Manage Classrooms, Teachers, Students, and Assign Timetables & Rosters.'}
-                {selectedRole === 'teacher' && 'Manage assigned classes, trigger live AI quizzes, review student rosters, and view class timetables.'}
-                {selectedRole === 'student' && 'View weekly classroom timetable, check assigned teachers, and participate in active quizzes.'}
-              </p>
+            <div>
+              <label className="block text-xs font-black text-slate-900 mb-1 flex items-center gap-1">
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Password</span>
+              </label>
+              <input
+                type="password"
+                value={academicPassword}
+                onChange={(e) => setAcademicPassword(e.target.value)}
+                className="w-full p-3 bg-white border-2 border-slate-900 rounded-xl text-xs font-black text-slate-900 outline-none shadow-[2px_2px_0px_0px_#000]"
+                placeholder="••••••••••••"
+              />
             </div>
 
-            {/* Simulated Email & Password Inputs */}
-            <div className="space-y-3 font-mono">
-              <div>
-                <label className="block text-xs font-black text-slate-900 mb-1">Email or User ID</label>
-                <input
-                  type="email"
-                  placeholder={
-                    selectedRole === 'admin' ? 'admin@classpulse.edu' : selectedRole === 'teacher' ? 'anitha@classpulse.edu' : 'ananya@classpulse.edu'
-                  }
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full p-2.5 bg-white border-2 border-slate-900 rounded-xl text-xs font-black text-slate-900 outline-none shadow-[2px_2px_0px_0px_#000]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-900 mb-1">Password / Security PIN</label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full p-2.5 bg-white border-2 border-slate-900 rounded-xl text-xs font-black text-slate-900 outline-none shadow-[2px_2px_0px_0px_#000]"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-yellow-300 hover:bg-yellow-400 active:bg-yellow-500 text-slate-900 font-black rounded-xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_#000] text-sm flex items-center justify-center gap-2 cursor-pointer transition uppercase tracking-wider"
+              className={`w-full py-3.5 px-4 font-black text-slate-900 rounded-xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_#000] text-sm flex items-center justify-center gap-2 cursor-pointer transition uppercase tracking-wider mt-2 ${
+                academicRole === 'teacher' ? 'bg-sky-300 hover:bg-sky-400' : 'bg-emerald-300 hover:bg-emerald-400'
+              }`}
             >
-              <span>Log In as {selectedRole.toUpperCase()}</span>
+              <span>Log In & Proceed to {academicRole === 'teacher' ? 'Teacher Workbench (5174)' : 'Student Portal (5175)'}</span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </button>
           </form>
         </div>
 
-        {/* Footer info */}
         <div className="text-center text-xs font-mono font-black text-slate-700 space-y-1">
           <p>© ClassPulse Smart Education System</p>
         </div>

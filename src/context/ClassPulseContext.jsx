@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   INITIAL_PI_NODES,
@@ -128,8 +130,9 @@ const INITIAL_ACCESS_CONTROLS = {
 
 export const ClassPulseProvider = ({ children }) => {
   // Authentication & Role State
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Default false so app launches on Login Page
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState('admin'); // 'admin' | 'teacher' | 'student'
+  const [currentPort, setCurrentPort] = useState('5173');
   const [currentUser, setCurrentUser] = useState({
     id: 'usr-admin-01',
     name: 'Head Administrator',
@@ -179,6 +182,36 @@ export const ClassPulseProvider = ({ children }) => {
       }
     }
   };
+
+  // Smart Port-based & URL-based Auto Detection for Dedicated Port Services
+  // Port 5171 -> Admin Dedicated Login Portal
+  // Port 5172 -> Academic User Dedicated Login Portal
+  // Port 5173 -> Admin Portal (ManagementView)
+  // Port 5174 -> Teacher Workbench (TeacherDashboard)
+  // Port 5175 -> Student Portal (StudentDashboard)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const port = window.location.port || '5172';
+    const search = window.location.search;
+    const envRole = typeof process !== 'undefined' && process.env 
+      ? (process.env.NEXT_PUBLIC_APP_ROLE || process.env.VITE_APP_ROLE || process.env.APP_ROLE)
+      : undefined;
+    setCurrentPort(port);
+
+    if (port === '5171' || envRole === 'admin-login') {
+      setUserRole('admin');
+      setIsLoggedIn(false); // Dedicated Admin Login Portal on Port 5171
+    } else if (port === '5172' || envRole === 'academic-login') {
+      setUserRole('teacher');
+      setIsLoggedIn(false); // Dedicated Academic Login Portal on Port 5172
+    } else if (port === '5174' || search.includes('role=teacher') || envRole === 'teacher') {
+      login('teacher');
+    } else if (port === '5175' || search.includes('role=student') || envRole === 'student') {
+      login('student');
+    } else if (port === '5173' || search.includes('role=admin') || envRole === 'admin') {
+      login('admin');
+    }
+  }, []);
 
   const logout = () => {
     setIsLoggedIn(false);
@@ -457,6 +490,7 @@ export const ClassPulseProvider = ({ children }) => {
       value={{
         isLoggedIn,
         userRole,
+        currentPort,
         currentUser,
         login,
         logout,
