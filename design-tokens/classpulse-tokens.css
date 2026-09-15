@@ -1,0 +1,596 @@
+/* ==========================================================================
+   CLASSPULSE DESIGN SYSTEM — EDITORIAL BRUTALIST / SWISS MONOCHROME
+   Extracted from DESIGN.md (Canonical Brand Source of Truth)
+   Use across ClassPulse apps (Teacher, Student, etc.) for brand consistency.
+   Contains: CSS Custom Properties (:root), Reset/Base Rules, Core Primitives.
+   Zero out-of-scope components included.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS CUSTOM PROPERTIES (:root)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Canvas & Surfaces */
+  --cp-canvas: #f6f6f3;
+  --cp-surface: #ffffff;
+  --cp-surface-sunken: #fafaf8;
+  --cp-surface-hover: #f1f1ee;
+  --cp-surface-selected: #f2f2ef;
+
+  /* Ink & Typography Colors (Strict Monochrome) */
+  --cp-ink: #111111;
+  --cp-ink-hover: #333333;
+  --cp-ink-2: #444444;
+  --cp-text-primary: #111111;
+  --cp-text-secondary: #555555;
+  --cp-text-muted: #777777;
+  --cp-text-muted-2: #888888;
+  --cp-text-muted-3: #666666;
+  --cp-text-faint: #999999;
+  --cp-on-ink: #bdbdbd;
+  --cp-on-ink-eyebrow: #aaaaaa;
+  --cp-on-ink-hover: #dddddd;
+
+  /* Hairline Rules (1px) */
+  --cp-border-strong: #111111;
+  --cp-border: #d7d7d2;
+  --cp-border-topbar: #d5d5d0;
+  --cp-border-input: #cfcfca;
+  --cp-border-soft: #e2e2dd;
+  --cp-border-faint: #e8e8e3;
+  --cp-border-ghost: #ddddda;
+  --cp-border-btn: #ccccca;
+  --cp-track: #e8e8e3;
+
+  /* Zero Radius Rule: strictly 0 everywhere */
+  --cp-radius: 0px;
+
+  /* Hard Offset Shadows (Un-blurred) */
+  --cp-shadow-hard: 6px 6px 0 #111111;
+  --cp-shadow-hard-sm: 2px 2px 0 #111111;
+  --cp-shadow-hard-lg: 8px 8px 0 #111111;
+  --cp-shadow-hard-warm: 7px 7px 0 #bdbdb7;
+  --cp-shadow-focus: 4px 4px 0 #dddddd;
+  --cp-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15); /* Sole soft shadow */
+  --cp-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Typography: Inter-only (weights 400, 700, 800, 900) */
+  --font-sans: 'Inter', Arial, Helvetica, sans-serif;
+  --font-display: 'Inter', Arial, Helvetica, sans-serif;
+
+  /* Motion & Transitions */
+  --cp-ease: 0.2s ease;
+  --cp-transition-duration: 200ms;
+
+  font-family: var(--font-sans);
+  color-scheme: light;
+}
+
+/* --------------------------------------------------------------------------
+   2. BASE RESET & ELEMENT DEFAULTS
+   -------------------------------------------------------------------------- */
+html {
+  background-color: var(--cp-canvas);
+  color: var(--cp-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cp-canvas);
+  color: var(--cp-ink);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Universal Zero-Radius Rule */
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--cp-ink);
+  font-weight: 700;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border-radius: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::placeholder {
+  color: var(--cp-text-muted-2);
+  opacity: 1;
+}
+
+::selection {
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+}
+
+/* --------------------------------------------------------------------------
+   3. CORE TYPOGRAPHY PRIMITIVES
+   -------------------------------------------------------------------------- */
+
+/* Eyebrow Rule: 9px/900 uppercase tracked label above every section/card */
+.cp-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--cp-text-muted);
+  display: block;
+}
+
+/* Hero Title */
+.cp-hero-title {
+  font-family: var(--font-sans);
+  font-size: clamp(58px, 7vw, 94px);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -5px;
+  color: var(--cp-ink);
+}
+
+/* Page Display Title */
+.cp-display {
+  font-family: var(--font-sans);
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -4px;
+  color: var(--cp-ink);
+}
+
+/* Section Title */
+.cp-h2 {
+  font-family: var(--font-sans);
+  font-size: 31px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1.3px;
+  color: var(--cp-ink);
+}
+
+/* Panel / Card Title */
+.cp-h3 {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--cp-ink);
+}
+
+/* Row / Item Title */
+.cp-h4 {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--cp-ink);
+}
+
+/* Metric / Stat Value */
+.cp-stat-value {
+  font-family: var(--font-sans);
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--cp-ink);
+}
+
+/* Descriptive Lead Copy */
+.cp-lead {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--cp-text-muted);
+}
+
+/* Body Copy */
+.cp-body {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--cp-text-primary);
+}
+
+/* Metadata / Caption */
+.cp-caption {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--cp-text-muted);
+}
+
+/* Micro Badge */
+.cp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background-color: var(--cp-surface);
+  color: var(--cp-text-secondary);
+  border: 1px solid var(--cp-border);
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.cp-badge.is-ink {
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+  border-color: var(--cp-ink);
+}
+
+.cp-badge.is-outline {
+  background-color: transparent;
+  color: var(--cp-ink);
+  border-color: var(--cp-border-strong);
+}
+
+.cp-badge.is-muted {
+  background-color: var(--cp-surface-sunken);
+  color: var(--cp-text-muted);
+  border-color: var(--cp-border-soft);
+}
+
+/* --------------------------------------------------------------------------
+   4. CORE BUTTON PRIMITIVES
+   -------------------------------------------------------------------------- */
+.cp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  border: 1px solid transparent;
+  transition: background-color var(--cp-ease), border-color var(--cp-ease), color var(--cp-ease);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+  border: 1px solid var(--cp-ink);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: background-color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-btn-primary:hover {
+  background-color: var(--cp-ink-hover);
+  border-color: var(--cp-ink-hover);
+}
+
+.cp-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  background-color: var(--cp-surface);
+  color: var(--cp-text-primary);
+  border: 1px solid var(--cp-border-strong);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: background-color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-btn-secondary:hover {
+  background-color: var(--cp-surface-hover);
+}
+
+.cp-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  background-color: var(--cp-surface);
+  color: var(--cp-text-secondary);
+  border: 1px solid var(--cp-border-btn);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: border-color var(--cp-ease), color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-btn-ghost:hover {
+  border-color: var(--cp-border-strong);
+  color: var(--cp-ink);
+}
+
+.cp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  background-color: transparent;
+  color: var(--cp-ink);
+  border: 1px solid var(--cp-border-strong);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: background-color var(--cp-ease), color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-btn-outline:hover {
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+}
+
+/* The One-Ink Rule: Danger buttons are grey-bordered white slabs that fill black on hover (no red) */
+.cp-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  background-color: var(--cp-surface);
+  color: var(--cp-text-secondary);
+  border: 1px solid var(--cp-border);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: background-color var(--cp-ease), color var(--cp-ease), border-color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-btn-danger:hover {
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+  border-color: var(--cp-ink);
+}
+
+/* Button Sizing */
+.cp-btn-xs { min-height: 30px; padding: 0 12px; font-size: 9px; }
+.cp-btn-sm { min-height: 38px; padding: 0 16px; font-size: 9px; }
+.cp-btn-lg { min-height: 54px; padding: 0 26px; font-size: 11px; }
+.cp-btn-block { width: 100%; }
+
+/* --------------------------------------------------------------------------
+   5. CORE CARD & SURFACE PRIMITIVES
+   -------------------------------------------------------------------------- */
+.cp-card {
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0;
+  padding: 22px;
+}
+
+/* The Lift Rule: interactive cards lift 4px and gain hard offset shadow */
+.cp-card-interactive {
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0;
+  padding: 22px;
+  transition: transform var(--cp-ease), box-shadow var(--cp-ease), border-color var(--cp-ease);
+  cursor: pointer;
+}
+
+.cp-card-interactive:hover {
+  transform: translateY(-4px);
+  border-color: var(--cp-border-strong);
+  box-shadow: var(--cp-shadow-hard);
+}
+
+.cp-card-interactive:active {
+  transform: translateY(-1px);
+  box-shadow: var(--cp-shadow-hard-sm);
+}
+
+.cp-card-static {
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0;
+  padding: 22px;
+  box-shadow: var(--cp-shadow-hard-lg);
+}
+
+.cp-card-ink {
+  background-color: var(--cp-ink);
+  color: var(--cp-surface);
+  border: 1px solid var(--cp-border-strong);
+  border-radius: 0;
+  padding: 22px;
+}
+
+.cp-panel {
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0;
+  padding: 27px;
+}
+
+.cp-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--cp-border-soft);
+}
+
+/* --------------------------------------------------------------------------
+   6. CORE FORM PRIMITIVES
+   -------------------------------------------------------------------------- */
+.cp-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--cp-text-muted);
+  margin-bottom: 8px;
+}
+
+.cp-input,
+.cp-select,
+.cp-textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border-input);
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--cp-ink);
+  outline: none;
+  transition: border-color var(--cp-ease), box-shadow var(--cp-ease);
+}
+
+.cp-textarea {
+  min-height: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.cp-input:focus,
+.cp-select:focus,
+.cp-textarea:focus {
+  border-color: var(--cp-border-strong);
+  box-shadow: var(--cp-shadow-focus);
+}
+
+/* --------------------------------------------------------------------------
+   7. CORE RULES, STATUS & PROGRESS
+   -------------------------------------------------------------------------- */
+.cp-rule {
+  width: 100%;
+  height: 1px;
+  background-color: var(--cp-border);
+  border: none;
+  margin: 0;
+}
+
+.cp-rule-strong {
+  background-color: var(--cp-border-strong);
+}
+
+.cp-rule-soft {
+  background-color: var(--cp-border-soft);
+}
+
+.cp-rule-faint {
+  background-color: var(--cp-border-faint);
+}
+
+/* Status Dot: the sole circular element (7px) */
+.cp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--cp-ink);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Progress track and fill */
+.cp-progress {
+  width: 100%;
+  height: 7px;
+  background-color: var(--cp-track);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.cp-progress-fill {
+  height: 100%;
+  background-color: var(--cp-ink);
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   8. ACCESSIBILITY / MOTION PREFERENCE
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}

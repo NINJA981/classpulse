@@ -161,17 +161,17 @@ export const ClassPulseProvider = ({ children }) => {
 
   // Port-based & URL-based Auto Detection for the Admin services
   // Port 5171 -> Admin Dedicated Login Portal (logged out, shows LoginPage)
-  // Port 5173 -> Admin Control Center (ManagementView, auto-logged-in admin)
+  // Port 5174 (or 5173 / any non-5171 port) -> Admin Control Center (ManagementView, auto-logged-in admin)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const port = window.location.port || '5171';
     const search = window.location.search;
     const envRole = typeof process !== 'undefined' && process.env
-      ? (process.env.NEXT_PUBLIC_APP_ROLE || process.env.VITE_APP_ROLE || process.env.APP_ROLE)
+      ? (process.env.NEXT_PUBLIC_APP_ROLE || process.env.APP_ROLE)
       : undefined;
     setCurrentPort(port);
 
-    if (port === '5173' || search.includes('role=admin') || envRole === 'admin') {
+    if (port === '5174' || port === '5173' || (port !== '5171' && port !== '') || search.includes('role=admin') || envRole === 'admin') {
       login();
     } else {
       // Dedicated Admin Login Portal (Port 5171 / admin-login) or any other entry point
@@ -182,6 +182,10 @@ export const ClassPulseProvider = ({ children }) => {
 
   const logout = () => {
     setIsLoggedIn(false);
+    if (typeof window !== 'undefined' && window.location.port !== '5171') {
+      const host = window.location.hostname || 'localhost';
+      window.location.replace(`http://${host}:5171/`);
+    }
   };
 
   // Data simulation states
@@ -254,7 +258,7 @@ export const ClassPulseProvider = ({ children }) => {
   ]);
 
   const [students, setStudents] = useState([
-    { id: 's1', name: 'Ananya Harish', rollNo: 'STU-1001', className: 'Grade 10-A', nickname: 'Ananya', email: 'ananya@classpulse.edu', status: 'Active' },
+    { id: 's1', name: 'Siddharth Verma', rollNo: 'STU-1001', className: 'Grade 10-A', nickname: 'Siddharth', email: 'siddharth@classpulse.edu', status: 'Active' },
     { id: 's2', name: 'Rahul Sharma', rollNo: 'STU-1002', className: 'Grade 10-A', nickname: 'RahulS', email: 'rahul@classpulse.edu', status: 'Active' },
     { id: 's3', name: 'Maya Patel', rollNo: 'STU-1003', className: 'Grade 9-B', nickname: 'MayaP', email: 'maya@classpulse.edu', status: 'Active' },
     { id: 's4', name: 'Karthik Raja', rollNo: 'STU-1004', className: 'Grade 11-C', nickname: 'Karthik', email: 'karthik@classpulse.edu', status: 'Active' },

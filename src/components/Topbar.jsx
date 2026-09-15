@@ -13,7 +13,8 @@ export const Topbar = () => {
   const isAdmin = userRole === 'admin';
 
   const adminNavItems = [
-    { id: 'management', label: 'Admin Control Center', badge: 'CORE' },
+    { id: 'management', label: 'Admin Control Center' },
+    { id: 'onboarding', label: 'Onboarding & Setup' },
     { id: 'analytics', label: 'Classroom Analytics' }
   ];
 
@@ -70,7 +71,7 @@ export const Topbar = () => {
       <div className="cp-profile">
         <span className="cp-live hidden sm:inline-flex items-center gap-2">
           <span className="cp-dot is-live" />
-          {userRole === 'admin' && '🔐 ADMIN CONTROL (PORT 5173)'}
+          {userRole === 'admin' && '🔐 ADMIN CONTROL'}
           {userRole === 'teacher' && '👨‍🏫 TEACHER WORKBENCH'}
           {userRole === 'student' && '🎓 STUDENT PORTAL'}
         </span>

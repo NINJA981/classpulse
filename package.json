@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
-    "dev:admin-login": "cross-env NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
-    "dev:admin": "cross-env NEXT_PUBLIC_APP_ROLE=admin PORT=5173 next dev -p 5173",
+    "dev": "cross-env NEXT_PUBLIC_ADMIN_PORT=5174 NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
+    "dev:admin-login": "cross-env NEXT_PUBLIC_ADMIN_PORT=5174 NEXT_PUBLIC_APP_ROLE=admin-login PORT=5171 next dev -p 5171",
+    "dev:admin": "cross-env NEXT_PUBLIC_APP_ROLE=admin PORT=5174 next dev -p 5174",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

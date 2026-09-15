@@ -1,34 +1,31 @@
 # ================================================
-# Stage 1: Build Stage (Node.js Alpine)
+# Stage 1: Build Stage (Next.js)
 # ================================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy full application code and build static assets
 COPY . .
 RUN npm run build
 
 # ================================================
-# Stage 2: Production Stage (Nginx Alpine)
+# Stage 2: Production Stage (Next.js Node Runner)
 # ================================================
-FROM nginx:alpine AS runner
+FROM node:20-alpine AS runner
 
-# Remove default nginx configuration
-RUN rm /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-# Copy custom nginx configuration for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
+ENV PORT=80
 
-# Copy compiled static assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 
-# Expose HTTP port
 EXPOSE 80
 
-# Start Nginx web server in foreground
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "start", "--", "-p", "80"]

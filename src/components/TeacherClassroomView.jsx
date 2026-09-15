@@ -205,12 +205,30 @@ export const TeacherClassroomView = () => {
                 </div>
 
                 <div className="cp-panel">
-                  <div className="cp-panel-header">
+                  <div className="cp-panel-header flex-wrap items-start justify-between gap-4">
                     <div>
-                      <span className="cp-eyebrow is-tight">Roster</span>
+                      <span className="cp-eyebrow is-tight">Roster Inspection</span>
                       <h3>🎓 Enrolled Roster for {selectedClassroomObj.name}</h3>
+                      <p className="cp-caption text-secondary mt-1">
+                        Room: <strong className="text-ink">{selectedClassroomObj.room}</strong> · {selectedClassroomObj.gradeLevel} · {students.filter(s => s.className === selectedClassroomObj.name).length} Students
+                      </p>
                     </div>
-                    <div className="cp-icon-box" aria-hidden="true">□</div>
+
+                    {/* Lead Instructor Details */}
+                    <div className="border border-border-strong bg-surface-sunken p-3 flex items-center gap-3 shadow-hard-sm">
+                      <div className="cp-avatar w-9 h-9 text-xs font-black shrink-0" aria-hidden="true">
+                        {selectedClassroomObj.leadTeacher ? selectedClassroomObj.leadTeacher.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.)\s*/, '')[0] || 'T' : 'T'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="cp-eyebrow text-muted text-[8px]">Lead Instructor</span>
+                          <span className="cp-badge is-ink text-[7px] py-0 px-1.5">FACULTY IN-CHARGE</span>
+                        </div>
+                        <div className="text-xs font-black text-primary tracking-tight">
+                          {selectedClassroomObj.leadTeacher || 'Assigned Faculty'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="cp-table-wrap">
                     <table className="cp-table">

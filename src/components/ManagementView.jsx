@@ -167,7 +167,7 @@ export const ManagementView = () => {
       <section className="cp-page-header">
           <div>
             <span className="cp-eyebrow">
-              Executive Administration <span className="text-muted-2">• Live Service Port 5173</span>
+              Executive Administration <span className="text-muted-2">• Live Service</span>
             </span>
             <h1 className="cp-display">System Operations & Control</h1>
             <p className="cp-lead">
@@ -182,7 +182,7 @@ export const ManagementView = () => {
       </section>
 
       {/* System Overview Metrics Row */}
-      <section className="cp-grid-stats">
+      <section className="cp-grid-3">
           <div className="cp-stat">
             <div className="cp-stat-top">
               <span className="cp-icon-box" aria-hidden="true">▣</span>
@@ -206,13 +206,6 @@ export const ManagementView = () => {
             </div>
             <span className="cp-stat-label">Enrolled Students</span>
             <span className="cp-stat-value">{students.length}</span>
-          </div>
-          <div className="cp-stat">
-            <div className="cp-stat-top">
-              <span className="cp-icon-box" aria-hidden="true">↗</span>
-            </div>
-            <span className="cp-stat-label">Security Status</span>
-            <span className="cp-stat-value is-sm">100% Enforced</span>
           </div>
       </section>
 
@@ -393,13 +386,50 @@ export const ManagementView = () => {
               </div>
 
               <div className="cp-panel">
-                <div className="cp-panel-header">
+                <div className="cp-panel-header flex-wrap items-start justify-between gap-4">
                   <div>
                     <span className="cp-eyebrow is-tight">Classroom Inspection</span>
-                    <h3>
-                      🎓 Enrolled Roster for {selectedClassroomObj.name} ({selectedClassroomObj.room})
+                    <h3 className="text-xl font-black text-ink tracking-tight">
+                      🎓 Enrolled Roster for {selectedClassroomObj.name} <span className="font-normal text-muted">({selectedClassroomObj.room})</span>
                     </h3>
+                    <p className="cp-caption text-secondary mt-1">
+                      {selectedClassroomObj.gradeLevel} · {selectedClassroomObj.description || 'Academic Stream'} · {students.filter(s => s.className === selectedClassroomObj.name).length} Enrolled Students
+                    </p>
                   </div>
+
+                  {/* Lead Instructor Details */}
+                  {(() => {
+                    const leadTeacherObj = teachers.find(t => t.name === selectedClassroomObj.leadTeacher) || {
+                      name: selectedClassroomObj.leadTeacher || 'Unassigned',
+                      department: 'Academic Faculty',
+                      staffId: 'FAC-101',
+                      email: `${(selectedClassroomObj.leadTeacher || 'faculty').toLowerCase().replace(/[^a-z]/g, '')}@classpulse.edu`
+                    };
+
+                    return (
+                      <div className="border border-border-strong bg-surface-sunken p-3.5 flex items-center gap-3.5 shadow-hard-sm">
+                        <div className="cp-avatar w-10 h-10 text-sm font-black shrink-0" aria-hidden="true">
+                          {leadTeacherObj.name ? leadTeacherObj.name.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.)\s*/, '')[0] || 'T' : 'T'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="cp-eyebrow text-muted text-[8px]">Lead Instructor</span>
+                            <span className="cp-badge is-ink text-[7px] py-0 px-1.5">FACULTY IN-CHARGE</span>
+                          </div>
+                          <div className="text-sm font-black text-primary tracking-tight">
+                            {leadTeacherObj.name}
+                          </div>
+                          <div className="text-[10px] text-secondary font-mono mt-0.5 flex flex-wrap items-center gap-2">
+                            <span>ID: {leadTeacherObj.staffId}</span>
+                            <span>•</span>
+                            <span>{leadTeacherObj.department}</span>
+                            <span>•</span>
+                            <span className="text-muted">{leadTeacherObj.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="cp-table-wrap">
                   <table className="cp-table">
@@ -727,7 +757,7 @@ export const ManagementView = () => {
                       value={studentForm.name}
                       onChange={(e) => setStudentForm({...studentForm, name: e.target.value})}
                       className="cp-input"
-                      placeholder="Ananya Harish"
+                      placeholder="Rohan Sharma"
                     />
                   </div>
                   <div className="cp-field">

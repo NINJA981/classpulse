@@ -1,33 +1,38 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useClassPulse } from '../context/ClassPulseContext';
 
-// Dedicated Admin Login Portal (Port 5171).
-// Only administrators can sign in; on submit the browser is redirected to the
-// Admin Control Center service on port 5173.
+// Dedicated Admin Login Portal.
+// Only administrators can sign in; on submit the session is authenticated and
+// launches the Admin Control Center directly in-app.
 export const LoginPage = () => {
+  const { login } = useClassPulse();
   const [adminEmail, setAdminEmail] = useState('admin@classpulse.edu');
   const [adminPassword, setAdminPassword] = useState('');
 
   const [isNavigating, setIsNavigating] = useState(false);
   const [navTargetLabel, setNavTargetLabel] = useState('');
 
-  const ADMIN_PORT = '5173';
-  const ADMIN_TARGET_LABEL = '🔐 Admin Control Center (Port 5173)';
-
-  const redirectToAdminPortal = () => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-
-    setIsNavigating(true);
-    setNavTargetLabel(ADMIN_TARGET_LABEL);
-
-    window.location.replace(`http://${host}:${ADMIN_PORT}/`);
-  };
+  const ADMIN_TARGET_LABEL = '🔐 Admin Control Center';
 
   const handleAdminSubmit = (e) => {
     e.preventDefault();
-    redirectToAdminPortal();
+    setIsNavigating(true);
+    setNavTargetLabel(ADMIN_TARGET_LABEL);
+
+    // Transition smoothly and authorize the session in-app
+    setTimeout(() => {
+      login({
+        name: 'System Administrator',
+        email: adminEmail || 'admin@classpulse.edu',
+        role: 'admin',
+        staffId: 'ADM-101'
+      });
+      setIsNavigating(false);
+    }, 400);
   };
+
 
   return (
     <div className="cp-page select-none">
@@ -61,7 +66,7 @@ export const LoginPage = () => {
                 Class<span>Pulse</span> Admin Portal
               </div>
               <div className="cp-brand-subtitle uppercase">
-                ClassPulse Executive Gateway • Port 5171
+                ClassPulse Executive Gateway
               </div>
             </div>
           </div>
@@ -79,23 +84,11 @@ export const LoginPage = () => {
                 <div>
                   <span className="cp-eyebrow is-tight">Administrator</span>
                   <h2 className="cp-h4">Administrator Sign In</h2>
-                  <p className="cp-caption">Port 5171 Control Authentication</p>
                 </div>
               </div>
               <span className="cp-badge is-ink">
                 System Active
               </span>
-            </div>
-
-            {/* Info Notice Box */}
-            <div className="cp-card-sunken p-4 space-y-1">
-              <div className="flex items-center gap-1.5 text-caption font-bold text-ink">
-                <span aria-hidden="true">→</span>
-                <span>Redirects to Admin Control Center (Port 5173)</span>
-              </div>
-              <p className="cp-caption leading-relaxed">
-                Access RBAC access controls, classroom streams, faculty assignments, and analytics.
-              </p>
             </div>
 
             <form onSubmit={handleAdminSubmit} className="space-y-4">

@@ -11,6 +11,7 @@ import { StudentDashboard } from './components/StudentDashboard';
 import { AnalyticsView } from './components/AnalyticsView';
 import { QuizWorkbench } from './components/QuizWorkbench';
 import { ProjectorKiosk } from './components/ProjectorKiosk';
+import { OnboardingHub } from './components/onboarding/OnboardingHub';
 
 const MainContent = () => {
   const { activeTab, userRole } = useClassPulse();
@@ -19,6 +20,7 @@ const MainContent = () => {
   return (
     <main className="cp-content">
       {activeTab === 'management' && (isAdmin ? <ManagementView /> : <TeacherClassroomView />)}
+      {activeTab === 'onboarding' && (isAdmin ? <OnboardingHub /> : <ManagementView />)}
       {activeTab === 'teacher-dash' && <TeacherDashboard />}
       {activeTab === 'student-dash' && <StudentDashboard />}
       {activeTab === 'analytics' && <AnalyticsView />}
