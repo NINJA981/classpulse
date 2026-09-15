@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function Resources() {
   const [resources, setResources] = useState([]);
@@ -94,513 +95,377 @@ function Resources() {
     setResources(updatedResources);
   };
 
+
+  const footer = (
+    <>
+      <div>
+
+        <strong>
+          Teacher Guide
+        </strong>
+
+        <p>
+          Intelligent workspace for modern teaching.
+        </p>
+
+      </div>
+
+      <Link
+        to="/analytics"
+        className="ui-button ui-button-secondary"
+      >
+        Explore Analytics →
+      </Link>
+    </>
+  );
+
+  const stats = [
+    {
+      label: "TOTAL RESOURCES",
+      value: resources.length,
+      detail: "Teaching materials",
+    },
+    {
+      label: "WORKSHEETS",
+      value: resources.filter(
+        (item) => item.type === "Worksheet"
+      ).length,
+      detail: "Practice materials",
+    },
+    {
+      label: "NOTES",
+      value: resources.filter(
+        (item) => item.type === "Notes"
+      ).length,
+      detail: "Subject notes",
+    },
+    {
+      label: "LIBRARY STATUS",
+      value: resources.length > 0 ? "ON" : "—",
+      detail: "Stored in this browser",
+    },
+  ];
+
   return (
-    <div className="dashboard-page">
+    <AppShell footer={footer}>
 
       {/* HEADER */}
 
-      <header className="topbar">
+      <header className="page-header">
 
-        <Link to="/" className="brand-area">
+        <div className="page-header-copy">
 
-          <div className="brand-mark">
-            TG
-          </div>
+          <p className="zine-label">
+            RESOURCE LIBRARY
+          </p>
 
-          <div>
-            <div className="brand">
-              TEACHER GUIDE
-            </div>
+          <h1>
+            Teaching
+            <br />
+            <span>Resources.</span>
+          </h1>
 
-            <div className="brand-subtitle">
-              TEACHER WORKSPACE
-            </div>
-          </div>
+          <p>
+            Keep worksheets, notes, documents and other
+            teaching materials organized in one place.
+          </p>
 
-        </Link>
+        </div>
 
-        <nav>
+        <div className="page-header-side">
 
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link
-            to="/resources"
-            className="active"
+          <button
+            type="button"
+            className="ui-button ui-button-primary"
+            onClick={() => setShowForm(!showForm)}
           >
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-          <Link to="/analytics">
-            Analytics
-          </Link>
-
-        </nav>
-
-        <div className="profile">
-
-          <div className="profile-avatar">
-            H
-          </div>
-
-          <div className="profile-info">
-
-            <strong>
-              Teacher
-            </strong>
-
-            <span>
-              Administrator
-            </span>
-
-          </div>
+            <span>+</span>
+            Add Resource
+          </button>
 
         </div>
 
       </header>
 
-      {/* MAIN */}
+      {/* SUMMARY */}
 
-      <main className="dashboard-content">
+      <section className="stat-grid">
 
-        <section className="welcome-section">
+        {stats.map((stat) => (
 
-          <div className="welcome-copy">
-
-            <p className="eyebrow">
-              RESOURCE LIBRARY
-            </p>
-
-            <h1>
-              Teaching
-              <br />
-              <span>Resources.</span>
-            </h1>
-
-            <p className="welcome-text">
-              Keep worksheets, notes, documents and other
-              teaching materials organized in one place.
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => setShowForm(!showForm)}
+          <div
+            className="hypercard-static stat-tile"
+            key={stat.label}
           >
-            <span>＋</span>
-            Add Resource
-          </button>
 
-        </section>
+            <p className="zine-label">
+              {stat.label}
+            </p>
 
-        {/* SUMMARY */}
+            <p className="stat-tile-value">
+              {stat.value}
+            </p>
 
-        <section className="stats-grid">
-
-          <div className="stat-card">
-
-            <div className="stat-top">
-              <div className="stat-icon">
-                □
-              </div>
-            </div>
-
-            <div className="stat-label">
-              TOTAL RESOURCES
-            </div>
-
-            <div className="stat-value">
-              {resources.length}
-            </div>
-
-            <div className="stat-detail">
-              Teaching materials
+            <div className="stat-tile-foot">
+              <span>
+                {stat.detail}
+              </span>
             </div>
 
           </div>
 
-          <div className="stat-card">
+        ))}
 
-            <div className="stat-top">
-              <div className="stat-icon">
-                ▤
-              </div>
-            </div>
+      </section>
 
-            <div className="stat-label">
-              WORKSHEETS
-            </div>
+      {/* ADD FORM */}
 
-            <div className="stat-value">
-              {
-                resources.filter(
-                  (item) => item.type === "Worksheet"
-                ).length
-              }
-            </div>
+      {showForm && (
 
-            <div className="stat-detail">
-              Practice materials
-            </div>
+        <section className="panel groupb-form-section">
 
-          </div>
-
-          <div className="stat-card">
-
-            <div className="stat-top">
-              <div className="stat-icon">
-                ▣
-              </div>
-            </div>
-
-            <div className="stat-label">
-              NOTES
-            </div>
-
-            <div className="stat-value">
-              {
-                resources.filter(
-                  (item) => item.type === "Notes"
-                ).length
-              }
-            </div>
-
-            <div className="stat-detail">
-              Subject notes
-            </div>
-
-          </div>
-
-          <div className="stat-card">
-
-            <div className="stat-top">
-              <div className="stat-icon">
-                ✓
-              </div>
-            </div>
-
-            <div className="stat-label">
-              LIBRARY STATUS
-            </div>
-
-            <div className="stat-value">
-              {resources.length > 0 ? "ON" : "—"}
-            </div>
-
-            <div className="stat-detail">
-              Stored in this browser
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* ADD FORM */}
-
-        {showForm && (
-
-          <section className="panel resource-form-panel">
-
-            <div className="panel-header">
-
-              <div>
-
-                <p className="eyebrow">
-                  NEW RESOURCE
-                </p>
-
-                <h2>
-                  Add teaching material.
-                </h2>
-
-              </div>
-
-            </div>
-
-            <form
-              className="resource-form"
-              onSubmit={addResource}
-            >
-
-              <div className="resource-form-grid">
-
-                <label>
-                  <span>
-                    RESOURCE TITLE
-                  </span>
-
-                  <input
-                    type="text"
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    placeholder="Example: Algebra Worksheet"
-                  />
-                </label>
-
-                <label>
-                  <span>
-                    TYPE
-                  </span>
-
-                  <select
-                    name="type"
-                    value={form.type}
-                    onChange={handleChange}
-                  >
-                    <option>
-                      Worksheet
-                    </option>
-
-                    <option>
-                      Notes
-                    </option>
-
-                    <option>
-                      Document
-                    </option>
-
-                    <option>
-                      Presentation
-                    </option>
-
-                    <option>
-                      Other
-                    </option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>
-                    SUBJECT
-                  </span>
-
-                  <input
-                    type="text"
-                    name="subject"
-                    value={form.subject}
-                    onChange={handleChange}
-                    placeholder="Mathematics"
-                  />
-                </label>
-
-                <label>
-                  <span>
-                    DESCRIPTION
-                  </span>
-
-                  <input
-                    type="text"
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    placeholder="Short description"
-                  />
-                </label>
-
-              </div>
-
-              <div className="resource-form-actions">
-
-                <button
-                  type="submit"
-                  className="primary-button"
-                >
-                  Save Resource
-                </button>
-
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </form>
-
-          </section>
-
-        )}
-
-        {/* RESOURCE LIST */}
-
-        <section className="section">
-
-          <div className="section-heading">
+          <div className="panel-header">
 
             <div>
 
-              <p className="eyebrow">
-                YOUR LIBRARY
+              <p className="zine-label">
+                NEW RESOURCE
               </p>
 
               <h2>
-                Available teaching materials.
+                Add teaching material.
               </h2>
 
             </div>
 
           </div>
 
-          {resources.length === 0 ? (
+          <form
+            className="form-stack"
+            onSubmit={addResource}
+          >
 
-            <section className="empty-state">
+            <div className="form-grid">
 
-              <div className="empty-icon">
-                □
-              </div>
+              <label className="form-field">
+                <span className="form-label form-label-recase">
+                    RESOURCE TITLE
+                </span>
 
-              <p className="eyebrow">
-                EMPTY LIBRARY
-              </p>
+                <input
+                  type="text"
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Example: Algebra Worksheet"
+                />
+              </label>
 
-              <h2>
-                No resources yet.
-              </h2>
+              <label className="form-field">
+                <span className="form-label form-label-recase">
+                    TYPE
+                </span>
 
-              <p>
-                Add your first worksheet, note or teaching
-                material to build your resource library.
-              </p>
+                <select
+                  name="type"
+                  value={form.type}
+                  onChange={handleChange}
+                >
+                  <option>
+                    Worksheet
+                  </option>
+
+                  <option>
+                    Notes
+                  </option>
+
+                  <option>
+                    Document
+                  </option>
+
+                  <option>
+                    Presentation
+                  </option>
+
+                  <option>
+                    Other
+                  </option>
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span className="form-label form-label-recase">
+                    SUBJECT
+                </span>
+
+                <input
+                  type="text"
+                  name="subject"
+                  value={form.subject}
+                  onChange={handleChange}
+                  placeholder="Mathematics"
+                />
+              </label>
+
+              <label className="form-field">
+                <span className="form-label form-label-recase">
+                    DESCRIPTION
+                </span>
+
+                <input
+                  type="text"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Short description"
+                />
+              </label>
+
+            </div>
+
+            <div className="form-actions">
+
+              <button
+                type="submit"
+                className="ui-button ui-button-primary"
+              >
+                Save Resource
+              </button>
 
               <button
                 type="button"
-                className="primary-button"
-                onClick={() => setShowForm(true)}
+                className="ui-button ui-button-secondary"
+                onClick={() => setShowForm(false)}
               >
-                ＋ Add First Resource
+                Cancel
               </button>
-
-            </section>
-
-          ) : (
-
-            <div className="resource-grid">
-
-              {resources.map((resource, index) => (
-
-                <article
-                  className="resource-card"
-                  key={resource.id}
-                >
-
-                  <div className="resource-card-top">
-
-                    <span className="resource-number">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-
-                    <span className="status">
-                      {resource.type}
-                    </span>
-
-                  </div>
-
-                  <div className="resource-icon">
-                    □
-                  </div>
-
-                  <h3>
-                    {resource.title}
-                  </h3>
-
-                  <p className="resource-subject">
-                    {resource.subject}
-                  </p>
-
-                  <p className="resource-description">
-                    {resource.description}
-                  </p>
-
-                  <div className="resource-footer">
-
-                    <span>
-                      Added
-                    </span>
-
-                    <button
-                      type="button"
-                      className="delete-button"
-                      onClick={() =>
-                        deleteResource(resource.id)
-                      }
-                    >
-                      Delete
-                    </button>
-
-                  </div>
-
-                </article>
-
-              ))}
 
             </div>
 
-          )}
+          </form>
 
         </section>
 
-        <div className="workspace-back-container">
-          <Link
-            to="/"
-            className="workspace-back"
-          >
-            ← Back to Dashboard
-          </Link>
-        </div>
+      )}
 
-      </main>
+      {/* RESOURCE LIST */}
 
-      <footer className="footer">
+      <section className="section-block">
 
-        <div className="footer-brand">
+        <div className="section-header">
 
-          <div className="footer-mark">
-            TG
-          </div>
+          <div className="section-header-copy">
 
-          <div>
-
-            <strong>
-              Teacher Guide
-            </strong>
-
-            <p>
-              Intelligent workspace for modern teaching.
+            <p className="zine-label">
+              YOUR LIBRARY
             </p>
 
+            <h2>
+              Available teaching materials.
+            </h2>
+
           </div>
+
+          <span className="ui-pill">
+            {resources.length}
+          </span>
 
         </div>
 
+        {resources.length === 0 ? (
+
+          <section className="empty-block">
+            <p className="zine-label">
+              EMPTY LIBRARY
+            </p>
+
+            <h2>
+              No resources yet.
+            </h2>
+
+            <p>
+              Add your first worksheet, note or teaching
+              material to build your resource library.
+            </p>
+
+            <button
+              type="button"
+              className="ui-button ui-button-primary"
+              onClick={() => setShowForm(true)}
+            >
+              ＋ Add First Resource
+            </button>
+
+          </section>
+
+        ) : (
+
+          <div className="card-grid">
+
+            {resources.map((resource) => (
+
+              <article
+                className="ui-card pad-6 groupb-card"
+                key={resource.id}
+              >
+
+                <div className="card-top">
+                  <span className="ui-pill ui-pill-dark">
+                    {resource.type}
+                  </span>
+
+                </div>
+
+                <h3 className="card-title">
+                  {resource.title}
+                </h3>
+
+                <p className="text-muted">
+                  {resource.subject}
+                </p>
+
+                <p className="card-body">
+                  {resource.description}
+                </p>
+
+                <div className="card-foot">
+
+                  <span>
+                    Added
+                  </span>
+
+                  <button
+                    type="button"
+                    className="ui-button ui-button-danger"
+                    onClick={() =>
+                      deleteResource(resource.id)
+                    }
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </article>
+
+            ))}
+
+          </div>
+
+        )}
+
+      </section>
+
+      <div className="back-row">
         <Link
-          to="/analytics"
-          className="footer-button"
+          to="/"
+          className="ui-button ui-button-secondary"
         >
-          Explore Analytics →
+          ← Back to Dashboard
         </Link>
+      </div>
 
-      </footer>
-
-    </div>
+    </AppShell>
   );
 }
 

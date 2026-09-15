@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function MyClasses() {
   const [classes, setClasses] = useState([]);
@@ -93,51 +94,17 @@ function MyClasses() {
     setClasses(updatedClasses);
   };
 
+
   return (
-    <div className="lesson-page">
+    <AppShell>
 
       {/* HEADER */}
 
-      <header className="topbar">
+      <header className="page-header">
 
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
+        <div className="page-header-copy">
 
-        <nav>
-
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <a href="#">
-            Resources
-          </a>
-
-        </nav>
-
-        <button className="profile">
-          Teacher
-        </button>
-
-      </header>
-
-
-      {/* MAIN */}
-
-      <main className="lesson-main">
-
-        <div className="page-heading">
-
-          <p className="eyebrow">
+          <p className="zine-label">
             TEACHER WORKSPACE
           </p>
 
@@ -146,20 +113,20 @@ function MyClasses() {
             Classes.
           </h1>
 
-          <p className="page-description">
+          <p>
             Organize your classes, students and
             teaching activities in one place.
           </p>
 
         </div>
 
-
         {/* ADD BUTTON */}
 
-        <div className="new-plan-container">
+        <div className="page-header-side">
 
           <button
-            className="generate"
+            type="button"
+            className="ui-button ui-button-primary"
             onClick={() => setShowForm(!showForm)}
           >
             {showForm
@@ -169,214 +136,225 @@ function MyClasses() {
 
         </div>
 
-
-        {/* ADD CLASS FORM */}
-
-        {showForm && (
-
-          <section className="class-form-section">
-
-            <p className="eyebrow">
-              NEW CLASS
-            </p>
-
-            <h2>
-              Add a Class
-            </h2>
-
-            <form onSubmit={addClass}>
-
-              <div className="form-grid">
-
-                <div className="form-group">
-
-                  <label>
-                    Class Name *
-                  </label>
-
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Example: Class A"
-                    value={form.name}
-                    onChange={handleChange}
-                  />
-
-                </div>
+      </header>
 
 
-                <div className="form-group">
+      {/* ADD CLASS FORM */}
 
-                  <label>
-                    Class / Grade *
-                  </label>
+      {showForm && (
 
-                  <input
-                    type="text"
-                    name="grade"
-                    placeholder="Example: Grade 8"
-                    value={form.grade}
-                    onChange={handleChange}
-                  />
+        <section className="panel">
 
-                </div>
+          <div className="panel-header">
 
+            <div>
 
-                <div className="form-group">
+              <p className="zine-label">
+                NEW CLASS
+              </p>
 
-                  <label>
-                    Subject *
-                  </label>
+              <h2>
+                Add a Class
+              </h2>
 
-                  <input
-                    type="text"
-                    name="subject"
-                    placeholder="Example: Mathematics"
-                    value={form.subject}
-                    onChange={handleChange}
-                  />
+            </div>
 
-                </div>
+          </div>
 
+          <form onSubmit={addClass} className="form-stack">
 
-                <div className="form-group">
+            <div className="form-grid">
 
-                  <label>
-                    Number of Students *
-                  </label>
+              <div className="form-field">
 
-                  <input
-                    type="number"
-                    name="students"
-                    placeholder="Example: 30"
-                    min="1"
-                    value={form.students}
-                    onChange={handleChange}
-                  />
-
-                </div>
-
-              </div>
-
-
-              <div className="form-group">
-
-                <label>
-                  Class Description
+                <label className="form-label">
+                  Class Name *
                 </label>
 
-                <textarea
-                  name="description"
-                  placeholder="Write a short description about this class..."
-                  value={form.description}
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Example: Class A"
+                  value={form.name}
                   onChange={handleChange}
-                  rows="5"
                 />
 
               </div>
 
 
+              <div className="form-field">
+
+                <label className="form-label">
+                  Class / Grade *
+                </label>
+
+                <input
+                  type="text"
+                  name="grade"
+                  placeholder="Example: Grade 8"
+                  value={form.grade}
+                  onChange={handleChange}
+                />
+
+              </div>
+
+
+              <div className="form-field">
+
+                <label className="form-label">
+                  Subject *
+                </label>
+
+                <input
+                  type="text"
+                  name="subject"
+                  placeholder="Example: Mathematics"
+                  value={form.subject}
+                  onChange={handleChange}
+                />
+
+              </div>
+
+
+              <div className="form-field">
+
+                <label className="form-label">
+                  Number of Students *
+                </label>
+
+                <input
+                  type="number"
+                  name="students"
+                  placeholder="Example: 30"
+                  min="1"
+                  value={form.students}
+                  onChange={handleChange}
+                />
+
+              </div>
+
+            </div>
+
+
+            <div className="form-field">
+
+              <label className="form-label">
+                Class Description
+              </label>
+
+              <textarea
+                name="description"
+                placeholder="Write a short description about this class..."
+                value={form.description}
+                onChange={handleChange}
+                rows="5"
+              />
+
+            </div>
+
+
+            <div className="form-actions">
+
               <button
                 type="submit"
-                className="primary-form-button"
+                className="ui-button ui-button-primary"
               >
                 Save Class →
               </button>
 
-            </form>
+            </div>
 
-          </section>
+          </form>
 
-        )}
+        </section>
 
-
-        {/* CLASSES */}
-
-        {classes.length === 0 ? (
-
-          <section className="empty-plans">
-
-            <h2>
-              No classes added yet.
-            </h2>
-
-            <p>
-              Add your first class to start
-              managing your students.
-            </p>
-
-          </section>
-
-        ) : (
-
-          <section className="saved-plans-grid">
-
-            {classes.map((item, index) => (
-
-              <div
-                className="saved-plan-card"
-                key={item.id}
-              >
-
-                <div className="saved-plan-top">
-
-                  <span className="number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <span className="saved-date">
-                    {item.createdAt}
-                  </span>
-
-                </div>
+      )}
 
 
-                <h2>
-                  {item.name}
-                </h2>
+      {/* CLASSES */}
 
+      {classes.length === 0 ? (
 
-                <p className="plan-meta">
-                  {item.subject} · {item.grade}
-                </p>
+        <section className="empty-block section-block">
+          <p className="zine-label">
+            NO CLASSES
+          </p>
 
+          <h2>
+            No classes added yet.
+          </h2>
 
-                <p className="plan-duration">
-                  {item.students} Students
-                </p>
+          <p>
+            Add your first class to start
+            managing your students.
+          </p>
 
+        </section>
 
-                <div className="saved-plan-actions">
+      ) : (
 
-                  <Link
-                    to={`/class-view/${item.id}`}
-                    className="view-button"
-                  >
-                    View →
-                  </Link>
+        <section className="card-grid section-block">
 
-                  <button
-                    className="delete-button"
-                    onClick={() =>
-                      deleteClass(item.id)
-                    }
-                  >
-                    Delete
-                  </button>
+          {classes.map((item) => (
 
-                </div>
+            <div
+              className="ui-card pad-6 groupb-card"
+              key={item.id}
+            >
+
+              <div className="card-top">
+                <span className="ui-pill">
+                  {item.createdAt}
+                </span>
 
               </div>
 
-            ))}
 
-          </section>
+              <h2 className="card-title">
+                {item.name}
+              </h2>
 
-        )}
 
-      </main>
+              <p className="text-muted">
+                {item.subject} · {item.grade}
+              </p>
 
-    </div>
+
+              <p className="card-body">
+                {item.students} Students
+              </p>
+
+
+              <div className="card-foot">
+
+                <Link
+                  to={`/class-view/${item.id}`}
+                  className="ui-button ui-button-secondary"
+                >
+                  View →
+                </Link>
+
+                <button
+                  type="button"
+                  className="ui-button ui-button-danger"
+                  onClick={() =>
+                    deleteClass(item.id)
+                  }
+                >
+                  Delete
+                </button>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </section>
+
+      )}
+
+    </AppShell>
   );
 }
 

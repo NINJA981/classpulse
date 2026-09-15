@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function ResourceView() {
   const { id } = useParams();
@@ -21,32 +22,12 @@ function ResourceView() {
 
   if (!resource) {
     return (
-      <div className="lesson-page">
+      <AppShell>
 
-        <header className="topbar">
+        <div className="page-center">
 
-          <div className="logo">
-            TEACHER GUIDE
-          </div>
-
-          <nav>
-            <Link to="/">Dashboard</Link>
-            <Link to="/saved-plans">Lesson Plans</Link>
-            <Link to="/classes">My Classes</Link>
-            <Link to="/resources">Resources</Link>
-          </nav>
-
-          <button className="profile">
-            Teacher
-          </button>
-
-        </header>
-
-        <main className="lesson-main">
-
-          <div className="page-heading">
-
-            <p className="eyebrow">
+          <div className="empty-block">
+            <p className="zine-label">
               RESOURCE
             </p>
 
@@ -54,52 +35,33 @@ function ResourceView() {
               Resource Not Found
             </h1>
 
-            <p className="page-description">
+            <p>
               The resource you are looking for does not exist.
             </p>
 
+            <Link
+              to="/resources"
+              className="ui-button ui-button-primary"
+            >
+              ← Back to Resources
+            </Link>
+
           </div>
 
-          <Link
-            to="/resources"
-            className="generate"
-          >
-            ← Back to Resources
-          </Link>
+        </div>
 
-        </main>
-
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="lesson-page">
+    <AppShell>
 
-      <header className="topbar">
+      <header className="page-header">
 
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
+        <div className="page-header-copy">
 
-        <nav>
-          <Link to="/">Dashboard</Link>
-          <Link to="/saved-plans">Lesson Plans</Link>
-          <Link to="/classes">My Classes</Link>
-          <Link to="/resources">Resources</Link>
-        </nav>
-
-        <button className="profile">
-          Teacher
-        </button>
-
-      </header>
-
-      <main className="lesson-main">
-
-        <div className="page-heading">
-
-          <p className="eyebrow">
+          <p className="zine-label">
             SAVED RESOURCE
           </p>
 
@@ -107,110 +69,107 @@ function ResourceView() {
             {resource.title}
           </h1>
 
-          <p className="page-description">
-            {resource.type} · {resource.subject} ·{" "}
+          <p>
+            {resource.type} · {resource.subject} •{" "}
             {resource.grade}
           </p>
 
         </div>
 
-        <section className="class-details">
+      </header>
 
-          <div className="detail-card">
+      <section className="stack-card pad-8">
 
-            <span className="number">
-              01
-            </span>
+        <p className="zine-label">
+          RESOURCE DETAILS
+        </p>
 
-            <h2>
+        <div className="detail-grid">
+
+          <div>
+            <span>
               Resource Type
-            </h2>
+            </span>
 
-            <p>
+            <strong>
               {resource.type}
-            </p>
-
+            </strong>
           </div>
 
-          <div className="detail-card">
-
-            <span className="number">
-              02
-            </span>
-
-            <h2>
+          <div>
+            <span>
               Subject
-            </h2>
+            </span>
 
-            <p>
+            <strong>
               {resource.subject}
-            </p>
-
+            </strong>
           </div>
 
-          <div className="detail-card">
-
-            <span className="number">
-              03
-            </span>
-
-            <h2>
+          <div>
+            <span>
               Class / Grade
-            </h2>
-
-            <p>
-              {resource.grade}
-            </p>
-
-          </div>
-
-          <div className="detail-card">
-
-            <span className="number">
-              04
             </span>
 
-            <h2>
-              Description
-            </h2>
-
-            <p>
-              {resource.description ||
-                "No description added."}
-            </p>
-
+            <strong>
+              {resource.grade}
+            </strong>
           </div>
 
-        </section>
+        </div>
 
-        {resource.link && (
-          <div className="resource-link-box">
+        <div className="detail-section">
 
-            <h2>
+          <span>
+            Description
+          </span>
+
+          <p>
+            {resource.description ||
+              "No description added."}
+          </p>
+
+        </div>
+
+      </section>
+
+      {resource.link && (
+        <div className="ui-card pad-5 groupb-link-box">
+
+          <div>
+
+            <p className="zine-label">
+              LINK
+            </p>
+
+            <h2 className="text-row-title">
               Resource Link
             </h2>
 
-            <a
-              href={resource.link}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open Resource →
-            </a>
-
           </div>
-        )}
 
+          <a
+            href={resource.link}
+            target="_blank"
+            rel="noreferrer"
+            className="ui-button ui-button-secondary"
+          >
+            Open Resource →
+          </a>
+
+        </div>
+      )}
+
+      <div className="back-row">
         <Link
           to="/resources"
-          className="generate"
+          className="ui-button ui-button-secondary"
         >
           ← Back to Resources
         </Link>
+      </div>
 
-      </main>
-
-    </div>
+    </AppShell>
   );
 }
 

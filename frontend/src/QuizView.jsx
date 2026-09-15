@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function QuizView() {
   const { id } = useParams();
@@ -29,173 +30,115 @@ function QuizView() {
 
   if (loading) {
     return (
-      <div className="app">
-        <main className="dashboard">
-          <section className="empty-state">
+      <AppShell>
+        <div>
+          <section className="empty-block">
+            <span className="live-dot" />
+            <p className="zine-label">Quiz</p>
             <h2>Loading quiz...</h2>
           </section>
-        </main>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="app">
+      <AppShell>
 
-        <header className="navbar">
-          <div className="logo">
-            TEACHER GUIDE
+        <div>
+
+          <div className="page-center">
+
+            <section className="empty-block">
+              <p className="zine-label">
+                QUIZ DETAILS
+              </p>
+
+              <h2>
+                Quiz not found.
+              </h2>
+
+              <p>
+                This quiz may have been deleted or does not
+                exist anymore.
+              </p>
+
+              <Link
+                to="/quizzes"
+                className="ui-button ui-button-primary"
+              >
+                ← Back to Quizzes
+              </Link>
+
+            </section>
+
           </div>
 
-          <nav>
-            <Link to="/">Dashboard</Link>
+        </div>
 
-            <Link to="/saved-plans">
-              Lesson Plans
-            </Link>
-
-            <Link to="/classes">
-              My Classes
-            </Link>
-
-            <Link to="/resources">
-              Resources
-            </Link>
-
-            <Link to="/quizzes">
-              Quizzes
-            </Link>
-          </nav>
-
-          <div className="teacher">
-            Teacher
-          </div>
-        </header>
-
-        <main className="dashboard">
-
-          <section className="empty-state">
-
-            <div className="empty-number">
-              404
-            </div>
-
-            <h2>
-              Quiz not found.
-            </h2>
-
-            <p>
-              This quiz may have been deleted or does not
-              exist anymore.
-            </p>
-
-            <Link
-              to="/quizzes"
-              className="primary-button"
-            >
-              ← Back to Quizzes
-            </Link>
-
-          </section>
-
-        </main>
-
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="app">
-
-      {/* NAVBAR */}
-
-      <header className="navbar">
-
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
-
-        <nav>
-
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-        </nav>
-
-        <div className="teacher">
-          Teacher
-        </div>
-
-      </header>
-
+    <AppShell>
 
       {/* MAIN */}
 
-      <main className="dashboard">
+      <div>
 
         {/* HERO */}
 
-        <section className="hero">
+        <header className="page-header">
 
-          <p className="eyebrow">
-            QUIZ DETAILS
-          </p>
+          <div className="page-header-copy">
 
-          <h1>
-            {quiz.title}
-          </h1>
+            <p className="zine-label">
+              QUIZ DETAILS
+            </p>
 
-          <p className="hero-text">
-            {quiz.subject} • {quiz.grade} •{" "}
-            {quiz.duration}
-          </p>
+            <h1>
+              {quiz.title}
+            </h1>
 
-          <div className="hero-buttons">
+            <p>
+              {quiz.subject} • {quiz.grade} •{" "}
+              {quiz.duration}
+            </p>
 
-            <Link
-              to={`/take-quiz/${quiz.id}`}
-              className="primary-button"
-            >
-              Take Quiz
-            </Link>
+          </div>
+
+          <div className="page-header-side">
 
             <Link
               to="/quizzes"
-              className="secondary-button"
+              className="ui-button ui-button-secondary"
             >
               ← Back to Quizzes
             </Link>
 
+            <Link
+              to={`/take-quiz/${quiz.id}`}
+              className="ui-button ui-button-primary"
+            >
+              Take Quiz
+            </Link>
+
           </div>
 
-        </section>
+        </header>
 
 
         {/* QUIZ INFORMATION */}
 
-        <section className="quiz-library-header">
+        <section className="section-block">
 
-          <div>
+        <div className="section-header">
 
-            <p className="eyebrow">
+          <div className="section-header-copy">
+
+            <p className="zine-label">
               QUIZ INFORMATION
             </p>
 
@@ -205,16 +148,16 @@ function QuizView() {
 
           </div>
 
-          <div className="quiz-count">
+          <span className="ui-pill">
             {quiz.questions?.length || 0}
-          </div>
+          </span>
 
-        </section>
+        </div>
 
 
         {/* QUESTIONS */}
 
-        <section className="quiz-list">
+        <div className="stack-5">
 
           {quiz.questions?.map((question, index) => {
 
@@ -225,48 +168,74 @@ function QuizView() {
             return (
 
               <article
-                className="saved-quiz-card"
+                className={
+                  index === 0
+                    ? "stack-card pad-6"
+                    : "ui-card pad-6"
+                }
                 key={index}
               >
 
-                <div className="saved-quiz-number">
-                  {String(index + 1).padStart(2, "0")}
+                <div className="card-top">
+
+                  <span className="index-circle">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <span className="ui-pill">
+                    Question {index + 1}
+                  </span>
+
                 </div>
 
-                <div className="saved-quiz-content">
+                <div>
 
-                  <h2>
-                    Question {index + 1}
-                  </h2>
-
-                  <p className="quiz-question-text">
+                  <p className="text-question">
                     {question.question}
                   </p>
 
 
                   {/* OPTIONS */}
 
-                  <div className="quiz-view-options">
+                  <div className="card-grid-2 quizflow-options">
 
                     {["A", "B", "C", "D"].map(
-                      (letter, optionIndex) => (
+                      (letter, optionIndex) => {
 
-                        <div
-                          className="quiz-option"
-                          key={letter}
-                        >
+                        const isCorrect =
+                          String(question.answer || "")
+                            .trim()
+                            .toUpperCase() === letter;
 
-                          <strong>
-                            {letter}
-                          </strong>
+                        return (
 
-                          <span>
-                            {options[optionIndex] || "—"}
-                          </span>
+                          <div
+                            className={`quiz-option quiz-option-static${
+                              isCorrect
+                                ? " quiz-option-correct"
+                                : ""
+                            }`}
+                            key={letter}
+                          >
 
-                        </div>
+                            <span className="quiz-option-key">
+                              {letter}
+                            </span>
 
-                      )
+                            <span className="quiz-option-text">
+                              {options[optionIndex] || "—"}
+                            </span>
+
+                            {isCorrect && (
+                              <span className="quiz-option-mark">
+                                ✓
+                              </span>
+                            )}
+
+                          </div>
+
+                        );
+                      }
                     )}
 
                   </div>
@@ -274,15 +243,17 @@ function QuizView() {
 
                   {/* CORRECT ANSWER */}
 
-                  <div className="correct-answer">
+                  <div className="detail-section">
 
                     <span>
                       Correct Answer
                     </span>
 
-                    <strong>
-                      {question.answer || "Not selected"}
-                    </strong>
+                    <p>
+                      <strong>
+                        {question.answer || "Not selected"}
+                      </strong>
+                    </p>
 
                   </div>
 
@@ -293,32 +264,34 @@ function QuizView() {
             );
           })}
 
+        </div>
+
         </section>
 
 
         {/* BOTTOM ACTIONS */}
 
-        <div className="quiz-actions">
+        <div className="ui-button-row back-row">
 
           <Link
             to={`/take-quiz/${quiz.id}`}
-            className="primary-button"
+            className="ui-button ui-button-primary"
           >
             Take This Quiz
           </Link>
 
           <Link
             to="/quizzes"
-            className="secondary-button"
+            className="ui-button ui-button-secondary"
           >
             Back to Quiz Library
           </Link>
 
         </div>
 
-      </main>
+      </div>
 
-    </div>
+    </AppShell>
   );
 }
 

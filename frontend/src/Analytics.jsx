@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
+import SectionReadinessCard from "./components/SectionReadinessCard.jsx";
 
 function Analytics() {
   const [stats, setStats] = useState({
@@ -129,250 +131,156 @@ function Analytics() {
     };
   }, [loadAnalytics]);
 
-  return (
-    <div className="app">
-
-      {/* =========================================
-          NAVBAR
-      ========================================= */}
-
-      <header className="navbar">
-
-        <div className="logo">
+  const footer = (
+    <>
+      <div>
+        <strong>
           TEACHER GUIDE
-        </div>
+        </strong>
 
-        <nav>
+        <p>
+          Intelligent workspace for modern teaching.
+        </p>
+      </div>
+    </>
+  );
 
-          <Link to="/">
-            Dashboard
-          </Link>
+  const overview = [
+    {
+      label: "Students",
+      description: "Students registered across your classes.",
+      value: stats.students,
+    },
+    {
+      label: "Classes",
+      description: "Classes currently managed in Teacher Guide.",
+      value: stats.classes,
+    },
+    {
+      label: "Lesson Plans",
+      description: "Lesson plans created and saved.",
+      value: stats.lessonPlans,
+    },
+    {
+      label: "Resources",
+      description: "Teaching materials available.",
+      value: stats.resources,
+    },
+    {
+      label: "Quizzes",
+      description: "Assessments created for students.",
+      value: stats.quizzes,
+    },
+    {
+      label: "Quiz Attempts",
+      description: "Completed quiz attempts recorded.",
+      value: stats.quizAttempts,
+    },
+    {
+      label: "Average Score",
+      description: "Average percentage from completed quizzes.",
+      value: `${stats.averageScore}%`,
+    },
+  ];
 
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
+  const activity = [
+    {
+      title: "Lesson Planning",
+      detail: `${stats.lessonPlans} plans created`,
+      value: stats.lessonPlans,
+    },
+    {
+      title: "Classroom Management",
+      detail: `${stats.classes} classes managed`,
+      value: stats.classes,
+    },
+    {
+      title: "Teaching Materials",
+      detail: `${stats.resources} resources available`,
+      value: stats.resources,
+    },
+    {
+      title: "Student Management",
+      detail: `${stats.students} students registered`,
+      value: stats.students,
+    },
+    {
+      title: "Assessments",
+      detail: `${stats.quizzes} quizzes created`,
+      value: stats.quizzes,
+    },
+    {
+      title: "Student Performance",
+      detail: `${stats.averageScore}% average score`,
+      value: `${stats.averageScore}%`,
+    },
+  ];
 
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-          <Link to="/analytics">
-            Analytics
-          </Link>
-
-        </nav>
-
-        <div className="teacher">
-          Teacher
-        </div>
-
-      </header>
-
-
-      {/* =========================================
-          MAIN
-      ========================================= */}
-
-      <main className="dashboard">
+  const quickActions = [
+    { label: "Create Lesson Plan", to: "/lesson-plan" },
+    { label: "Manage Classes", to: "/classes" },
+    { label: "Manage Quizzes", to: "/quizzes" },
+    { label: "Manage Resources", to: "/resources" },
+  ];
+  return (
+    <AppShell footer={footer}>
+      <div className="dashboard">
 
         {/* =========================================
             HERO
         ========================================= */}
 
-        <section className="hero">
+        <header className="page-header">
+          <div className="page-header-copy">
+            <p className="zine-label">
+              TEACHER ANALYTICS
+            </p>
 
-          <p className="eyebrow">
-            TEACHER ANALYTICS
-          </p>
+            <h1>
+              Track.
+              <br />
+              Understand.
+            </h1>
 
-          <h1>
-            Track.
-            <br />
-            Understand.
-          </h1>
+            <p>
+              Monitor classroom activity, assessments and
+              teaching resources from one place.
+            </p>
+          </div>
 
-          <p className="hero-text">
-            Monitor classroom activity, assessments and
-            teaching resources from one place.
-          </p>
-
-        </section>
+          <div className="page-header-side">
+            <span className="ui-pill live-label">
+              <span className="live-dot" aria-hidden="true"></span>
+              {stats.quizAttempts}{" "}
+              {stats.quizAttempts === 1 ? "attempt" : "attempts"}
+            </span>
+          </div>
+        </header>
 
 
         {/* =========================================
             STATISTICS
         ========================================= */}
 
-        <section className="feature-grid">
+        <section className="stat-grid">
+          {overview.map((item) => (
+            <div
+              className="hypercard-static stat-tile"
+              key={item.label}
+            >
+              <p className="zine-label">
+                {item.label}
+              </p>
 
-          {/* STUDENTS */}
+              <p className="stat-tile-value">
+                {item.value}
+              </p>
 
-          <div className="feature-card">
-
-            <span className="number">
-              01
-            </span>
-
-            <h2>
-              Students
-            </h2>
-
-            <p>
-              Students registered across your classes.
-            </p>
-
-            <span className="analytics-value">
-              {stats.students}
-            </span>
-
-          </div>
-
-
-          {/* CLASSES */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              02
-            </span>
-
-            <h2>
-              Classes
-            </h2>
-
-            <p>
-              Classes currently managed in Teacher Guide.
-            </p>
-
-            <span className="analytics-value">
-              {stats.classes}
-            </span>
-
-          </div>
-
-
-          {/* LESSON PLANS */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              03
-            </span>
-
-            <h2>
-              Lesson Plans
-            </h2>
-
-            <p>
-              Lesson plans created and saved.
-            </p>
-
-            <span className="analytics-value">
-              {stats.lessonPlans}
-            </span>
-
-          </div>
-
-
-          {/* RESOURCES */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              04
-            </span>
-
-            <h2>
-              Resources
-            </h2>
-
-            <p>
-              Teaching materials available.
-            </p>
-
-            <span className="analytics-value">
-              {stats.resources}
-            </span>
-
-          </div>
-
-
-          {/* QUIZZES */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              05
-            </span>
-
-            <h2>
-              Quizzes
-            </h2>
-
-            <p>
-              Assessments created for students.
-            </p>
-
-            <span className="analytics-value">
-              {stats.quizzes}
-            </span>
-
-          </div>
-
-
-          {/* ATTEMPTS */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              06
-            </span>
-
-            <h2>
-              Quiz Attempts
-            </h2>
-
-            <p>
-              Completed quiz attempts recorded.
-            </p>
-
-            <span className="analytics-value">
-              {stats.quizAttempts}
-            </span>
-
-          </div>
-
-
-          {/* AVERAGE SCORE */}
-
-          <div className="feature-card">
-
-            <span className="number">
-              07
-            </span>
-
-            <h2>
-              Average Score
-            </h2>
-
-            <p>
-              Average percentage from completed quizzes.
-            </p>
-
-            <span className="analytics-value">
-              {stats.averageScore}%
-            </span>
-
-          </div>
-
+              <p className="card-body">
+                {item.description}
+              </p>
+            </div>
+          ))}
         </section>
 
 
@@ -380,239 +288,86 @@ function Analytics() {
             CLASSROOM OVERVIEW
         ========================================= */}
 
-        <section className="quiz-section">
-
-          <p className="section-number">
-            CLASSROOM OVERVIEW
-          </p>
-
-          <h2>
-            Teaching Activity
-          </h2>
-
-
-          <div className="feature-grid">
-
-            {/* LESSON PLANNING */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                01
-              </span>
-
-              <h2>
-                Lesson Planning
-              </h2>
-
-              <p>
-                {stats.lessonPlans} plans created
+        <section className="section-block">
+          <div className="section-header">
+            <div className="section-header-copy">
+              <p className="zine-label">
+                CLASSROOM OVERVIEW
               </p>
 
-              <span className="analytics-value">
-                {stats.lessonPlans}
-              </span>
-
-            </div>
-
-
-            {/* CLASSROOM MANAGEMENT */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                02
-              </span>
-
               <h2>
-                Classroom Management
+                Teaching Activity
               </h2>
-
-              <p>
-                {stats.classes} classes managed
-              </p>
-
-              <span className="analytics-value">
-                {stats.classes}
-              </span>
-
             </div>
-
-
-            {/* TEACHING MATERIALS */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                03
-              </span>
-
-              <h2>
-                Teaching Materials
-              </h2>
-
-              <p>
-                {stats.resources} resources available
-              </p>
-
-              <span className="analytics-value">
-                {stats.resources}
-              </span>
-
-            </div>
-
-
-            {/* STUDENT MANAGEMENT */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                04
-              </span>
-
-              <h2>
-                Student Management
-              </h2>
-
-              <p>
-                {stats.students} students registered
-              </p>
-
-              <span className="analytics-value">
-                {stats.students}
-              </span>
-
-            </div>
-
-
-            {/* ASSESSMENTS */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                05
-              </span>
-
-              <h2>
-                Assessments
-              </h2>
-
-              <p>
-                {stats.quizzes} quizzes created
-              </p>
-
-              <span className="analytics-value">
-                {stats.quizzes}
-              </span>
-
-            </div>
-
-
-            {/* STUDENT PERFORMANCE */}
-
-            <div className="feature-card">
-
-              <span className="number">
-                06
-              </span>
-
-              <h2>
-                Student Performance
-              </h2>
-
-              <p>
-                {stats.averageScore}% average score
-              </p>
-
-              <span className="analytics-value">
-                {stats.averageScore}%
-              </span>
-
-            </div>
-
           </div>
 
+          <div className="card-grid">
+              {activity.map((item) => (
+                <div className="ui-card pad-6" key={item.title}>
+                  <div className="card-top">
+                    <span className="ui-pill">
+                      {item.value}
+                    </span>
+                  </div>
+
+                  <h3 className="card-title">
+                    {item.title}
+                  </h3>
+
+                  <p className="card-body">
+                    {item.detail}
+                  </p>
+                </div>
+              ))}
+          </div>
         </section>
 
+        {/* =========================================
+            SECTION READINESS ROLLUP
+        ========================================= */}
+
+        <section className="section-block">
+          <SectionReadinessCard />
+        </section>
 
         {/* =========================================
             QUICK ACTIONS
         ========================================= */}
 
-        <section className="quick-actions">
+        <section className="section-block">
+          <div className="section-header">
+            <div className="section-header-copy">
+              <p className="zine-label">
+                QUICK ACTIONS
+              </p>
 
-          <div className="quick-actions-header">
-
-            <p className="eyebrow">
-              QUICK ACTIONS
-            </p>
-
-            <h2>
-              Continue Teaching
-            </h2>
-
+              <h2>
+                Continue Teaching
+              </h2>
+            </div>
           </div>
 
+          <div className="card-grid">
+            {quickActions.map((action, index) => (
+              <Link
+                to={action.to}
+                className="hypercard stat-tile action-tile"
+                key={action.to}
+              >
+                <p className="zine-label">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
 
-          <div className="quick-actions-grid">
+                <h3 className="card-title">
+                  {action.label}
+                </h3>
 
-            <Link
-              to="/lesson-plan"
-              className="quick-action"
-            >
-              <span>
-                Create Lesson Plan
-              </span>
-
-              <strong>
-                01
-              </strong>
-            </Link>
-
-
-            <Link
-              to="/classes"
-              className="quick-action"
-            >
-              <span>
-                Manage Classes
-              </span>
-
-              <strong>
-                02
-              </strong>
-            </Link>
-
-
-            <Link
-              to="/quizzes"
-              className="quick-action"
-            >
-              <span>
-                Manage Quizzes
-              </span>
-
-              <strong>
-                03
-              </strong>
-            </Link>
-
-
-            <Link
-              to="/resources"
-              className="quick-action"
-            >
-              <span>
-                Manage Resources
-              </span>
-
-              <strong>
-                04
-              </strong>
-            </Link>
-
+                <div className="stat-tile-foot">
+                  <span className="text-link">Open →</span>
+                </div>
+              </Link>
+            ))}
           </div>
-
         </section>
 
 
@@ -620,37 +375,17 @@ function Analytics() {
             BACK TO DASHBOARD
         ========================================= */}
 
-        <div className="analytics-back">
-
+        <div className="back-row">
           <Link
             to="/"
-            className="secondary-button"
+            className="ui-button ui-button-secondary"
           >
             ← Back to Dashboard
           </Link>
-
         </div>
 
-
-        {/* =========================================
-            FOOTER
-        ========================================= */}
-
-        <footer className="dashboard-footer">
-
-          <div>
-            TEACHER GUIDE
-          </div>
-
-          <p>
-            Intelligent workspace for modern teaching.
-          </p>
-
-        </footer>
-
-      </main>
-
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

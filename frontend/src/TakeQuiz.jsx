@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function TakeQuiz() {
   const { id } = useParams();
@@ -145,41 +146,39 @@ function TakeQuiz() {
 
   if (!quiz) {
     return (
-      <div className="app">
-        <header className="navbar">
-          <div className="logo">TEACHER GUIDE</div>
+      <AppShell>
+        <div className="app-main-narrow">
 
-          <nav>
-            <Link to="/">Dashboard</Link>
-            <Link to="/saved-plans">Lesson Plans</Link>
-            <Link to="/classes">My Classes</Link>
-            <Link to="/resources">Resources</Link>
-            <Link to="/quizzes">Quizzes</Link>
-            <Link to="/analytics">Analytics</Link>
-          </nav>
-
-          <div className="teacher">Teacher</div>
-        </header>
-
-        <main className="dashboard">
-          <section className="empty-state">
-            <div className="empty-number">404</div>
-
-            <h2>Quiz not found.</h2>
-
-            <p>
-              The selected quiz could not be found.
-            </p>
-
+          <div className="ui-button-row">
             <Link
               to="/quizzes"
-              className="primary-button"
+              className="ui-button ui-button-secondary"
             >
               ← Back to Quizzes
             </Link>
-          </section>
-        </main>
-      </div>
+          </div>
+
+          <div className="page-center">
+            <section className="empty-block">
+              <p className="zine-label">TAKE QUIZ</p>
+
+              <h2>Quiz not found.</h2>
+
+              <p>
+                The selected quiz could not be found.
+              </p>
+
+              <Link
+                to="/quizzes"
+                className="ui-button ui-button-primary"
+              >
+                ← Back to Quizzes
+              </Link>
+            </section>
+          </div>
+
+        </div>
+      </AppShell>
     );
   }
 
@@ -187,63 +186,73 @@ function TakeQuiz() {
     ? quiz.questions
     : [];
 
+  const answeredCount = questions.filter(
+    (_, index) => answers[index] !== undefined
+  ).length;
+
   return (
-    <div className="app">
+    <AppShell>
 
-      <header className="navbar">
-        <div className="logo">TEACHER GUIDE</div>
+      <div className="app-main-narrow">
 
-        <nav>
-          <Link to="/">Dashboard</Link>
-          <Link to="/saved-plans">Lesson Plans</Link>
-          <Link to="/classes">My Classes</Link>
-          <Link to="/resources">Resources</Link>
-          <Link to="/quizzes">Quizzes</Link>
-          <Link to="/analytics">Analytics</Link>
-        </nav>
-
-        <div className="teacher">Teacher</div>
-      </header>
-
-      <main className="dashboard">
-
-        <section className="hero">
-          <p className="eyebrow">TAKE QUIZ</p>
-
-          <h1>
-            {quiz.title || "Untitled Quiz"}
-          </h1>
-
-          <p className="hero-text">
-            {quiz.subject || "General"} •{" "}
-            {quiz.grade || "All Grades"} •{" "}
-            {quiz.duration || "30 minutes"}
-          </p>
-
+        <div className="ui-button-row">
           <Link
             to="/quizzes"
-            className="secondary-button"
+            className="ui-button ui-button-secondary"
           >
             ← Back to Quizzes
           </Link>
-        </section>
+        </div>
+
+        <header className="page-header section-block">
+          <div className="page-header-copy">
+            <p className="zine-label">TAKE QUIZ</p>
+
+            <h1>
+              {quiz.title || "Untitled Quiz"}
+            </h1>
+
+            <p>
+              {quiz.subject || "General"} •{" "}
+              {quiz.grade || "All Grades"} •{" "}
+              {quiz.duration || "30 minutes"}
+            </p>
+          </div>
+
+          <div className="page-header-side">
+            <span className="ui-pill ui-pill-dark live-label">
+              {submitted ? null : <span className="live-dot" />}
+              {questions.length} questions
+            </span>
+          </div>
+        </header>
 
         {submitted ? (
-          <section className="quiz-section">
+          <section className="stack-card pad-10 text-center quizflow-result">
 
-            <p className="eyebrow">
+            <div
+              className={
+                score === questions.length && questions.length > 0
+                  ? "result-icon result-icon-filled"
+                  : "result-icon"
+              }
+            >
+              {score > 0 ? "✓" : "0"}
+            </div>
+
+            <p className="zine-label">
               QUIZ RESULT
             </p>
 
-            <h2>
+            <h2 className="text-section-title">
               Quiz Submitted Successfully!
             </h2>
 
-            <div className="analytics-value">
+            <p className="text-stat">
               {score} / {questions.length}
-            </div>
+            </p>
 
-            <p className="hero-text">
+            <p className="text-muted quizflow-result-note">
               Your score:{" "}
               <strong>
                 {questions.length > 0
@@ -255,11 +264,11 @@ function TakeQuiz() {
               </strong>
             </p>
 
-            <div className="quiz-actions">
+            <div className="ui-button-row">
 
               <button
                 type="button"
-                className="primary-button"
+                className="ui-button ui-button-primary"
                 onClick={retakeQuiz}
               >
                 Retake Quiz
@@ -267,14 +276,14 @@ function TakeQuiz() {
 
               <Link
                 to="/quizzes"
-                className="secondary-button"
+                className="ui-button ui-button-secondary"
               >
                 Back to Quizzes
               </Link>
 
               <Link
                 to="/analytics"
-                className="secondary-button"
+                className="ui-button ui-button-secondary"
               >
                 View Analytics
               </Link>
@@ -283,15 +292,38 @@ function TakeQuiz() {
 
           </section>
         ) : (
-          <section className="quiz-section">
+          <section>
 
-            <div className="section-number">
-              01
+            <div className="section-header">
+              <div className="section-header-copy">
+                <p className="zine-label">
+                  01
+                </p>
+
+                <h2>
+                  Questions
+                </h2>
+              </div>
+
+              <span className="ui-pill">
+                {answeredCount} / {questions.length}
+              </span>
             </div>
 
-            <h2>
-              Questions
-            </h2>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${
+                    questions.length > 0
+                      ? (answeredCount / questions.length) * 100
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+
+            <div className="stack-5 section-block">
 
             {questions.map((question, questionIndex) => {
 
@@ -299,27 +331,35 @@ function TakeQuiz() {
 
               return (
                 <article
-                  className="question-card"
+                  className={
+                    questionIndex === 0
+                      ? "stack-card pad-6"
+                      : "ui-card pad-6"
+                  }
                   key={questionIndex}
                 >
 
-                  <div className="question-header">
-                    <h3>
+                  <div className="card-top">
+                    <span className="index-circle">
+                      {String(questionIndex + 1).padStart(2, "0")}
+                    </span>
+
+                    <span className="zine-label">
                       QUESTION {questionIndex + 1}
-                    </h3>
+                    </span>
                   </div>
 
-                  <h2>
+                  <h3 className="text-question">
                     {question.question ||
                       "Question"}
-                  </h2>
+                  </h3>
 
                   {options.length === 0 ? (
-                    <p>
+                    <p className="text-muted quizflow-options">
                       No answer options available.
                     </p>
                   ) : (
-                    <div className="take-quiz-options">
+                    <div className="card-grid-2 quizflow-options">
 
                       {options.map(
                         (option, optionIndex) => {
@@ -336,14 +376,15 @@ function TakeQuiz() {
                           return (
                             <label
                               key={optionIndex}
-                              className={`take-quiz-option ${
+                              className={`quiz-option ${
                                 selected
-                                  ? "selected"
+                                  ? "quiz-option-selected"
                                   : ""
                               }`}
                             >
 
                               <input
+                                className="visually-hidden"
                                 type="radio"
                                 name={`question-${questionIndex}`}
                                 value={letter}
@@ -356,13 +397,19 @@ function TakeQuiz() {
                                 }
                               />
 
-                              <span className="option-letter">
+                              <span className="quiz-option-key">
                                 {letter}
                               </span>
 
-                              <span className="option-text">
+                              <span className="quiz-option-text">
                                 {option}
                               </span>
+
+                              {selected && (
+                                <span className="quiz-option-mark">
+                                  ✓
+                                </span>
+                              )}
 
                             </label>
                           );
@@ -376,12 +423,14 @@ function TakeQuiz() {
               );
             })}
 
+            </div>
+
             {questions.length > 0 && (
-              <div className="quiz-actions">
+              <div className="ui-button-row back-row">
 
                 <button
                   type="button"
-                  className="primary-button"
+                  className="ui-button ui-button-primary"
                   onClick={submitQuiz}
                 >
                   Submit Quiz
@@ -389,7 +438,7 @@ function TakeQuiz() {
 
                 <Link
                   to="/quizzes"
-                  className="secondary-button"
+                  className="ui-button ui-button-secondary"
                 >
                   Cancel
                 </Link>
@@ -400,8 +449,8 @@ function TakeQuiz() {
           </section>
         )}
 
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

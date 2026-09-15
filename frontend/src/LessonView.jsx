@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function LessonView() {
   const { id } = useParams();
@@ -23,101 +24,69 @@ function LessonView() {
 
   if (!plan) {
     return (
-      <div className="tg-page">
-        <header className="tg-header">
-          <Link to="/" className="tg-brand">
-            <span className="tg-logo">TG</span>
-            <span className="tg-brand-text">
-              <strong>TEACHER GUIDE</strong>
-              <small>TEACHER WORKSPACE</small>
-            </span>
-          </Link>
+      <AppShell>
+        <div className="tg-content">
+          <div className="page-center">
+            <div className="empty-block">
+              <p className="zine-label">Lesson plan</p>
+              <h1>Lesson plan not found.</h1>
+              <p>
+                This lesson plan may have been deleted or does not exist.
+              </p>
 
-          <nav className="tg-nav">
-            <Link to="/">Dashboard</Link>
-            <Link to="/saved-plans">Lesson Plans</Link>
-            <Link to="/classes">My Classes</Link>
-            <Link to="/resources">Resources</Link>
-            <Link to="/quizzes">Quizzes</Link>
-            <Link to="/analytics">Analytics</Link>
-          </nav>
-        </header>
-
-        <main className="tg-content">
-          <div className="tg-not-found">
-            <span>404</span>
-            <h1>Lesson plan not found.</h1>
-            <p>
-              This lesson plan may have been deleted or does not exist.
-            </p>
-
-            <Link to="/saved-plans" className="tg-primary">
-              ← Back to Lesson Plans
-            </Link>
+              <Link to="/saved-plans" className="ui-button ui-button-primary">
+                ← Back to Lesson Plans
+              </Link>
+            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
+
+  const footer = (
+    <>
+      <div>
+        <strong>TEACHER GUIDE</strong>
+        <span>Plan better. Teach smarter. Track progress.</span>
+      </div>
+
+      <span>© 2026</span>
+    </>
+  );
+
   return (
-    <div className="tg-page">
-      <header className="tg-header">
-        <Link to="/" className="tg-brand">
-          <span className="tg-logo">TG</span>
+    <AppShell footer={footer}>
+      <div className="tg-content">
+        <header className="page-header">
+          <div className="page-header-copy">
+            <p className="zine-label">LESSON PLAN</p>
 
-          <span className="tg-brand-text">
-            <strong>TEACHER GUIDE</strong>
-            <small>TEACHER WORKSPACE</small>
-          </span>
-        </Link>
+            <h1>{plan.title || "Untitled Lesson"}</h1>
 
-        <nav className="tg-nav">
-          <Link to="/">Dashboard</Link>
-          <Link className="active" to="/saved-plans">
-            Lesson Plans
-          </Link>
-          <Link to="/classes">My Classes</Link>
-          <Link to="/resources">Resources</Link>
-          <Link to="/quizzes">Quizzes</Link>
-          <Link to="/analytics">Analytics</Link>
-        </nav>
+            <p>
+              {plan.subject || "Subject"} •{" "}
+              {plan.grade || "Class"} •{" "}
+              {plan.duration
+                ? `${plan.duration} minutes`
+                : "Duration not specified"}
+            </p>
+          </div>
 
-        <div className="tg-profile">
-          <span className="tg-avatar">T</span>
-          <span>
-            <strong>Teacher</strong>
-            <small>Administrator</small>
-          </span>
-        </div>
-      </header>
-
-      <main className="tg-content">
-        <section className="tg-lesson-hero">
-          <p className="tg-eyebrow">LESSON PLAN</p>
-
-          <h1>{plan.title || "Untitled Lesson"}</h1>
-
-          <p className="tg-subtitle">
-            {plan.subject || "Subject"} ·{" "}
-            {plan.grade || "Class"} ·{" "}
-            {plan.duration
-              ? `${plan.duration} minutes`
-              : "Duration not specified"}
-          </p>
-
-          <div className="tg-actions">
-            <Link to="/saved-plans" className="tg-secondary">
+          <div className="page-header-side">
+            <Link to="/saved-plans" className="ui-button ui-button-secondary">
               ← Back to Lesson Plans
             </Link>
           </div>
-        </section>
+        </header>
 
-        <section className="tg-lesson-grid">
+        <section className="card-grid card-grid-2">
           <LessonSection
             number="01"
             title="Lesson Details"
             value={plan.topic}
+            featured
           />
 
           <LessonSection
@@ -150,43 +119,35 @@ function LessonView() {
             value={plan.notes}
           />
         </section>
-      </main>
-
-      <footer className="tg-footer">
-        <div>
-          <strong>TEACHER GUIDE</strong>
-          <span>Plan better. Teach smarter. Track progress.</span>
-        </div>
-
-        <span>© 2026</span>
-      </footer>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
-function LessonSection({ number, title, value }) {
+function LessonSection({ number, title, value, featured = false }) {
   return (
-    <section className="tg-lesson-card">
-      <div className="tg-card-number">{number}</div>
+    <section
+      className={featured ? "stack-card pad-6" : "ui-card pad-6"}
+    >
+      <div className="lessonview-card-top">
+        {number ? <span className="index-circle index-circle-sm">{number}</span> : null}
+        <p className="zine-label">{title}</p>
+      </div>
 
-      <div>
-        <p className="tg-eyebrow">{title}</p>
-
-        <div className="tg-card-content">
-          {value ? (
-            Array.isArray(value) ? (
-              <ul>
-                {value.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>{value}</p>
-            )
+      <div className="lessonview-card-content">
+        {value ? (
+          Array.isArray(value) ? (
+            <ul>
+              {value.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
           ) : (
-            <p className="tg-empty">No information added.</p>
-          )}
-        </div>
+            <p>{value}</p>
+          )
+        ) : (
+          <p className="lessonview-empty">No information added.</p>
+        )}
       </div>
     </section>
   );

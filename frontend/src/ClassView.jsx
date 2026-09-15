@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 const students = [
   { id: 1, name: "Aarav Sharma", score: 86, attendance: "98%" },
@@ -13,311 +14,313 @@ const students = [
 function ClassView() {
   const navigate = useNavigate();
 
+
+  const footer = (
+    <>
+      <div>
+        <strong>TEACHER GUIDE</strong>
+        <p>Intelligent workspace for modern teaching.</p>
+      </div>
+
+      <Link to="/" className="ui-button ui-button-secondary">
+        Back to Dashboard →
+      </Link>
+    </>
+  );
+
   return (
-    <div className="class-view-page">
-      {/* TOP NAVIGATION */}
-      <header className="class-view-header">
-        <div className="class-view-brand">
-          <Link to="/" className="brand-main">
-            TEACHER GUIDE
-          </Link>
-          <span>TEACHER WORKSPACE</span>
-        </div>
-
-        <nav className="class-view-nav">
-          <Link to="/">Dashboard</Link>
-          <Link to="/saved-plans">Lesson Plans</Link>
-          <Link to="/classes" className="active">
-            My Classes
-          </Link>
-          <Link to="/resources">Resources</Link>
-          <Link to="/quizzes">Quizzes</Link>
-          <Link to="/analytics">Analytics</Link>
-        </nav>
-
-        <div className="class-view-profile">
-          <div className="class-view-avatar">H</div>
-          <div>
-            <strong>Teacher</strong>
-            <span>Administrator</span>
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN */}
-      <main className="class-view-content">
-        {/* BACK */}
+    <AppShell footer={footer}>
+      {/* BACK */}
+      <div className="classview-back">
         <button
-          className="back-button"
+          type="button"
+          className="ui-button ui-button-secondary"
           onClick={() => navigate("/classes")}
         >
           ← Back to Classes
         </button>
+      </div>
 
-        {/* HERO */}
-        <section className="class-hero">
-          <div>
-            <p className="class-eyebrow">CLASS DETAILS</p>
+      {/* HERO */}
+      <header className="page-header">
+        <div className="page-header-copy">
+          <p className="zine-label">CLASS DETAILS</p>
 
-            <h1>Class A</h1>
+          <h1>Class A</h1>
 
-            <p className="class-description">
-              Mathematics learning group · Grade 8
-            </p>
+          <p>Mathematics learning group · Grade 8</p>
+        </div>
+
+        <div className="page-header-side">
+          <button
+            type="button"
+            className="ui-button ui-button-secondary"
+            onClick={() => navigate("/lesson-plan")}
+          >
+            + Lesson Plan
+          </button>
+
+          <button
+            type="button"
+            className="ui-button ui-button-primary"
+            onClick={() => navigate("/quizzes")}
+          >
+            Create Quiz
+          </button>
+        </div>
+      </header>
+
+      {/* STATS */}
+      <section className="stat-grid">
+        <div className="hypercard-static stat-tile">
+          <p className="zine-label">STUDENTS</p>
+          <p className="stat-tile-value">30</p>
+          <div className="stat-tile-foot">
+            <span>Registered students</span>
           </div>
+        </div>
 
-          <div className="class-hero-actions">
-            <button
-              className="secondary-button"
-              onClick={() => navigate("/lesson-plan")}
-            >
-              + Lesson Plan
-            </button>
-
-            <button
-              className="primary-button"
-              onClick={() => navigate("/quizzes")}
-            >
-              Create Quiz
-            </button>
+        <div className="hypercard-static stat-tile">
+          <p className="zine-label">ATTENDANCE</p>
+          <p className="stat-tile-value">96%</p>
+          <div className="stat-tile-foot">
+            <span>Average attendance</span>
           </div>
-        </section>
+        </div>
 
-        {/* STATS */}
-        <section className="class-stats">
-          <div className="class-stat-card">
-            <span>STUDENTS</span>
-            <strong>30</strong>
-            <p>Registered students</p>
+        <div className="hypercard-static stat-tile">
+          <p className="zine-label">PROGRESS</p>
+          <p className="stat-tile-value">0%</p>
+          <div className="stat-tile-foot">
+            <span>Overall completion</span>
           </div>
+        </div>
 
-          <div className="class-stat-card">
-            <span>ATTENDANCE</span>
-            <strong>96%</strong>
-            <p>Average attendance</p>
+        <div className="hypercard-static stat-tile">
+          <p className="zine-label">SUBJECT</p>
+          <p className="stat-tile-value">Math</p>
+          <div className="stat-tile-foot">
+            <span>Grade 8 Mathematics</span>
           </div>
+        </div>
+      </section>
 
-          <div className="class-stat-card">
-            <span>PROGRESS</span>
-            <strong>0%</strong>
-            <p>Overall completion</p>
-          </div>
-
-          <div className="class-stat-card">
-            <span>SUBJECT</span>
-            <strong className="subject-value">Math</strong>
-            <p>Grade 8 Mathematics</p>
-          </div>
-        </section>
-
-        {/* TWO COLUMNS */}
-        <div className="class-main-grid">
-          {/* STUDENTS */}
-          <section className="class-panel students-panel">
-            <div className="class-panel-header">
-              <div>
-                <p className="class-eyebrow">STUDENTS</p>
-                <h2>Student roster</h2>
-              </div>
-
-              <span className="student-count">30 students</span>
+      {/* TWO COLUMNS */}
+      <div className="two-column section-block">
+        {/* STUDENTS */}
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <p className="zine-label">STUDENTS</p>
+              <h2>Student roster</h2>
             </div>
 
-            <div className="student-table">
-              <div className="student-table-header">
-                <span>Student</span>
-                <span>Performance</span>
-                <span>Attendance</span>
-              </div>
+            <span className="ui-pill">30 students</span>
+          </div>
 
-              {students.map((student) => (
-                <div className="student-row" key={student.id}>
-                  <div className="student-name">
-                    <div className="student-avatar">
-                      {student.name.charAt(0)}
-                    </div>
+          <div className="data-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Performance</th>
+                  <th>Attendance</th>
+                </tr>
+              </thead>
 
-                    <div>
-                      <strong>{student.name}</strong>
-                      <span>Student {student.id}</span>
-                    </div>
-                  </div>
+              <tbody>
+                {students.map((student) => (
+                  <tr key={student.id}>
+                    <td>
+                      <div className="classview-student">
+                        <div className="index-circle index-circle-sm">
+                          {student.name.charAt(0)}
+                        </div>
 
-                  <div className="student-performance">
-                    <strong>{student.score}%</strong>
+                        <div className="classview-student-copy">
+                          <strong>{student.name}</strong>
+                          <span className="text-fine">
+                            Student {student.id}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
 
-                    <div className="mini-progress">
-                      <div
-                        className="mini-progress-fill"
-                        style={{ width: `${student.score}%` }}
-                      />
-                    </div>
-                  </div>
+                    <td>
+                      <div className="classview-score">
+                        <strong>{student.score}%</strong>
 
-                  <span className="attendance-badge">
-                    {student.attendance}
-                  </span>
-                </div>
-              ))}
-            </div>
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${student.score}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
 
-            <button className="view-students-button">
+                    <td>
+                      <span className="ui-pill ui-pill-dark">
+                        {student.attendance}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="classview-table-foot">
+            <button type="button" className="text-link">
               View all 30 students →
             </button>
-          </section>
-
-          {/* CLASS INFORMATION */}
-          <section className="class-panel">
-            <div className="class-panel-header">
-              <div>
-                <p className="class-eyebrow">CLASS INFORMATION</p>
-                <h2>Teaching overview</h2>
-              </div>
-            </div>
-
-            <div className="info-list">
-              <div className="info-item">
-                <span>Class name</span>
-                <strong>Class A</strong>
-              </div>
-
-              <div className="info-item">
-                <span>Subject</span>
-                <strong>Mathematics</strong>
-              </div>
-
-              <div className="info-item">
-                <span>Grade</span>
-                <strong>Grade 8</strong>
-              </div>
-
-              <div className="info-item">
-                <span>Students</span>
-                <strong>30</strong>
-              </div>
-
-              <div className="info-item">
-                <span>Attendance</span>
-                <strong>96%</strong>
-              </div>
-
-              <div className="info-item">
-                <span>Status</span>
-                <strong className="status-active">Active</strong>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* PROGRESS SECTION */}
-        <section className="class-panel progress-panel">
-          <div className="class-panel-header">
-            <div>
-              <p className="class-eyebrow">LEARNING PROGRESS</p>
-              <h2>Class performance</h2>
-            </div>
-
-            <span className="progress-label">Getting started</span>
           </div>
+        </section>
 
-          <div className="overall-progress">
-            <div className="overall-progress-top">
-              <span>Overall class progress</span>
-              <strong>0%</strong>
-            </div>
-
-            <div className="large-progress">
-              <div className="large-progress-fill" />
+        {/* CLASS INFORMATION */}
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <p className="zine-label">CLASS INFORMATION</p>
+              <h2>Teaching overview</h2>
             </div>
           </div>
 
-          <div className="progress-metrics">
+          <div className="detail-grid">
             <div>
-              <strong>30</strong>
+              <span>Class name</span>
+              <strong>Class A</strong>
+            </div>
+
+            <div>
+              <span>Subject</span>
+              <strong>Mathematics</strong>
+            </div>
+
+            <div>
+              <span>Grade</span>
+              <strong>Grade 8</strong>
+            </div>
+
+            <div>
               <span>Students</span>
+              <strong>30</strong>
             </div>
 
             <div>
-              <strong>0</strong>
-              <span>Completed</span>
-            </div>
-
-            <div>
-              <strong>96%</strong>
               <span>Attendance</span>
+              <strong>96%</strong>
             </div>
 
             <div>
-              <strong>2</strong>
-              <span>Lesson Plans</span>
+              <span>Status</span>
+              <strong>
+                <span className="ui-pill ui-pill-dark">Active</span>
+              </strong>
             </div>
           </div>
         </section>
+      </div>
 
-        {/* QUICK ACTIONS */}
-        <section className="quick-actions-section">
-          <div className="class-eyebrow">QUICK ACTIONS</div>
-
-          <h2>Continue teaching</h2>
-
-          <div className="class-quick-grid">
-            <Link to="/lesson-plan" className="class-action-card">
-              <span className="action-number">01</span>
-
-              <div>
-                <strong>Create Lesson Plan</strong>
-                <p>Plan your next mathematics lesson.</p>
-              </div>
-
-              <span className="action-arrow">→</span>
-            </Link>
-
-            <Link to="/quizzes" className="class-action-card">
-              <span className="action-number">02</span>
-
-              <div>
-                <strong>Create Quiz</strong>
-                <p>Assess your students' understanding.</p>
-              </div>
-
-              <span className="action-arrow">→</span>
-            </Link>
-
-            <Link to="/resources" className="class-action-card">
-              <span className="action-number">03</span>
-
-              <div>
-                <strong>Browse Resources</strong>
-                <p>Find teaching material for this class.</p>
-              </div>
-
-              <span className="action-arrow">→</span>
-            </Link>
-
-            <Link to="/analytics" className="class-action-card">
-              <span className="action-number">04</span>
-
-              <div>
-                <strong>View Analytics</strong>
-                <p>Track class performance and progress.</p>
-              </div>
-
-              <span className="action-arrow">→</span>
-            </Link>
+      {/* PROGRESS SECTION */}
+      <section className="panel section-block">
+        <div className="panel-header">
+          <div>
+            <p className="zine-label">LEARNING PROGRESS</p>
+            <h2>Class performance</h2>
           </div>
-        </section>
-      </main>
 
-      {/* FOOTER */}
-      <footer className="class-view-footer">
-        <div>
-          <strong>TEACHER GUIDE</strong>
-          <p>Intelligent workspace for modern teaching.</p>
+          <span className="ui-pill">
+            Getting started
+          </span>
         </div>
 
-        <Link to="/">Back to Dashboard →</Link>
-      </footer>
-    </div>
+        <div className="classview-overall">
+          <div className="progress-meta">
+            <span>Overall class progress</span>
+            <strong>0%</strong>
+          </div>
+
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: "0%" }} />
+          </div>
+        </div>
+
+        <div className="mini-metrics mini-metrics-4 classview-metrics">
+          <div>
+            <span>Students</span>
+            <strong>30</strong>
+          </div>
+
+          <div>
+            <span>Completed</span>
+            <strong>0</strong>
+          </div>
+
+          <div>
+            <span>Attendance</span>
+            <strong>96%</strong>
+          </div>
+
+          <div>
+            <span>Lesson Plans</span>
+            <strong>2</strong>
+          </div>
+        </div>
+      </section>
+
+      {/* QUICK ACTIONS */}
+      <section className="section-block">
+        <div className="section-header">
+          <div className="section-header-copy">
+            <p className="zine-label">QUICK ACTIONS</p>
+            <h2>Continue teaching</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid-4">
+          <Link to="/lesson-plan" className="hypercard stat-tile action-tile">
+            <p className="zine-label">01</p>
+            <h3 className="card-title">Create Lesson Plan</h3>
+            <p className="card-body">Plan your next mathematics lesson.</p>
+
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
+
+          <Link to="/quizzes" className="hypercard stat-tile action-tile">
+            <p className="zine-label">02</p>
+            <h3 className="card-title">Create Quiz</h3>
+            <p className="card-body">Assess your students' understanding.</p>
+
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
+
+          <Link to="/resources" className="hypercard stat-tile action-tile">
+            <p className="zine-label">03</p>
+            <h3 className="card-title">Browse Resources</h3>
+            <p className="card-body">Find teaching material for this class.</p>
+
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
+
+          <Link to="/analytics" className="hypercard stat-tile action-tile">
+            <p className="zine-label">04</p>
+            <h3 className="card-title">View Analytics</h3>
+            <p className="card-body">Track class performance and progress.</p>
+
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
+        </div>
+      </section>
+    </AppShell>
   );
 }
 

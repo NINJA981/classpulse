@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 const initialQuizzes = [
   {
@@ -77,51 +78,32 @@ function Quizzes() {
   };
 
   return (
-    <div className="workspace-page">
-      {/* HEADER */}
-      <header className="workspace-header">
-        <div>
-          <Link to="/" className="workspace-brand">
-            TEACHER GUIDE
-          </Link>
+    <AppShell
+      footer={
+        <>
+          <div>
+            <strong>
+              TEACHER GUIDE
+            </strong>
 
-          <div className="workspace-subtitle">
-            TEACHER WORKSPACE
+            <span>
+              Intelligent workspace for modern teaching.
+            </span>
           </div>
-        </div>
 
-        <nav className="workspace-navigation">
-          <Link to="/">Dashboard</Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
+          <Link to="/" className="ui-button ui-button-secondary">
+            Dashboard
           </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-          <Link to="/analytics">
-            Analytics
-          </Link>
-        </nav>
-      </header>
-
+        </>
+      }
+    >
       {/* MAIN */}
-      <main className="workspace-container">
+      <div>
 
         {/* PAGE HEADING */}
-        <section className="workspace-heading">
-          <div>
-            <p className="workspace-eyebrow">
+        <header className="page-header">
+          <div className="page-header-copy">
+            <p className="zine-label">
               ASSESSMENT CENTER
             </p>
 
@@ -134,63 +116,65 @@ function Quizzes() {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="primary-action"
-            onClick={() => setShowForm((current) => !current)}
-          >
-            + Create Quiz
-          </button>
-        </section>
+          <div className="page-header-side">
+            <button
+              type="button"
+              className="ui-button ui-button-primary"
+              onClick={() => setShowForm((current) => !current)}
+            >
+              + Create Quiz
+            </button>
+          </div>
+        </header>
 
         {/* SUMMARY */}
-        <section className="workspace-summary">
-          <div>
-            <span>
+        <section className="stat-grid">
+          <div className="hypercard-static stat-tile">
+            <p className="zine-label">
               TOTAL QUIZZES
-            </span>
+            </p>
 
-            <strong>
+            <p className="stat-tile-value">
               {quizzes.length}
-            </strong>
+            </p>
 
-            <p>
+            <p className="card-body">
               Assessments created
             </p>
           </div>
 
-          <div>
-            <span>
+          <div className="hypercard-static stat-tile">
+            <p className="zine-label">
               PUBLISHED
-            </span>
+            </p>
 
-            <strong>
+            <p className="stat-tile-value">
               {
                 quizzes.filter(
                   (quiz) => quiz.status === "Published"
                 ).length
               }
-            </strong>
+            </p>
 
-            <p>
+            <p className="card-body">
               Ready for students
             </p>
           </div>
 
-          <div>
-            <span>
+          <div className="hypercard-static stat-tile">
+            <p className="zine-label">
               DRAFTS
-            </span>
+            </p>
 
-            <strong>
+            <p className="stat-tile-value">
               {
                 quizzes.filter(
                   (quiz) => quiz.status === "Draft"
                 ).length
               }
-            </strong>
+            </p>
 
-            <p>
+            <p className="card-body">
               Still being prepared
             </p>
           </div>
@@ -198,10 +182,10 @@ function Quizzes() {
 
         {/* CREATE FORM */}
         {showForm && (
-          <section className="quiz-form-card">
-            <div className="quiz-form-header">
+          <section className="panel section-block">
+            <div className="panel-header">
               <div>
-                <p className="workspace-eyebrow">
+                <p className="zine-label">
                   NEW ASSESSMENT
                 </p>
 
@@ -212,7 +196,8 @@ function Quizzes() {
 
               <button
                 type="button"
-                className="close-button"
+                className="ui-button ui-button-secondary ui-button-icon"
+                aria-label="Close"
                 onClick={() => setShowForm(false)}
               >
                 ×
@@ -220,7 +205,7 @@ function Quizzes() {
             </div>
 
             <form onSubmit={createQuiz}>
-              <div className="quiz-form-grid">
+              <div className="form-grid">
 
                 <div className="form-field">
                   <label htmlFor="quiz-title">
@@ -326,10 +311,10 @@ function Quizzes() {
 
               </div>
 
-              <div className="quiz-form-actions">
+              <div className="form-actions">
                 <button
                   type="button"
-                  className="secondary-action"
+                  className="ui-button ui-button-secondary"
                   onClick={() => setShowForm(false)}
                 >
                   Cancel
@@ -337,7 +322,7 @@ function Quizzes() {
 
                 <button
                   type="submit"
-                  className="primary-action"
+                  className="ui-button ui-button-primary"
                 >
                   Create Quiz
                 </button>
@@ -347,11 +332,11 @@ function Quizzes() {
         )}
 
         {/* QUIZ LIBRARY */}
-        <section className="quiz-library">
+        <section className="section-block">
 
-          <div className="library-heading">
-            <div>
-              <p className="workspace-eyebrow">
+          <div className="section-header">
+            <div className="section-header-copy">
+              <p className="zine-label">
                 QUIZ LIBRARY
               </p>
 
@@ -360,19 +345,14 @@ function Quizzes() {
               </h2>
             </div>
 
-            <span className="library-count">
+            <span className="ui-pill">
               {quizzes.length} quizzes
             </span>
           </div>
 
           {quizzes.length === 0 ? (
-            <section className="empty-state">
-
-              <div className="empty-icon">
-                +
-              </div>
-
-              <p className="workspace-eyebrow">
+            <section className="empty-block">
+              <p className="zine-label">
                 EMPTY LIBRARY
               </p>
 
@@ -386,7 +366,7 @@ function Quizzes() {
 
               <button
                 type="button"
-                className="primary-action"
+                className="ui-button ui-button-primary"
                 onClick={() => setShowForm(true)}
               >
                 Create Your First Quiz
@@ -394,25 +374,25 @@ function Quizzes() {
 
             </section>
           ) : (
-            <div className="quiz-grid">
+            <div className="card-grid">
 
               {quizzes.map((quiz, index) => (
                 <article
-                  className="quiz-card"
+                  className="ui-card pad-6"
                   key={quiz.id}
                 >
 
-                  <div className="quiz-card-top">
+                  <div className="card-top">
 
-                    <span className="quiz-number">
+                    <span className="zine-label">
                       {String(index + 1).padStart(2, "0")}
                     </span>
 
                     <span
                       className={
                         quiz.status === "Published"
-                          ? "quiz-status published"
-                          : "quiz-status"
+                          ? "ui-pill ui-pill-dark"
+                          : "ui-pill"
                       }
                     >
                       {quiz.status}
@@ -420,19 +400,15 @@ function Quizzes() {
 
                   </div>
 
-                  <div className="quiz-icon">
-                    ✓
-                  </div>
-
-                  <h2>
+                  <h2 className="card-title">
                     {quiz.title}
                   </h2>
 
-                  <p className="quiz-description">
+                  <p className="card-body">
                     {quiz.subject} · {quiz.grade}
                   </p>
 
-                  <div className="quiz-details">
+                  <div className="detail-grid">
 
                     <div>
                       <span>
@@ -466,18 +442,18 @@ function Quizzes() {
 
                   </div>
 
-                  <div className="quiz-card-footer">
+                  <div className="card-foot">
 
                     <button
                       type="button"
-                      className="quiz-open-button"
+                      className="ui-button ui-button-secondary"
                     >
                       Open Quiz →
                     </button>
 
                     <button
                       type="button"
-                      className="quiz-delete-button"
+                      className="ui-button ui-button-danger"
                       onClick={() =>
                         deleteQuiz(quiz.id)
                       }
@@ -495,11 +471,11 @@ function Quizzes() {
         </section>
 
         {/* QUICK ACTIONS */}
-        <section className="quick-actions-section">
+        <section className="section-block">
 
-          <div className="library-heading">
-            <div>
-              <p className="workspace-eyebrow">
+          <div className="section-header">
+            <div className="section-header-copy">
+              <p className="zine-label">
                 QUICK ACTIONS
               </p>
 
@@ -509,126 +485,107 @@ function Quizzes() {
             </div>
           </div>
 
-          <div className="quick-actions-grid">
+          <div className="card-grid card-grid-4">
 
             <Link
               to="/lesson-plan"
-              className="quick-action-card"
+              className="hypercard stat-tile action-tile"
             >
-              <span>
+              <p className="zine-label">
                 01
-              </span>
+              </p>
 
-              <strong>
+              <h3 className="card-title">
                 Create Lesson Plan
-              </strong>
+              </h3>
 
-              <p>
+              <p className="card-body">
                 Plan your next structured lesson.
               </p>
 
-              <b>
-                →
-              </b>
+              <div className="stat-tile-foot">
+                <span className="text-link">Open →</span>
+              </div>
             </Link>
 
             <Link
               to="/classes"
-              className="quick-action-card"
+              className="hypercard stat-tile action-tile"
             >
-              <span>
+              <p className="zine-label">
                 02
-              </span>
+              </p>
 
-              <strong>
+              <h3 className="card-title">
                 Manage Classes
-              </strong>
+              </h3>
 
-              <p>
+              <p className="card-body">
                 View students and class progress.
               </p>
 
-              <b>
-                →
-              </b>
+              <div className="stat-tile-foot">
+                <span className="text-link">Open →</span>
+              </div>
             </Link>
 
             <Link
               to="/resources"
-              className="quick-action-card"
+              className="hypercard stat-tile action-tile"
             >
-              <span>
+              <p className="zine-label">
                 03
-              </span>
+              </p>
 
-              <strong>
+              <h3 className="card-title">
                 Browse Resources
-              </strong>
+              </h3>
 
-              <p>
+              <p className="card-body">
                 Find teaching materials.
               </p>
 
-              <b>
-                →
-              </b>
+              <div className="stat-tile-foot">
+                <span className="text-link">Open →</span>
+              </div>
             </Link>
 
             <Link
               to="/analytics"
-              className="quick-action-card"
+              className="hypercard stat-tile action-tile"
             >
-              <span>
+              <p className="zine-label">
                 04
-              </span>
+              </p>
 
-              <strong>
+              <h3 className="card-title">
                 View Analytics
-              </strong>
+              </h3>
 
-              <p>
+              <p className="card-body">
                 Track student performance.
               </p>
 
-              <b>
-                →
-              </b>
+              <div className="stat-tile-foot">
+                <span className="text-link">Open →</span>
+              </div>
             </Link>
 
           </div>
         </section>
 
         {/* BACK */}
-        <div className="workspace-back-container">
+        <div className="back-row">
           <Link
             to="/"
-            className="workspace-back"
+            className="ui-button ui-button-secondary"
           >
             ← Back to Dashboard
           </Link>
         </div>
 
-      </main>
-
-      {/* FOOTER */}
-      <footer className="workspace-footer">
-
-        <div>
-          <strong>
-            TEACHER GUIDE
-          </strong>
-
-          <span>
-            Intelligent workspace for modern teaching.
-          </span>
-        </div>
-
-        <Link to="/">
-          Dashboard
-        </Link>
-
-      </footer>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

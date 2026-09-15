@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function SavedPlans() {
   const [plans, setPlans] = useState([]);
@@ -192,53 +193,29 @@ function SavedPlans() {
     );
   }
 
+
+  const footer = (
+    <>
+      <div>
+        <strong>TEACHER GUIDE</strong>
+
+        <span>
+          Plan better. Teach smarter. Track progress.
+        </span>
+      </div>
+
+      <Link to="/" className="ui-button ui-button-secondary">
+        Dashboard
+      </Link>
+    </>
+  );
+
   return (
-    <div className="saved-plans-page">
-      <header className="saved-plans-header">
-        <div className="saved-plans-brand">
-          <Link to="/" className="saved-plans-logo">
-            TG
-          </Link>
-
-          <div>
-            <Link to="/" className="saved-plans-brand-name">
-              TEACHER GUIDE
-            </Link>
-
-            <span>TEACHER WORKSPACE</span>
-          </div>
-        </div>
-
-        <nav className="saved-plans-nav">
-          <Link to="/">Dashboard</Link>
-
-          <Link to="/saved-plans" className="active">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">My Classes</Link>
-
-          <Link to="/resources">Resources</Link>
-
-          <Link to="/quizzes">Quizzes</Link>
-
-          <Link to="/analytics">Analytics</Link>
-        </nav>
-
-        <div className="saved-plans-profile">
-          <div className="saved-plans-avatar">T</div>
-
-          <div>
-            <strong>Teacher</strong>
-            <span>Administrator</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="saved-plans-container">
-        <section className="saved-plans-hero">
-          <div>
-            <p className="saved-plans-eyebrow">
+    <AppShell footer={footer}>
+      <div className="saved-plans-container">
+        <header className="page-header">
+          <div className="page-header-copy">
+            <p className="zine-label">
               LESSON LIBRARY
             </p>
 
@@ -249,11 +226,11 @@ function SavedPlans() {
             </p>
           </div>
 
-          <div className="saved-plans-hero-actions">
+          <div className="page-header-side">
             {plans.length > 0 && (
               <button
                 type="button"
-                className="delete-all-button"
+                className="ui-button ui-button-danger"
                 onClick={deleteAllPlans}
               >
                 Delete All
@@ -262,147 +239,135 @@ function SavedPlans() {
 
             <Link
               to="/lesson-plan"
-              className="create-plan-button"
+              className="ui-button ui-button-primary"
             >
               Create Lesson Plan
             </Link>
           </div>
-        </section>
+        </header>
 
-        <section className="saved-plans-summary">
-          <div className="summary-box">
-            <span className="summary-label">
+        <section className="stat-grid">
+          <div className="hypercard-static stat-tile">
+            <p className="zine-label">
               SAVED PLANS
-            </span>
+            </p>
 
-            <strong>{plans.length}</strong>
+            <p className="stat-tile-value">{plans.length}</p>
 
-            <span>
+            <p className="card-body">
               {plans.length === 1
                 ? "Lesson plan"
                 : "Lesson plans"}
-            </span>
+            </p>
           </div>
 
-          <div className="summary-box">
-            <span className="summary-label">
+          <div className="hypercard-static stat-tile">
+            <p className="zine-label">
               LIBRARY STATUS
-            </span>
+            </p>
 
-            <strong>Ready</strong>
+            <p className="stat-tile-value">Ready</p>
 
-            <span>Stored in this browser</span>
+            <p className="card-body">Stored in this browser</p>
           </div>
         </section>
 
         {plans.length === 0 ? (
-          <section className="empty-plans">
-            <div className="empty-number">01</div>
+          <section className="empty-block section-block">
+            <p className="zine-label">
+              EMPTY LIBRARY
+            </p>
 
-            <div>
-              <p className="saved-plans-eyebrow">
-                EMPTY LIBRARY
-              </p>
+            <h2>No lesson plans yet</h2>
 
-              <h2>No lesson plans yet</h2>
+            <p>
+              Create your first lesson plan and it will appear here.
+            </p>
 
-              <p>
-                Create your first lesson plan and it will appear here.
-              </p>
-
-              <Link
-                to="/lesson-plan"
-                className="create-plan-button"
-              >
-                Create Lesson Plan
-              </Link>
-            </div>
+            <Link
+              to="/lesson-plan"
+              className="ui-button ui-button-primary"
+            >
+              Create Lesson Plan
+            </Link>
           </section>
         ) : (
-          <section className="saved-plans-list">
+          <section className="card-grid section-block">
             {plans.map((plan, index) => (
               <article
-                className="saved-plan-card"
+                className="ui-card pad-6"
                 key={
                   plan.id !== undefined
                     ? plan.id
                     : `plan-${index}`
                 }
               >
-                <div className="saved-plan-number">
-                  {String(index + 1).padStart(2, "0")}
+                <div className="card-top">
+                  <span className="ui-pill ui-pill-dark">
+                    Saved
+                  </span>
                 </div>
 
-                <div className="saved-plan-main">
-                  <div className="saved-plan-top">
-                    <span className="plan-subject">
-                      {plan.subject || "General"}
-                    </span>
+                <p className="zine-label">
+                  {plan.subject || "General"}
+                </p>
 
-                    <span className="saved-badge">
-                      Saved
-                    </span>
+                <h2 className="card-title">{getTitle(plan)}</h2>
+
+                <p className="card-body">
+                  {plan.topic || "No topic added"}
+                </p>
+
+                <div className="detail-grid">
+                  <div>
+                    <span>Subject</span>
+
+                    <strong>
+                      {plan.subject || "Not specified"}
+                    </strong>
                   </div>
 
-                  <h2>{getTitle(plan)}</h2>
+                  <div>
+                    <span>Class</span>
 
-                  <p className="saved-plan-topic">
-                    {plan.topic || "No topic added"}
-                  </p>
-
-                  <div className="saved-plan-details">
-                    <div>
-                      <span>Subject</span>
-
-                      <strong>
-                        {plan.subject || "Not specified"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Class</span>
-
-                      <strong>{getGrade(plan)}</strong>
-                    </div>
-
-                    <div>
-                      <span>Duration</span>
-
-                      <strong>{getDuration(plan)}</strong>
-                    </div>
-
-                    <div>
-                      <span>Created</span>
-
-                      <strong>{formatDate(plan)}</strong>
-                    </div>
+                    <strong>{getGrade(plan)}</strong>
                   </div>
 
-                  <div className="saved-plan-preview">
-                    <div>
-                      <span>Learning Objectives</span>
+                  <div>
+                    <span>Duration</span>
 
-                      <p>{getObjectives(plan)}</p>
-                    </div>
+                    <strong>{getDuration(plan)}</strong>
+                  </div>
 
-                    <div>
-                      <span>Activities</span>
+                  <div>
+                    <span>Created</span>
 
-                      <p>{getActivities(plan)}</p>
-                    </div>
-
-                    <div>
-                      <span>Assessment</span>
-
-                      <p>{getAssessment(plan)}</p>
-                    </div>
+                    <strong>{formatDate(plan)}</strong>
                   </div>
                 </div>
 
-                <div className="saved-plan-actions">
+                <div className="detail-section">
+                  <span>Learning Objectives</span>
+
+                  <p>{getObjectives(plan)}</p>
+                </div>
+
+                <div className="detail-section">
+                  <span>Activities</span>
+
+                  <p>{getActivities(plan)}</p>
+                </div>
+
+                <div className="detail-section">
+                  <span>Assessment</span>
+
+                  <p>{getAssessment(plan)}</p>
+                </div>
+
+                <div className="card-foot">
                   <button
                     type="button"
-                    className="view-plan-button"
+                    className="ui-button ui-button-secondary"
                     onClick={() => setSelectedPlan(plan)}
                   >
                     View Plan
@@ -410,7 +375,7 @@ function SavedPlans() {
 
                   <button
                     type="button"
-                    className="delete-plan-button"
+                    className="ui-button ui-button-danger"
                     onClick={() => deletePlan(plan)}
                   >
                     Delete
@@ -421,23 +386,25 @@ function SavedPlans() {
           </section>
         )}
 
-        <div className="saved-plans-back">
-          <Link to="/">Back to Dashboard</Link>
+        <div className="back-row">
+          <Link to="/" className="ui-button ui-button-secondary">
+            Back to Dashboard
+          </Link>
         </div>
-      </main>
+      </div>
 
       {selectedPlan && (
         <div
-          className="plan-modal-overlay"
+          className="ui-modal-overlay"
           onClick={() => setSelectedPlan(null)}
         >
           <div
-            className="plan-modal"
+            className="ui-modal"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="plan-modal-header">
+            <div className="ui-modal-header">
               <div>
-                <p className="saved-plans-eyebrow">
+                <p className="zine-label">
                   SAVED LESSON PLAN
                 </p>
 
@@ -452,86 +419,89 @@ function SavedPlans() {
 
               <button
                 type="button"
-                className="modal-close-button"
+                className="ui-button ui-button-secondary ui-button-icon"
+                aria-label="Close"
                 onClick={() => setSelectedPlan(null)}
               >
-                Close
+                ×
               </button>
             </div>
 
-            <div className="modal-details">
-              <div>
-                <span>Subject</span>
+            <div className="ui-modal-body">
+              <div className="detail-grid">
+                <div>
+                  <span>Subject</span>
 
-                <strong>
-                  {selectedPlan.subject || "Not specified"}
-                </strong>
+                  <strong>
+                    {selectedPlan.subject || "Not specified"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Class</span>
+
+                  <strong>{getGrade(selectedPlan)}</strong>
+                </div>
+
+                <div>
+                  <span>Duration</span>
+
+                  <strong>{getDuration(selectedPlan)}</strong>
+                </div>
+
+                <div>
+                  <span>Created</span>
+
+                  <strong>{formatDate(selectedPlan)}</strong>
+                </div>
               </div>
 
-              <div>
-                <span>Class</span>
+              <div className="stack-3">
+                <div className="detail-section">
+                  <h3 className="zine-label">Main Topic</h3>
 
-                <strong>{getGrade(selectedPlan)}</strong>
-              </div>
+                  <p>
+                    {selectedPlan.topic ||
+                      "No topic added."}
+                  </p>
+                </div>
 
-              <div>
-                <span>Duration</span>
+                <div className="detail-section">
+                  <h3 className="zine-label">Learning Objectives</h3>
 
-                <strong>{getDuration(selectedPlan)}</strong>
-              </div>
+                  <p>{getObjectives(selectedPlan)}</p>
+                </div>
 
-              <div>
-                <span>Created</span>
+                <div className="detail-section">
+                  <h3 className="zine-label">Teaching Activities</h3>
 
-                <strong>{formatDate(selectedPlan)}</strong>
+                  <p>{getActivities(selectedPlan)}</p>
+                </div>
+
+                <div className="detail-section">
+                  <h3 className="zine-label">Resources</h3>
+
+                  <p>{getResources(selectedPlan)}</p>
+                </div>
+
+                <div className="detail-section">
+                  <h3 className="zine-label">Assessment</h3>
+
+                  <p>{getAssessment(selectedPlan)}</p>
+                </div>
+
+                <div className="detail-section">
+                  <h3 className="zine-label">Teacher Notes</h3>
+
+                  <p>{getNotes(selectedPlan)}</p>
+                </div>
               </div>
             </div>
 
-            <div className="modal-content">
-              <div>
-                <h3>Main Topic</h3>
-
-                <p>
-                  {selectedPlan.topic ||
-                    "No topic added."}
-                </p>
-              </div>
-
-              <div>
-                <h3>Learning Objectives</h3>
-
-                <p>{getObjectives(selectedPlan)}</p>
-              </div>
-
-              <div>
-                <h3>Teaching Activities</h3>
-
-                <p>{getActivities(selectedPlan)}</p>
-              </div>
-
-              <div>
-                <h3>Resources</h3>
-
-                <p>{getResources(selectedPlan)}</p>
-              </div>
-
-              <div>
-                <h3>Assessment</h3>
-
-                <p>{getAssessment(selectedPlan)}</p>
-              </div>
-
-              <div>
-                <h3>Teacher Notes</h3>
-
-                <p>{getNotes(selectedPlan)}</p>
-              </div>
-            </div>
-
-            <div className="modal-footer">
+            <div className="ui-modal-footer">
               <button
                 type="button"
-                className="delete-plan-button"
+                className="ui-button ui-button-danger"
                 onClick={() => deletePlan(selectedPlan)}
               >
                 Delete Plan
@@ -539,7 +509,7 @@ function SavedPlans() {
 
               <button
                 type="button"
-                className="view-plan-button"
+                className="ui-button ui-button-secondary"
                 onClick={() => setSelectedPlan(null)}
               >
                 Close
@@ -548,19 +518,7 @@ function SavedPlans() {
           </div>
         </div>
       )}
-
-      <footer className="saved-plans-footer">
-        <div>
-          <strong>TEACHER GUIDE</strong>
-
-          <span>
-            Plan better. Teach smarter. Track progress.
-          </span>
-        </div>
-
-        <Link to="/">Dashboard</Link>
-      </footer>
-    </div>
+    </AppShell>
   );
 }
 

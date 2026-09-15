@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 function Classes() {
   const navigate = useNavigate();
@@ -90,50 +91,24 @@ function Classes() {
     navigate(`/class-view/${id}`);
   };
 
+
+  const footer = (
+    <>
+      <div>
+        <strong>TEACHER GUIDE</strong>
+        <p>Intelligent workspace for modern teaching.</p>
+      </div>
+    </>
+  );
+
   return (
-    <div className="app">
+    <AppShell footer={footer}>
 
-      <header className="navbar">
+      <header className="page-header">
 
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
+        <div className="page-header-copy">
 
-        <nav>
-          <Link to="/">Dashboard</Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-
-          <Link to="/analytics">
-            Analytics
-          </Link>
-        </nav>
-
-        <div className="teacher">
-          Teacher
-        </div>
-
-      </header>
-
-      <main className="dashboard">
-
-        <section className="hero">
-
-          <p className="eyebrow">
+          <p className="zine-label">
             TEACHER WORKSPACE
           </p>
 
@@ -141,124 +116,122 @@ function Classes() {
             My Classes.
           </h1>
 
-          <p className="hero-text">
+          <p>
             Organize your classes, students and teaching
             activities in one place.
           </p>
 
-          <div className="hero-buttons">
+        </div>
 
-            <button
-              type="button"
-              className="primary-button"
-              onClick={addClass}
-            >
-              + Add New Class
-            </button>
+        <div className="page-header-side">
 
-          </div>
+          <button
+            type="button"
+            className="ui-button ui-button-primary"
+            onClick={addClass}
+          >
+            + Add New Class
+          </button>
+
+        </div>
+
+      </header>
+
+      {classes.length === 0 ? (
+
+        <section className="empty-block">
+          <p className="zine-label">
+            NO CLASSES
+          </p>
+
+          <h2>
+            No classes added yet.
+          </h2>
+
+          <p>
+            Add your first class to start managing your students.
+          </p>
+
+          <button
+            type="button"
+            className="ui-button ui-button-primary"
+            onClick={addClass}
+          >
+            + Add New Class
+          </button>
 
         </section>
 
-        {classes.length === 0 ? (
+      ) : (
 
-          <section className="empty-state">
+        <section className="card-grid">
 
-            <div className="empty-number">
-              00
-            </div>
+          {classes.map((item) => (
 
-            <h2>
-              No classes added yet.
-            </h2>
-
-            <p>
-              Add your first class to start managing your students.
-            </p>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={addClass}
+            <article
+              className="ui-card pad-6 groupb-card"
+              key={item.id}
             >
-              + Add New Class
-            </button>
 
-          </section>
+              <div className="card-top">
+                <button
+                  type="button"
+                  className="ui-button ui-button-danger"
+                  onClick={() => deleteClass(item.id)}
+                >
+                  Delete
+                </button>
 
-        ) : (
+              </div>
 
-          <section className="items-grid">
+              <h2 className="card-title">
+                {item.name}
+              </h2>
 
-            {classes.map((item, index) => (
+              <p className="text-muted">
+                {item.subject || "Mathematics"} •{" "}
+                {item.grade || "Grade 8"}
+              </p>
 
-              <article
-                className="item-card"
-                key={item.id}
-              >
+              <p className="card-body">
+                {item.description ||
+                  "Mathematics learning group"}
+              </p>
 
-                <div className="item-top">
+              <div className="card-foot">
 
-                  <span className="number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+                <span>
+                  {Number(item.students || 0)}{" "}
+                  {Number(item.students || 0) === 1
+                    ? "Student"
+                    : "Students"}
+                </span>
 
-                  <button
-                    type="button"
-                    className="delete-button"
-                    onClick={() => deleteClass(item.id)}
-                  >
-                    Delete
-                  </button>
+                <button
+                  type="button"
+                  className="ui-button ui-button-secondary"
+                  onClick={() => openClass(item.id)}
+                >
+                  View →
+                </button>
 
-                </div>
+              </div>
 
-                <h2>
-                  {item.name}
-                </h2>
+            </article>
 
-                <p className="item-meta">
-                  {item.subject || "Mathematics"} ·{" "}
-                  {item.grade || "Grade 8"}
-                </p>
+          ))}
 
-                <p className="item-description">
-                  {item.description ||
-                    "Mathematics learning group"}
-                </p>
+        </section>
 
-                <div className="item-bottom">
+      )}
 
-                  <span>
-                    {Number(item.students || 0)}{" "}
-                    {Number(item.students || 0) === 1
-                      ? "Student"
-                      : "Students"}
-                  </span>
+      <section className="section-block">
 
-                  <button
-                    type="button"
-                    className="open-button"
-                    onClick={() => openClass(item.id)}
-                  >
-                    View →
-                  </button>
+        <div className="section-header">
 
-                </div>
+          <div className="section-header-copy">
 
-              </article>
-
-            ))}
-
-          </section>
-
-        )}
-
-        <section className="quick-actions">
-
-          <div className="quick-actions-header">
-
-            <p className="eyebrow">
+            <p className="zine-label">
               QUICK ACTIONS
             </p>
 
@@ -268,79 +241,75 @@ function Classes() {
 
           </div>
 
-          <div className="quick-actions-grid">
+        </div>
 
-            <Link
-              to="/lesson-plan"
-              className="quick-action"
-            >
-              <span>
-                Create Lesson Plan
-              </span>
+        <div className="card-grid card-grid-4">
 
-              <strong>
-                01
-              </strong>
-            </Link>
+          <Link
+            to="/lesson-plan"
+            className="hypercard stat-tile action-tile"
+          >
+            <p className="zine-label">01</p>
 
-            <Link
-              to="/classes"
-              className="quick-action"
-            >
-              <span>
-                Manage Classes
-              </span>
+            <h3 className="card-title">
+              Create Lesson Plan
+            </h3>
 
-              <strong>
-                02
-              </strong>
-            </Link>
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
 
-            <Link
-              to="/quizzes"
-              className="quick-action"
-            >
-              <span>
-                Manage Quizzes
-              </span>
+          <Link
+            to="/classes"
+            className="hypercard stat-tile action-tile"
+          >
+            <p className="zine-label">02</p>
 
-              <strong>
-                03
-              </strong>
-            </Link>
+            <h3 className="card-title">
+              Manage Classes
+            </h3>
 
-            <Link
-              to="/resources"
-              className="quick-action"
-            >
-              <span>
-                Manage Resources
-              </span>
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
 
-              <strong>
-                04
-              </strong>
-            </Link>
+          <Link
+            to="/quizzes"
+            className="hypercard stat-tile action-tile"
+          >
+            <p className="zine-label">03</p>
 
-          </div>
+            <h3 className="card-title">
+              Manage Quizzes
+            </h3>
 
-        </section>
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
 
-        <footer className="dashboard-footer">
+          <Link
+            to="/resources"
+            className="hypercard stat-tile action-tile"
+          >
+            <p className="zine-label">04</p>
 
-          <div>
-            TEACHER GUIDE
-          </div>
+            <h3 className="card-title">
+              Manage Resources
+            </h3>
 
-          <p>
-            Intelligent workspace for modern teaching.
-          </p>
+            <div className="stat-tile-foot">
+              <span className="text-link">Open →</span>
+            </div>
+          </Link>
 
-        </footer>
+        </div>
 
-      </main>
+      </section>
 
-    </div>
+    </AppShell>
   );
 }
 

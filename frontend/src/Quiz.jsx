@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AppShell from "./components/AppShell.jsx";
 
 const createEmptyQuestion = () => ({
   question: "",
@@ -183,7 +184,7 @@ function Quiz() {
           existingQuizzes = parsed;
         }
       }
-    } catch (error) {
+    } catch {
       existingQuizzes = [];
     }
 
@@ -206,84 +207,63 @@ function Quiz() {
   };
 
   return (
-    <div className="app">
-
-      {/* NAVBAR */}
-      <header className="navbar">
-
-        <div className="logo">
-          TEACHER GUIDE
-        </div>
-
-        <nav>
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/saved-plans">
-            Lesson Plans
-          </Link>
-
-          <Link to="/classes">
-            My Classes
-          </Link>
-
-          <Link to="/resources">
-            Resources
-          </Link>
-
-          <Link to="/quizzes">
-            Quizzes
-          </Link>
-        </nav>
-
-        <div className="teacher">
-          Teacher
-        </div>
-
-      </header>
+    <AppShell>
 
       {/* MAIN */}
-      <main className="dashboard">
+      <div>
 
         {/* HERO */}
-        <section className="hero">
+        <header className="page-header">
 
-          <p className="eyebrow">
-            QUIZ BUILDER
-          </p>
+          <div className="page-header-copy">
 
-          <h1>
-            Create.
-            <br />
-            Assess.
-          </h1>
+            <p className="zine-label">
+              QUIZ BUILDER
+            </p>
 
-          <p className="hero-text">
-            Create engaging quizzes for your students and
-            organize assessments in one place.
-          </p>
+            <h1>
+              Create.
+              <br />
+              Assess.
+            </h1>
 
-        </section>
+            <p>
+              Create engaging quizzes for your students and
+              organize assessments in one place.
+            </p>
+
+          </div>
+
+          <div className="page-header-side">
+            <span className="ui-pill">
+              Draft
+            </span>
+          </div>
+
+        </header>
 
         {/* FORM */}
-        <form onSubmit={saveQuiz}>
+        <form onSubmit={saveQuiz} className="form-stack">
 
           {/* QUIZ INFORMATION */}
-          <section className="quiz-section">
+          <section className="panel">
 
-            <div className="section-number">
-              01
+            <div className="panel-header">
+              <div>
+                <p className="zine-label">
+                  01
+                </p>
+
+                <h2>
+                  Quiz Information
+                </h2>
+              </div>
             </div>
 
-            <h2>
-              Quiz Information
-            </h2>
-
-            <div className="quiz-form">
+            <div className="form-grid">
 
               {/* TITLE */}
-              <div className="form-group">
+              <div className="form-field form-span-2">
 
                 <label htmlFor="quiz-title">
                   Quiz Title
@@ -305,7 +285,7 @@ function Quiz() {
               </div>
 
               {/* SUBJECT */}
-              <div className="form-group">
+              <div className="form-field">
 
                 <label htmlFor="quiz-subject">
                   Subject
@@ -351,7 +331,7 @@ function Quiz() {
               </div>
 
               {/* GRADE */}
-              <div className="form-group">
+              <div className="form-field">
 
                 <label htmlFor="quiz-grade">
                   Grade
@@ -397,7 +377,7 @@ function Quiz() {
               </div>
 
               {/* DURATION */}
-              <div className="form-group">
+              <div className="form-field">
 
                 <label htmlFor="quiz-duration">
                   Duration
@@ -443,33 +423,47 @@ function Quiz() {
           </section>
 
           {/* QUESTIONS */}
-          <section className="quiz-section">
+          <section className="section-block">
 
-            <div className="section-number">
-              02
+            <div className="section-header">
+              <div className="section-header-copy">
+                <p className="zine-label">
+                  02
+                </p>
+
+                <h2>
+                  Questions
+                </h2>
+              </div>
+
+              <span className="ui-pill">
+                {questions.length}
+              </span>
             </div>
 
-            <h2>
-              Questions
-            </h2>
+            <div className="stack-5">
 
             {questions.map((q, index) => (
 
               <div
-                className="question-card"
+                className={
+                  index === 0
+                    ? "stack-card pad-6"
+                    : "ui-card pad-6"
+                }
                 key={index}
               >
 
-                <div className="question-header">
+                <div className="card-top">
 
-                  <h3>
+                  <h3 className="text-row-title">
                     Question {index + 1}
                   </h3>
 
                   {questions.length > 1 && (
                     <button
                       type="button"
-                      className="remove-question"
+                      className="ui-button ui-button-danger"
                       onClick={() =>
                         removeQuestion(index)
                       }
@@ -480,8 +474,10 @@ function Quiz() {
 
                 </div>
 
+                <div className="form-stack quizflow-card-form">
+
                 {/* QUESTION */}
-                <div className="form-group">
+                <div className="form-field">
 
                   <label>
                     Question
@@ -503,9 +499,9 @@ function Quiz() {
                 </div>
 
                 {/* OPTIONS */}
-                <div className="options-grid">
+                <div className="form-grid">
 
-                  <div className="form-group">
+                  <div className="form-field">
 
                     <label>
                       Option A
@@ -526,7 +522,7 @@ function Quiz() {
 
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-field">
 
                     <label>
                       Option B
@@ -547,7 +543,7 @@ function Quiz() {
 
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-field">
 
                     <label>
                       Option C
@@ -568,7 +564,7 @@ function Quiz() {
 
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-field">
 
                     <label>
                       Option D
@@ -592,10 +588,15 @@ function Quiz() {
                 </div>
 
                 {/* CORRECT ANSWER */}
-                <div className="form-group">
+                <div className="form-field">
 
                   <label>
                     Correct Answer
+                    {q.correctAnswer && (
+                      <span className="ui-pill ui-pill-dark quizflow-answer-pill">
+                        {q.correctAnswer}
+                      </span>
+                    )}
                   </label>
 
                   <select
@@ -633,52 +634,58 @@ function Quiz() {
 
                 </div>
 
+                </div>
+
               </div>
 
             ))}
 
+            </div>
+
             {/* ADD QUESTION */}
-            <button
-              type="button"
-              className="add-question-button"
-              onClick={addQuestion}
-            >
-              + Add Another Question
-            </button>
+            <div className="ui-button-row quizflow-add-row">
+              <button
+                type="button"
+                className="ui-button ui-button-tactile"
+                onClick={addQuestion}
+              >
+                + Add Another Question
+              </button>
+            </div>
 
           </section>
 
           {/* ERROR */}
           {error && (
-            <div className="quiz-error">
+            <div className="form-notice form-notice-error" role="alert">
               {error}
             </div>
           )}
 
           {/* ACTIONS */}
-          <div className="quiz-actions">
-
-            <button
-              type="submit"
-              className="primary-button"
-            >
-              Save Quiz
-            </button>
+          <div className="form-actions">
 
             <Link
               to="/quizzes"
-              className="secondary-button"
+              className="ui-button ui-button-secondary"
             >
               Cancel
             </Link>
+
+            <button
+              type="submit"
+              className="ui-button ui-button-primary"
+            >
+              Save Quiz
+            </button>
 
           </div>
 
         </form>
 
-      </main>
+      </div>
 
-    </div>
+    </AppShell>
   );
 }
 
