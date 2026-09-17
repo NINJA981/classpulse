@@ -142,6 +142,7 @@ export const ClassPulseProvider = ({ children }) => {
   });
 
   const [activeTab, setActiveTab] = useState('management');
+  const [onboardingStep, setOnboardingStep] = useState('institution');
 
   // Login handler — only administrators can sign in to this application.
   const ADMIN_USER = {
@@ -499,7 +500,9 @@ export const ClassPulseProvider = ({ children }) => {
         assignStudentToClassroom,
         accessControls,
         toggleUserPermission,
-        toggleUserStatus
+        toggleUserStatus,
+        onboardingStep,
+        setOnboardingStep
       }}
     >
       {children}

@@ -3,7 +3,8 @@
 import React from 'react';
 import { ClassPulseProvider, useClassPulse } from './context/ClassPulseContext';
 import { LoginPage } from './components/LoginPage';
-import { Topbar, AppFooter } from './components/Topbar';
+import { Sidebar } from './components/Sidebar';
+import { AppFooter } from './components/Topbar';
 import { ManagementView } from './components/ManagementView';
 import { TeacherClassroomView } from './components/TeacherClassroomView';
 import { TeacherDashboard } from './components/TeacherDashboard';
@@ -38,10 +39,12 @@ const AppInner = () => {
   }
 
   return (
-    <div className="cp-page font-sans">
-      <Topbar />
-      <MainContent />
-      <AppFooter />
+    <div className="cp-layout font-sans">
+      <Sidebar />
+      <div className="cp-main-wrapper">
+        <MainContent />
+        <AppFooter />
+      </div>
     </div>
   );
 };

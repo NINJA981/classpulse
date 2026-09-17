@@ -1,21 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useClassPulse } from '../../context/ClassPulseContext';
 import { InstitutionSetupView } from './InstitutionSetupView';
 import { RosterImportView } from './RosterImportView';
 import { CourseSyllabusView } from './CourseSyllabusView';
 import { SectionManagementView } from './SectionManagementView';
 
 export const OnboardingHub = () => {
-  // Sub-tab navigation: 'institution' | 'roster' | 'syllabus' | 'sections'
-  const [activeStep, setActiveStep] = useState('institution');
+  const { onboardingStep, setOnboardingStep } = useClassPulse();
+  const [localStep, setLocalStep] = useState('institution');
 
-  const steps = [
-    { id: 'institution', label: 'Institution Setup' },
-    { id: 'roster', label: 'Roster Ingestion' },
-    { id: 'syllabus', label: 'Courses & Syllabi' },
-    { id: 'sections', label: 'Section Tokens' }
-  ];
+  const activeStep = onboardingStep || localStep;
+  const setActiveStep = setOnboardingStep || setLocalStep;
 
   return (
     <div className="space-y-12">
@@ -74,25 +71,8 @@ export const OnboardingHub = () => {
         </div>
       </section>
 
-      {/* Sub-tab Navigation conforming to DESIGN.md (.cp-tabs / .cp-tab) */}
+      {/* Content Area — Step selection handled via Sidebar */}
       <section className="cp-stack">
-        <div className="cp-tabs border-b border-border-strong">
-          {steps.map((step) => {
-            const isActive = activeStep === step.id;
-            return (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => setActiveStep(step.id)}
-                className={`cp-tab ${isActive ? 'is-active' : ''}`}
-              >
-                <span>{step.label}</span>
-                {step.badge && <span className="cp-badge">{step.badge}</span>}
-              </button>
-            );
-          })}
-        </div>
-
         {/* Sub-view Content */}
         <div className="pt-2">
           {activeStep === 'institution' && (
