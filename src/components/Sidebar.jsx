@@ -301,3 +301,38 @@ export const Sidebar = () => {
     </>
   );
 };
+
+/**
+ * Shared footer band: 1px top rule, brand mark, role copy.
+ */
+export const AppFooter = () => {
+  const { userRole } = useClassPulse();
+  const isAdmin = userRole === 'admin';
+
+  return (
+    <footer className="cp-footer">
+      <div className="cp-footer-brand">
+        <div className="cp-footer-mark" aria-hidden="true">CP</div>
+        <div>
+          <strong>{isAdmin ? 'Executive System' : 'ClassPulse v2.5'}</strong>
+          <p>
+            {isAdmin
+              ? 'ClassPulse Executive Administration & Telemetry System.'
+              : 'ClassPulse Administration System & Learning Workbench.'}
+          </p>
+        </div>
+      </div>
+      <div className="cp-footer-brand">
+        <div>
+          <span className="cp-eyebrow is-tight">Active Mode:</span>
+          <strong>
+            {userRole === 'admin' && '🔐 System Administrator'}
+            {userRole === 'teacher' && '👨‍🏫 Classroom Teacher'}
+            {userRole === 'student' && '🎓 Enrolled Student'}
+          </strong>
+          <p>Smart Classroom Administration & Telemetry System</p>
+        </div>
+      </div>
+    </footer>
+  );
+};
