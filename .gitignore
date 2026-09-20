@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Secrets — NEVER commit (contains Sarvam/OpenAI/pipeline API keys)
+.env
+.env.local
+.env.*.local
+
+# Uploaded lecture recordings (user content, potentially large + private)
+uploads/
+
+# Build output
+dist/
+
+# Logs & test artifacts
+*.log
+test-results.json
+
+# OS
+.DS_Store
+Thumbs.db
