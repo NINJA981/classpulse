@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  BookOpen,
   HelpCircle,
   Timer,
   TrendingUp,
@@ -17,6 +18,10 @@ import {
   CourseQuiz,
   CourseContent,
 } from "@/lib/diagnosticApi";
+import {
+  lessonQuizApi,
+  LessonQuizSummary,
+} from "@/lib/lessonQuizApi";
 
 export default function QuizzesPage() {
   const [courseContent, setCourseContent] = useState<CourseContent>(() => {
@@ -25,6 +30,7 @@ export default function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<CourseQuiz[]>(() => {
     return diagnosticApi.getCourseContent().quizzes;
   });
+  const [lessonQuizzes, setLessonQuizzes] = useState<LessonQuizSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -61,6 +67,12 @@ export default function QuizzesPage() {
     }
 
     loadQuizzes();
+
+    // Pipeline-generated lesson quizzes (published by teachers)
+    lessonQuizApi
+      .list()
+      .then((res) => setLessonQuizzes(res.quizzes))
+      .catch(() => setLessonQuizzes([])); // section hides when empty
 
     function onStorage() {
       const content = diagnosticApi.getCourseContent();
@@ -168,6 +180,62 @@ export default function QuizzesPage() {
           </div>
 
         </section>
+
+      {/* Lecture quizzes (pipeline-generated, self-paced) */}
+      {lessonQuizzes.length > 0 && (
+        <section className="cp-section" aria-labelledby="lesson-quizzes-title">
+          <div className="cp-section__head">
+            <div className="cp-section__heading">
+              <p className="zine-label">
+                <BookOpen aria-hidden="true" />
+                Lecture Quizzes
+              </p>
+              <h3 id="lesson-quizzes-title" className="cp-section__title">
+                From recent lectures
+              </h3>
+            </div>
+            <span className="ui-pill ui-pill-mint">Self-paced</span>
+          </div>
+
+          <div className="cp-section__list">
+            {lessonQuizzes.map((lq) => (
+              <div key={lq.id} className="cp-row cp-row--mint">
+                <div className="cp-row__main">
+                  <div className="cp-row__tags">
+                    <p className="zine-label">
+                      <BookOpen aria-hidden="true" />
+                      Lecture Quiz
+                    </p>
+                    <span className="ui-pill ui-pill-yellow">{lq.subject}</span>
+                  </div>
+                  <h3 className="cp-row__title">{lq.title}</h3>
+                  <p className="cp-row__meta">
+                    <span className="cp-row__meta-item">
+                      <HelpCircle aria-hidden="true" />
+                      {lq.questionCount} questions
+                    </span>
+                    <span className="cp-row__meta-item">
+                      <User aria-hidden="true" />
+                      {lq.className}
+                    </span>
+                  </p>
+                  {lq.summary && <p className="cp-text mt-2 line-clamp-2 opacity-70">{lq.summary}</p>}
+                </div>
+                <div className="cp-row__side">
+                  <span className="ui-pill ui-pill-mint">Available</span>
+                  <Link
+                    href={`/quizzes/lesson/${lq.id}`}
+                    className="ui-button ui-button-primary ui-button-sm"
+                  >
+                    Start Quiz
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Quiz list */}
       <section className="cp-section" aria-labelledby="quizzes-title">
