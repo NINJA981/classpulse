@@ -49,3 +49,4 @@ export interface PipelineIngestResult {
   summary: string | null;
   keyTakeaways: string[];
 }
+

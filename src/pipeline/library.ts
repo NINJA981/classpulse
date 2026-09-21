@@ -392,3 +392,4 @@ export function detectTopics(text: string): TopicEntry[] {
   const lower = text.toLowerCase();
   return TOPIC_LIBRARY.filter((t) => t.triggers.some((trig) => lower.includes(trig)));
 }
+

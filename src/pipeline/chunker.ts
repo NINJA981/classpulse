@@ -71,3 +71,4 @@ export function chunkTranscript(
 
   return { segments, refinedChunks, durationSec };
 }
+

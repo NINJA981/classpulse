@@ -56,3 +56,4 @@ export function extractKnowledge(chunks: RefinedChunk[], subject?: string): Know
 
   return items;
 }
+
