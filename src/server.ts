@@ -16,6 +16,7 @@ import assignmentRoutes from './routes/assignmentRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import studentQuizRouter from './routes/studentQuizRoutes.js';
 import { pipelineHealth } from './services/pipelineClient.js';
+import { pipelineRouter } from './routes/pipelineRoutes.js';
 import { seedDatabase } from './scripts/seed.js';
 
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/sections', sectionRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/student/quizzes', studentQuizRouter);
+app.use('/v1', pipelineRouter);
 
 // Health check endpoint (includes pipeline sidecar connectivity)
 app.get('/api/health', async (req, res) => {

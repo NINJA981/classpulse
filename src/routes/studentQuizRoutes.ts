@@ -135,9 +135,11 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
       scorePct,
       results
     };
-    submissions.set(lessonId, payload);
+    submissions.set(String(lessonId), payload);
     res.status(200).json(payload);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
+
+export default studentQuizRouter;

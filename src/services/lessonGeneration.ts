@@ -43,7 +43,7 @@ function toQuestionDoc(
   pq: PipelineQuestion,
   lessonId: string,
   subject: string
-): ReturnType<typeof Question.create> {
+) {
   const type = mapType(pq.type);
 
   let options: string[] = [];
