@@ -309,9 +309,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   let body = options.body;
-  if (body && typeof body === 'object' && !(body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-    body = JSON.stringify(body);
+  if (body && !(body instanceof FormData)) {
+    if (!headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (typeof body === 'object') {
+      body = JSON.stringify(body);
+    }
   }
 
   const response = await fetch(url, {
