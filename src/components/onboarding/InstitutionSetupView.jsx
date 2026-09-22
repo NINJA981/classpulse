@@ -139,23 +139,23 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
 
       {/* Confirmation Summary Card (shown when created and not actively re-editing) */}
       {createdInstitution && !isEditing ? (
-        <div className="cp-card cp-card-static bg-surface border border-border-strong p-8 shadow-hard-lg">
-          <div className="flex flex-wrap items-start justify-between gap-6 border-b border-border-soft pb-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
+        <div className="bg-surface border border-border p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5">
                 <span className="cp-badge is-ink">✓ INSTITUTION CONFIGURED</span>
-                <span className="cp-caption text-muted">ID: {createdInstitution.id}</span>
+                <span className="cp-caption text-muted font-mono">ID: {createdInstitution.id}</span>
               </div>
-              <h3 className="cp-display text-4xl font-black tracking-tight">{createdInstitution.name}</h3>
-              <p className="cp-lead text-secondary">
+              <h3 className="cp-display text-2xl sm:text-3xl font-black tracking-tight">{createdInstitution.name}</h3>
+              <p className="cp-lead text-secondary text-xs">
                 Slug identifier: <strong className="text-primary">{createdInstitution.code}</strong> · Academic Year: <strong className="text-primary">{createdInstitution.academicYear}</strong>
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="cp-btn-secondary"
+                className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
               >
                 Edit Parameters
               </button>
@@ -163,7 +163,7 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
                 <button
                   type="button"
                   onClick={onProceedToRoster}
-                  className="cp-btn-primary"
+                  className="cp-btn cp-btn-primary min-h-0 h-8 px-3 text-xs"
                 >
                   Proceed to Roster Import →
                 </button>
@@ -171,32 +171,32 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
+            <div className="p-3.5 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Standard Timezone</span>
-              <div className="text-sm font-bold mt-1 text-primary">{createdInstitution.timezone}</div>
-              <span className="cp-caption text-muted">Synchronized for live Pi boundary logs</span>
+              <div className="text-xs font-bold mt-1 text-primary">{createdInstitution.timezone}</div>
+              <span className="cp-caption text-muted text-[10px]">Synchronized for boundary logs</span>
             </div>
 
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+            <div className="p-3.5 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Allowed Email Domains</span>
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {createdInstitution.emailDomains?.map((dom) => (
-                  <span key={dom} className="cp-badge is-ink">
+                  <span key={dom} className="cp-badge is-ink text-[10px]">
                     @{dom}
                   </span>
                 ))}
               </div>
-              <span className="cp-caption text-muted mt-2 block">Strict domain enforcement during roster check</span>
+              <span className="cp-caption text-muted mt-1.5 block text-[10px]">Strict domain enforcement</span>
             </div>
 
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+            <div className="p-3.5 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Initialization Status</span>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-1.5">
                 <span className="cp-dot is-live" />
-                <span className="text-sm font-bold text-primary uppercase tracking-wider">Active & Ready</span>
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">Active & Ready</span>
               </div>
-              <span className="cp-caption text-muted block mt-1">Ready to receive department and roster CSVs</span>
+              <span className="cp-caption text-muted block mt-1 text-[10px]">Ready for roster datasets</span>
             </div>
           </div>
         </div>
@@ -204,12 +204,12 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
 
       {/* Main Form */}
       {(!createdInstitution || isEditing) && (
-        <form onSubmit={handleSubmit} className="cp-panel border border-border bg-surface p-6 sm:p-8 space-y-8">
-          <div className="border-b border-border pb-4">
+        <form onSubmit={handleSubmit} className="border border-border bg-surface p-5 sm:p-6 space-y-5 shadow-sm">
+          <div className="border-b border-border pb-3">
             <span className="cp-eyebrow">Configuration Manifest</span>
-            <h3 className="cp-h3 mt-1">Master Campus Parameters</h3>
-            <p className="cp-lead text-secondary text-xs mt-1">
-              Configure baseline identity metadata and strict organizational boundary filters.
+            <h3 className="cp-h3 mt-0.5">Master Campus Parameters</h3>
+            <p className="cp-lead text-secondary text-xs mt-0.5">
+              Configure baseline identity metadata and organizational boundary filters.
             </p>
           </div>
 
@@ -366,12 +366,12 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
           </div>
 
           {/* Form Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             {isEditing ? (
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="cp-btn-secondary"
+                className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
               >
                 Cancel Edits
               </button>
@@ -384,7 +384,7 @@ export const InstitutionSetupView = ({ onProceedToRoster }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="cp-btn-primary"
+              className="cp-btn cp-btn-primary min-h-0 h-8 px-4 text-xs"
             >
               {isLoading ? 'Writing Manifest...' : isEditing ? 'Save Revisions' : 'Initialize Institution Record'}
             </button>

@@ -46,7 +46,7 @@ export const ClassroomCard = ({
         <div className="cp-metric-grid">
           <div>
             <span>Lead Instructor:</span>
-            <strong>👨‍🏫 {classroom.leadTeacher}</strong>
+            <strong>{classroom.leadTeacher}</strong>
           </div>
           {showGrade && (
             <div>
@@ -67,7 +67,7 @@ export const ClassroomCard = ({
             e.stopPropagation();
             onOpen();
           }}
-          className="cp-btn-secondary cp-btn-sm cp-btn-block"
+          className="cp-btn cp-btn-secondary min-h-0 h-8 text-xs cp-btn-block"
         >
           <span>{actionLabel}</span>
           <span aria-hidden="true">→</span>

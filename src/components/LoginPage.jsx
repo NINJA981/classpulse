@@ -14,7 +14,7 @@ export const LoginPage = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const [navTargetLabel, setNavTargetLabel] = useState('');
 
-  const ADMIN_TARGET_LABEL = '🔐 Admin Control Center';
+  const ADMIN_TARGET_LABEL = 'Admin Control Center';
 
   const handleAdminSubmit = (e) => {
     e.preventDefault();
@@ -56,8 +56,8 @@ export const LoginPage = () => {
         </div>
       )}
 
-      <main className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md space-y-8">
+      <main className="flex-1 flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-md space-y-6">
           {/* Brand Header */}
           <div className="cp-brand-area justify-center">
             <div className="cp-brand-mark">CP</div>
@@ -65,71 +65,57 @@ export const LoginPage = () => {
               <div className="cp-brand">
                 Class<span>Pulse</span> Admin Portal
               </div>
-              <div className="cp-brand-subtitle uppercase">
-                ClassPulse Executive Gateway
-              </div>
             </div>
           </div>
-          <p className="cp-lead text-center">
-            Authorized Administrator Authentication & Control Gateway
-          </p>
 
           {/* Login Card */}
           <div className="cp-card-static space-y-6">
-            <div className="flex items-center justify-between gap-4 pb-5 border-b border-line-soft">
-              <div className="flex items-center gap-3">
-                <div className="cp-icon-box is-lg">
-                  🔐
-                </div>
-                <div>
-                  <span className="cp-eyebrow is-tight">Administrator</span>
-                  <h2 className="cp-h4">Administrator Sign In</h2>
-                </div>
-              </div>
-              <span className="cp-badge is-ink">
-                System Active
-              </span>
+            <div className="pb-4 border-b border-line-soft">
+              <h2 className="cp-h4">Administrator Sign In</h2>
             </div>
 
-            <form onSubmit={handleAdminSubmit} className="space-y-4">
-              <div className="cp-field">
+            <form onSubmit={handleAdminSubmit} className="space-y-4" suppressHydrationWarning>
+              <div className="cp-field" suppressHydrationWarning>
                 <label className="cp-label">
                   <span>Admin Email or Staff ID</span>
                 </label>
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="username"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   className="cp-input"
                   placeholder="admin@classpulse.edu"
+                  suppressHydrationWarning
                 />
               </div>
 
-              <div className="cp-field">
+              <div className="cp-field" suppressHydrationWarning>
                 <label className="cp-label">
                   <span>Security PIN / Password</span>
                 </label>
                 <input
                   type="password"
+                  name="password"
+                  autoComplete="current-password"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   className="cp-input"
                   placeholder="••••••••••••"
+                  suppressHydrationWarning
                 />
               </div>
 
               <button
                 type="submit"
                 className="cp-btn-primary cp-btn-block mt-2 gap-2"
+                suppressHydrationWarning
               >
                 <span>Sign In & Launch Admin Control</span>
                 <span aria-hidden="true">→</span>
               </button>
             </form>
-          </div>
-
-          <div className="text-center cp-caption-2 uppercase tracking-label">
-            <p>© ClassPulse Executive Education System</p>
           </div>
         </div>
       </main>

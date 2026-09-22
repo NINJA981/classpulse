@@ -33,9 +33,9 @@ const db = {
     'job-init-101': {
       id: 'job-init-101',
       status: 'done',
-      files: ['departments.csv', 'courses.csv', 'sections.csv', 'students.csv'],
-      rowCount: 148,
-      successCount: 144,
+      files: ['departments.csv', 'teachers.csv', 'courses.csv', 'sections.csv', 'students.csv'],
+      rowCount: 182,
+      successCount: 177,
       createdAt: new Date(Date.now() - 3600000).toISOString(),
       confirmed: false,
       errors: [
@@ -45,6 +45,13 @@ const db = {
           value: 'karthik.s@gmail.com',
           message: 'Domain @gmail.com not permitted. Must match @apex.edu',
           suggestedValue: 'karthik.s@apex.edu'
+        },
+        {
+          row: 22,
+          field: 'staffId',
+          value: 'TCH-501',
+          message: 'Duplicate Staff ID: TCH-501 already registered to Dr. Anitha',
+          suggestedValue: 'TCH-505'
         },
         {
           row: 28,
@@ -295,9 +302,9 @@ export const onboardingApi = {
     const newJob = {
       id: importJobId,
       status: 'pending', // 'pending' -> 'processing' -> 'done'
-      files: Object.keys(fileData).length > 0 ? Object.keys(fileData) : ['departments.csv', 'courses.csv', 'sections.csv', 'students.csv'],
-      rowCount: 148,
-      successCount: 144,
+      files: Object.keys(fileData).length > 0 ? Object.keys(fileData) : ['departments.csv', 'teachers.csv', 'courses.csv', 'sections.csv', 'students.csv'],
+      rowCount: 182,
+      successCount: 177,
       createdAt: new Date().toISOString(),
       confirmed: false,
       errors: [
@@ -307,6 +314,13 @@ export const onboardingApi = {
           value: 'karthik.s@gmail.com',
           message: 'Domain @gmail.com not permitted. Must match @apex.edu',
           suggestedValue: 'karthik.s@apex.edu'
+        },
+        {
+          row: 22,
+          field: 'staffId',
+          value: 'TCH-501',
+          message: 'Duplicate Staff ID: TCH-501 already registered to Dr. Anitha',
+          suggestedValue: 'TCH-505'
         },
         {
           row: 28,
@@ -396,6 +410,12 @@ export const onboardingApi = {
         isValid = true;
       } else {
         feedback = 'Roll number must be at least 3 characters.';
+      }
+    } else if (field === 'staffId') {
+      if (newValue && newValue.trim().length >= 3) {
+        isValid = true;
+      } else {
+        feedback = 'Staff ID must be at least 3 characters (e.g. TCH-505).';
       }
     } else if (field === 'sectionNames') {
       if (['SEC-A', 'SEC-B', 'Section A', 'Section B'].includes(newValue.trim())) {
