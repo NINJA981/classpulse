@@ -37,7 +37,7 @@ export async function getLessonById(req: Request, res: Response): Promise<void> 
 
 export async function createLesson(req: Request, res: Response): Promise<void> {
   try {
-    const { title, subject, className, teacherId } = req.body;
+    const { title, subject, className, teacherId, language } = req.body;
 
     if (!title || !subject || !className) {
       res.status(400).json({ error: 'Title, subject, and className are required' });
@@ -49,6 +49,7 @@ export async function createLesson(req: Request, res: Response): Promise<void> {
       subject,
       className,
       teacherId: teacherId || 'tch_001',
+      language: language || 'en',
       status: 'draft',
       timings: {
         startedAt: new Date(),
@@ -89,7 +90,11 @@ export async function attachSource(req: Request, res: Response): Promise<void> {
     lesson.status = 'queued';
     await lesson.save();
 
-    res.status(200).json(lesson);
+    res.status(200).json({
+      success: true,
+      sourceFile: lesson.sourceFile,
+      ...lesson.toObject()
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
