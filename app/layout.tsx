@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import HeaderNav from '../components/HeaderNav';
+import TeacherShell from '../components/TeacherShell';
 
 export const metadata: Metadata = {
   title: 'ClasePulse — Teacher Terminal',
@@ -23,10 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="app-container">
-          <HeaderNav />
-          <main className="main-content">{children}</main>
-        </div>
+        <TeacherShell>{children}</TeacherShell>
       </body>
     </html>
   );

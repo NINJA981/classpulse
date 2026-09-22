@@ -5,15 +5,26 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SourcePicker, { SelectedSourceData } from '../../../components/SourcePicker';
 import { api } from '../../../lib/api';
+import { Radio, UploadCloud, Play, Sparkles, KeyRound, Users, ShieldCheck } from 'lucide-react';
 
 export default function NewLessonPage() {
   const router = useRouter();
 
-  // Exactly three fields as strictly requested: title, subject, class
+  // Mode: 'live_session' | 'curriculum_quiz'
+  const [setupMode, setSetupMode] = useState<'live_session' | 'curriculum_quiz'>('live_session');
+
+  // Fields
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [className, setClassName] = useState('Grade 10 - Section B');
 
+  // Live session options
+  const [roomCode, setRoomCode] = useState('BIO-10B-' + Math.floor(1000 + Math.random() * 9000));
+  const [enableLiveTranscription, setEnableLiveTranscription] = useState(true);
+  const [enableLiveQA, setEnableLiveQA] = useState(true);
+  const [enableAttendancePrompt, setEnableAttendancePrompt] = useState(true);
+
+  // Curriculum source picker
   const [selectedSource, setSelectedSource] = useState<SelectedSourceData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,7 +40,53 @@ export default function NewLessonPage() {
     'Grade 12 - Honors'
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLaunchLiveSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (!title.trim()) {
+      setErrorMessage('Please enter a lesson topic or title.');
+      return;
+    }
+    if (!subject.trim()) {
+      setErrorMessage('Please enter a subject.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      // Create draft lesson
+      const newLesson = await api.createLesson({
+        title: title.trim(),
+        subject: subject.trim(),
+        className
+      });
+
+      // Save live session config to localStorage for record-transcribe
+      localStorage.setItem(
+        'clasepulse_active_live_session',
+        JSON.stringify({
+          lessonId: newLesson._id,
+          title: title.trim(),
+          subject: subject.trim(),
+          className,
+          roomCode,
+          enableLiveTranscription,
+          enableLiveQA,
+          enableAttendancePrompt,
+          startedAt: new Date().toISOString()
+        })
+      );
+
+      // Redirect directly to Record & Transcribe console
+      router.push('/record-transcribe?session=active');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to initialize live classroom session.');
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCurriculumSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -79,110 +136,269 @@ export default function NewLessonPage() {
     <div>
       <div className="page-header">
         <div className="page-header-info">
-          <span className="eyebrow">NEW LESSON WORKFLOW</span>
-          <h1>Create Lesson</h1>
+          <span className="eyebrow">ACTIVE CLASSROOM SETUP</span>
+          <h1>New Lesson</h1>
           <p className="text-secondary" style={{ marginTop: '4px' }}>
-            Enter lesson metadata and record or upload raw lecture material.
+            Configure and launch an active classroom lecture or generate ground-truth quizzes from study notes.
           </p>
         </div>
 
         <div className="page-header-actions">
-          <Link href="/lessons" className="btn btn-secondary">
+          <Link href="/dashboard" className="btn btn-secondary">
             Cancel
           </Link>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: '820px' }}>
-        {errorMessage && (
-          <div className="card mb-3" style={{ border: '2px solid #111', background: '#faf9f6' }}>
-            <span className="eyebrow" style={{ color: '#111' }}>VALIDATION ERROR</span>
-            <p style={{ fontWeight: 600, fontSize: '13px' }}>{errorMessage}</p>
-          </div>
-        )}
+      {/* Mode Selector Tabs */}
+      <div className="tab-bar">
+        <button
+          type="button"
+          className={`tab-btn ${setupMode === 'live_session' ? 'active' : ''}`}
+          onClick={() => setSetupMode('live_session')}
+        >
+          <Radio size={14} style={{ display: 'inline', marginRight: '6px' }} />
+          Option 1: Launch Active Live Class Session
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${setupMode === 'curriculum_quiz' ? 'active' : ''}`}
+          onClick={() => setSetupMode('curriculum_quiz')}
+        >
+          <UploadCloud size={14} style={{ display: 'inline', marginRight: '6px' }} />
+          Option 2: Generate Quiz From Document/Audio
+        </button>
+      </div>
 
-        <div className="card card-solid mb-4">
-          <span className="eyebrow">LESSON METADATA</span>
+      {errorMessage && (
+        <div className="card mb-3" style={{ border: '2px solid #111', background: '#faf9f6' }}>
+          <span className="eyebrow" style={{ color: '#111' }}>VALIDATION NOTICE</span>
+          <p style={{ fontWeight: 600, fontSize: '13px' }}>{errorMessage}</p>
+        </div>
+      )}
 
-          {/* Field 1: Title */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="lesson-title">
-              Lesson Title
-            </label>
-            <input
-              id="lesson-title"
-              type="text"
-              placeholder="e.g. Mendelian Genetics & Punnett Squares"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+      {setupMode === 'live_session' ? (
+        /* MODE 1: LIVE CLASSROOM SESSION */
+        <form onSubmit={handleLaunchLiveSession} style={{ maxWidth: '840px' }}>
+          <div className="card card-solid mb-4">
+            <span className="eyebrow">CLASSROOM IDENTIFIER & TOPIC</span>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-            {/* Field 2: Subject */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="lesson-subject">
-                Subject
+            <div className="form-group">
+              <label className="form-label" htmlFor="live-title">
+                Lecture Topic / Chapter
               </label>
               <input
-                id="lesson-subject"
+                id="live-title"
                 type="text"
-                placeholder="e.g. Biology"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                placeholder="e.g. Krebs Cycle & ATP Synthase Kinetics"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 disabled={isSubmitting}
                 required
               />
             </div>
 
-            {/* Field 3: Class (Dropdown) */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="lesson-class">
-                Class
-              </label>
-              <select
-                id="lesson-class"
-                value={className}
-                onChange={(e) => setClassName(e.target.value)}
-                disabled={isSubmitting}
-              >
-                {classOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="live-subject">
+                  Subject
+                </label>
+                <input
+                  id="live-subject"
+                  type="text"
+                  placeholder="e.g. Biology"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="live-class">
+                  Assigned Section / Class
+                </label>
+                <select
+                  id="live-class"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {classOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mutually Exclusive Source Picker */}
-        <div className="mb-4">
-          <SourcePicker
-            selectedSource={selectedSource}
-            onSourceSelected={setSelectedSource}
-          />
-        </div>
+          {/* Live Session Configuration */}
+          <div className="card card-solid mb-4">
+            <span className="eyebrow">LIVE INTERACTION CONTROLS</span>
 
-        {/* Submit Action */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid var(--hairline)', paddingTop: '1.5rem' }}>
-          {selectedSource && (
-            <span className="text-secondary text-mono" style={{ fontSize: '12px' }}>
-              Source attached: {selectedSource.sourceType.toUpperCase()} ({selectedSource.name})
-            </span>
-          )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+              <div style={{ border: '1px solid var(--hairline)', padding: '1rem', background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <KeyRound size={16} />
+                  <span style={{ fontWeight: 800, fontSize: '12px' }}>Student Room Access Code</span>
+                </div>
+                <div className="text-mono" style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '0.08em', padding: '6px 0' }}>
+                  {roomCode}
+                </div>
+                <p className="text-secondary" style={{ fontSize: '11px' }}>
+                  Share this code on classroom board for instant student joining.
+                </p>
+              </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg"
-            disabled={isSubmitting || !selectedSource}
-          >
-            {isSubmitting ? 'Creating & Generating…' : 'Create & Generate Quiz'}
-          </button>
-        </div>
-      </form>
+              <div style={{ border: '1px solid var(--hairline)', padding: '1rem', background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <Users size={16} />
+                  <span style={{ fontWeight: 800, fontSize: '12px' }}>Student Cohort</span>
+                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, padding: '4px 0' }}>
+                  {className}
+                </div>
+                <p className="text-secondary" style={{ fontSize: '11px' }}>
+                  32 enrolled students will be alerted on their student portal.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={enableLiveTranscription}
+                  onChange={(e) => setEnableLiveTranscription(e.target.checked)}
+                />
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>
+                  Enable Real-Time Lecture Audio/Video Recording & Live Speech-to-Text Transcription
+                </span>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={enableLiveQA}
+                  onChange={(e) => setEnableLiveQA(e.target.checked)}
+                />
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>
+                  Enable In-Class Live Student Q&A Stream & Discussion Prompts
+                </span>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={enableAttendancePrompt}
+                  onChange={(e) => setEnableAttendancePrompt(e.target.checked)}
+                />
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>
+                  Broadcast automated geolocation / room-code attendance check
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--hairline)', paddingTop: '1.5rem' }}>
+            <Link href="/dashboard" className="btn btn-secondary">
+              Discard
+            </Link>
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              disabled={isSubmitting}
+            >
+              <Play size={16} />
+              {isSubmitting ? 'Starting Session…' : 'Start Live Classroom Session'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        /* MODE 2: CURRICULUM QUIZ GENERATOR (EXISTING) */
+        <form onSubmit={handleCurriculumSubmit} style={{ maxWidth: '840px' }}>
+          <div className="card card-solid mb-4">
+            <span className="eyebrow">LESSON METADATA</span>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="curriculum-title">
+                Lesson Title
+              </label>
+              <input
+                id="curriculum-title"
+                type="text"
+                placeholder="e.g. Mendelian Genetics & Punnett Squares"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={isSubmitting}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="curriculum-subject">
+                  Subject
+                </label>
+                <input
+                  id="curriculum-subject"
+                  type="text"
+                  placeholder="e.g. Biology"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="curriculum-class">
+                  Class
+                </label>
+                <select
+                  id="curriculum-class"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {classOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Source Picker */}
+          <div className="mb-4">
+            <SourcePicker
+              selectedSource={selectedSource}
+              onSourceSelected={setSelectedSource}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid var(--hairline)', paddingTop: '1.5rem' }}>
+            {selectedSource && (
+              <span className="text-secondary text-mono" style={{ fontSize: '12px' }}>
+                Source attached: {selectedSource.sourceType.toUpperCase()} ({selectedSource.name})
+              </span>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              disabled={isSubmitting || !selectedSource}
+            >
+              <Sparkles size={16} />
+              {isSubmitting ? 'Creating & Generating…' : 'Create & Generate Quiz'}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
