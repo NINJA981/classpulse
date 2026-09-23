@@ -3,7 +3,29 @@
  * how the API reports an error. Everything else in lib/ goes through here.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
+/**
+ * The API host is resolved in the browser, not baked in.
+ *
+ * NEXT_PUBLIC_API_BASE_URL is fixed when the dev server starts, so it pins whatever LAN IP
+ * the machine had at that moment. Change Wi-Fi, renew a DHCP lease, or open the app from a
+ * different host and every request goes to an address that no longer answers — and a
+ * hanging fetch looks like a frozen page, not an error. The page's own hostname is always
+ * reachable from the browser that loaded it, so only the port and path are taken from the
+ * configured value.
+ */
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
+  if (typeof window === 'undefined') return configured;
+  try {
+    const url = new URL(configured, window.location.origin);
+    url.hostname = window.location.hostname;
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return configured;
+  }
+}
+
+const API_BASE_URL = resolveApiBase();
 
 const TOKEN_KEY = "cp_student_token";
 

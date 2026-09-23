@@ -42,6 +42,9 @@ export default function Home() {
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
+  // Real published quizzes for this student's section, straight from the backend.
+  const [publishedQuizCount, setPublishedQuizCount] = useState<number | null>(null);
+
   useEffect(() => {
     function refreshData() {
       const enr = diagnosticApi.getCurrentEnrollment();
@@ -51,6 +54,10 @@ export default function Home() {
     }
 
     refreshData();
+    import("@/lib/lessonQuizApi")
+      .then(({ lessonQuizApi }) => lessonQuizApi.list())
+      .then((res) => setPublishedQuizCount(res.quizzes.length))
+      .catch(() => setPublishedQuizCount(null));
     window.addEventListener("storage", refreshData);
     return () => window.removeEventListener("storage", refreshData);
   }, []);
@@ -263,8 +270,10 @@ export default function Home() {
             </span>
           </div>
 
-          <p className="cp-stat__value">{courseContent.stats.quizzesTotal}</p>
-          <p className="cp-stat__caption">{courseContent.stats.quizzesDueSoon} due soon</p>
+          <p className="cp-stat__value">{publishedQuizCount ?? "—"}</p>
+          <p className="cp-stat__caption">
+            {publishedQuizCount != null ? "published for your section" : "sign in to load"}
+          </p>
 
           <div className="cp-stat__foot">
             <span className="cp-link">

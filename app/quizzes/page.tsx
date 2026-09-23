@@ -6,87 +6,73 @@ import {
   ArrowRight,
   BookOpen,
   HelpCircle,
-  Timer,
   TrendingUp,
   User,
   Zap,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import DashboardShell from "@/components/DashboardShell";
-import {
-  diagnosticApi,
-  CourseQuiz,
-  CourseContent,
-} from "@/lib/diagnosticApi";
+import { request, isSignedIn } from "@/lib/apiClient";
 import {
   lessonQuizApi,
   LessonQuizSummary,
 } from "@/lib/lessonQuizApi";
 
+interface Enrollment {
+  id: string;
+  courseTitle: string;
+  sectionName: string;
+  rollNumber?: string;
+}
+
 export default function QuizzesPage() {
-  const [courseContent, setCourseContent] = useState<CourseContent>(() => {
-    return diagnosticApi.getCourseContent();
-  });
-  const [quizzes, setQuizzes] = useState<CourseQuiz[]>(() => {
-    return diagnosticApi.getCourseContent().quizzes;
-  });
-  const [lessonQuizzes, setLessonQuizzes] = useState<LessonQuizSummary[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [quizzes, setQuizzes] = useState<LessonQuizSummary[]>([]);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [signedOut, setSignedOut] = useState(false);
 
   useEffect(() => {
     let active = true;
-    async function loadQuizzes() {
-      const content = diagnosticApi.getCourseContent();
-      if (!active) return;
-      setCourseContent(content);
+
+    async function load() {
+      if (!isSignedIn()) {
+        if (active) {
+          setSignedOut(true);
+          setLoading(false);
+        }
+        return;
+      }
 
       try {
-        const { data, error } = await supabase
-          .from("quizzes")
-          .select("id, title, subject, created_by")
-          .eq("subject", content.subject)
-          .order("id", { ascending: true });
-
+        const [enrollments, quizList] = await Promise.all([
+          request<{ items: Enrollment[] }>("/student/enrollments").catch(() => ({ items: [] })),
+          lessonQuizApi.list(),
+        ]);
         if (!active) return;
-
-        if (error || !data || data.length === 0) {
-          setQuizzes(content.quizzes);
-          setErrorMessage("");
-        } else {
-          setQuizzes(data);
-          setErrorMessage("");
-        }
-      } catch {
-        if (!active) return;
-        setQuizzes(content.quizzes);
+        setEnrollment(enrollments.items[0] ?? null);
+        setQuizzes(quizList.quizzes);
         setErrorMessage("");
+      } catch (err) {
+        if (!active) return;
+        setErrorMessage(
+          err instanceof Error ? err.message : "Could not load your quizzes."
+        );
       } finally {
         if (active) setLoading(false);
       }
     }
 
-    loadQuizzes();
-
-    // Pipeline-generated lesson quizzes (published by teachers)
-    lessonQuizApi
-      .list()
-      .then((res) => setLessonQuizzes(res.quizzes))
-      .catch(() => setLessonQuizzes([])); // section hides when empty
-
-    function onStorage() {
-      const content = diagnosticApi.getCourseContent();
-      setCourseContent(content);
-      setQuizzes(content.quizzes);
-    }
-    window.addEventListener("storage", onStorage);
+    void load();
     return () => {
       active = false;
-      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
-  const ready = !loading && !errorMessage;
+  const ready = !loading && !errorMessage && !signedOut;
+  const completed = quizzes.filter((q) => q.bestScorePct != null);
+  const bestScore = completed.length
+    ? Math.max(...completed.map((q) => q.bestScorePct ?? 0))
+    : null;
 
   return (
     <DashboardShell footerNote="Live quiz workspace">
@@ -96,7 +82,7 @@ export default function QuizzesPage() {
         <div className="cp-hero__row">
           <div className="cp-hero__body">
             <p className="cp-sticker">
-              Live Assessments • {courseContent.code}
+              Quizzes • {enrollment?.sectionName ?? "My Class"}
             </p>
 
             <h2 className="cp-h-hero">
@@ -104,7 +90,15 @@ export default function QuizzesPage() {
             </h2>
 
             <p className="cp-hero__sub">
-              Live quizzes for <strong className="text-ink font-bold">{courseContent.courseTitle}</strong> with {courseContent.teacherName}.
+              {enrollment ? (
+                <>
+                  Quizzes published for{" "}
+                  <strong className="text-ink font-bold">{enrollment.courseTitle}</strong>{" "}
+                  — {enrollment.sectionName}.
+                </>
+              ) : (
+                <>Quizzes your teachers publish appear here the moment they go live.</>
+              )}
             </p>
           </div>
 
@@ -113,9 +107,7 @@ export default function QuizzesPage() {
               <span className="ui-pill ui-pill-dark">
                 <Zap aria-hidden="true" />
                 {quizzes.length}{" "}
-                {quizzes.length === 1
-                  ? "Live Quiz"
-                  : "Live Quizzes"}
+                {quizzes.length === 1 ? "Quiz" : "Quizzes"}
               </span>
             ) : (
               <span className="cp-skeleton h-7 w-28" aria-hidden="true" />
@@ -192,62 +184,109 @@ export default function QuizzesPage() {
               <span className="cp-skeleton block h-11 w-16" aria-hidden="true" />
             )}
             <p className="cp-stat__caption">
-              Quiz sessions
+              Published for your section
             </p>
           </div>
 
           <div className="hypercard-static cp-stat">
             <div className="cp-stat__head">
-              <p className="cp-sticker">Question Time</p>
+              <p className="cp-sticker">Attempted</p>
               <span className="cp-stat__icon cp-stat__icon--yellow" aria-hidden="true">
-                <Timer />
+                <HelpCircle />
               </span>
             </div>
 
-            <p className="cp-stat__value">
-              20s
-            </p>
+            {ready ? (
+              <p className="cp-stat__value">
+                {completed.length}
+              </p>
+            ) : (
+              <span className="cp-skeleton block h-11 w-16" aria-hidden="true" />
+            )}
             <p className="cp-stat__caption">
-              Per question
+              Quizzes you have taken
             </p>
           </div>
 
           <div className="hypercard-static cp-stat">
             <div className="cp-stat__head">
-              <p className="cp-sticker">Scoring</p>
+              <p className="cp-sticker">Best Score</p>
               <span className="cp-stat__icon cp-stat__icon--mint" aria-hidden="true">
                 <TrendingUp />
               </span>
             </div>
 
-            <p className="cp-stat__value">
-              Fast
-            </p>
+            {ready ? (
+              <p className="cp-stat__value">
+                {bestScore != null ? `${bestScore}%` : "—"}
+              </p>
+            ) : (
+              <span className="cp-skeleton block h-11 w-16" aria-hidden="true" />
+            )}
             <p className="cp-stat__caption">
-              Faster answers earn more
+              Across attempted quizzes
             </p>
           </div>
 
         </section>
 
-      {/* Lecture quizzes (pipeline-generated, self-paced) */}
-      {lessonQuizzes.length > 0 && (
-        <section className="cp-section" aria-labelledby="lesson-quizzes-title">
-          <div className="cp-section__head">
-            <div className="cp-section__heading">
-              <p className="zine-label">
-                <BookOpen aria-hidden="true" />
-                Lecture Quizzes
-              </p>
-              <h3 id="lesson-quizzes-title" className="cp-section__title">
-                From recent lectures
-              </h3>
-            </div>
-            <span className="ui-pill ui-pill-mint">Self-paced</span>
+      {/* Quiz list — everything a teacher has published for this student's section */}
+      <section className="cp-section" aria-labelledby="lesson-quizzes-title">
+        <div className="cp-section__head">
+          <div className="cp-section__heading">
+            <p className="zine-label">
+              <BookOpen aria-hidden="true" />
+              Lecture Quizzes
+            </p>
+            <h3 id="lesson-quizzes-title" className="cp-section__title">
+              From your lectures
+            </h3>
           </div>
+          <span className="ui-pill ui-pill-mint">Self-paced</span>
+        </div>
 
-          <div className="cp-section__list">
-            {lessonQuizzes.map((lq) => (
+        <div className="cp-section__list">
+
+          {/* Loading */}
+          {loading && (
+            <div className="cp-state-wrap">
+              <div className="cp-state">
+                <span className="live-dot" aria-hidden="true" />
+                <p className="cp-sticker">Loading</p>
+                <h3 className="cp-h-card">Loading quizzes...</h3>
+              </div>
+            </div>
+          )}
+
+          {/* Signed out */}
+          {!loading && signedOut && (
+            <div className="cp-empty">
+              <p className="cp-sticker">Signed Out</p>
+              <h3 className="cp-h-card mt-3">Sign in to see your quizzes</h3>
+              <p className="cp-empty__hand mt-2">
+                Your quizzes are tied to your class section.
+              </p>
+              <Link href="/login" className="ui-button ui-button-primary ui-button-sm mt-3">
+                Go to Login
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            </div>
+          )}
+
+          {/* Error */}
+          {!loading && !signedOut && errorMessage && (
+            <div className="cp-state-wrap">
+              <div className="cp-state cp-state--error">
+                <p className="cp-sticker">Connection Error</p>
+                <h3 className="cp-h-card">Could not load quizzes</h3>
+                <p className="cp-state__msg">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Quiz rows */}
+          {ready &&
+            quizzes.map((lq) => (
               <div key={lq.id} className="cp-row cp-row--mint">
                 <div className="cp-row__main">
                   <div className="cp-row__tags">
@@ -271,141 +310,16 @@ export default function QuizzesPage() {
                   {lq.summary && <p className="cp-text mt-2 line-clamp-2 opacity-70">{lq.summary}</p>}
                 </div>
                 <div className="cp-row__side">
-                  <span className="ui-pill ui-pill-mint">Available</span>
+                  {lq.bestScorePct != null ? (
+                    <span className="ui-pill ui-pill-yellow">Best {lq.bestScorePct}%</span>
+                  ) : (
+                    <span className="ui-pill ui-pill-mint">New</span>
+                  )}
                   <Link
                     href={`/quizzes/lesson/${lq.id}`}
                     className="ui-button ui-button-primary ui-button-sm"
                   >
-                    Start Quiz
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Quiz list */}
-      <section className="cp-section" aria-labelledby="quizzes-title">
-
-        <div className="cp-section__head">
-          <div className="cp-section__heading">
-            <p className="zine-label">
-              <Zap aria-hidden="true" />
-              Quiz Sessions
-            </p>
-
-            <h3 id="quizzes-title" className="cp-section__title">
-              Available Quizzes
-            </h3>
-          </div>
-
-          {ready ? (
-            <span className="ui-pill ui-pill-sky">
-              {quizzes.length}{" "}
-              {quizzes.length === 1
-                ? "quiz"
-                : "quizzes"}
-            </span>
-          ) : (
-            <span className="cp-skeleton h-7 w-20" aria-hidden="true" />
-          )}
-        </div>
-
-        <div className="cp-section__list">
-
-          {/* Loading */}
-          {loading && (
-            <div className="cp-state-wrap">
-              <div className="cp-state">
-                <span className="live-dot" aria-hidden="true" />
-
-                <p className="cp-sticker">
-                  Loading
-                </p>
-
-                <h3 className="cp-h-card">
-                  Loading quizzes...
-                </h3>
-              </div>
-            </div>
-          )}
-
-          {/* Error */}
-          {!loading && errorMessage && (
-            <div className="cp-state-wrap">
-              <div className="cp-state cp-state--error">
-                <p className="cp-sticker">
-                  Database Error
-                </p>
-
-                <h3 className="cp-h-card">
-                  Could not load quizzes
-                </h3>
-
-                <p className="cp-state__msg">
-                  {errorMessage}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Quiz rows */}
-          {ready &&
-            quizzes.map((quiz) => (
-              <div
-                key={quiz.id}
-                className="cp-row cp-row--mint"
-              >
-                <div className="cp-row__main">
-                  <div className="cp-row__tags">
-                    <p className="zine-label">
-                      <span className="live-dot" aria-hidden="true" />
-                      Live Quiz
-                    </p>
-
-                    <span className="ui-pill ui-pill-yellow">
-                      {quiz.subject}
-                    </span>
-                  </div>
-
-                  <h3 className="cp-row__title">
-                    {quiz.title}
-                  </h3>
-
-                  <p className="cp-row__meta">
-                    <span className="cp-row__meta-item">
-                      <HelpCircle aria-hidden="true" />
-                      10 questions
-                    </span>
-                    <span className="cp-row__meta-item">
-                      <Timer aria-hidden="true" />
-                      20 seconds each
-                    </span>
-                    {quiz.created_by && (
-                      <span className="cp-row__meta-item">
-                        <User aria-hidden="true" />
-                        Created by {quiz.created_by}
-                      </span>
-                    )}
-                  </p>
-
-                  <p className="cp-text mt-2">
-                    Faster correct answers earn more points.
-                  </p>
-                </div>
-
-                <div className="cp-row__side">
-                  <span className="ui-pill ui-pill-mint">
-                    Available
-                  </span>
-
-                  <Link
-                    href={`/quizzes/${quiz.id}/lobby`}
-                    className="ui-button ui-button-primary ui-button-sm"
-                  >
-                    Join Live Quiz
+                    {lq.bestScorePct != null ? "Retake Quiz" : "Start Quiz"}
                     <ArrowRight aria-hidden="true" />
                   </Link>
                 </div>
@@ -415,17 +329,10 @@ export default function QuizzesPage() {
           {/* Empty */}
           {ready && quizzes.length === 0 && (
             <div className="cp-empty">
-              <p className="cp-sticker">
-                No Sessions
-              </p>
-
-              <h3 className="cp-h-card mt-3">
-                No quizzes available
-              </h3>
-
+              <p className="cp-sticker">Nothing Yet</p>
+              <h3 className="cp-h-card mt-3">No quizzes published</h3>
               <p className="cp-empty__hand mt-2">
-                Quizzes will appear here when faculty creates
-                a live session.
+                When your teacher publishes a quiz from a lecture, it lands here automatically.
               </p>
             </div>
           )}

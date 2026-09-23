@@ -1309,33 +1309,27 @@ export const diagnosticApi = {
       }
     }
 
-    const base = MOCK_COURSE_DATA[code] || MOCK_COURSE_DATA["MATH10"];
-
-    // Check for any submitted assignments stored in localStorage
-    const storedOverrides = getStorage<
-      Record<number, { status: "Pending" | "Submitted"; fileName?: string; comment?: string }>
-    >(`cp_assignments_${base.code}`, {});
-
-    const assignments = base.assignments.map((a) => {
-      if (storedOverrides[a.id]) {
-        return { ...a, ...storedOverrides[a.id] };
-      }
-      return a;
-    });
-
-    const pendingAssignments = assignments.filter((a) => a.status === "Pending").length;
-    const upcomingTests = base.tests.filter((t) => t.status === "Upcoming").length;
-
+    // The fabricated demo records are gone. Identity comes from the enrollment the student
+    // actually joined with (real backend data); the content lists stay empty until a real
+    // backend feed exists for assignments and tests. Published quizzes come from
+    // lessonQuizApi, not from here.
     return {
-      ...base,
-      assignments,
+      code,
+      courseTitle: enrollment?.courseTitle || "Your Course",
+      subject: enrollment?.courseTitle || "General",
+      teacherName: enrollment?.teacherName || "your teacher",
+      institutionName: enrollment?.institutionName || "",
+      assignments: [],
+      tests: [],
+      quizzes: [],
+      upcoming: [],
       stats: {
-        assignmentsTotal: assignments.length,
-        assignmentsPending: pendingAssignments,
-        testsTotal: base.tests.length,
-        testsUpcoming: upcomingTests,
-        quizzesTotal: base.quizzes.length,
-        quizzesDueSoon: Math.min(1, base.quizzes.length),
+        assignmentsTotal: 0,
+        assignmentsPending: 0,
+        testsTotal: 0,
+        testsUpcoming: 0,
+        quizzesTotal: 0,
+        quizzesDueSoon: 0,
       },
     };
   },
