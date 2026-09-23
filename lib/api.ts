@@ -550,13 +550,25 @@ export const api = {
   /**
    * POST /api/lessons
    */
-  async createLesson({ title, subject, className, liveSessionId }: { title: string; subject: string; className: string; liveSessionId?: string }) {
+  async createLesson({
+    title,
+    subject,
+    className,
+    language,
+    liveSessionId
+  }: {
+    title: string;
+    subject: string;
+    className: string;
+    language?: string;
+    liveSessionId?: string;
+  }) {
     // Claim whatever the recorder captured live, unless the caller passed one explicitly.
     const claimedSession = liveSessionId ?? takeLiveSession();
     if (!USE_MOCK) {
       const { lesson } = await request<{ lesson: Lesson }>('/lessons', {
         method: 'POST',
-        body: JSON.stringify({ title, subject, className, liveSessionId: claimedSession })
+        body: JSON.stringify({ title, subject, className, language: language || 'en', liveSessionId: claimedSession })
       });
       return normalizeLesson(lesson);
     }
@@ -570,7 +582,7 @@ export const api = {
       sourceType: null,
       sourceFile: null,
       status: 'draft',
-      language: 'en',
+      language: language || 'en',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -1044,5 +1056,79 @@ export const api = {
       return request<{ submissions: any[] }>(`/lessons/${lessonId}/submissions`);
     }
     return { submissions: [] };
+  },
+
+  /**
+   * POST /api/live-quiz/create
+   */
+  async createLiveQuizSession(lessonId: string): Promise<{ success: boolean; pin: string; lessonId: string; title: string; questionCount: number }> {
+    if (!USE_MOCK) {
+      return request<{ success: boolean; pin: string; lessonId: string; title: string; questionCount: number }>('/live-quiz/create', {
+        method: 'POST',
+        body: JSON.stringify({ lessonId })
+      });
+    }
+    return {
+      success: true,
+      pin: String(Math.floor(100000 + Math.random() * 900000)),
+      lessonId,
+      title: 'Mock Live Quiz',
+      questionCount: 5
+    };
+  },
+
+  /**
+   * GET /api/lessons/:id/analytics
+   */
+  async getLessonAnalytics(lessonId: string): Promise<{
+    lessonId: string;
+    lessonTitle: string;
+    subject: string;
+    className: string;
+    totalSubmissions: number;
+    classAveragePct: number;
+    criticalGapsCount: number;
+    moderateGapsCount: number;
+    masteredCount: number;
+    questions: Array<{
+      questionId: string;
+      stem: string;
+      stemLocal?: string;
+      topicTag: string;
+      difficulty: string;
+      totalAttempts: number;
+      correctAttempts: number;
+      accuracyPct: number;
+      status: 'critical' | 'moderate' | 'mastered';
+      sourceCitation?: string;
+      explanation: string;
+      explanationLocal?: string;
+    }>;
+    remedialNotes: Array<{
+      questionId: string;
+      topic: string;
+      accuracyPct: number;
+      misconception: string;
+      remedialNote: string;
+      suggestedAction: string;
+      sourceTimestamp?: string;
+    }>;
+  }> {
+    if (!USE_MOCK) {
+      return request(`/lessons/${lessonId}/analytics`);
+    }
+    return {
+      lessonId,
+      lessonTitle: 'Mock Lesson',
+      subject: 'Science',
+      className: 'Grade 10',
+      totalSubmissions: 0,
+      classAveragePct: 0,
+      criticalGapsCount: 0,
+      moderateGapsCount: 0,
+      masteredCount: 0,
+      questions: [],
+      remedialNotes: []
+    };
   }
 };

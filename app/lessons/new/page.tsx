@@ -17,6 +17,18 @@ export default function NewLessonPage() {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [className, setClassName] = useState('Grade 10 - Section B');
+  const [language, setLanguage] = useState('en-IN');
+
+  const languageOptions = [
+    { code: 'en-IN', label: 'English (Indian English)' },
+    { code: 'hi-IN', label: 'Hindi — हिन्दी' },
+    { code: 'ta-IN', label: 'Tamil — தமிழ்' },
+    { code: 'te-IN', label: 'Telugu — తెలుగు' },
+    { code: 'kn-IN', label: 'Kannada — ಕನ್ನಡ' },
+    { code: 'bn-IN', label: 'Bengali — বাংলা' },
+    { code: 'mr-IN', label: 'Marathi — मराठी' },
+    { code: 'gu-IN', label: 'Gujarati — ગુજરાતી' }
+  ];
 
   // Live session options
   const [roomCode, setRoomCode] = useState('BIO-10B-' + Math.floor(1000 + Math.random() * 9000));
@@ -59,7 +71,8 @@ export default function NewLessonPage() {
       const newLesson = await api.createLesson({
         title: title.trim(),
         subject: subject.trim(),
-        className
+        className,
+        language
       });
 
       // Save live session config to localStorage for record-transcribe
@@ -110,7 +123,8 @@ export default function NewLessonPage() {
       const newLesson = await api.createLesson({
         title: title.trim(),
         subject: subject.trim(),
-        className
+        className,
+        language
       });
 
       // 2. Attach the source file
@@ -198,7 +212,7 @@ export default function NewLessonPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" htmlFor="live-subject">
                   Subject
@@ -227,6 +241,24 @@ export default function NewLessonPage() {
                   {classOptions.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="live-language">
+                  Lecture Language
+                </label>
+                <select
+                  id="live-language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -337,7 +369,7 @@ export default function NewLessonPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" htmlFor="curriculum-subject">
                   Subject
@@ -366,6 +398,24 @@ export default function NewLessonPage() {
                   {classOptions.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="curriculum-language">
+                  Target Language
+                </label>
+                <select
+                  id="curriculum-language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
