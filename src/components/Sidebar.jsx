@@ -14,46 +14,68 @@ import {
   LogOut,
   Menu,
   X,
-  Radio,
   Building2,
   FileSpreadsheet,
   BookOpen,
   KeyRound,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  Calendar
 } from 'lucide-react';
 
 export const Sidebar = () => {
   const {
     activeTab,
     setActiveTab,
+    adminSubTab = 'access',
+    setAdminSubTab,
     onboardingStep = 'institution',
     setOnboardingStep,
     userRole,
     currentUser,
-    logout
+    logout,
+    classrooms = [],
+    teachers = [],
+    students = []
   } = useClassPulse();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [onboardingExpanded, setOnboardingExpanded] = useState(true);
+  const [managementExpanded, setManagementExpanded] = useState(true);
+  const [onboardingExpanded, setOnboardingExpanded] = useState(false);
   const isAdmin = userRole === 'admin';
 
-  // Keep dropdown open when user navigates to onboarding
+  // Keep dropdown open when user navigates
   useEffect(() => {
-    if (activeTab === 'onboarding') {
+    if (activeTab === 'management') {
+      setManagementExpanded(true);
+    } else if (activeTab === 'onboarding') {
       setOnboardingExpanded(true);
     }
   }, [activeTab]);
 
+  const managementSubItems = [
+    { id: 'access', label: 'Access Control (RBAC)', icon: ShieldCheck },
+    { id: 'timetables', label: 'Schedules & Timetables', icon: Calendar }
+  ];
+
   const onboardingSubItems = [
     { id: 'institution', label: 'Institution Setup', icon: Building2, tag: 'CAMPUS' },
+    { id: 'classrooms', label: 'Classrooms Directory', icon: School, count: classrooms.length },
+    { id: 'teachers', label: 'Faculty Directory', icon: UserCheck, count: teachers.length },
+    { id: 'students', label: 'Student Roster', icon: GraduationCap, count: students.length },
     { id: 'roster', label: 'Roster Ingestion', icon: FileSpreadsheet, tag: 'ROSTER' },
     { id: 'syllabus', label: 'Courses & Syllabi', icon: BookOpen, tag: 'COURSES' },
     { id: 'sections', label: 'Section Tokens', icon: KeyRound, tag: 'TOKENS' }
   ];
 
   const adminNavItems = [
-    { id: 'management', label: 'Admin Control Center', icon: Layers, badge: 'CORE' },
+    {
+      id: 'management',
+      label: 'Admin Control Center',
+      icon: Layers,
+      hasDropdown: true
+    },
     {
       id: 'onboarding',
       label: 'Onboarding & Setup',
@@ -79,6 +101,25 @@ export const Sidebar = () => {
 
   const handleNavClick = (id) => {
     setActiveTab(id);
+    setMobileOpen(false);
+  };
+
+  const handleManagementToggle = (e) => {
+    e.stopPropagation();
+    setManagementExpanded(!managementExpanded);
+  };
+
+  const handleManagementParentClick = () => {
+    setActiveTab('management');
+    setManagementExpanded(true);
+    setMobileOpen(false);
+  };
+
+  const handleManagementSubClick = (subId) => {
+    setActiveTab('management');
+    if (setAdminSubTab) {
+      setAdminSubTab(subId);
+    }
     setMobileOpen(false);
   };
 
@@ -153,22 +194,6 @@ export const Sidebar = () => {
             </div>
           </div>
 
-          {/* Role / Status Badge Card */}
-          <div className="cp-role-card">
-            <div className="flex items-center justify-between">
-              <span className="cp-eyebrow is-tight">Active Workspace</span>
-              <span className="cp-live inline-flex items-center gap-1.5 text-[9px]">
-                <span className="cp-dot is-live" />
-                LIVE
-              </span>
-            </div>
-            <div className="text-xs font-bold mt-1 text-slate-900 flex items-center gap-1.5">
-              {userRole === 'admin' && '🔐 System Administrator'}
-              {userRole === 'teacher' && '👨‍🏫 Teacher Workbench'}
-              {userRole === 'student' && '🎓 Student Portal'}
-            </div>
-          </div>
-
           {/* Navigation Section */}
           <div className="flex flex-col gap-1.5">
             <span className="cp-nav-section-label">Navigation</span>
@@ -177,17 +202,24 @@ export const Sidebar = () => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
 
-                // Handle Onboarding with dropdown
+                // Handle items with dropdown (Management & Onboarding)
                 if (item.hasDropdown) {
+                  const isManagement = item.id === 'management';
+                  const isExpanded = isManagement ? managementExpanded : onboardingExpanded;
+                  const onParentClick = isManagement ? handleManagementParentClick : handleOnboardingParentClick;
+                  const onToggle = isManagement ? handleManagementToggle : handleOnboardingToggle;
+                  const subList = isManagement ? managementSubItems : onboardingSubItems;
+                  const onSubClick = isManagement ? handleManagementSubClick : handleSubStepClick;
+
                   return (
                     <div key={item.id} className="flex flex-col">
                       {/* Parent Item */}
                       <div
                         className={`cp-sidebar-link ${isActive ? 'is-active' : ''} group`}
-                        onClick={handleOnboardingParentClick}
+                        onClick={onParentClick}
                         role="button"
                         tabIndex={0}
-                        aria-expanded={onboardingExpanded}
+                        aria-expanded={isExpanded}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="w-4 h-4 shrink-0" />
@@ -196,11 +228,11 @@ export const Sidebar = () => {
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={handleOnboardingToggle}
+                            onClick={onToggle}
                             className="p-1 hover:bg-black/10 rounded transition-colors"
-                            aria-label={onboardingExpanded ? 'Collapse onboarding menu' : 'Expand onboarding menu'}
+                            aria-label={isExpanded ? `Collapse ${item.label} menu` : `Expand ${item.label} menu`}
                           >
-                            {onboardingExpanded ? (
+                            {isExpanded ? (
                               <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                             ) : (
                               <ChevronRight className="w-3.5 h-3.5 opacity-70" />
@@ -210,22 +242,32 @@ export const Sidebar = () => {
                       </div>
 
                       {/* Dropdown sub-items */}
-                      {onboardingExpanded && (
-                        <div className="cp-sidebar-subnav" role="region" aria-label="Onboarding Steps">
-                          {onboardingSubItems.map((sub) => {
+                      {isExpanded && (
+                        <div className="cp-sidebar-subnav" role="region" aria-label={`${item.label} Subsections`}>
+                          {subList.map((sub) => {
                             const SubIcon = sub.icon;
-                            const isSubActive = activeTab === 'onboarding' && onboardingStep === sub.id;
+                            const isSubActive = isManagement
+                              ? (activeTab === 'management' && adminSubTab === sub.id)
+                              : (activeTab === 'onboarding' && onboardingStep === sub.id);
+
                             return (
                               <button
                                 key={sub.id}
                                 type="button"
-                                onClick={() => handleSubStepClick(sub.id)}
+                                onClick={() => onSubClick(sub.id)}
                                 className={`cp-sidebar-sublink ${isSubActive ? 'is-active' : ''}`}
                                 aria-current={isSubActive ? 'step' : undefined}
                               >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-slate-900' : 'text-slate-400'}`} />
-                                  <span className="truncate">{sub.label}</span>
+                                <div className="flex items-center justify-between w-full min-w-0 pr-1">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-slate-900' : 'text-slate-400'}`} />
+                                    <span className="truncate">{sub.label}</span>
+                                  </div>
+                                  {sub.count !== undefined && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0 ml-1">
+                                      {sub.count}
+                                    </span>
+                                  )}
                                 </div>
                                 <span className="cp-subdot shrink-0" />
                               </button>
@@ -260,16 +302,8 @@ export const Sidebar = () => {
           </div>
         </div>
 
-        {/* Bottom Area: System Status & User Profile */}
+        {/* Bottom Area: User Profile */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200">
-          {/* Telemetry info pill */}
-          <div className="cp-sidebar-telemetry">
-            <Radio className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span className="text-[10px] text-slate-600 font-medium">
-              Edge Telemetry Online (18ms)
-            </span>
-          </div>
-
           {/* User Profile Card */}
           <div className="cp-sidebar-profile">
             <div className="flex items-center gap-3 min-w-0">
@@ -326,9 +360,9 @@ export const AppFooter = () => {
         <div>
           <span className="cp-eyebrow is-tight">Active Mode:</span>
           <strong>
-            {userRole === 'admin' && '🔐 System Administrator'}
-            {userRole === 'teacher' && '👨‍🏫 Classroom Teacher'}
-            {userRole === 'student' && '🎓 Enrolled Student'}
+            {userRole === 'admin' && 'System Administrator'}
+            {userRole === 'teacher' && 'Classroom Teacher'}
+            {userRole === 'student' && 'Enrolled Student'}
           </strong>
           <p>Smart Classroom Administration & Telemetry System</p>
         </div>

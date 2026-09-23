@@ -58,11 +58,11 @@ const COHORT_ANALYTICS = {
       { topic: 'Photolysis of Water', mastery: 88 }
     ],
     studentRankings: [
-      { rank: 1, name: 'Siddharth Verma', score: 380, avatar: '⚡' },
-      { rank: 2, name: 'Priya Mohan', score: 370, avatar: '🌟' },
-      { rank: 3, name: 'Rahul Sharma', score: 350, avatar: '🚀' },
-      { rank: 4, name: 'Deepa K', score: 340, avatar: '🔥' },
-      { rank: 5, name: 'Vijay T', score: 320, avatar: '🎯' }
+      { rank: 1, name: 'Siddharth Verma', score: 380, initials: 'SV' },
+      { rank: 2, name: 'Priya Mohan', score: 370, initials: 'PM' },
+      { rank: 3, name: 'Rahul Sharma', score: 350, initials: 'RS' },
+      { rank: 4, name: 'Deepa K', score: 340, initials: 'DK' },
+      { rank: 5, name: 'Vijay T', score: 320, initials: 'VT' }
     ]
   },
 
@@ -95,11 +95,11 @@ const COHORT_ANALYTICS = {
       { topic: 'Free-Fall Gravitational Dynamics', mastery: 84 }
     ],
     studentRankings: [
-      { rank: 1, name: 'Maya Patel', score: 395, avatar: '⚡' },
-      { rank: 2, name: 'Vikram Singh', score: 365, avatar: '🚀' },
-      { rank: 3, name: 'Sneha Rao', score: 355, avatar: '🌟' },
-      { rank: 4, name: 'Rohit K', score: 335, avatar: '🔥' },
-      { rank: 5, name: 'Anirudh G', score: 310, avatar: '🎯' }
+      { rank: 1, name: 'Maya Patel', score: 395, initials: 'MP' },
+      { rank: 2, name: 'Vikram Singh', score: 365, initials: 'VS' },
+      { rank: 3, name: 'Sneha Rao', score: 355, initials: 'SR' },
+      { rank: 4, name: 'Rohit K', score: 335, initials: 'RK' },
+      { rank: 5, name: 'Anirudh G', score: 310, initials: 'AG' }
     ]
   },
 
@@ -132,11 +132,11 @@ const COHORT_ANALYTICS = {
       { topic: 'Aromatic Resonance Delocalization', mastery: 85 }
     ],
     studentRankings: [
-      { rank: 1, name: 'Karthik Raja', score: 410, avatar: '⚡' },
-      { rank: 2, name: 'Divya N', score: 395, avatar: '🌟' },
-      { rank: 3, name: 'Harish B', score: 380, avatar: '🚀' },
-      { rank: 4, name: 'Swetha M', score: 360, avatar: '🔥' },
-      { rank: 5, name: 'Pradeep S', score: 345, avatar: '🎯' }
+      { rank: 1, name: 'Karthik Raja', score: 410, initials: 'KR' },
+      { rank: 2, name: 'Divya N', score: 395, initials: 'DN' },
+      { rank: 3, name: 'Harish B', score: 380, initials: 'HB' },
+      { rank: 4, name: 'Swetha M', score: 360, initials: 'SM' },
+      { rank: 5, name: 'Pradeep S', score: 345, initials: 'PS' }
     ]
   },
 
@@ -169,11 +169,11 @@ const COHORT_ANALYTICS = {
       { topic: 'Hash Collision Chaining', mastery: 86 }
     ],
     studentRankings: [
-      { rank: 1, name: 'Siddharth Verma', score: 405, avatar: '⚡' },
-      { rank: 2, name: 'Maya Patel', score: 390, avatar: '🚀' },
-      { rank: 3, name: 'Karthik Raja', score: 380, avatar: '🌟' },
-      { rank: 4, name: 'Rahul Sharma', score: 360, avatar: '🔥' },
-      { rank: 5, name: 'Vikram Singh', score: 340, avatar: '🎯' }
+      { rank: 1, name: 'Siddharth Verma', score: 405, initials: 'SV' },
+      { rank: 2, name: 'Maya Patel', score: 390, initials: 'MP' },
+      { rank: 3, name: 'Karthik Raja', score: 380, initials: 'KR' },
+      { rank: 4, name: 'Rahul Sharma', score: 360, initials: 'RS' },
+      { rank: 5, name: 'Vikram Singh', score: 340, initials: 'VS' }
     ]
   }
 };
@@ -186,29 +186,9 @@ export const AnalyticsView = () => {
   const currentCohort = COHORT_ANALYTICS[selectedCohortKey] || COHORT_ANALYTICS['10A'];
 
   return (
-    <>
-      {/* Executive Telemetry Header Banner */}
-      <section className="cp-page-header select-none">
-        <div>
-          <span className="cp-eyebrow">Performance Telemetry Engine • Real-Time Analytics</span>
-          <h1 className="cp-display">
-            Classroom Analytics & Insights
-          </h1>
-          <p className="cp-lead">
-            Real-time comprehension trends, AI topic mastery, response speed metrics, and engagement telemetry partitioned across academic cohorts.
-          </p>
-        </div>
-
-        <div className="cp-page-actions">
-          <div className="cp-status">
-            <span className="cp-dot is-live" />
-            <span>Telemetry Active</span>
-          </div>
-        </div>
-      </section>
-
+    <div className="space-y-4 select-none">
       {/* Cohort Selector Filter Bar */}
-      <section className="cp-panel p-4 bg-surface border border-border-strong select-none">
+      <section className="p-3.5 px-4 bg-surface border border-border">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <label htmlFor="cohort-select" className="cp-label uppercase text-[9px] font-black tracking-wider text-muted mb-0 shrink-0">
@@ -218,7 +198,7 @@ export const AnalyticsView = () => {
               id="cohort-select"
               value={selectedCohortKey}
               onChange={(e) => setSelectedCohortKey(e.target.value)}
-              className="cp-select text-xs py-1.5 px-3 h-[40px] font-bold text-primary min-w-[280px]"
+              className="cp-select text-xs py-1 px-3 h-8 font-bold text-primary min-w-[280px]"
             >
               <option value="10A">Grade 10-A · Biology & Life Sciences (Dr. Anitha)</option>
               <option value="9B">Grade 9-B · Physics & Mechanics (Prof. Rajesh Kumar)</option>
@@ -283,9 +263,9 @@ export const AnalyticsView = () => {
         {/* Card 4: Response Speed */}
         <div className="cp-stat">
           <div className="cp-stat-top">
-            <span className="cp-icon-box" aria-hidden="true">▣</span>
+            <span className="cp-icon-box" aria-hidden="true">◷</span>
           </div>
-          <span className="cp-stat-label">Avg Response Speed</span>
+          <span className="cp-stat-label">Average Response Speed</span>
           <span className="cp-stat-value is-sm">{currentCohort.avgResponseSpeed}</span>
           <span className="cp-stat-detail">
             {currentCohort.speedLabel}
@@ -294,7 +274,7 @@ export const AnalyticsView = () => {
       </section>
 
       {/* Chart: Per-Period Engagement & Accuracy Stream */}
-      <section className="cp-panel select-none">
+      <section className="p-5 bg-surface border border-border select-none">
         <div className="cp-panel-header">
           <div>
             <span className="cp-eyebrow is-tight">Telemetry stream • {currentCohort.className}</span>
@@ -317,7 +297,7 @@ export const AnalyticsView = () => {
 
         <div className="h-64 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={currentCohort.periodAccuracy} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <LineChart data={currentCohort.periodAccuracy || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={CHART.grid} strokeDasharray="0" />
               <XAxis dataKey="period" stroke={CHART.axis} tick={TICK_STYLE} tickLine={false} axisLine={{ stroke: CHART.axis }} />
               <YAxis stroke={CHART.axis} tick={TICK_STYLE} domain={[40, 100]} tickLine={false} axisLine={false} />
@@ -332,7 +312,7 @@ export const AnalyticsView = () => {
       {/* Grid: Topic Mastery + Live Student Leaderboard */}
       <section className="cp-columns select-none">
         {/* Topic Mastery Bars */}
-        <div className="cp-panel">
+        <div className="p-5 bg-surface border border-border">
           <div className="cp-panel-header">
             <div>
               <span className="cp-eyebrow is-tight">Mastery • {currentCohort.subject}</span>
@@ -342,12 +322,12 @@ export const AnalyticsView = () => {
               <p className="cp-caption mt-1">Student comprehension percentages by module for {currentCohort.className}.</p>
             </div>
             <span className="cp-badge">
-              {currentCohort.topicMastery.length} Key Modules
+              {(currentCohort.topicMastery || []).length} Key Modules
             </span>
           </div>
 
           <div className="space-y-5">
-            {currentCohort.topicMastery.map((item, idx) => (
+            {(currentCohort.topicMastery || []).map((item, idx) => (
               <div key={idx}>
                 <div className="flex justify-between items-center text-body font-bold text-ink mb-2">
                   <span>{item.topic}</span>
@@ -366,7 +346,7 @@ export const AnalyticsView = () => {
         </div>
 
         {/* Student Leaderboard */}
-        <div className="cp-panel">
+        <div className="p-5 bg-surface border border-border">
           <div className="cp-panel-header">
             <div>
               <span className="cp-eyebrow is-tight">Cohort Leaderboard • {currentCohort.className}</span>
@@ -381,24 +361,27 @@ export const AnalyticsView = () => {
           </div>
 
           <div className="cp-list cp-list-bordered">
-            {currentCohort.studentRankings.map((student) => (
+            {(currentCohort.studentRankings || []).map((student) => (
               <div
                 key={student.rank}
                 className={`cp-row ${student.rank === 1 ? 'is-selected' : ''}`}
-                style={{ minHeight: 56 }}
+                style={{ minHeight: 52 }}
               >
                 <span
-                  className={`cp-chip-letter shrink-0 w-8 h-8 ${
-                    student.rank <= 3 ? 'bg-ink text-white border-line-strong' : ''
+                  className={`cp-chip-letter shrink-0 w-7 h-7 font-mono font-bold text-xs ${
+                    student.rank <= 3 ? 'bg-ink text-white border-line-strong' : 'bg-surface-sunken text-body'
                   }`}
                 >
                   #{student.rank}
                 </span>
-                <div className="cp-row-content">
-                  <span className="cp-row-title">{student.avatar} {student.name}</span>
+                <div className="cp-row-content flex items-center gap-2">
+                  <span className="w-6 h-6 border border-border bg-surface-sunken text-[10px] font-mono font-bold flex items-center justify-center text-primary shrink-0">
+                    {student.initials}
+                  </span>
+                  <span className="cp-row-title">{student.name}</span>
                 </div>
                 <div className="cp-row-actions">
-                  <span className="cp-badge">
+                  <span className="cp-badge font-mono font-bold">
                     {student.score} pts
                   </span>
                 </div>
@@ -407,6 +390,6 @@ export const AnalyticsView = () => {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };

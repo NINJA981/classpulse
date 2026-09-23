@@ -116,14 +116,14 @@ export const SectionManagementView = () => {
       </div>
 
       {/* Main Panel */}
-      <div className="cp-panel border border-border bg-surface p-6 sm:p-8 space-y-6">
+      <div className="border border-border bg-surface shadow-sm">
         {/* Header & Course Filter */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-surface">
           <div>
             <span className="cp-eyebrow">Classroom Cohorts</span>
-            <h3 className="cp-h3 mt-1">Section Tokens & Faculty Linkage</h3>
-            <p className="cp-lead text-secondary text-xs mt-1">
-              Distribute randomized student join tokens. Rotate codes on demand to prevent unauthorized student admittance.
+            <h3 className="cp-h3 mt-0.5">Section Tokens & Faculty Linkage</h3>
+            <p className="cp-lead text-secondary text-xs mt-0.5">
+              Distribute randomized student join tokens. Rotate codes on demand to prevent unauthorized admittance.
             </p>
           </div>
 
@@ -136,7 +136,7 @@ export const SectionManagementView = () => {
               id="course-filter"
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="cp-select text-xs py-1 px-3 h-[38px]"
+              className="cp-select text-xs py-1 px-3 h-8"
             >
               <option value="ALL">All Enrolled Courses ({sections.length} Sections)</option>
               {courses.map((c) => (
@@ -152,72 +152,69 @@ export const SectionManagementView = () => {
         {loading ? (
           <div className="p-8 text-center text-xs text-muted">Loading section rosters...</div>
         ) : filteredSections.length === 0 ? (
-          <div className="p-8 text-center text-xs text-muted border border-border bg-surface-sunken">
+          <div className="p-8 text-center text-xs text-muted border-b border-border bg-surface-sunken">
             No sections found for the selected course.
           </div>
         ) : (
-          <div className="cp-table-wrap overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="cp-table w-full text-left border-collapse">
               <thead>
-                <tr className="border-b-2 border-border-strong bg-surface-sunken text-[10px] uppercase font-black tracking-wider">
-                  <th className="p-3">Course / Cohort</th>
-                  <th className="p-3">Section Name</th>
-                  <th className="p-3">Active Join Code</th>
-                  <th className="p-3">Code Validity / Expiry</th>
-                  <th className="p-3">Assigned Teacher(s)</th>
-                  <th className="p-3">Enrolled</th>
-                  <th className="p-3 text-right">Access Controls</th>
+                <tr className="border-b border-border bg-surface-sunken text-[10px] uppercase font-black tracking-wider text-muted">
+                  <th className="py-2.5 px-4">Course / Cohort</th>
+                  <th className="py-2.5 px-4">Section Name</th>
+                  <th className="py-2.5 px-4">Active Join Code</th>
+                  <th className="py-2.5 px-4">Code Validity / Expiry</th>
+                  <th className="py-2.5 px-4">Assigned Teacher(s)</th>
+                  <th className="py-2.5 px-4">Enrolled</th>
+                  <th className="py-2.5 px-4 text-right">Access Controls</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSections.map((sec) => (
-                  <tr key={sec.id} className="border-b border-border-faint hover:bg-surface-hover">
-                    <td className="p-3 text-xs">
+                  <tr key={sec.id} className="border-b border-border-faint last:border-b-0 hover:bg-surface-hover">
+                    <td className="py-2.5 px-4 text-xs">
                       <span className="cp-badge is-ink font-mono font-bold">
                         {getCourseCode(sec.courseId)}
                       </span>
-                      <div className="text-[11px] text-muted truncate max-w-[180px] mt-1">
+                      <div className="text-[11px] text-muted truncate max-w-[180px] mt-0.5">
                         {getCourseTitle(sec.courseId)}
                       </div>
                     </td>
 
-                    <td className="p-3 text-xs font-bold text-primary">
+                    <td className="py-2.5 px-4 text-xs font-bold text-primary">
                       {sec.name}
-                      <div className="text-[10px] font-mono text-muted font-normal">
-                        ID: {sec.id}
-                      </div>
                     </td>
 
-                    <td className="p-3 text-xs">
-                      <div className="inline-flex items-center gap-2 border border-border-strong bg-surface-sunken px-3 py-1.5 font-mono font-black text-sm tracking-widest text-primary shadow-hard-sm">
-                        <span>{sec.joinCode}</span>
-                      </div>
+                    <td className="py-2.5 px-4 text-xs">
+                      <span className="font-mono font-bold text-primary bg-surface-sunken px-2 py-0.5 border border-border">
+                        {sec.joinCode}
+                      </span>
                     </td>
 
-                    <td className="p-3 text-xs">
-                      <div className="font-mono text-[11px] text-secondary">
-                        {formatExpiry(sec.joinCodeExpiresAt)}
+                    <td className="py-2.5 px-4 text-xs">
+                      <div className="font-mono text-[11px] text-primary">
+                        {new Date(sec.joinCodeExpiresAt).toLocaleDateString()} · {new Date(sec.joinCodeExpiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       <span className="cp-caption text-muted block text-[10px] mt-0.5">
                         24h Rolling Window
                       </span>
                     </td>
 
-                    <td className="p-3 text-xs">
+                    <td className="py-2.5 px-4 text-xs">
                       <div className="text-primary font-semibold">
                         {sec.teacherNames?.join(', ') || 'Unassigned'}
                       </div>
                     </td>
 
-                    <td className="p-3 text-xs font-mono">
+                    <td className="py-2.5 px-4 text-xs font-mono">
                       <span className="font-bold text-primary">{sec.enrolledCount}</span> students
                     </td>
 
-                    <td className="p-3 text-right">
+                    <td className="py-2.5 px-4 text-right">
                       <button
                         type="button"
                         onClick={() => handleOpenRotateConfirm(sec)}
-                        className="cp-btn-secondary text-xs py-1 px-3"
+                        className="cp-btn cp-btn-secondary text-[11px] min-h-0 h-7 px-2.5 py-0"
                       >
                         Rotate Code
                       </button>
@@ -229,8 +226,8 @@ export const SectionManagementView = () => {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-          <div className="text-xs text-muted">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3.5 bg-surface-sunken">
+          <div className="text-[11px] text-muted">
             Join codes are entered by students in the Student Portal to register their personal device into this lecture group.
           </div>
         </div>

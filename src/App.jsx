@@ -3,7 +3,7 @@
 import React from 'react';
 import { ClassPulseProvider, useClassPulse } from './context/ClassPulseContext';
 import { LoginPage } from './components/LoginPage';
-import { Sidebar, AppFooter } from './components/Sidebar';
+import { Sidebar } from './components/Sidebar';
 import { ManagementView } from './components/ManagementView';
 import { TeacherClassroomView } from './components/TeacherClassroomView';
 import { TeacherDashboard } from './components/TeacherDashboard';
@@ -42,7 +42,6 @@ const AppInner = () => {
       <Sidebar />
       <div className="cp-main-wrapper cp-main-pane">
         <MainContent />
-        <AppFooter />
       </div>
     </div>
   );

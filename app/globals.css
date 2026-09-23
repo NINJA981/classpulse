@@ -540,14 +540,14 @@
   }
 
   .cp-content {
-    width: min(1380px, calc(100% - 84px));
+    width: min(1380px, calc(100% - 64px));
     margin: 0 auto;
-    padding: 64px 0 80px;
+    padding: 28px 0 36px;
     flex: 1;
   }
 
   .cp-content > * + * {
-    margin-top: 78px;
+    margin-top: 24px;
   }
 
   /* Stat row hugs the hero band (spec §8: hero -> stats = 14px). */
@@ -2023,8 +2023,8 @@
     padding-bottom: 2px;
   }
   .cp-profile { min-width: auto; }
-  .cp-content { width: calc(100% - 36px); padding-top: 35px; }
-  .cp-content > * + * { margin-top: 48px; }
+  .cp-content { width: calc(100% - 36px); padding-top: 20px; }
+  .cp-content > * + * { margin-top: 20px; }
   .cp-content > .cp-hero + *,
   .cp-content > .cp-page-header + * { margin-top: 14px; }
   .cp-hero,

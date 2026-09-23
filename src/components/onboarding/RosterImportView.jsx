@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { onboardingApi } from '../../mock/onboardingApi';
+import { useClassPulse } from '../../context/ClassPulseContext';
 
 const CSV_SLOTS = [
   {
@@ -10,6 +11,13 @@ const CSV_SLOTS = [
     title: 'Department Registry',
     expectedCols: 'code, name, hodEmail, building',
     sampleRows: 'CSE, Computer Science & Engineering, hod.cse@apex.edu, Alan Turing Block'
+  },
+  {
+    id: 'teachers',
+    fileName: 'teachers.csv',
+    title: 'Faculty & Teacher Registry',
+    expectedCols: 'staffId, name, email, department, assignedClasses',
+    sampleRows: 'TCH-505, Dr. Sunita Rao, sunita.rao@apex.edu, Mathematics, Grade 10-A'
   },
   {
     id: 'courses',
@@ -34,10 +42,27 @@ const CSV_SLOTS = [
   }
 ];
 
+const BATCH_STUDENTS = [
+  { id: 'stu-bulk-1', name: 'Aarav Nair', rollNo: '21CS042', className: 'Grade 10-A', nickname: 'Aarav', email: 'aarav.n@apex.edu', status: 'Active' },
+  { id: 'stu-bulk-2', name: 'Priya Ram', rollNo: '21CS094', className: 'Grade 10-A', nickname: 'PriyaR', email: 'priya.r@apex.edu', status: 'Active' },
+  { id: 'stu-bulk-3', name: 'Diya Menon', rollNo: '21CS118', className: 'Grade 11-C', nickname: 'Diya', email: 'diya.m@apex.edu', status: 'Active' },
+  { id: 'stu-bulk-4', name: 'Kabir Chawla', rollNo: '21CS142', className: 'Grade 9-B', nickname: 'Kabir', email: 'kabir.c@apex.edu', status: 'Active' },
+  { id: 'stu-bulk-5', name: 'Ananya Sharma', rollNo: '21CS155', className: 'Grade 10-A', nickname: 'Ananya', email: 'ananya.s@apex.edu', status: 'Active' }
+];
+
+const BATCH_TEACHERS = [
+  { id: 'tch-bulk-1', name: 'Dr. Sunita Rao', staffId: 'TCH-505', email: 'sunita.rao@apex.edu', department: 'Mathematics', assignedClasses: ['Grade 10-A'], status: 'Active' },
+  { id: 'tch-bulk-2', name: 'Prof. David Lee', staffId: 'TCH-506', email: 'david.l@apex.edu', department: 'Computer Science', assignedClasses: ['Grade 11-C'], status: 'Active' },
+  { id: 'tch-bulk-3', name: 'Dr. Kavita Narang', staffId: 'TCH-507', email: 'kavita.n@apex.edu', department: 'Physics & Electronics', assignedClasses: ['Grade 9-B'], status: 'Active' }
+];
+
 export const RosterImportView = ({ onProceedToCourses }) => {
+  const { addBulkStudents, addBulkTeachers, setOnboardingStep } = useClassPulse();
+
   // Upload slots state: { [slotId]: { file: File | string, size: string, isUploaded: boolean } }
   const [uploadedSlots, setUploadedSlots] = useState({
     departments: null,
+    teachers: null,
     courses: null,
     sections: null,
     students: null
@@ -81,6 +106,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
   const handleLoadSampleCSVs = () => {
     setUploadedSlots({
       departments: { name: 'departments.csv', size: '14.2 KB', isUploaded: true },
+      teachers: { name: 'teachers.csv', size: '32.4 KB', isUploaded: true },
       courses: { name: 'courses.csv', size: '28.6 KB', isUploaded: true },
       sections: { name: 'sections.csv', size: '18.1 KB', isUploaded: true },
       students: { name: 'students.csv', size: '94.8 KB', isUploaded: true }
@@ -144,7 +170,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
         if (jobData) {
           setJobData({
             ...jobData,
-            successCount: (jobData.successCount || 144) + 1
+            successCount: (jobData.successCount || 177) + 1
           });
         }
       } else {
@@ -168,6 +194,8 @@ export const RosterImportView = ({ onProceedToCourses }) => {
     setIsConfirming(true);
     try {
       const result = await onboardingApi.confirmImport(jobId || 'job-init-101');
+      if (addBulkStudents) addBulkStudents(BATCH_STUDENTS);
+      if (addBulkTeachers) addBulkTeachers(BATCH_TEACHERS);
       setConfirmResult(result);
       setStage('confirmed');
     } catch (err) {
@@ -178,61 +206,61 @@ export const RosterImportView = ({ onProceedToCourses }) => {
   };
 
   return (
-    <div className="cp-stack">
+    <div className="space-y-4">
       {/* Top Banner / Breadcrumb */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <div>
-          <span className="cp-eyebrow">Roster Management</span>
-          <h2 className="cp-h2">Roster & Academic Schema Import</h2>
+          <span className="cp-eyebrow">Roster & Faculty Ingestion</span>
+          <h2 className="cp-h2 mt-0.5">Bulk Academic Schema & Member Import</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="cp-badge is-outline">Roster Ingestion</span>
+          <span className="cp-badge is-outline">5 Schema Datasets</span>
         </div>
       </div>
 
       {/* Stage 1: File Upload Slots */}
       {stage === 'upload' && (
-        <div className="cp-panel border border-border bg-surface p-6 sm:p-8 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <div>
               <span className="cp-eyebrow">Data Provisioning Slots</span>
-              <h3 className="cp-h3 mt-1">Multi-File Roster Intake</h3>
-              <p className="cp-lead text-secondary text-xs mt-1">
-                Provide the four foundational CSV datasets. You may upload custom exports or pre-fill with verified sample schemas.
+              <h3 className="cp-h3 mt-0.5">Multi-File Roster & Faculty Intake</h3>
+              <p className="cp-lead text-secondary text-xs mt-0.5">
+                Upload CSV files to bulk populate departments, faculty, courses, sections, and students into the institution ledger.
               </p>
             </div>
             <button
               type="button"
               onClick={handleLoadSampleCSVs}
-              className="cp-btn-secondary text-xs"
+              className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
             >
               ▤ Pre-populate Demo CSVs
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {CSV_SLOTS.map((slot) => {
               const fileInfo = uploadedSlots[slot.id];
               return (
                 <div
                   key={slot.id}
-                  className={`border p-4 transition-colors ${
+                  className={`border p-3.5 transition-colors ${
                     fileInfo ? 'border-border-strong bg-surface-sunken' : 'border-border bg-surface'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="cp-badge is-ink">{slot.fileName}</span>
-                        {fileInfo && <span className="cp-badge">Staged</span>}
+                      <div className="flex items-center gap-1.5">
+                        <span className="cp-badge is-ink text-[10px]">{slot.fileName}</span>
+                        {fileInfo && <span className="cp-badge text-[10px]">Staged</span>}
                       </div>
-                      <h4 className="cp-h4 font-bold text-sm text-primary">{slot.title}</h4>
+                      <h4 className="cp-h4 font-bold text-xs text-primary">{slot.title}</h4>
                     </div>
                     {fileInfo ? (
                       <button
                         type="button"
                         onClick={() => handleClearSlot(slot.id)}
-                        className="text-xs font-bold text-muted hover:text-ink"
+                        className="text-[11px] font-bold text-muted hover:text-ink leading-none p-1"
                         title="Remove file"
                       >
                         × Remove
@@ -240,7 +268,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
                     ) : (
                       <label
                         htmlFor={`file-${slot.id}`}
-                        className="cp-btn-secondary text-xs py-1 px-3 cursor-pointer"
+                        className="cp-btn cp-btn-secondary text-xs min-h-0 h-7 px-2.5 py-0 cursor-pointer shrink-0"
                       >
                         Browse...
                       </label>
@@ -255,16 +283,16 @@ export const RosterImportView = ({ onProceedToCourses }) => {
                   </div>
 
                   {fileInfo ? (
-                    <div className="mt-3 pt-3 border-t border-border-soft flex items-center justify-between text-xs">
-                      <span className="font-mono text-primary font-bold">{fileInfo.name}</span>
-                      <span className="text-muted">{fileInfo.size}</span>
+                    <div className="mt-2.5 pt-2.5 border-t border-border-soft flex items-center justify-between text-xs">
+                      <span className="font-mono text-primary font-bold text-[11px] truncate max-w-[150px]">{fileInfo.name}</span>
+                      <span className="text-muted text-[10px]">{fileInfo.size}</span>
                     </div>
                   ) : (
-                    <div className="mt-3 pt-3 border-t border-border-soft space-y-1 text-xs">
-                      <div className="text-secondary font-mono text-[11px]">
+                    <div className="mt-2.5 pt-2.5 border-t border-border-soft space-y-1 text-xs">
+                      <div className="text-secondary font-mono text-[10px] leading-tight">
                         <strong>Expected:</strong> {slot.expectedCols}
                       </div>
-                      <div className="text-muted text-[10px]">
+                      <div className="text-muted text-[10px] truncate">
                         e.g. {slot.sampleRows}
                       </div>
                     </div>
@@ -274,12 +302,12 @@ export const RosterImportView = ({ onProceedToCourses }) => {
             })}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             <div className="text-xs text-muted">
               {allSlotsFilled
-                ? 'All 4 files staged and ready for schema parsing.'
+                ? 'All 5 files staged and ready for schema parsing.'
                 : someSlotsFilled
-                ? 'Some files staged. Ready to run partial or complete ingest.'
+                ? 'Files staged. Ready to run bulk ingestion.'
                 : 'Select files or click "Pre-populate Demo CSVs" to begin.'}
             </div>
 
@@ -287,7 +315,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
               type="button"
               disabled={!someSlotsFilled}
               onClick={handleStartImport}
-              className="cp-btn-primary"
+              className="cp-btn cp-btn-primary min-h-0 h-8 px-4 text-xs"
             >
               Initiate Roster Parsing Pipeline →
             </button>
@@ -297,16 +325,16 @@ export const RosterImportView = ({ onProceedToCourses }) => {
 
       {/* Stage 2: In-Flight Job Status Pipeline */}
       {stage === 'job_status' && (
-        <div className="cp-panel border border-border-strong bg-surface p-8 shadow-hard space-y-8">
-          <div className="border-b border-border-soft pb-4">
+        <div className="border border-border-strong bg-surface p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="border-b border-border-soft pb-3">
             <span className="cp-eyebrow">Ingestion Pipeline Monitor</span>
-            <h3 className="cp-h3 mt-1">Import Job In Progress</h3>
+            <h3 className="cp-h3 mt-0.5">Import Job In Progress</h3>
             <p className="cp-caption text-muted">Transaction ID: {jobId || 'Allocating Job ID...'}</p>
           </div>
 
           {/* Pipeline Monitor Display */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className={`p-4 border ${jobStatus === 'pending' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={`p-3.5 border ${jobStatus === 'pending' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="cp-eyebrow">Schema Check</span>
                 {jobStatus !== 'pending' && <span className="text-xs font-bold text-primary">✓</span>}
@@ -315,16 +343,16 @@ export const RosterImportView = ({ onProceedToCourses }) => {
               <span className="cp-caption text-muted">Header structure verification</span>
             </div>
 
-            <div className={`p-4 border ${jobStatus === 'processing' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
+            <div className={`p-3.5 border ${jobStatus === 'processing' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="cp-eyebrow">Cross Reference</span>
                 {jobStatus === 'done' && <span className="text-xs font-bold text-primary">✓</span>}
               </div>
               <strong className="text-xs uppercase tracking-wider block">Relational Cross-Check</strong>
-              <span className="cp-caption text-muted">Enrollments & Course FK check</span>
+              <span className="cp-caption text-muted">Enrollments, faculty & course FK</span>
             </div>
 
-            <div className={`p-4 border ${jobStatus === 'done' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
+            <div className={`p-3.5 border ${jobStatus === 'done' ? 'border-border-strong bg-surface-sunken' : 'border-border'}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="cp-eyebrow">Summary Compile</span>
                 {jobStatus === 'done' && <span className="text-xs font-bold text-primary">✓</span>}
@@ -348,7 +376,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
             </div>
           </div>
 
-          <div className="text-center py-2 text-xs text-muted animate-pulse">
+          <div className="text-center py-1 text-xs text-muted animate-pulse">
             Processing row records against active domain and section constraints...
           </div>
         </div>
@@ -356,7 +384,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
 
       {/* Stage 3: Review Screen & Error Table with Inline Fix */}
       {stage === 'review' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Summary Stat Grid */}
           <div className="cp-grid-stats">
             <div className="cp-stat">
@@ -365,7 +393,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
                 <span className="cp-badge is-ink">Total Rows</span>
               </div>
               <span className="cp-stat-label">Evaluated Records</span>
-              <span className="cp-stat-value">{jobData?.rowCount || 148}</span>
+              <span className="cp-stat-value">{jobData?.rowCount || 182}</span>
             </div>
 
             <div className="cp-stat">
@@ -374,7 +402,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
                 <span className="cp-badge">Clean</span>
               </div>
               <span className="cp-stat-label">Valid Rows Staged</span>
-              <span className="cp-stat-value">{jobData?.successCount || 144}</span>
+              <span className="cp-stat-value">{jobData?.successCount || 177}</span>
             </div>
 
             <div className="cp-stat">
@@ -392,18 +420,18 @@ export const RosterImportView = ({ onProceedToCourses }) => {
               </div>
               <span className="cp-stat-label">Validation Yield</span>
               <span className="cp-stat-value is-sm">
-                {Math.round(((jobData?.successCount || 144) / (jobData?.rowCount || 148)) * 100)}%
+                {Math.round(((jobData?.successCount || 177) / (jobData?.rowCount || 182)) * 100)}%
               </span>
             </div>
           </div>
 
           {/* Anomaly Table */}
-          <div className="cp-panel border border-border bg-surface p-6 sm:p-8 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+          <div className="border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
               <div>
                 <span className="cp-eyebrow">Anomaly Correction Hub</span>
-                <h3 className="cp-h3 mt-1">Per-Row Ingestion Exceptions</h3>
-                <p className="cp-lead text-secondary text-xs mt-1">
+                <h3 className="cp-h3 mt-0.5">Per-Row Ingestion Exceptions</h3>
+                <p className="cp-lead text-secondary text-xs mt-0.5">
                   Correct values directly inline to verify against validation schemas before committing the roster.
                 </p>
               </div>
@@ -541,34 +569,37 @@ export const RosterImportView = ({ onProceedToCourses }) => {
 
       {/* Stage 4: Confirmed State */}
       {stage === 'confirmed' && (
-        <div className="cp-panel border border-border-strong bg-surface p-8 shadow-hard-lg space-y-6">
-          <div className="flex items-center gap-3 border-b border-border-soft pb-4">
+        <div className="border border-border-strong bg-surface p-6 sm:p-7 shadow-hard space-y-5">
+          <div className="flex items-center gap-3 border-b border-border pb-3">
             <span className="cp-badge is-ink">TRANSACTION COMMITTED</span>
-            <span className="cp-caption text-muted">Ref: {jobId || 'REC-101'}</span>
+            <span className="cp-caption text-muted font-mono">Ref: {jobId || 'REC-101'}</span>
           </div>
 
           <div>
-            <span className="cp-eyebrow">Institutional Roster Provisioned</span>
-            <h3 className="cp-display text-3xl font-black mt-1">Academic Roster Online</h3>
-            <p className="cp-lead text-secondary text-sm mt-2">
-              Successfully enrolled <strong>{confirmResult?.importedCount || 144} student and course associations</strong> into the ClassPulse local ledger.
+            <span className="cp-eyebrow">Institutional Roster & Faculty Provisioned</span>
+            <h3 className="cp-display text-2xl sm:text-3xl font-black mt-1">Academic Roster & Faculty Online</h3>
+            <p className="cp-lead text-secondary text-xs mt-1">
+              Successfully enrolled <strong>{confirmResult?.importedCount || 177} academic records</strong> into the ClassPulse local ledger, including active student and faculty profiles.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-border-soft">
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
+            <div className="p-3 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Timestamp</span>
               <div className="text-xs font-bold font-mono mt-1 text-primary">
-                {confirmResult?.confirmedAt || new Date().toISOString()}
+                {confirmResult?.confirmedAt ? new Date(confirmResult.confirmedAt).toLocaleTimeString() : new Date().toLocaleTimeString()}
               </div>
             </div>
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+            <div className="p-3 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Enrolled Records</span>
-              <div className="text-lg font-black mt-1 text-primary">
-                {confirmResult?.importedCount || 144} Records
+              <div className="text-lg font-black mt-0.5 text-primary">
+                {confirmResult?.importedCount || 177} Records
+              </div>
+              <div className="text-[10px] text-muted font-mono mt-0.5">
+                +5 Students · +3 Faculty Ingested
               </div>
             </div>
-            <div className="p-4 border border-border-soft bg-surface-sunken">
+            <div className="p-3 border border-border bg-surface-sunken">
               <span className="cp-eyebrow">Next Milestone</span>
               <div className="text-xs font-bold mt-1 text-primary">
                 Course Catalog & Syllabus Parsing
@@ -576,23 +607,39 @@ export const RosterImportView = ({ onProceedToCourses }) => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-            <button
-              type="button"
-              onClick={() => {
-                setStage('upload');
-                setErrorsAcknowledged(false);
-              }}
-              className="cp-btn-secondary text-xs"
-            >
-              Upload Additional Batches
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setStage('upload');
+                  setErrorsAcknowledged(false);
+                }}
+                className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
+              >
+                Upload Additional Batches
+              </button>
+              <button
+                type="button"
+                onClick={() => setOnboardingStep && setOnboardingStep('teachers')}
+                className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
+              >
+                View Faculty Directory →
+              </button>
+              <button
+                type="button"
+                onClick={() => setOnboardingStep && setOnboardingStep('students')}
+                className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
+              >
+                View Student Roster →
+              </button>
+            </div>
 
             {onProceedToCourses && (
               <button
                 type="button"
                 onClick={onProceedToCourses}
-                className="cp-btn-primary"
+                className="cp-btn cp-btn-primary min-h-0 h-8 px-3 text-xs"
               >
                 Proceed to Course & Syllabus List →
               </button>

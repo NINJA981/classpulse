@@ -142,6 +142,7 @@ export const ClassPulseProvider = ({ children }) => {
   });
 
   const [activeTab, setActiveTab] = useState('management');
+  const [adminSubTab, setAdminSubTab] = useState('access');
   const [onboardingStep, setOnboardingStep] = useState('institution');
 
   // Login handler — only administrators can sign in to this application.
@@ -308,6 +309,14 @@ export const ClassPulseProvider = ({ children }) => {
     setStudents(prev => [...prev, item]);
   };
 
+  const addBulkStudents = (newStudents) => {
+    setStudents(prev => {
+      const existingRolls = new Set(prev.map(s => s.rollNo));
+      const filtered = newStudents.filter(s => !existingRolls.has(s.rollNo));
+      return [...prev, ...filtered];
+    });
+  };
+
   const deleteStudent = (id) => {
     setStudents(prev => prev.filter(s => s.id !== id));
   };
@@ -322,6 +331,14 @@ export const ClassPulseProvider = ({ children }) => {
         : (newTeacher.assignedClasses || [])
     };
     setTeachers(prev => [...prev, item]);
+  };
+
+  const addBulkTeachers = (newTeachers) => {
+    setTeachers(prev => {
+      const existingIds = new Set(prev.map(t => t.staffId));
+      const filtered = newTeachers.filter(t => !existingIds.has(t.staffId));
+      return [...prev, ...filtered];
+    });
   };
 
   const deleteTeacher = (id) => {
@@ -489,9 +506,11 @@ export const ClassPulseProvider = ({ children }) => {
         deleteClassroom,
         students,
         addStudent,
+        addBulkStudents,
         deleteStudent,
         teachers,
         addTeacher,
+        addBulkTeachers,
         deleteTeacher,
         timetables,
         updateTimetableSlot,
@@ -502,7 +521,9 @@ export const ClassPulseProvider = ({ children }) => {
         toggleUserPermission,
         toggleUserStatus,
         onboardingStep,
-        setOnboardingStep
+        setOnboardingStep,
+        adminSubTab,
+        setAdminSubTab
       }}
     >
       {children}
