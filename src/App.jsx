@@ -12,6 +12,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { QuizWorkbench } from './components/QuizWorkbench';
 import { ProjectorKiosk } from './components/ProjectorKiosk';
 import { OnboardingHub } from './components/onboarding/OnboardingHub';
+import { ModelSettingsView } from './components/ModelSettingsView';
 
 const MainContent = () => {
   const { activeTab, userRole } = useClassPulse();
@@ -26,6 +27,7 @@ const MainContent = () => {
       {activeTab === 'analytics' && <AnalyticsView />}
       {activeTab === 'quiz' && (userRole === 'admin' ? <ManagementView /> : <QuizWorkbench />)}
       {activeTab === 'projector' && <ProjectorKiosk />}
+      {activeTab === 'ai-models' && <ModelSettingsView />}
     </main>
   );
 };

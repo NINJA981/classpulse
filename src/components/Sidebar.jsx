@@ -82,7 +82,8 @@ export const Sidebar = () => {
       icon: UserPlus,
       hasDropdown: true
     },
-    { id: 'analytics', label: 'Classroom Analytics', icon: BarChart3 }
+    { id: 'analytics', label: 'Classroom Analytics', icon: BarChart3 },
+    { id: 'ai-models', label: 'AI Model Settings', icon: BrainCircuit }
   ];
 
   const teacherNavItems = [
