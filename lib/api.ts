@@ -9,7 +9,29 @@ import {
   TranscriptSource
 } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+/**
+ * The API host is resolved in the browser, not baked in.
+ *
+ * NEXT_PUBLIC_API_BASE_URL is fixed when the dev server starts, so it pins whatever LAN IP
+ * the machine had at that moment. Change Wi-Fi, renew a DHCP lease, or open the app from a
+ * different host and every request goes to an address that no longer answers — and a
+ * hanging fetch looks like a frozen page, not an error. The page's own hostname is always
+ * reachable from the browser that loaded it, so only the port and path are taken from the
+ * configured value.
+ */
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+  if (typeof window === 'undefined') return configured;
+  try {
+    const url = new URL(configured, window.location.origin);
+    url.hostname = window.location.hostname;
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return configured;
+  }
+}
+
+const API_BASE_URL = resolveApiBase();
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
@@ -196,14 +218,34 @@ export const api = {
   },
 
   /**
+   * GET /api/admin/sections
+   *
+   * The real section directory. Lessons published without a sectionId never reach a
+   * student's quiz list, so the class picker must offer these instead of invented labels.
+   */
+  async listSections() {
+    const { items } = await request<{
+      items: Array<{
+        id: string;
+        name: string;
+        joinCode: string;
+        teacherIds: string[];
+        teacherNames: string[];
+        enrolledCount: number;
+      }>;
+    }>('/admin/sections');
+    return items;
+  },
+
+  /**
    * POST /api/lessons
    */
-  async createLesson({ title, subject, className, liveSessionId }: { title: string; subject: string; className: string; liveSessionId?: string }) {
+  async createLesson({ title, subject, className, sectionId, liveSessionId }: { title: string; subject: string; className: string; sectionId?: string; liveSessionId?: string }) {
     // Claim whatever the recorder captured live, unless the caller passed one explicitly.
     const claimedSession = liveSessionId ?? takeLiveSession();
     const { lesson } = await request<{ lesson: Lesson }>('/lessons', {
       method: 'POST',
-      body: JSON.stringify({ title, subject, className, liveSessionId: claimedSession })
+      body: JSON.stringify({ title, subject, className, sectionId, liveSessionId: claimedSession })
     });
     return normalizeLesson(lesson);
   },

@@ -1,31 +1,46 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Radio,
   Mic,
   Video,
   Monitor,
   Play,
   Square,
   Pause,
-  RotateCcw,
   Copy,
-  Download,
   Sparkles,
   FileText,
   Search,
-  Check,
-  Volume2
+  Check
 } from 'lucide-react';
+import LiveTranscript from '../../components/LiveTranscript';
+import { api } from '../../lib/api';
 
 interface TranscriptSegment {
   id: string;
   timestamp: string;
   speaker: string;
   text: string;
+}
+
+interface StoredLiveSession {
+  lessonId?: string;
+  title?: string;
+  subject?: string;
+  className?: string;
+  sectionId?: string;
+}
+
+/** The first recording container the browser can actually produce. */
+function pickMimeType(video: boolean): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = video
+    ? ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+    : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
 }
 
 export default function RecordTranscribePage() {
@@ -39,28 +54,37 @@ export default function RecordTranscribePage() {
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(30);
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [captureError, setCaptureError] = useState('');
 
-  // Transcripts
+  // The live MediaStream, shared with the caption relay.
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+
+  // Transcripts (each finalised live-caption line becomes a segment)
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
   const [copiedNotification, setCopiedNotification] = useState(false);
 
-  // Active session metadata
-  const [sessionTitle, setSessionTitle] = useState('Cellular Respiration & Krebs Cycle');
-  const [sessionClass, setSessionClass] = useState('Grade 10 - Section B');
+  // Convert-to-quiz state
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertError, setConvertError] = useState('');
+
+  // Active session metadata (real when launched from New Lesson, generic otherwise)
+  const [session, setSession] = useState<StoredLiveSession>({});
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const mimeTypeRef = useRef('');
+  const elapsedRef = useRef(0);
+  elapsedRef.current = elapsedSeconds;
 
   // Load session from storage if created from New Lesson
   useEffect(() => {
     try {
       const stored = localStorage.getItem('clasepulse_active_live_session');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.title) setSessionTitle(parsed.title);
-        if (parsed.className) setSessionClass(parsed.className);
-      }
+      if (stored) setSession(JSON.parse(stored));
     } catch (err) {
       console.error(err);
     }
@@ -68,7 +92,7 @@ export default function RecordTranscribePage() {
 
   // Timer & waveform animation loop
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (isRecording && !isPaused) {
       interval = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
@@ -80,73 +104,147 @@ export default function RecordTranscribePage() {
     return () => clearInterval(interval);
   }, [isRecording, isPaused]);
 
-  // Handle camera / screen stream
-  const startMediaStream = async () => {
-    try {
-      if (recordMode === 'video') {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
-        mediaStreamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } else if (recordMode === 'screen') {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true
-        });
-        mediaStreamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }
-    } catch (err) {
-      console.warn('Device media access unavailable or permission denied, using simulated capture:', err);
-    }
-  };
+  const stopMediaStream = useCallback(() => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+    setMediaStream(null);
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
 
-  const stopMediaStream = () => {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
+  useEffect(() => stopMediaStream, [stopMediaStream]);
 
   const handleStartRecording = async () => {
+    setCaptureError('');
+    setConvertError('');
+    setRecordingBlob(null);
+    setTranscriptSegments([]);
+    setElapsedSeconds(0);
+
+    let stream: MediaStream;
+    try {
+      if (recordMode === 'screen') {
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        // Screen shares often come without audio; the lecture needs the mic regardless.
+        if (stream.getAudioTracks().length === 0) {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mic.getAudioTracks().forEach((track) => stream.addTrack(track));
+        }
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: recordMode === 'video',
+          audio: true
+        });
+      }
+    } catch (err) {
+      setCaptureError(
+        err instanceof Error && err.name === 'NotAllowedError'
+          ? 'Microphone access was refused. Allow the microphone for this site and try again.'
+          : 'Could not open the microphone or camera on this device. Recording needs HTTPS or localhost.'
+      );
+      return;
+    }
+
+    const mimeType = pickMimeType(recordMode !== 'audio');
+    if (!mimeType) {
+      stream.getTracks().forEach((track) => track.stop());
+      setCaptureError('This browser cannot record media (MediaRecorder unsupported).');
+      return;
+    }
+
+    mediaStreamRef.current = stream;
+    setMediaStream(stream);
+    if (videoRef.current && recordMode !== 'audio') {
+      videoRef.current.srcObject = stream;
+    }
+
+    chunksRef.current = [];
+    mimeTypeRef.current = mimeType;
+    const recorder = new MediaRecorder(stream, { mimeType });
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data);
+    };
+    recorder.onstop = () => {
+      setRecordingBlob(new Blob(chunksRef.current, { type: mimeTypeRef.current }));
+    };
+    mediaRecorderRef.current = recorder;
+    recorder.start(1000);
+
     setIsRecording(true);
     setIsPaused(false);
-    await startMediaStream();
-
-    // Append simulated live streaming speech text every 8 seconds
-    const interval = setTimeout(() => {
-      const minutes = Math.floor((elapsedSeconds + 8) / 60);
-      const seconds = (elapsedSeconds + 8) % 60;
-      const stamp = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      const newSeg: TranscriptSegment = {
-        id: 'seg_' + Date.now(),
-        timestamp: stamp,
-        speaker: 'Prof. Sharma',
-        text: 'Pay close attention to substrate-level phosphorylation versus oxidative phosphorylation in the inner membrane.'
-      };
-      setTranscriptSegments((prev) => [...prev, newSeg]);
-    }, 8000);
-
-    return () => clearTimeout(interval);
   };
 
   const handlePauseRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+    if (isPaused) recorder.resume();
+    else recorder.pause();
     setIsPaused(!isPaused);
   };
 
   const handleStopRecording = () => {
     setIsRecording(false);
     setIsPaused(false);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    mediaRecorderRef.current = null;
     stopMediaStream();
+  };
+
+  /** Every finalised live-caption line lands in the editable transcript feed. */
+  const handleFinalLine = useCallback((line: string) => {
+    const total = elapsedRef.current;
+    const stamp = `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+    setTranscriptSegments((prev) => [
+      ...prev,
+      { id: 'seg_' + Date.now() + '_' + prev.length, timestamp: stamp, speaker: 'Teacher', text: line }
+    ]);
+  }, []);
+
+  /**
+   * The whole point of the console: recorded audio in, quiz pipeline out.
+   *
+   * A session launched from New Lesson already owns a lesson; otherwise one is created
+   * against a real section (the live captions saved server-side are claimed automatically).
+   */
+  const handleConvertToQuiz = async () => {
+    if (!recordingBlob) {
+      setConvertError('Record the lecture first — stop the recording, then convert it.');
+      return;
+    }
+    setConvertError('');
+    setIsConverting(true);
+
+    try {
+      let lessonId = session.lessonId;
+
+      if (!lessonId) {
+        let className = session.className;
+        let sectionId = session.sectionId;
+        if (!sectionId) {
+          const sections = await api.listSections();
+          if (sections.length === 0) {
+            throw new Error('No class sections exist yet. Create one in the admin console first.');
+          }
+          className = sections[0].name;
+          sectionId = sections[0].id;
+        }
+        const lesson = await api.createLesson({
+          title: session.title?.trim() || `Recorded lecture — ${new Date().toLocaleDateString()}`,
+          subject: session.subject?.trim() || 'General',
+          className: className || 'Unassigned',
+          sectionId
+        });
+        lessonId = lesson._id;
+      }
+
+      await api.attachSource(lessonId, recordingBlob, 'audio');
+      await api.generate(lessonId);
+      localStorage.removeItem('clasepulse_active_live_session');
+      router.push(`/lessons/${lessonId}`);
+    } catch (err: any) {
+      setConvertError(err?.message || 'Could not start quiz generation. Please try again.');
+      setIsConverting(false);
+    }
   };
 
   const formatTimer = (totalSec: number) => {
@@ -175,6 +273,9 @@ export default function RecordTranscribePage() {
     seg.text.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
+  const sessionTitle = session.title || 'Classroom Lecture';
+  const sessionClass = session.className || 'No section linked yet';
+
   return (
     <div>
       {/* Header */}
@@ -183,7 +284,7 @@ export default function RecordTranscribePage() {
           <span className="eyebrow">BROADCAST & AUTOMATED LECTURE CAPTURE</span>
           <h1>Record & Transcribe</h1>
           <p className="text-secondary" style={{ marginTop: '4px' }}>
-            Live classroom audio & video capture engine with automated real-time Speech-to-Text transcription.
+            Live classroom audio & video capture with real-time speech-to-text transcription.
           </p>
         </div>
 
@@ -238,6 +339,15 @@ export default function RecordTranscribePage() {
           )}
         </div>
       </div>
+
+      {captureError && (
+        <div
+          className="card card-solid mb-4"
+          style={{ padding: '0.9rem 1.25rem', borderColor: '#c93c1c', color: '#c93c1c', fontWeight: 700, fontSize: '13px' }}
+        >
+          {captureError}
+        </div>
+      )}
 
       {/* Main Two Column Layout: Media Console on Left, Transcription on Right */}
       <div
@@ -297,7 +407,9 @@ export default function RecordTranscribePage() {
                   {isRecording ? 'Capturing Microphone Stream' : 'Microphone Ready'}
                 </div>
                 <p style={{ color: '#aaa', fontSize: '12px', marginTop: '4px' }}>
-                  Input: Default High Definition Audio Device (48.0 kHz)
+                  {isRecording
+                    ? `Recording as ${mimeTypeRef.current || 'browser default'}`
+                    : 'Uses this device’s default microphone (HTTPS or localhost required).'}
                 </p>
 
                 {/* Live Waveform Indicator */}
@@ -361,7 +473,9 @@ export default function RecordTranscribePage() {
           >
             <div>
               <span className="text-secondary text-mono" style={{ fontSize: '11px' }}>
-                Format: WebM / Opus Audio
+                {recordingBlob
+                  ? `Saved recording: ${(recordingBlob.size / 1024 / 1024).toFixed(2)} MB`
+                  : 'Format: WebM / Opus Audio'}
               </span>
             </div>
 
@@ -371,6 +485,7 @@ export default function RecordTranscribePage() {
                   type="button"
                   className="btn btn-primary btn-lg"
                   onClick={handleStartRecording}
+                  disabled={isConverting}
                 >
                   <Play size={16} /> Start Recording
                 </button>
@@ -396,6 +511,14 @@ export default function RecordTranscribePage() {
               )}
             </div>
           </div>
+
+          {/* Live captions tap the same stream the recorder uses. */}
+          <LiveTranscript
+            stream={mediaStream}
+            active={isRecording && !isPaused}
+            language="auto"
+            onFinalLine={handleFinalLine}
+          />
         </div>
 
         {/* RIGHT COLUMN: Automated Live Speech Transcription */}
@@ -457,7 +580,9 @@ export default function RecordTranscribePage() {
           >
             {filteredSegments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#888', fontSize: '13px' }}>
-                No transcription match found.
+                {isRecording
+                  ? 'Listening… finalised sentences appear here as you speak.'
+                  : 'Start a recording and the live transcript will appear here.'}
               </div>
             ) : (
               filteredSegments.map((seg) => (
@@ -506,7 +631,9 @@ export default function RecordTranscribePage() {
               alignItems: 'center',
               marginTop: '1rem',
               borderTop: '1px solid var(--hairline)',
-              paddingTop: '1rem'
+              paddingTop: '1rem',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}
           >
             <span className="text-secondary text-mono" style={{ fontSize: '11px' }}>
@@ -517,11 +644,23 @@ export default function RecordTranscribePage() {
               <Link href="/notes-syllabus" className="btn btn-sm btn-secondary">
                 <FileText size={12} /> Save to Notes
               </Link>
-              <Link href="/lessons/new" className="btn btn-sm btn-primary">
-                <Sparkles size={12} /> Convert to Quiz
-              </Link>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={handleConvertToQuiz}
+                disabled={isConverting || isRecording || !recordingBlob}
+                title={!recordingBlob ? 'Stop a recording first' : 'Generate a quiz from this recording'}
+              >
+                <Sparkles size={12} /> {isConverting ? 'Generating…' : 'Convert to Quiz'}
+              </button>
             </div>
           </div>
+
+          {convertError && (
+            <p style={{ color: '#c93c1c', fontWeight: 700, fontSize: '12px', marginTop: '8px' }}>
+              {convertError}
+            </p>
+          )}
         </div>
       </div>
     </div>

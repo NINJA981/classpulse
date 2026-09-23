@@ -16,7 +16,34 @@ export default function NewLessonPage() {
   // Fields
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
-  const [className, setClassName] = useState('Grade 10 - Section B');
+
+  // The real section directory. A lesson published without a sectionId never shows up in
+  // any student's quiz list, so the picker offers actual sections instead of invented labels.
+  const [sections, setSections] = useState<
+    Array<{ id: string; name: string; joinCode: string; enrolledCount: number }>
+  >([]);
+  const [sectionId, setSectionId] = useState('');
+  const [sectionsError, setSectionsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listSections()
+      .then((items) => {
+        if (cancelled) return;
+        setSections(items);
+        if (items.length > 0) setSectionId(items[0].id);
+        else setSectionsError('No class sections exist yet. Create one in the admin console first.');
+      })
+      .catch(() => {
+        if (!cancelled) setSectionsError('Could not load class sections from the server.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedSection = sections.find((s) => s.id === sectionId) ?? null;
 
   // Live session options
   // Empty on the server, filled in after mount. Math.random() runs once during the server
@@ -36,17 +63,6 @@ export default function NewLessonPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const classOptions = [
-    'Grade 9 - Section A',
-    'Grade 9 - Section B',
-    'Grade 9 - Section C',
-    'Grade 10 - Section A',
-    'Grade 10 - Section B',
-    'Grade 11 - Section A',
-    'Grade 11 - Advanced Physics',
-    'Grade 12 - Honors'
-  ];
-
   const handleLaunchLiveSession = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -59,6 +75,10 @@ export default function NewLessonPage() {
       setErrorMessage('Please enter a subject.');
       return;
     }
+    if (!selectedSection) {
+      setErrorMessage(sectionsError || 'Please choose a class section.');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -66,7 +86,8 @@ export default function NewLessonPage() {
       const newLesson = await api.createLesson({
         title: title.trim(),
         subject: subject.trim(),
-        className
+        className: selectedSection.name,
+        sectionId: selectedSection.id
       });
 
       // Save live session config to localStorage for record-transcribe
@@ -76,7 +97,8 @@ export default function NewLessonPage() {
           lessonId: newLesson._id,
           title: title.trim(),
           subject: subject.trim(),
-          className,
+          className: selectedSection.name,
+          sectionId: selectedSection.id,
           roomCode,
           enableLiveTranscription,
           enableLiveQA,
@@ -109,6 +131,10 @@ export default function NewLessonPage() {
       setErrorMessage('Please record audio or upload a source document before submitting.');
       return;
     }
+    if (!selectedSection) {
+      setErrorMessage(sectionsError || 'Please choose a class section.');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -117,7 +143,8 @@ export default function NewLessonPage() {
       const newLesson = await api.createLesson({
         title: title.trim(),
         subject: subject.trim(),
-        className
+        className: selectedSection.name,
+        sectionId: selectedSection.id
       });
 
       // 2. Attach the source file
@@ -227,13 +254,16 @@ export default function NewLessonPage() {
                 </label>
                 <select
                   id="live-class"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
-                  disabled={isSubmitting}
+                  value={sectionId}
+                  onChange={(e) => setSectionId(e.target.value)}
+                  disabled={isSubmitting || sections.length === 0}
                 >
-                  {classOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
+                  {sections.length === 0 && (
+                    <option value="">{sectionsError || 'Loading sections…'}</option>
+                  )}
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — {s.joinCode}
                     </option>
                   ))}
                 </select>
@@ -265,10 +295,12 @@ export default function NewLessonPage() {
                   <span style={{ fontWeight: 800, fontSize: '12px' }}>Student Cohort</span>
                 </div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, padding: '4px 0' }}>
-                  {className}
+                  {selectedSection ? selectedSection.name : '—'}
                 </div>
                 <p className="text-secondary" style={{ fontSize: '11px' }}>
-                  32 enrolled students will be alerted on their student portal.
+                  {selectedSection
+                    ? `${selectedSection.enrolledCount} enrolled student${selectedSection.enrolledCount === 1 ? '' : 's'} will see published quizzes on their portal (join code ${selectedSection.joinCode}).`
+                    : 'Choose a class section to see who will receive this lesson.'}
                 </p>
               </div>
             </div>
@@ -366,13 +398,16 @@ export default function NewLessonPage() {
                 </label>
                 <select
                   id="curriculum-class"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
-                  disabled={isSubmitting}
+                  value={sectionId}
+                  onChange={(e) => setSectionId(e.target.value)}
+                  disabled={isSubmitting || sections.length === 0}
                 >
-                  {classOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
+                  {sections.length === 0 && (
+                    <option value="">{sectionsError || 'Loading sections…'}</option>
+                  )}
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — {s.joinCode}
                     </option>
                   ))}
                 </select>
