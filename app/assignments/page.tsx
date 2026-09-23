@@ -97,13 +97,9 @@ export default function AssignmentsPage() {
     <DashboardShell footerNote="Assignment workspace">
 
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--pink cp-tape-top">
+      <header className="cp-hero cp-hero--pink">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
-            <p className="cp-sticker">
-              Coursework • {courseContent.code}
-            </p>
-
             <h2 className="cp-h-hero">
               Assignments
             </h2>
@@ -130,7 +126,7 @@ export default function AssignmentsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Total</p>
+            <span className="font-bold text-sm text-ink">Total</span>
             <span className="cp-stat__icon cp-stat__icon--pink" aria-hidden="true">
               <ClipboardList />
             </span>
@@ -146,7 +142,7 @@ export default function AssignmentsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Pending</p>
+            <span className="font-bold text-sm text-ink">Pending</span>
             <span className="cp-stat__icon cp-stat__icon--yellow" aria-hidden="true">
               <Hourglass />
             </span>
@@ -162,7 +158,7 @@ export default function AssignmentsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Submitted</p>
+            <span className="font-bold text-sm text-ink">Submitted</span>
             <span className="cp-stat__icon cp-stat__icon--mint" aria-hidden="true">
               <CheckCircle2 />
             </span>

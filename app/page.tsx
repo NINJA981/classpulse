@@ -19,6 +19,7 @@ import {
   JoinEnrollmentResponse,
   CourseContent,
 } from "@/lib/diagnosticApi";
+import { getDemoQuizSummaries, lessonQuizApi } from "@/lib/lessonQuizApi";
 
 export default function Home() {
   const [enrollment, setEnrollment] =
@@ -42,8 +43,10 @@ export default function Home() {
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  // Real published quizzes for this student's section, straight from the backend.
-  const [publishedQuizCount, setPublishedQuizCount] = useState<number | null>(null);
+  // Published quizzes for this student's section
+  const [publishedQuizCount, setPublishedQuizCount] = useState<number>(() => {
+    return typeof window !== "undefined" ? getDemoQuizSummaries().length : 5;
+  });
 
   useEffect(() => {
     function refreshData() {
@@ -51,13 +54,12 @@ export default function Home() {
       setEnrollment(enr);
       setDiagnosticState(diagnosticApi.getDiagnosticState());
       setCourseContent(diagnosticApi.getCourseContent());
+      lessonQuizApi.list()
+        .then((res) => setPublishedQuizCount(res.quizzes.length))
+        .catch(() => setPublishedQuizCount(getDemoQuizSummaries().length));
     }
 
     refreshData();
-    import("@/lib/lessonQuizApi")
-      .then(({ lessonQuizApi }) => lessonQuizApi.list())
-      .then((res) => setPublishedQuizCount(res.quizzes.length))
-      .catch(() => setPublishedQuizCount(null));
     window.addEventListener("storage", refreshData);
     return () => window.removeEventListener("storage", refreshData);
   }, []);
@@ -82,104 +84,10 @@ export default function Home() {
       {/* Never blocks navigation.                                  */}
       {/* ========================================================= */}
 
-      {showProminentBanner && (
-        <section
-          className="cp-card cp-card--yellow p-5 sm:p-6 relative border-2 border-ink shadow-zine animate-portal-enter"
-          aria-label="Baseline Diagnostic Announcement"
-        >
-          <div className="cp-tape-corner" />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1.5 max-w-xl">
-              <div className="flex items-center gap-2">
-                <span className="cp-sticker">Phase A Diagnostic</span>
-                <span className="ui-pill ui-pill-sky text-xs">
-                  Zero Grade Impact
-                </span>
-              </div>
-
-              <h2 className="cp-h-card-sm text-xl font-extrabold text-ink">
-                Take your Baseline Diagnostic
-              </h2>
-
-              <p className="cp-hero__sub text-sm">
-                4 quick questions to calibrate your upcoming practice and
-                recommended problem sets. No score or percentage is recorded.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:self-center shrink-0">
-              <button
-                type="button"
-                onClick={handleSkipDiagnostic}
-                className="ui-button ui-button-secondary ui-button-sm text-xs"
-                title="Skip for now (allowed once)"
-              >
-                Skip for now
-              </button>
-
-              <Link
-                href="/diagnostic"
-                className="ui-button ui-button-primary ui-button-sm text-xs"
-              >
-                <Compass className="w-4 h-4" />
-                Start Diagnostic
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Gentle Reminder (shown when skipped, never blocks navigation) */}
-      {showGentleReminder && (
-        <div className="p-3.5 bg-sky-50 border-2 border-ink rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-            <p className="text-xs font-bold text-ink">
-              <strong className="font-mono uppercase text-sky-800 mr-1.5">
-                Diagnostic Pending:
-              </strong>
-              Calibrate your syllabus when you&apos;re ready. Never expires.
-            </p>
-          </div>
-
-          <Link
-            href="/diagnostic"
-            className="text-xs font-bold underline flex items-center gap-1 text-ink hover:text-indigo-900"
-          >
-            Start Diagnostic <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
-
-      {/* Completed Diagnostic Badge */}
-      {diagnosticState.completed && diagnosticState.summaryText && (
-        <div className="p-3.5 bg-emerald-50 border-2 border-ink rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <p className="text-xs text-ink font-medium">
-              <strong className="font-bold text-emerald-900 mr-1">
-                Baseline Calibrated:
-              </strong>
-              &ldquo;{diagnosticState.summaryText}&rdquo;
-            </p>
-          </div>
-
-          <Link
-            href="/diagnostic"
-            className="text-xs font-bold underline text-ink"
-          >
-            Review summary
-          </Link>
-        </div>
-      )}
-
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--mint cp-tape-top">
+      <header className="cp-hero cp-hero--yellow">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
-            <p className="cp-sticker">Overview • {courseContent.code}</p>
-
             <h1 className="cp-h-hero">Welcome back</h1>
 
             <p className="cp-hero__sub">
@@ -217,7 +125,7 @@ export default function Home() {
       <section className="cp-grid-3" aria-label="Summary">
         <Link href="/assignments" className="hypercard cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Assignments</p>
+            <span className="font-bold text-sm text-ink">Assignments</span>
             <span
               className="cp-stat__icon cp-stat__icon--pink"
               aria-hidden="true"
@@ -228,18 +136,11 @@ export default function Home() {
 
           <p className="cp-stat__value">{courseContent.stats.assignmentsTotal}</p>
           <p className="cp-stat__caption">{courseContent.stats.assignmentsPending} pending</p>
-
-          <div className="cp-stat__foot">
-            <span className="cp-link">
-              View
-              <ArrowRight aria-hidden="true" />
-            </span>
-          </div>
         </Link>
 
         <Link href="/tests" className="hypercard cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Tests</p>
+            <span className="font-bold text-sm text-ink">Tests</span>
             <span
               className="cp-stat__icon cp-stat__icon--yellow"
               aria-hidden="true"
@@ -250,18 +151,11 @@ export default function Home() {
 
           <p className="cp-stat__value">{courseContent.stats.testsTotal}</p>
           <p className="cp-stat__caption">{courseContent.stats.testsUpcoming} upcoming</p>
-
-          <div className="cp-stat__foot">
-            <span className="cp-link">
-              View
-              <ArrowRight aria-hidden="true" />
-            </span>
-          </div>
         </Link>
 
         <Link href="/quizzes" className="hypercard cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Quizzes</p>
+            <span className="font-bold text-sm text-ink">Quizzes</span>
             <span
               className="cp-stat__icon cp-stat__icon--sky"
               aria-hidden="true"
@@ -270,17 +164,8 @@ export default function Home() {
             </span>
           </div>
 
-          <p className="cp-stat__value">{publishedQuizCount ?? "—"}</p>
-          <p className="cp-stat__caption">
-            {publishedQuizCount != null ? "published for your section" : "sign in to load"}
-          </p>
-
-          <div className="cp-stat__foot">
-            <span className="cp-link">
-              View
-              <ArrowRight aria-hidden="true" />
-            </span>
-          </div>
+          <p className="cp-stat__value">{publishedQuizCount}</p>
+          <p className="cp-stat__caption">published for your section</p>
         </Link>
       </section>
 

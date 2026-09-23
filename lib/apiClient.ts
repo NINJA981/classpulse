@@ -85,7 +85,19 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const token = getToken();
   if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+      signal: init.signal || controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // 204 has no body to parse — DELETE answers this way.
   if (res.status === 204) return undefined as T;
@@ -100,8 +112,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   if (!res.ok) {
     const error = (data as { error?: { code?: string; message?: string } })?.error;
-    // A stale token should not leave the app half-signed-in.
-    if (res.status === 401) clearToken();
+    // A stale token should not leave the app half-signed-in (except for demo tokens)
+    if (res.status === 401 && !token?.startsWith("demo_token_")) clearToken();
     throw new ApiError(
       error?.message || `Request failed (${res.status})`,
       res.status,

@@ -159,8 +159,6 @@ export default function DiagnosticPage() {
           /* COMPLETION SCREEN: Qualitative summary ONLY. NEVER numeric */
           /* ========================================================= */
           <div className="cp-card cp-card--mint p-8 sm:p-12 max-w-2xl mx-auto w-full relative animate-portal-enter text-center">
-            <div className="cp-tape-top" />
-            
             <div className="w-16 h-16 bg-white border-2 border-ink rounded-full flex items-center justify-center mx-auto mb-4 shadow-zine">
               <Sparkles className="w-8 h-8 text-emerald-600" />
             </div>
@@ -198,8 +196,6 @@ export default function DiagnosticPage() {
           /* QUESTION FLOW: One question at a time, progress dots      */
           /* ========================================================= */
           <div className="cp-card cp-card--yellow p-6 sm:p-10 max-w-2xl mx-auto w-full relative animate-portal-enter">
-            <div className="cp-tape-top" />
-
             {/* Header: Question Badge + PROGRESS DOTS (Strictly NO percentage or score) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b-2 border-ink/20">
               <div className="flex items-center gap-2">

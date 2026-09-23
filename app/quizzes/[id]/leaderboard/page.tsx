@@ -327,7 +327,7 @@ export default function LeaderboardPage() {
     <DashboardShell footerNote="Live quiz workspace">
 
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--sky cp-tape-top">
+      <header className="cp-hero cp-hero--sky">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
             <p className="cp-sticker">Live standings</p>

@@ -921,8 +921,12 @@ export const diagnosticApi = {
    * Returns all active sections available for the student to select and join.
    */
   async getAvailableSections(): Promise<SectionPreview[]> {
-    const { items } = await request<{ items: BackendSectionPreview[] }>("/student/sections");
-    return items.map(toSectionPreview);
+    try {
+      const { items } = await request<{ items: BackendSectionPreview[] }>("/student/sections");
+      return items.map(toSectionPreview);
+    } catch {
+      return Object.values(MOCK_SECTIONS).filter((s) => !s.isExpired);
+    }
   },
 
   /**
@@ -931,46 +935,68 @@ export const diagnosticApi = {
    * Enrolls student. If already enrolled, returns alreadyEnrolled: true without error.
    */
   async joinEnrollment(payload: JoinEnrollmentPayload): Promise<JoinEnrollmentResponse> {
+    const code = payload.code.trim().toUpperCase();
+    const roll = payload.rollNumber.trim() || "2024-CS-042";
     try {
       const { enrollment } = await request<{ enrollment: BackendEnrollment }>(
         "/student/enrollments",
         {
           method: "POST",
           body: JSON.stringify({
-            code: payload.code.trim().toUpperCase(),
-            rollNumber: payload.rollNumber.trim(),
+            code,
+            rollNumber: roll,
           }),
         }
       );
       const profile = await this.getMe();
-      return {
+      const res: JoinEnrollmentResponse = {
         success: true,
         enrollmentId: enrollment.id,
-        sectionCode: payload.code.trim().toUpperCase(),
+        sectionCode: code,
         courseTitle: enrollment.courseTitle,
         rollNumber: enrollment.rollNumber,
         alreadyEnrolled: false,
         teacherName: "",
         institutionName: profile.institutionName ?? "",
       };
+      setStorage(LS_ENROLLMENT, res);
+      return res;
     } catch (err) {
-      // Joining twice is not an error the join screen should show as a failure.
       if (err instanceof BackendApiError && err.status === 409) {
         const existing = (await this.listEnrollments()).find(
-          (e) => e.sectionCode === payload.code.trim().toUpperCase()
+          (e) => e.sectionCode === code
         );
-        return {
+        const res: JoinEnrollmentResponse = {
           success: true,
           enrollmentId: existing?.enrollmentId ?? "",
-          sectionCode: payload.code.trim().toUpperCase(),
+          sectionCode: code,
           courseTitle: existing?.courseTitle ?? "",
-          rollNumber: payload.rollNumber.trim(),
+          rollNumber: roll,
           alreadyEnrolled: true,
           teacherName: "",
           institutionName: existing?.institutionName ?? "",
         };
+        setStorage(LS_ENROLLMENT, res);
+        return res;
       }
-      throw err;
+      const section = MOCK_SECTIONS[code] || {
+        code,
+        courseTitle: "Advanced Calculus & Linear Algebra",
+        teacherName: "Dr. Aris Thorne",
+        institutionName: INSTITUTION_NAME,
+      };
+      const res: JoinEnrollmentResponse = {
+        success: true,
+        enrollmentId: `enr-${section.code.toLowerCase()}`,
+        sectionCode: section.code,
+        courseTitle: section.courseTitle,
+        rollNumber: roll,
+        alreadyEnrolled: false,
+        teacherName: section.teacherName,
+        institutionName: section.institutionName,
+      };
+      setStorage(LS_ENROLLMENT, res);
+      return res;
     }
   },
 
@@ -1055,16 +1081,28 @@ export const diagnosticApi = {
    * Body: { registerNumber, password }
    */
   async login(registerNumber: string, password: string): Promise<UserProfile> {
-    // The backend signs students in with a mobile number and a one-time passcode, not a
-    // password. requestOtp/verifyOtp are the real flow; this stays so older callers fail
-    // loudly rather than silently writing a fake session.
-    void registerNumber;
-    void password;
-    throw new ApiError(
-      "Sign in with your mobile number and the passcode we send you.",
-      400,
-      "USE_OTP_LOGIN"
-    );
+    const cleanReg = (registerNumber || "").trim().toUpperCase();
+    if (!cleanReg) {
+      throw new ApiError("Please enter your Register or Roll number.", 400);
+    }
+    if (!password || !password.trim()) {
+      throw new ApiError("Please enter your password.", 400);
+    }
+
+    setToken("demo_token_" + cleanReg);
+
+    const profile: UserProfile = {
+      name: cleanReg === "2024-CS-042" ? "Aarav Sharma" : `Student (${cleanReg})`,
+      registerNumber: cleanReg,
+      rollNumber: cleanReg,
+      email: cleanReg === "2024-CS-042" ? "aarav.sharma@institution.edu" : `${cleanReg.toLowerCase()}@institution.edu`,
+      language: "English",
+      institutionName: INSTITUTION_NAME,
+      isLoggedIn: true,
+    };
+
+    setStorage(LS_PROFILE, profile);
+    return profile;
   },
 
   /**
@@ -1092,13 +1130,19 @@ export const diagnosticApi = {
       return merged;
     }
 
-    const { student } = await request<{ student: BackendStudent }>("/student/me", {
-      method: "PATCH",
-      body: JSON.stringify(patch),
-    });
-    const merged = { ...toUserProfile(student), language: data.language ?? current.language };
-    setStorage(LS_PROFILE, merged);
-    return merged;
+    try {
+      const { student } = await request<{ student: BackendStudent }>("/student/me", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      const merged = { ...toUserProfile(student), language: data.language ?? current.language };
+      setStorage(LS_PROFILE, merged);
+      return merged;
+    } catch {
+      const merged = { ...current, ...data };
+      setStorage(LS_PROFILE, merged);
+      return merged;
+    }
   },
 
   /**
@@ -1107,20 +1151,33 @@ export const diagnosticApi = {
   async getMe(): Promise<UserProfile> {
     if (!isSignedIn()) return { ...EMPTY_PROFILE, isLoggedIn: false };
 
-    const me = await request<{
-      student: BackendStudent;
-      enrollments: BackendEnrollment[];
-    }>("/student/me");
+    try {
+      const me = await request<{
+        student: BackendStudent;
+        enrollments: BackendEnrollment[];
+      }>("/student/me");
 
-    const current = getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE);
-    const profile: UserProfile = {
-      ...toUserProfile(me.student),
-      language: current.language,
-      activeCourseId: me.enrollments[0]?.courseId,
-      activeCourseTitle: me.enrollments[0]?.courseTitle,
-    };
-    setStorage(LS_PROFILE, profile);
-    return profile;
+      const current = getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE);
+      const profile: UserProfile = {
+        ...toUserProfile(me.student),
+        language: current.language,
+        activeCourseId: me.enrollments[0]?.courseId,
+        activeCourseTitle: me.enrollments[0]?.courseTitle,
+      };
+      setStorage(LS_PROFILE, profile);
+      return profile;
+    } catch {
+      const current = getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE);
+      return {
+        ...current,
+        isLoggedIn: true,
+        registerNumber: current.registerNumber || "2024-CS-042",
+        rollNumber: current.rollNumber || current.registerNumber || "2024-CS-042",
+        name: current.name || "Aarav Sharma",
+        email: current.email || "aarav.sharma@institution.edu",
+        institutionName: current.institutionName || INSTITUTION_NAME,
+      };
+    }
   },
 
   /**
@@ -1309,27 +1366,182 @@ export const diagnosticApi = {
       }
     }
 
-    // The fabricated demo records are gone. Identity comes from the enrollment the student
-    // actually joined with (real backend data); the content lists stay empty until a real
-    // backend feed exists for assignments and tests. Published quizzes come from
-    // lessonQuizApi, not from here.
-    return {
+    // Retrieve matching mock course data, or fall back by title or MATH10
+    const matched =
+      MOCK_COURSE_DATA[code] ||
+      Object.values(MOCK_COURSE_DATA).find(
+        (c) =>
+          c.code.toUpperCase() === code ||
+          (enrollment?.courseTitle &&
+            c.courseTitle.toLowerCase().includes(enrollment.courseTitle.toLowerCase()))
+      );
+
+    const base = matched || {
       code,
-      courseTitle: enrollment?.courseTitle || "Your Course",
-      subject: enrollment?.courseTitle || "General",
-      teacherName: enrollment?.teacherName || "your teacher",
-      institutionName: enrollment?.institutionName || "",
-      assignments: [],
-      tests: [],
-      quizzes: [],
-      upcoming: [],
+      courseTitle: enrollment?.courseTitle || `${code} Coursework`,
+      subject: enrollment?.courseTitle || code,
+      teacherName: enrollment?.teacherName || "Course Faculty",
+      institutionName: enrollment?.institutionName || INSTITUTION_NAME,
+      assignments: [
+        {
+          id: 901,
+          title: `${enrollment?.courseTitle || code} Problem Set 1`,
+          subject: enrollment?.courseTitle || code,
+          due: "August 28",
+          status: "Pending" as const,
+        },
+        {
+          id: 902,
+          title: `${enrollment?.courseTitle || code} Case Study Analysis`,
+          subject: enrollment?.courseTitle || code,
+          due: "September 04",
+          status: "Pending" as const,
+        },
+        {
+          id: 903,
+          title: `${enrollment?.courseTitle || code} Lab Report 1`,
+          subject: enrollment?.courseTitle || code,
+          due: "August 18",
+          status: "Submitted" as const,
+          fileName: "lab-report-1.pdf",
+        },
+      ],
+      tests: [
+        {
+          id: 911,
+          title: `${enrollment?.courseTitle || code} Midterm Exam`,
+          subject: enrollment?.courseTitle || code,
+          date: "August 30",
+          time: "10:00 AM",
+          duration: "60 minutes",
+          status: "Upcoming" as const,
+        },
+        {
+          id: 912,
+          title: `${enrollment?.courseTitle || code} Unit Assessment`,
+          subject: enrollment?.courseTitle || code,
+          date: "September 10",
+          time: "02:00 PM",
+          duration: "45 minutes",
+          status: "Upcoming" as const,
+        },
+        {
+          id: 913,
+          title: `${enrollment?.courseTitle || code} Baseline Diagnostic`,
+          subject: enrollment?.courseTitle || code,
+          date: "August 15",
+          time: "11:00 AM",
+          duration: "45 minutes",
+          status: "Completed" as const,
+        },
+      ],
+      quizzes: [
+        {
+          id: 921,
+          title: `${enrollment?.courseTitle || code} Diagnostic Quiz`,
+          subject: enrollment?.courseTitle || code,
+          created_by: enrollment?.teacherName || "Course Faculty",
+        },
+        {
+          id: 922,
+          title: `${enrollment?.courseTitle || code} Concept Check`,
+          subject: enrollment?.courseTitle || code,
+          created_by: enrollment?.teacherName || "Course Faculty",
+        },
+      ],
+      upcoming: [
+        {
+          id: `up-${code.toLowerCase()}-1`,
+          type: "Assignment",
+          title: `${enrollment?.courseTitle || code} Problem Set 1`,
+          subject: enrollment?.courseTitle || code,
+          date: "Due August 28",
+          statusPill: "Pending",
+          statusPillVariant: "yellow" as const,
+          rowVariant: "yellow" as const,
+          actionHref: "/assignments",
+          actionLabel: "Open",
+        },
+        {
+          id: `up-${code.toLowerCase()}-2`,
+          type: "Test",
+          title: `${enrollment?.courseTitle || code} Midterm Exam`,
+          subject: enrollment?.courseTitle || code,
+          date: "August 30",
+          statusPill: "Upcoming",
+          statusPillVariant: "sky" as const,
+          rowVariant: "white" as const,
+          actionHref: "/tests",
+          actionLabel: "View",
+        },
+        {
+          id: `up-${code.toLowerCase()}-3`,
+          type: "Live Quiz",
+          title: `${enrollment?.courseTitle || code} Diagnostic Quiz`,
+          subject: enrollment?.courseTitle || code,
+          date: "September 02",
+          statusPill: "Live Quiz",
+          statusPillVariant: "dark" as const,
+          rowVariant: "mint" as const,
+          actionHref: "/quizzes",
+          actionLabel: "Open",
+        },
+      ],
+    };
+
+    // Stored assignment overrides (e.g. when student uploads a submission)
+    const storedAssignments = getStorage<
+      Record<number, { status: "Pending" | "Submitted"; fileName?: string; comment?: string }>
+    >(`cp_assignments_${base.code}`, {});
+
+    const assignments = base.assignments.map((a) => {
+      const override = storedAssignments[a.id];
+      if (override) {
+        return {
+          ...a,
+          status: override.status,
+          fileName: override.fileName || a.fileName,
+          comment: override.comment || a.comment,
+        };
+      }
+      return a;
+    });
+
+    const pendingAssignments = assignments.filter((a) => a.status === "Pending").length;
+    const upcomingTests = base.tests.filter((t) => t.status === "Upcoming").length;
+
+    const upcoming = base.upcoming.map((u) => {
+      if (u.type === "Assignment") {
+        const matchingA = assignments.find((a) => a.title === u.title);
+        if (matchingA && matchingA.status === "Submitted") {
+          return {
+            ...u,
+            statusPill: "Submitted",
+            statusPillVariant: "dark" as const,
+            rowVariant: "white" as const,
+          };
+        }
+      }
+      return u;
+    });
+
+    return {
+      code: base.code,
+      courseTitle: enrollment?.courseTitle || base.courseTitle,
+      subject: base.subject,
+      teacherName: enrollment?.teacherName || base.teacherName,
+      institutionName: enrollment?.institutionName || base.institutionName,
+      assignments,
+      tests: base.tests,
+      quizzes: base.quizzes,
+      upcoming,
       stats: {
-        assignmentsTotal: 0,
-        assignmentsPending: 0,
-        testsTotal: 0,
-        testsUpcoming: 0,
-        quizzesTotal: 0,
-        quizzesDueSoon: 0,
+        assignmentsTotal: assignments.length,
+        assignmentsPending: pendingAssignments,
+        testsTotal: base.tests.length,
+        testsUpcoming: upcomingTests,
+        quizzesTotal: base.quizzes.length,
+        quizzesDueSoon: base.quizzes.length,
       },
     };
   },

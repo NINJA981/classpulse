@@ -84,7 +84,7 @@ export default function LessonQuizPlayerPage() {
   if (result) {
     return (
       <DashboardShell footerNote="Lecture quiz results">
-        <header className="cp-hero cp-hero--sky cp-tape-top">
+        <header className="cp-hero cp-hero--sky">
           <div className="cp-hero__row">
             <div className="cp-hero__body">
               <p className="cp-sticker">Results • {quiz.subject}</p>
@@ -253,7 +253,7 @@ export default function LessonQuizPlayerPage() {
 
   return (
     <DashboardShell footerNote={`Question ${current + 1} of ${quiz.questions.length}`}>
-      <header className="cp-hero cp-hero--sky cp-tape-top">
+      <header className="cp-hero cp-hero--sky">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
             <p className="cp-sticker">Lecture Quiz • {quiz.subject}</p>

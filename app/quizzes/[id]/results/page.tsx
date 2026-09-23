@@ -284,7 +284,7 @@ export default function QuizResultsPage() {
     <DashboardShell footerNote="Live quiz workspace">
 
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--mint cp-tape-top">
+      <header className="cp-hero cp-hero--mint">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
             <div className="flex items-start gap-4">

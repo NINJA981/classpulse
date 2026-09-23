@@ -124,30 +124,8 @@ export default function DashboardShell({
           </nav>
         </div>
 
-        {/* Identity card & Log Out button */}
-        <div className="cp-sidebar__foot space-y-3">
-          <Link
-            href="/profile"
-            className="block hover:opacity-95 transition-opacity"
-            title="Manage profile & guardians"
-          >
-            <div className="cp-identity">
-              <span className="cp-identity__avatar" aria-hidden="true">
-                S
-              </span>
-              <div className="cp-identity__body">
-                <p className="cp-identity__name">Student Profile</p>
-                <p className="cp-identity__role">
-                  <span className="live-dot" aria-hidden="true" />
-                  Profile & Guardians
-                </p>
-                {footerNote ? (
-                  <p className="cp-identity__note">{footerNote}</p>
-                ) : null}
-              </div>
-            </div>
-          </Link>
-
+        {/* Log Out button */}
+        <div className="cp-sidebar__foot">
           <button
             type="button"
             onClick={handleLogout}

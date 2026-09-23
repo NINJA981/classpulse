@@ -11,10 +11,12 @@ import {
   Zap,
 } from "lucide-react";
 import DashboardShell from "@/components/DashboardShell";
-import { request, isSignedIn } from "@/lib/apiClient";
+import { request, isSignedIn, getToken } from "@/lib/apiClient";
+import { diagnosticApi } from "@/lib/diagnosticApi";
 import {
   lessonQuizApi,
   LessonQuizSummary,
+  getDemoQuizSummaries,
 } from "@/lib/lessonQuizApi";
 
 interface Enrollment {
@@ -25,31 +27,55 @@ interface Enrollment {
 }
 
 export default function QuizzesPage() {
-  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  const [quizzes, setQuizzes] = useState<LessonQuizSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(() => {
+    if (typeof window === "undefined") return null;
+    const localEnr = diagnosticApi.getCurrentEnrollment();
+    return localEnr
+      ? {
+          id: localEnr.enrollmentId,
+          courseTitle: localEnr.courseTitle,
+          sectionName: localEnr.sectionCode || "Section",
+          rollNumber: localEnr.rollNumber,
+        }
+      : null;
+  });
+
+  const [quizzes, setQuizzes] = useState<LessonQuizSummary[]>(() => {
+    return typeof window !== "undefined" ? getDemoQuizSummaries() : [];
+  });
+
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [signedOut, setSignedOut] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     async function load() {
-      if (!isSignedIn()) {
-        if (active) {
-          setSignedOut(true);
-          setLoading(false);
-        }
-        return;
-      }
-
       try {
-        const [enrollments, quizList] = await Promise.all([
-          request<{ items: Enrollment[] }>("/student/enrollments").catch(() => ({ items: [] })),
-          lessonQuizApi.list(),
-        ]);
+        const localEnr = diagnosticApi.getCurrentEnrollment();
+        let enr: Enrollment | null = localEnr
+          ? {
+              id: localEnr.enrollmentId,
+              courseTitle: localEnr.courseTitle,
+              sectionName: localEnr.sectionCode || "Section",
+              rollNumber: localEnr.rollNumber,
+            }
+          : null;
+
+        const token = getToken();
+        if (token && !token.startsWith("demo_token_")) {
+          try {
+            const enrollments = await request<{ items: Enrollment[] }>("/student/enrollments");
+            if (enrollments?.items?.[0]) enr = enrollments.items[0];
+          } catch {
+            // keep localEnr
+          }
+        }
+
+        const quizList = await lessonQuizApi.list();
         if (!active) return;
-        setEnrollment(enrollments.items[0] ?? null);
+
+        setEnrollment(enr);
         setQuizzes(quizList.quizzes);
         setErrorMessage("");
       } catch (err) {
@@ -57,18 +83,32 @@ export default function QuizzesPage() {
         setErrorMessage(
           err instanceof Error ? err.message : "Could not load your quizzes."
         );
-      } finally {
-        if (active) setLoading(false);
       }
     }
 
     void load();
+
+    function refreshScores() {
+      setQuizzes(getDemoQuizSummaries());
+      const localEnr = diagnosticApi.getCurrentEnrollment();
+      if (localEnr) {
+        setEnrollment({
+          id: localEnr.enrollmentId,
+          courseTitle: localEnr.courseTitle,
+          sectionName: localEnr.sectionCode || "Section",
+          rollNumber: localEnr.rollNumber,
+        });
+      }
+    }
+
+    window.addEventListener("storage", refreshScores);
     return () => {
       active = false;
+      window.removeEventListener("storage", refreshScores);
     };
   }, []);
 
-  const ready = !loading && !errorMessage && !signedOut;
+  const ready = !loading && !errorMessage;
   const completed = quizzes.filter((q) => q.bestScorePct != null);
   const bestScore = completed.length
     ? Math.max(...completed.map((q) => q.bestScorePct ?? 0))
@@ -78,13 +118,9 @@ export default function QuizzesPage() {
     <DashboardShell footerNote="Live quiz workspace">
 
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--sky cp-tape-top">
+      <header className="cp-hero cp-hero--sky">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
-            <p className="cp-sticker">
-              Quizzes • {enrollment?.sectionName ?? "My Class"}
-            </p>
-
             <h2 className="cp-h-hero">
               Quizzes
             </h2>
@@ -170,7 +206,7 @@ export default function QuizzesPage() {
 
           <div className="hypercard-static cp-stat">
             <div className="cp-stat__head">
-              <p className="cp-sticker">Available</p>
+              <span className="font-bold text-sm text-ink">Available</span>
               <span className="cp-stat__icon cp-stat__icon--sky" aria-hidden="true">
                 <Zap />
               </span>
@@ -190,7 +226,7 @@ export default function QuizzesPage() {
 
           <div className="hypercard-static cp-stat">
             <div className="cp-stat__head">
-              <p className="cp-sticker">Attempted</p>
+              <span className="font-bold text-sm text-ink">Attempted</span>
               <span className="cp-stat__icon cp-stat__icon--yellow" aria-hidden="true">
                 <HelpCircle />
               </span>
@@ -210,7 +246,7 @@ export default function QuizzesPage() {
 
           <div className="hypercard-static cp-stat">
             <div className="cp-stat__head">
-              <p className="cp-sticker">Best Score</p>
+              <span className="font-bold text-sm text-ink">Best Score</span>
               <span className="cp-stat__icon cp-stat__icon--mint" aria-hidden="true">
                 <TrendingUp />
               </span>
@@ -248,7 +284,7 @@ export default function QuizzesPage() {
         <div className="cp-section__list">
 
           {/* Loading */}
-          {loading && (
+          {loading && quizzes.length === 0 && (
             <div className="cp-state-wrap">
               <div className="cp-state">
                 <span className="live-dot" aria-hidden="true" />
@@ -258,23 +294,8 @@ export default function QuizzesPage() {
             </div>
           )}
 
-          {/* Signed out */}
-          {!loading && signedOut && (
-            <div className="cp-empty">
-              <p className="cp-sticker">Signed Out</p>
-              <h3 className="cp-h-card mt-3">Sign in to see your quizzes</h3>
-              <p className="cp-empty__hand mt-2">
-                Your quizzes are tied to your class section.
-              </p>
-              <Link href="/login" className="ui-button ui-button-primary ui-button-sm mt-3">
-                Go to Login
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            </div>
-          )}
-
           {/* Error */}
-          {!loading && !signedOut && errorMessage && (
+          {!loading && errorMessage && quizzes.length === 0 && (
             <div className="cp-state-wrap">
               <div className="cp-state cp-state--error">
                 <p className="cp-sticker">Connection Error</p>

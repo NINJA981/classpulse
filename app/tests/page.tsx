@@ -54,13 +54,9 @@ export default function TestsPage() {
     <DashboardShell footerNote="Test schedule">
 
       {/* Hero (acts as the page header) */}
-      <header className="cp-hero cp-hero--yellow cp-tape-top">
+      <header className="cp-hero cp-hero--yellow">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
-            <p className="cp-sticker">
-              Assessments • {courseContent.code}
-            </p>
-
             <h2 className="cp-h-hero">
               Tests
             </h2>
@@ -87,7 +83,7 @@ export default function TestsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Total Tests</p>
+            <span className="font-bold text-sm text-ink">Total Tests</span>
             <span className="cp-stat__icon cp-stat__icon--yellow" aria-hidden="true">
               <FileCheck2 />
             </span>
@@ -103,7 +99,7 @@ export default function TestsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Upcoming</p>
+            <span className="font-bold text-sm text-ink">Upcoming</span>
             <span className="cp-stat__icon cp-stat__icon--sky" aria-hidden="true">
               <CalendarDays />
             </span>
@@ -119,7 +115,7 @@ export default function TestsPage() {
 
         <div className="hypercard-static cp-stat">
           <div className="cp-stat__head">
-            <p className="cp-sticker">Completed</p>
+            <span className="font-bold text-sm text-ink">Completed</span>
             <span className="cp-stat__icon cp-stat__icon--mint" aria-hidden="true">
               <CheckCircle2 />
             </span>

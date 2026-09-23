@@ -137,9 +137,9 @@ export default function JoinSectionPage() {
   }
 
   return (
-    <div className="dashboard-page min-h-screen flex flex-col justify-between p-4 md:p-8">
+    <div className="dashboard-page min-h-screen flex flex-col justify-between p-3 md:p-5">
       {/* Top Bar */}
-      <header className="max-w-5xl w-full mx-auto flex items-center justify-between pb-6 border-b-2 border-ink">
+      <header className="max-w-5xl w-full mx-auto flex items-center justify-between pb-3 border-b-2 border-ink">
         <Link href="/" className="cp-brand">
           <div className="cp-brand__icon" aria-hidden="true">
             <School />
@@ -168,21 +168,20 @@ export default function JoinSectionPage() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-5xl w-full mx-auto my-6 flex-1 flex flex-col justify-start">
-        <div className="mb-6">
-          <span className="cp-sticker mb-2">Available Classes</span>
-          <h1 className="cp-h-hero mt-2">Choose your Class Section</h1>
-          <p className="cp-hero__sub mt-2">
-            Click any section below to join and immediately view your coursework on the dashboard, or enter a specific 6-character instructor code.
-          </p>
+      <main className="max-w-5xl w-full mx-auto my-3 flex-1 flex flex-col justify-start">
+        <div className="mb-3">
+          <div className="flex items-center gap-2">
+            <span className="cp-sticker text-xs py-0.5 px-2">Available Classes</span>
+            <h1 className="text-xl md:text-2xl font-extrabold text-ink tracking-tight">Choose your Class Section</h1>
+          </div>
         </div>
 
         {errorMessage && (
-          <div className="p-4 mb-6 bg-pink-100 border-2 border-ink rounded-lg flex items-start gap-3 text-ink">
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="p-3 mb-3 bg-pink-100 border-2 border-ink rounded-lg flex items-start gap-2.5 text-ink">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-bold text-red-900">Notice</p>
-              <p className="text-sm font-medium text-red-800 mt-0.5">
+              <p className="text-xs font-bold text-red-900">Notice</p>
+              <p className="text-xs font-medium text-red-800 mt-0.5">
                 {errorMessage}
               </p>
             </div>
@@ -190,16 +189,14 @@ export default function JoinSectionPage() {
         )}
 
         {/* Section Cards Grid (Click to Join & See Dashboard) */}
-        <div className="mb-8">
-          <p className="zine-label mb-3">Available Sections — Click to enroll:</p>
-
+        <div className="mb-3">
           {sectionsLoading ? (
-            <div className="p-12 text-center bg-white border-2 border-ink rounded-xl shadow-sm">
-              <RotateCw className="w-6 h-6 animate-spin mx-auto text-faint mb-2" />
-              <p className="cp-caption">Loading available sections...</p>
+            <div className="p-8 text-center bg-white border-2 border-ink rounded-xl shadow-sm">
+              <RotateCw className="w-5 h-5 animate-spin mx-auto text-faint mb-1.5" />
+              <p className="cp-caption text-xs">Loading available sections...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {availableSections.map((section) => {
                 const isEnrolling = enrollingCode === section.code;
                 return (
@@ -208,11 +205,11 @@ export default function JoinSectionPage() {
                     type="button"
                     onClick={() => handleSelectSection(section)}
                     disabled={Boolean(enrollingCode) || loading}
-                    className="hypercard p-6 text-left border-2 border-ink rounded-xl transition-all hover:bg-yellow-50 bg-white flex flex-col justify-between group"
+                    className="hypercard p-3 sm:p-3.5 text-left border-2 border-ink rounded-lg transition-all hover:bg-yellow-50 bg-white flex flex-col justify-between group"
                   >
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="cp-chip cp-chip--hot font-mono font-bold text-xs">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="cp-chip cp-chip--hot font-mono font-bold text-xs py-0.5 px-2">
                           {section.code}
                         </span>
                         <span className="text-xs font-bold text-sky-800 group-hover:underline flex items-center gap-1">
@@ -220,35 +217,24 @@ export default function JoinSectionPage() {
                         </span>
                       </div>
 
-                      <h3 className="cp-h-card text-xl font-extrabold text-ink group-hover:text-indigo-900 transition-colors">
+                      <h3 className="text-base font-extrabold text-ink group-hover:text-indigo-900 transition-colors leading-snug">
                         {section.courseTitle}
                       </h3>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="zine-caption flex items-center gap-1">
-                          <User className="w-3 h-3 text-muted" /> Faculty
-                        </p>
-                        <p className="font-bold text-ink mt-0.5 truncate">
-                          {section.teacherName}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="zine-caption flex items-center gap-1">
-                          <School className="w-3 h-3 text-muted" /> Institution
-                        </p>
-                        <p className="font-bold text-ink mt-0.5 truncate">
-                          {section.institutionName}
-                        </p>
-                      </div>
+                    <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-muted gap-2">
+                      <span className="truncate">
+                        <strong className="text-ink">{section.teacherName}</strong>
+                      </span>
+                      <span className="truncate text-faint">
+                        {section.institutionName}
+                      </span>
                     </div>
 
                     {isEnrolling && (
-                      <div className="mt-3 py-1.5 px-3 bg-yellow-300 border border-ink rounded text-xs font-bold flex items-center justify-center gap-2">
-                        <RotateCw className="w-3.5 h-3.5 animate-spin" />
-                        Enrolling and loading dashboard...
+                      <div className="mt-2 py-1 px-2.5 bg-yellow-300 border border-ink rounded text-xs font-bold flex items-center justify-center gap-1.5">
+                        <RotateCw className="w-3 h-3 animate-spin" />
+                        Enrolling...
                       </div>
                     )}
                   </button>
@@ -259,20 +245,20 @@ export default function JoinSectionPage() {
         </div>
 
         {/* Manual Code / Scan QR Card */}
-        <div className="cp-card cp-hero--white p-6 relative border-2 border-ink shadow-zine mt-2">
-          <div className="flex items-center justify-between mb-4">
+        <div className="cp-card cp-hero--white p-3 sm:p-3.5 relative border-2 border-ink shadow-sm">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="cp-sticker">Have a specific code?</span>
-              <h2 className="cp-h-card-sm text-lg font-bold">
+              <span className="cp-sticker text-xs py-0.5 px-2">Custom Code</span>
+              <h2 className="text-sm font-bold text-ink">
                 Enter Custom Class Code
               </h2>
             </div>
-            <KeyRound className="w-5 h-5 text-ink" />
+            <KeyRound className="w-4 h-4 text-ink" />
           </div>
 
           <form
             onSubmit={handleManualCodeSubmit}
-            className="flex flex-col sm:flex-row items-stretch gap-3"
+            className="flex flex-col sm:flex-row items-stretch gap-2"
           >
             <div className="flex-1">
               <input
@@ -284,24 +270,24 @@ export default function JoinSectionPage() {
                   setErrorMessage("");
                 }}
                 placeholder="e.g. MATH10 or EXP100"
-                className="ui-input font-mono font-bold text-lg uppercase tracking-wider py-2.5 px-4 w-full"
+                className="ui-input font-mono font-bold text-sm uppercase tracking-wider py-1.5 px-3 w-full"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || manualCode.trim().length < 6}
-              className="ui-button ui-button-primary justify-center sm:w-auto"
+              className="ui-button ui-button-primary ui-button-sm text-xs justify-center sm:w-auto py-1.5"
             >
               {loading ? (
                 <>
-                  <RotateCw className="w-4 h-4 animate-spin" />
+                  <RotateCw className="w-3.5 h-3.5 animate-spin" />
                   Verifying...
                 </>
               ) : (
                 <>
-                  Join & Open Dashboard
-                  <ArrowRight className="w-4 h-4" />
+                  Join Section
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
@@ -309,25 +295,25 @@ export default function JoinSectionPage() {
             <button
               type="button"
               onClick={() => setIsQrModalOpen(true)}
-              className="ui-button ui-button-secondary justify-center sm:w-auto"
+              className="ui-button ui-button-secondary ui-button-sm text-xs justify-center sm:w-auto py-1.5"
             >
-              <QrCode className="w-4 h-4" />
+              <QrCode className="w-3.5 h-3.5" />
               Scan QR
             </button>
           </form>
 
           {/* Quick Demo Test Chips */}
-          <div className="mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-mono text-faint">Test edge codes:</span>
+          <div className="mt-2 pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-mono text-faint text-[11px]">Test edge codes:</span>
             <button
               type="button"
               onClick={() => {
                 setManualCode("EXP100");
                 handleManualCodeSubmit(undefined, "EXP100");
               }}
-              className="cp-chip cp-chip--pink text-xs hover:opacity-80 cursor-pointer"
+              className="cp-chip cp-chip--pink text-[11px] py-0.5 px-1.5 hover:opacity-80 cursor-pointer"
             >
-              EXP100 (Expired code test)
+              EXP100 (Expired)
             </button>
             <button
               type="button"
@@ -335,9 +321,9 @@ export default function JoinSectionPage() {
                 setManualCode("MATH10");
                 handleManualCodeSubmit(undefined, "MATH10");
               }}
-              className="cp-chip cp-chip--yellow text-xs hover:opacity-80 cursor-pointer"
+              className="cp-chip cp-chip--yellow text-[11px] py-0.5 px-1.5 hover:opacity-80 cursor-pointer"
             >
-              MATH10 (Standard Calculus)
+              MATH10 (Calculus)
             </button>
           </div>
         </div>
@@ -398,11 +384,6 @@ export default function JoinSectionPage() {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="max-w-5xl w-full mx-auto text-center pt-6 border-t border-ink/20 text-xs font-mono text-faint">
-        ClassPulse Student Portal • Section Selection
-      </footer>
     </div>
   );
 }

@@ -196,8 +196,8 @@
   --cp-content-w: 1200px;
   --cp-gutter: 32px;
   --cp-gutter-mobile: 16px;
-  --cp-rhythm: 24px;
-  --cp-grid-gap: 20px;
+  --cp-rhythm: 16px;
+  --cp-grid-gap: 16px;
 
   color-scheme: light;
 }
@@ -738,8 +738,8 @@ img, svg {
   background: var(--cp-mint-100);
   border: var(--cp-border);
   border-radius: var(--cp-r-lg);
-  box-shadow: var(--cp-shadow);
-  padding: 32px;
+  box-shadow: var(--cp-shadow-sm);
+  padding: 16px 20px;
 }
 
 .cp-hero--mint { background: var(--cp-mint-100); }
@@ -816,42 +816,13 @@ img, svg {
   color: var(--cp-ink-3);
 }
 
-/* Tape strip anchored to the hero's top-left corner */
-.cp-tape-top,
-.tape-top,
-.cp-tape-corner,
-.tape-corner {
-  position: relative;
-}
-
+/* Tape strip disabled across UI */
 .cp-tape-top::before,
-.tape-top::before {
-  content: "";
-  position: absolute;
-  top: -11px;
-  left: 22px;
-  width: 92px;
-  height: 22px;
-  transform: rotate(-2deg);
-  background: rgba(253, 224, 71, 0.9);
-  border: 1px dashed var(--cp-ink);
-  z-index: 2;
-  pointer-events: none;
-}
-
+.tape-top::before,
 .cp-tape-corner::before,
-.tape-corner::before {
-  content: "";
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  transform: rotate(25deg);
-  width: 60px;
-  height: 18px;
-  background: rgba(186, 230, 253, 0.85);
-  border: 1px dashed var(--cp-ink);
-  z-index: 2;
-  pointer-events: none;
+.tape-corner::before,
+.stack-card::before {
+  display: none !important;
 }
 
 /* Legacy page-head row */
@@ -1046,10 +1017,10 @@ img, svg {
 .cp-stat-value,
 .cp-stat__value {
   font-family: var(--cp-font-title);
-  font-size: 44px;
-  line-height: 1;
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: var(--cp-ink);
 }
@@ -1220,21 +1191,21 @@ img, svg {
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  min-height: 170px;
+  min-height: 96px;
   min-width: 0;
-  padding: 22px;
+  padding: 12px 16px;
 }
 
 .cp-stat__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .cp-stat__icon {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -1245,8 +1216,8 @@ img, svg {
 }
 
 .cp-stat__icon svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   stroke-width: 2.25;
 }
 
@@ -1258,12 +1229,12 @@ img, svg {
 
 .cp-stat > .cp-sticker,
 .cp-stat > .cp-stat__head {
-  margin-bottom: 18px;
+  margin-bottom: 6px;
 }
 
 .cp-stat__value {
   display: block;
-  margin-top: 18px;
+  margin-top: 4px;
 }
 
 /* legacy: sticker directly followed by the value already has 18px below */
@@ -1275,7 +1246,7 @@ img, svg {
 
 /* Smaller variant for word values ("waiting", "leaderboard") */
 .cp-stat__value--sm {
-  font-size: 32px;
+  font-size: 24px;
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
@@ -1283,38 +1254,22 @@ img, svg {
 /* A boxed PIN inside a tile hugs its content instead of stretching */
 .cp-stat .cp-pin {
   align-self: flex-start;
-  margin-top: 18px;
+  margin-top: 10px;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
 .cp-stat__caption {
-  margin-top: 8px;
+  margin-top: 3px;
   font-family: var(--cp-font-sans);
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 500;
   color: var(--cp-faint);
 }
 
 .cp-stat__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 14px;
-  font-family: var(--cp-font-sans);
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 500;
-  color: var(--cp-faint);
-}
-
-.cp-stat__foot .cp-link {
-  margin-left: auto;
-  font-size: 13px;
-  line-height: 18px;
+  display: none !important;
 }
 
 /* =========================================================
@@ -1396,9 +1351,9 @@ img, svg {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px 20px;
+  gap: 10px 16px;
   min-width: 0;
-  padding: 18px 20px;
+  padding: 12px 16px;
   background: var(--cp-white);
   color: var(--cp-ink);
   border: var(--cp-border);

@@ -21,6 +21,7 @@ import {
   LogOut,
   KeyRound,
   BookOpen,
+  ChevronDown,
 } from "lucide-react";
 import DashboardShell from "@/components/DashboardShell";
 import {
@@ -174,7 +175,7 @@ export default function ProfilePage() {
   return (
     <DashboardShell footerNote="Student identity & guardian privacy">
       {/* Hero Header */}
-      <header className="cp-hero cp-hero--sky cp-tape-top">
+      <header className="cp-hero cp-hero--sky">
         <div className="cp-hero__row">
           <div className="cp-hero__body">
             <p className="cp-sticker">Academic Identity</p>
@@ -206,7 +207,6 @@ export default function ProfilePage() {
       {/* 1. STUDENT INFORMATION SECTION                            */}
       {/* ========================================================= */}
       <section className="cp-card cp-hero--white p-6 sm:p-8 relative border-2 border-ink shadow-zine">
-        <div className="cp-tape-corner" />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-ink mb-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-yellow-300 border-2 border-ink shadow-sm flex items-center justify-center font-bold text-xl text-ink">
@@ -289,8 +289,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            {LANGUAGES.map((lang) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {LANGUAGES.slice(0, 4).map((lang) => (
               <button
                 key={lang.code}
                 type="button"
@@ -304,6 +304,39 @@ export default function ProfilePage() {
                 {lang.label}
               </button>
             ))}
+
+            <div className="relative inline-flex items-center">
+              <select
+                aria-label="More languages"
+                value={
+                  LANGUAGES.slice(4).some((l) => l.label === profile?.language)
+                    ? (profile?.language ?? "")
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleLanguageChange(e.target.value);
+                  }
+                }}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-ink bg-white hover:bg-yellow-50 cursor-pointer pr-6 appearance-none ${
+                  LANGUAGES.slice(4).some((l) => l.label === profile?.language)
+                    ? "bg-yellow-300 shadow-sm"
+                    : ""
+                }`}
+              >
+                <option value="" disabled>
+                  {LANGUAGES.slice(4).some((l) => l.label === profile?.language)
+                    ? `More: ${profile?.language}`
+                    : "More languages"}
+                </option>
+                {LANGUAGES.slice(4).map((lang) => (
+                  <option key={lang.code} value={lang.label}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-ink absolute right-1.5 pointer-events-none" />
+            </div>
           </div>
         </div>
       </section>
@@ -315,7 +348,6 @@ export default function ProfilePage() {
         {/* Left Column: Add Guardian Form & Plain-Language Explainer */}
         <div className="lg:col-span-7 space-y-6">
           <div className="cp-card cp-card--yellow p-6 sm:p-8 relative">
-            <div className="cp-tape-corner" />
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="cp-sticker">Guardian Link</span>
