@@ -1089,13 +1089,23 @@ export const diagnosticApi = {
       throw new ApiError("Please enter your password.", 400);
     }
 
-    setToken("demo_token_" + cleanReg);
+    // Real sign-in: the backend checks the register number and password and returns the
+    // JWT every other call runs on. Wrong credentials surface the server's message.
+    const auth = await request<{
+      token: string;
+      student: { id: string; name: string; phone?: string; rollNumber: string };
+    }>("/student/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ register: cleanReg, password }),
+    });
+
+    setToken(auth.token);
 
     const profile: UserProfile = {
-      name: cleanReg === "2024-CS-042" ? "Aarav Sharma" : `Student (${cleanReg})`,
-      registerNumber: cleanReg,
-      rollNumber: cleanReg,
-      email: cleanReg === "2024-CS-042" ? "aarav.sharma@institution.edu" : `${cleanReg.toLowerCase()}@institution.edu`,
+      name: auth.student.name,
+      registerNumber: auth.student.rollNumber || cleanReg,
+      rollNumber: auth.student.rollNumber || cleanReg,
+      email: "",
       language: "English",
       institutionName: INSTITUTION_NAME,
       isLoggedIn: true,

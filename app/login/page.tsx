@@ -47,8 +47,8 @@ export default function LoginPage() {
   }
 
   function handleQuickDemoFill() {
-    setRegisterNumber("2024-CS-042");
-    setPassword("password123");
+    setRegisterNumber("12A-01");
+    setPassword("student123");
     setError("");
   }
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
                   setRegisterNumber(e.target.value.toUpperCase());
                   setError("");
                 }}
-                placeholder="e.g. 2024-CS-042"
+                placeholder="e.g. 12A-01"
                 className="ui-input font-mono font-bold text-sm py-2"
                 autoFocus
                 required
@@ -134,7 +134,7 @@ export default function LoginPage() {
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
                 <span className="font-bold text-ink">Demo:</span>
-                <span className="font-mono text-muted text-[11px]">2024-CS-042</span>
+                <span className="font-mono text-muted text-[11px]">12A-01</span>
               </div>
               <button
                 type="button"
