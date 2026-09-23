@@ -347,6 +347,48 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 /**
+ * The API speaks `id`; this app's types were written around Mongo's `_id`, and the review
+ * screen keys off it everywhere. Rather than touch every component, responses are
+ * normalised here on the way in — one place that knows about both spellings.
+ */
+function normalizeLesson(raw: any): Lesson {
+  return { ...raw, _id: raw?._id ?? raw?.id };
+}
+
+/** Same idea, plus the citation the API calls `sourceLine` and this app calls `sourceCitation`. */
+function normalizeQuestion(raw: any): Question {
+  return {
+    ...raw,
+    _id: raw?._id ?? raw?.id,
+    sourceCitation: raw?.sourceCitation ?? raw?.sourceLine
+  };
+}
+
+function normalizeAssignment(raw: any): Assignment | null {
+  return raw ? ({ ...raw, _id: raw._id ?? raw.id } as Assignment) : null;
+}
+
+/** PATCH /questions/:id only accepts these. Sending `_id` back would be rejected. */
+const EDITABLE_QUESTION_FIELDS = [
+  'stem',
+  'options',
+  'correctIndex',
+  'correctText',
+  'explanation',
+  'topicTag',
+  'difficulty',
+  'status'
+] as const;
+
+function questionPatch(updates: Partial<Question>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const field of EDITABLE_QUESTION_FIELDS) {
+    if (updates[field] !== undefined) out[field] = updates[field];
+  }
+  return out;
+}
+
+/**
  * WebSocket URL for live captions while recording. The backend relays to Sarvam so the
  * transcription key never reaches the browser. Returns null when nobody is signed in —
  * live captions need a real backend session, not the mock one.
@@ -442,7 +484,7 @@ export const api = {
         `/lessons/${lessonId}/transcript/select`,
         { method: 'POST', body: JSON.stringify({ source }) },
       );
-      return lesson;
+      return normalizeLesson(lesson);
     }
 
     const lessons = getStoredLessons();
@@ -456,10 +498,13 @@ export const api = {
 
   async login(email?: string, password?: string) {
     if (!USE_MOCK) {
-      return request<{ token: string; teacher: any }>('/auth/login', {
+      const result = await request<{ token: string; teacher: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
+      // Every other call reads the token back out of here.
+      if (isBrowser()) localStorage.setItem('clasepulse_jwt_token', result.token);
+      return result;
     }
 
     const teacher = {
@@ -483,7 +528,10 @@ export const api = {
       const params = new URLSearchParams();
       if (status) params.append('status', status);
       if (page) params.append('page', String(page));
-      return request<{ lessons: Lesson[]; page: number; total: number }>(`/lessons?${params.toString()}`);
+      const data = await request<{ items: any[]; page: number; pageSize: number; total: number }>(
+        `/lessons?${params.toString()}`
+      );
+      return { lessons: data.items.map(normalizeLesson), page: data.page, total: data.total };
     }
 
     let lessons = getStoredLessons();
@@ -506,10 +554,11 @@ export const api = {
     // Claim whatever the recorder captured live, unless the caller passed one explicitly.
     const claimedSession = liveSessionId ?? takeLiveSession();
     if (!USE_MOCK) {
-      return request<Lesson>('/lessons', {
+      const { lesson } = await request<{ lesson: Lesson }>('/lessons', {
         method: 'POST',
         body: JSON.stringify({ title, subject, className, liveSessionId: claimedSession })
       });
+      return normalizeLesson(lesson);
     }
 
     const newLesson: Lesson = {
@@ -541,10 +590,11 @@ export const api = {
       const formData = new FormData();
       formData.append('file', fileOrBlob);
       formData.append('sourceType', sourceType);
-      return request<{ success: boolean; sourceFile: SourceFile }>(`/lessons/${lessonId}/source`, {
+      const { lesson } = await request<{ lesson: Lesson }>(`/lessons/${lessonId}/source`, {
         method: 'POST',
         body: formData
       });
+      return { success: true, sourceFile: lesson.sourceFile as SourceFile };
     }
 
     const lessons = getStoredLessons();
@@ -577,9 +627,11 @@ export const api = {
    */
   async generate(lessonId: string) {
     if (!USE_MOCK) {
-      return request<{ status: number; jobId: string; message: string }>(`/lessons/${lessonId}/generate`, {
-        method: 'POST'
-      });
+      const job = await request<{ lessonId: string; jobId: string; status: string }>(
+        `/lessons/${lessonId}/generate`,
+        { method: 'POST' }
+      );
+      return { status: 202, jobId: job.jobId, message: `Lesson ${job.status}` };
     }
 
     const lessons = getStoredLessons();
@@ -718,7 +770,8 @@ export const api = {
    */
   async getLesson(lessonId: string): Promise<Lesson> {
     if (!USE_MOCK) {
-      return request<Lesson>(`/lessons/${lessonId}`);
+      const { lesson } = await request<{ lesson: Lesson; job: any }>(`/lessons/${lessonId}`);
+      return normalizeLesson(lesson);
     }
 
     const lessons = getStoredLessons();
@@ -762,7 +815,14 @@ export const api = {
    */
   async getLessonQuestions(lessonId: string): Promise<{ lessonId: string; questions: Question[]; assignment: Assignment | null }> {
     if (!USE_MOCK) {
-      return request<{ lessonId: string; questions: Question[]; assignment: Assignment | null }>(`/lessons/${lessonId}/questions`);
+      const data = await request<{ questions: any[]; assignment: any }>(
+        `/lessons/${lessonId}/questions`
+      );
+      return {
+        lessonId,
+        questions: data.questions.map(normalizeQuestion),
+        assignment: normalizeAssignment(data.assignment)
+      };
     }
 
     const questionsMap = getStoredQuestions();
@@ -782,10 +842,11 @@ export const api = {
    */
   async updateQuestion(questionId: string, updates: Partial<Question>): Promise<Question> {
     if (!USE_MOCK) {
-      return request<Question>(`/questions/${questionId}`, {
+      const { question } = await request<{ question: Question }>(`/questions/${questionId}`, {
         method: 'PATCH',
-        body: JSON.stringify(updates)
+        body: JSON.stringify(questionPatch(updates))
       });
+      return normalizeQuestion(question);
     }
 
     const questionsMap = getStoredQuestions();
@@ -817,10 +878,12 @@ export const api = {
    */
   async approveQuestion(idOrIds: string | string[]): Promise<{ success: boolean; approvedCount: number }> {
     if (!USE_MOCK) {
-      return request<{ success: boolean; approvedCount: number }>('/questions/approve', {
-        method: 'POST',
-        body: JSON.stringify({ ids: Array.isArray(idOrIds) ? idOrIds : [idOrIds] })
-      });
+      const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+      const { approvedCount } = await request<{ questions: Question[]; approvedCount: number }>(
+        `/questions/${ids[0]}/approve`,
+        { method: 'POST', body: JSON.stringify({ ids }) }
+      );
+      return { success: true, approvedCount };
     }
 
     const idsToApprove = new Set(Array.isArray(idOrIds) ? idOrIds : [idOrIds]);
@@ -846,9 +909,11 @@ export const api = {
    */
   async rejectQuestion(questionId: string): Promise<Question> {
     if (!USE_MOCK) {
-      return request<Question>(`/questions/${questionId}/reject`, {
-        method: 'POST'
+      const { question } = await request<{ question: Question }>(`/questions/${questionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected' })
       });
+      return normalizeQuestion(question);
     }
 
     const questionsMap = getStoredQuestions();
@@ -876,10 +941,15 @@ export const api = {
    */
   async updateAssignment(lessonId: string, updates: Partial<Assignment>): Promise<Assignment> {
     if (!USE_MOCK) {
-      return request<Assignment>(`/lessons/${lessonId}/assignment`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
-      });
+      const { prompt, estimatedMinutes, rubric, status } = updates;
+      const { assignment } = await request<{ assignment: Assignment }>(
+        `/lessons/${lessonId}/assignment`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ prompt, estimatedMinutes, rubric, status })
+        }
+      );
+      return normalizeAssignment(assignment) as Assignment;
     }
 
     const asgMap = getStoredAssignments();
@@ -900,9 +970,11 @@ export const api = {
    */
   async regenerate(lessonId: string) {
     if (!USE_MOCK) {
-      return request<{ status: number; jobId: string; message: string }>(`/lessons/${lessonId}/regenerate`, {
-        method: 'POST'
-      });
+      const job = await request<{ lessonId: string; jobId: string; status: string }>(
+        `/lessons/${lessonId}/regenerate`,
+        { method: 'POST' }
+      );
+      return { status: 202, jobId: job.jobId, message: `Lesson ${job.status}` };
     }
     return this.generate(lessonId);
   },
@@ -913,9 +985,20 @@ export const api = {
    */
   async publishLesson(lessonId: string): Promise<{ success: boolean; lessonId: string; publishedAt: string; approvedQuestionsCount: number }> {
     if (!USE_MOCK) {
-      return request<{ success: boolean; lessonId: string; publishedAt: string; approvedQuestionsCount: number }>(`/lessons/${lessonId}/publish`, {
+      const { lesson } = await request<{ lesson: Lesson }>(`/lessons/${lessonId}/publish`, {
         method: 'POST'
       });
+      // The publish route answers with the lesson; the banner also wants the count, and
+      // the questions are already cached server-side by this point.
+      const { questions } = await request<{ questions: Question[] }>(
+        `/lessons/${lessonId}/questions`
+      );
+      return {
+        success: true,
+        lessonId: normalizeLesson(lesson)._id,
+        publishedAt: lesson.updatedAt,
+        approvedQuestionsCount: questions.filter((q) => q.status === 'approved').length
+      };
     }
 
     const questionsMap = getStoredQuestions();
