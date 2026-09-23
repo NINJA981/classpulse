@@ -9,6 +9,14 @@
  * without modifying any component-level code.
  */
 
+import {
+  ApiError as BackendApiError,
+  clearToken,
+  isSignedIn,
+  request,
+  setToken,
+} from "./apiClient";
+
 export type SectionPreview = {
   code: string;
   courseTitle: string;
@@ -129,6 +137,92 @@ export type Guardian = {
   status: GuardianStatus;
   createdAt: string;
 };
+
+// --- what SIH-backend actually returns, and the mapping onto the types above -------------
+// The API speaks its own shapes; the components were written against the ones in this file,
+// so the translation lives here rather than in every page.
+
+type BackendSectionPreview = {
+  code: string;
+  courseTitle: string;
+  teacherName: string;
+  institutionName: string;
+  sectionName: string;
+  isExpired: boolean;
+};
+
+type BackendStudent = {
+  id: string;
+  institutionId: string;
+  name: string;
+  email?: string;
+  rollNumber: string;
+  createdAt: string;
+};
+
+type BackendEnrollment = {
+  id: string;
+  studentId: string;
+  sectionId: string;
+  courseId: string;
+  courseTitle: string;
+  sectionName: string;
+  rollNumber: string;
+  enrolledAt: string;
+};
+
+type BackendGuardian = {
+  id: string;
+  name: string;
+  relation: string;
+  phone: string;
+  email?: string;
+  verified: boolean;
+  createdAt: string;
+};
+
+const EMPTY_PROFILE: UserProfile = {
+  name: "",
+  registerNumber: "",
+  email: "",
+  language: "English",
+  rollNumber: "",
+  institutionName: "",
+  isLoggedIn: false,
+};
+
+function toSectionPreview(section: BackendSectionPreview): SectionPreview {
+  return {
+    code: section.code,
+    courseTitle: section.courseTitle,
+    teacherName: section.teacherName,
+    institutionName: section.institutionName,
+    isExpired: section.isExpired,
+  };
+}
+
+function toUserProfile(student: BackendStudent): UserProfile {
+  return {
+    name: student.name,
+    // This app shows a register number; the API calls the same thing a roll number.
+    registerNumber: student.rollNumber,
+    rollNumber: student.rollNumber,
+    email: student.email ?? "",
+    language: "English",
+    isLoggedIn: true,
+  };
+}
+
+/** The API tracks a guardian as verified or not; this app shows three pill states. */
+function toGuardian(guardian: BackendGuardian): Guardian {
+  return {
+    id: guardian.id,
+    name: guardian.name,
+    phone: guardian.phone,
+    status: guardian.verified ? "active" : "pending",
+    createdAt: new Date(guardian.createdAt).toLocaleDateString(),
+  };
+}
 
 export type DiagnosticQuestion = {
   questionId: string;
@@ -788,15 +882,30 @@ export const diagnosticApi = {
    * GET /api/sections/preview?code=
    * Returns courseTitle, teacherName, institutionName or throws 404/expired error.
    */
+  /** Every section this student has joined. */
+  async listEnrollments(): Promise<
+    Array<JoinEnrollmentResponse & { sectionId: string; courseId: string }>
+  > {
+    if (!isSignedIn()) return [];
+    const { items } = await request<{ items: BackendEnrollment[] }>("/student/enrollments");
+    return items.map((e) => ({
+      success: true,
+      enrollmentId: e.id,
+      sectionCode: e.sectionName,
+      courseTitle: e.courseTitle,
+      rollNumber: e.rollNumber,
+      alreadyEnrolled: true,
+      teacherName: "",
+      institutionName: "",
+      sectionId: e.sectionId,
+      courseId: e.courseId,
+    }));
+  },
+
   async getSectionPreview(code: string): Promise<SectionPreview> {
-    await fakeDelay();
-    const normalized = code.trim().toUpperCase();
-    const section = MOCK_SECTIONS[normalized];
-
-    if (!section) {
-      throw new ApiError("Invalid join code. Section not found.", 404);
-    }
-
+    const { section } = await request<{ section: BackendSectionPreview }>(
+      `/student/sections/${encodeURIComponent(code.trim().toUpperCase())}`
+    );
     if (section.isExpired) {
       throw new ApiError(
         "This code has expired, ask your teacher for a new one.",
@@ -804,8 +913,7 @@ export const diagnosticApi = {
         "CODE_EXPIRED"
       );
     }
-
-    return { ...section };
+    return toSectionPreview(section);
   },
 
   /**
@@ -813,8 +921,8 @@ export const diagnosticApi = {
    * Returns all active sections available for the student to select and join.
    */
   async getAvailableSections(): Promise<SectionPreview[]> {
-    await fakeDelay(100);
-    return Object.values(MOCK_SECTIONS).filter((s) => !s.isExpired);
+    const { items } = await request<{ items: BackendSectionPreview[] }>("/student/sections");
+    return items.map(toSectionPreview);
   },
 
   /**
@@ -823,35 +931,47 @@ export const diagnosticApi = {
    * Enrolls student. If already enrolled, returns alreadyEnrolled: true without error.
    */
   async joinEnrollment(payload: JoinEnrollmentPayload): Promise<JoinEnrollmentResponse> {
-    await fakeDelay();
-    const normalized = payload.code.trim().toUpperCase();
-    const section = MOCK_SECTIONS[normalized];
-
-    if (!section) {
-      throw new ApiError("Section not found.", 404);
+    try {
+      const { enrollment } = await request<{ enrollment: BackendEnrollment }>(
+        "/student/enrollments",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            code: payload.code.trim().toUpperCase(),
+            rollNumber: payload.rollNumber.trim(),
+          }),
+        }
+      );
+      const profile = await this.getMe();
+      return {
+        success: true,
+        enrollmentId: enrollment.id,
+        sectionCode: payload.code.trim().toUpperCase(),
+        courseTitle: enrollment.courseTitle,
+        rollNumber: enrollment.rollNumber,
+        alreadyEnrolled: false,
+        teacherName: "",
+        institutionName: profile.institutionName ?? "",
+      };
+    } catch (err) {
+      // Joining twice is not an error the join screen should show as a failure.
+      if (err instanceof BackendApiError && err.status === 409) {
+        const existing = (await this.listEnrollments()).find(
+          (e) => e.sectionCode === payload.code.trim().toUpperCase()
+        );
+        return {
+          success: true,
+          enrollmentId: existing?.enrollmentId ?? "",
+          sectionCode: payload.code.trim().toUpperCase(),
+          courseTitle: existing?.courseTitle ?? "",
+          rollNumber: payload.rollNumber.trim(),
+          alreadyEnrolled: true,
+          teacherName: "",
+          institutionName: existing?.institutionName ?? "",
+        };
+      }
+      throw err;
     }
-
-    const currentEnrollment = getStorage<JoinEnrollmentResponse | null>(LS_ENROLLMENT, null);
-    const isAlready =
-      normalized === "ENR999" ||
-      (currentEnrollment && currentEnrollment.enrollmentId === `enr-${normalized}`);
-
-    const result: JoinEnrollmentResponse = {
-      success: true,
-      enrollmentId: `enr-${normalized}`,
-      sectionCode: normalized,
-      courseTitle: section.courseTitle,
-      rollNumber: payload.rollNumber.trim(),
-      alreadyEnrolled: Boolean(isAlready),
-      teacherName: section.teacherName,
-      institutionName: section.institutionName,
-    };
-
-    setStorage(LS_ENROLLMENT, result);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("storage"));
-    }
-    return result;
   },
 
   /**
@@ -859,22 +979,30 @@ export const diagnosticApi = {
    * Returns a 10-minute expiry time (600s).
    */
   async requestOtp(_identifier?: string): Promise<OtpRequestResponse> {
-    void _identifier;
-    await fakeDelay();
-    const otpState: StoredOtpState = {
-      demoOtp: "123456",
+    const identifier = (_identifier ?? "").trim();
+    if (!identifier) throw new ApiError("Enter your mobile number.", 400);
+
+    const res = await request<{ sent: boolean; devOtp?: string; expiresInSec: number }>(
+      "/student/auth/request-otp",
+      { method: "POST", body: JSON.stringify({ phone: identifier }) }
+    );
+
+    // verifyOtp needs the number back; the passcode alone does not identify the account.
+    setStorage(LS_OTP_STATE, {
+      demoOtp: res.devOtp ?? "",
       attemptsLeft: 5,
       isLocked: false,
       requestedAt: Date.now(),
-      expiresInSeconds: 600, // 10 minutes
-    };
-    setStorage(LS_OTP_STATE, otpState);
+      expiresInSeconds: res.expiresInSec,
+      phone: identifier,
+    });
 
     return {
-      success: true,
-      expiresInSeconds: 600,
-      message: "6-digit OTP sent to your registered contact.",
-      demoOtp: "123456",
+      success: res.sent,
+      expiresInSeconds: res.expiresInSec,
+      message: "6-digit passcode sent to your mobile number.",
+      // Populated only outside production, where the server has no SMS gateway wired up.
+      demoOtp: res.devOtp ?? "",
     };
   },
 
@@ -883,58 +1011,43 @@ export const diagnosticApi = {
    * Body: { otp }
    * Tracks failed attempts and locks out after 5 failures.
    */
-  async verifyOtp(otp: string): Promise<OtpVerifyResponse> {
-    await fakeDelay();
-    const otpState = getStorage<StoredOtpState>(LS_OTP_STATE, {
-      demoOtp: "123456",
+  async verifyOtp(otp: string, name?: string): Promise<OtpVerifyResponse> {
+    const pending = getStorage<StoredOtpState & { phone?: string }>(LS_OTP_STATE, {
+      demoOtp: "",
       attemptsLeft: 5,
       isLocked: false,
     });
 
-    if (otpState.isLocked || otpState.attemptsLeft <= 0) {
+    if (!pending.phone) {
+      return { success: false, attemptsLeft: 5, isLocked: false, message: "Request a passcode first." };
+    }
+
+    try {
+      const res = await request<{ token: string; student: BackendStudent }>(
+        "/student/auth/verify-otp",
+        {
+          method: "POST",
+          body: JSON.stringify({ phone: pending.phone, otp: otp.trim(), name }),
+        }
+      );
+
+      setToken(res.token);
+      setStorage(LS_PROFILE, toUserProfile(res.student));
+      setStorage(LS_OTP_STATE, { ...pending, attemptsLeft: 5, isLocked: false });
+
+      return { success: true, attemptsLeft: 5, isLocked: false, token: res.token };
+    } catch (err) {
+      const attemptsLeft = Math.max(0, (pending.attemptsLeft ?? 5) - 1);
+      const locked = err instanceof BackendApiError && err.status === 429;
+      setStorage(LS_OTP_STATE, { ...pending, attemptsLeft, isLocked: locked });
       return {
         success: false,
-        attemptsLeft: 0,
-        isLocked: true,
-        message: "Account locked after 5 failed attempts. Please contact your section administrator.",
+        attemptsLeft,
+        isLocked: locked,
+        message:
+          err instanceof BackendApiError ? err.message : "That passcode is wrong or has expired.",
       };
     }
-
-    // Default mock valid OTP is 123456
-    const cleanOtp = otp.replace(/\s+/g, "");
-    if (cleanOtp === "123456" || cleanOtp === otpState.demoOtp) {
-      otpState.attemptsLeft = 5;
-      setStorage(LS_OTP_STATE, otpState);
-      return {
-        success: true,
-        attemptsLeft: 5,
-        isLocked: false,
-        token: "mock-jwt-token-" + Date.now(),
-      };
-    }
-
-    // Decrement attempts
-    otpState.attemptsLeft = Math.max(0, otpState.attemptsLeft - 1);
-    if (otpState.attemptsLeft === 0) {
-      otpState.isLocked = true;
-    }
-    setStorage(LS_OTP_STATE, otpState);
-
-    if (otpState.isLocked) {
-      return {
-        success: false,
-        attemptsLeft: 0,
-        isLocked: true,
-        message: "5 failed attempts reached. Verification locked. Ask your faculty to unlock your profile.",
-      };
-    }
-
-    return {
-      success: false,
-      attemptsLeft: otpState.attemptsLeft,
-      isLocked: false,
-      message: `Invalid OTP code. ${otpState.attemptsLeft} attempt(s) remaining.`,
-    };
   },
 
   /**
@@ -942,50 +1055,24 @@ export const diagnosticApi = {
    * Body: { registerNumber, password }
    */
   async login(registerNumber: string, password: string): Promise<UserProfile> {
-    await fakeDelay();
-    if (!registerNumber.trim()) {
-      throw new ApiError("Please enter your Register Number.", 400);
-    }
-    if (!password.trim()) {
-      throw new ApiError("Please enter your password.", 400);
-    }
-
-    const current = getStorage<UserProfile>(LS_PROFILE, {
-      name: "Aarav Sharma",
-      registerNumber: registerNumber.trim().toUpperCase(),
-      email: "aarav.sharma@institution.edu",
-      language: "English",
-      rollNumber: registerNumber.trim().toUpperCase(),
-      institutionName: "National Institute of Technology",
-      isLoggedIn: true,
-    });
-
-    const user: UserProfile = {
-      ...current,
-      registerNumber: registerNumber.trim().toUpperCase(),
-      rollNumber: registerNumber.trim().toUpperCase(),
-      isLoggedIn: true,
-    };
-
-    setStorage(LS_PROFILE, user);
-    return user;
+    // The backend signs students in with a mobile number and a one-time passcode, not a
+    // password. requestOtp/verifyOtp are the real flow; this stays so older callers fail
+    // loudly rather than silently writing a fake session.
+    void registerNumber;
+    void password;
+    throw new ApiError(
+      "Sign in with your mobile number and the passcode we send you.",
+      400,
+      "USE_OTP_LOGIN"
+    );
   },
 
   /**
    * POST /api/auth/logout
    */
   async logout(): Promise<void> {
-    await fakeDelay(100);
-    const current = getStorage<UserProfile>(LS_PROFILE, {
-      name: "Aarav Sharma",
-      registerNumber: "2024-CS-042",
-      email: "aarav.sharma@institution.edu",
-      language: "English",
-      rollNumber: "2024-CS-042",
-      institutionName: "National Institute of Technology",
-      isLoggedIn: true,
-    });
-    setStorage(LS_PROFILE, { ...current, isLoggedIn: false });
+    clearToken();
+    setStorage(LS_PROFILE, { ...getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE), isLoggedIn: false });
   },
 
   /**
@@ -993,40 +1080,47 @@ export const diagnosticApi = {
    * Body: { name?, language?, email?, ... }
    */
   async updateMe(data: Partial<UserProfile>): Promise<UserProfile> {
-    await fakeDelay();
-    const current = getStorage<UserProfile>(LS_PROFILE, {
-      name: "Aarav Sharma",
-      registerNumber: "2024-CS-042",
-      email: "aarav.sharma@institution.edu",
-      language: "English",
-      rollNumber: "2024-CS-042",
-      institutionName: "National Institute of Technology",
-      isLoggedIn: true,
+    const patch: Record<string, unknown> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.email !== undefined) patch.email = data.email;
+
+    // `language` is a local display preference; the server has no column for it.
+    const current = getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE);
+    if (Object.keys(patch).length === 0) {
+      const merged = { ...current, ...data };
+      setStorage(LS_PROFILE, merged);
+      return merged;
+    }
+
+    const { student } = await request<{ student: BackendStudent }>("/student/me", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
     });
-
-    const updated: UserProfile = {
-      ...current,
-      ...data,
-    };
-
-    setStorage(LS_PROFILE, updated);
-    return updated;
+    const merged = { ...toUserProfile(student), language: data.language ?? current.language };
+    setStorage(LS_PROFILE, merged);
+    return merged;
   },
 
   /**
    * GET /api/me
    */
   async getMe(): Promise<UserProfile> {
-    await fakeDelay(100);
-    return getStorage<UserProfile>(LS_PROFILE, {
-      name: "Aarav Sharma",
-      registerNumber: "2024-CS-042",
-      email: "aarav.sharma@institution.edu",
-      language: "English",
-      rollNumber: "2024-CS-042",
-      institutionName: "National Institute of Technology",
-      isLoggedIn: true,
-    });
+    if (!isSignedIn()) return { ...EMPTY_PROFILE, isLoggedIn: false };
+
+    const me = await request<{
+      student: BackendStudent;
+      enrollments: BackendEnrollment[];
+    }>("/student/me");
+
+    const current = getStorage<UserProfile>(LS_PROFILE, EMPTY_PROFILE);
+    const profile: UserProfile = {
+      ...toUserProfile(me.student),
+      language: current.language,
+      activeCourseId: me.enrollments[0]?.courseId,
+      activeCourseTitle: me.enrollments[0]?.courseTitle,
+    };
+    setStorage(LS_PROFILE, profile);
+    return profile;
   },
 
   /**
@@ -1034,20 +1128,15 @@ export const diagnosticApi = {
    * Body: { phone, name }
    */
   async addGuardian(payload: { phone: string; name: string }): Promise<Guardian> {
-    await fakeDelay();
-    const list = getStorage<Guardian[]>(LS_GUARDIANS, INITIAL_GUARDIANS);
-
-    const newGuardian: Guardian = {
-      id: `g-${Date.now()}`,
-      name: payload.name.trim(),
-      phone: payload.phone.trim(),
-      status: "pending",
-      createdAt: "Today",
-    };
-
-    const updated = [newGuardian, ...list];
-    setStorage(LS_GUARDIANS, updated);
-    return newGuardian;
+    const { guardian } = await request<{ guardian: BackendGuardian }>("/student/guardians", {
+      method: "POST",
+      body: JSON.stringify({
+        name: payload.name.trim(),
+        phone: payload.phone.trim(),
+        relation: "guardian",
+      }),
+    });
+    return toGuardian(guardian);
   },
 
   /**
@@ -1055,8 +1144,9 @@ export const diagnosticApi = {
    * Returns [{ id, name, phone, status, createdAt }]
    */
   async getGuardians(): Promise<Guardian[]> {
-    await fakeDelay();
-    return getStorage<Guardian[]>(LS_GUARDIANS, INITIAL_GUARDIANS);
+    if (!isSignedIn()) return [];
+    const { items } = await request<{ items: BackendGuardian[] }>("/student/guardians");
+    return items.map(toGuardian);
   },
 
   /**
@@ -1064,12 +1154,7 @@ export const diagnosticApi = {
    * Revokes guardian digest access.
    */
   async deleteGuardian(id: string): Promise<{ success: boolean; id: string }> {
-    await fakeDelay();
-    const list = getStorage<Guardian[]>(LS_GUARDIANS, INITIAL_GUARDIANS);
-    const updated = list.map((g) =>
-      g.id === id ? { ...g, status: "revoked" as GuardianStatus } : g
-    );
-    setStorage(LS_GUARDIANS, updated);
+    await request<void>(`/student/guardians/${id}`, { method: "DELETE" });
     return { success: true, id };
   },
 

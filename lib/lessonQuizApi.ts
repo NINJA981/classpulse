@@ -1,10 +1,10 @@
 /**
- * Client for pipeline-generated lesson quizzes (served by SIH-backend at
- * /api/student/quizzes). Answers are graded server-side; this module never
- * receives correct answers until after submission.
+ * Client for pipeline-generated lesson quizzes, served by SIH-backend at
+ * /api/student/quizzes. Answers are graded server-side; this module never receives the
+ * correct answers until after the submission comes back.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+import { request } from "./apiClient";
 
 export interface LessonQuizSummary {
   id: string;
@@ -15,6 +15,8 @@ export interface LessonQuizSummary {
   summary: string | null;
   keyTakeaways: string[];
   publishedAt: string;
+  /** Null until this student has submitted at least once. */
+  bestScorePct: number | null;
 }
 
 export interface LessonQuizDetail {
@@ -50,24 +52,6 @@ export interface LessonQuizResult {
   }>;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    let detail = body;
-    try {
-      detail = (JSON.parse(body) as { error?: string }).error || body;
-    } catch {
-      /* keep raw */
-    }
-    throw new Error(detail || `Request failed (${res.status})`);
-  }
-  return (await res.json()) as T;
-}
-
 export const lessonQuizApi = {
   list(): Promise<{ quizzes: LessonQuizSummary[] }> {
     return request("/student/quizzes");
@@ -83,7 +67,7 @@ export const lessonQuizApi = {
   ): Promise<LessonQuizResult> {
     return request(`/student/quizzes/${lessonId}/submit`, {
       method: "POST",
-      body: JSON.stringify({ answers })
+      body: JSON.stringify({ answers }),
     });
-  }
+  },
 };

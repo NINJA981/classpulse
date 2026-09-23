@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   School,
   Lock,
-  GraduationCap,
+  Smartphone,
   ArrowRight,
   RotateCw,
   AlertCircle,
@@ -13,22 +13,28 @@ import {
 } from "lucide-react";
 import { diagnosticApi } from "@/lib/diagnosticApi";
 
+/**
+ * Two steps, because that is how the backend signs a student in: a mobile number gets a
+ * one-time passcode, and the passcode is exchanged for a token. There is no password.
+ */
+type Step = "phone" | "otp";
+
 export default function LoginPage() {
   const router = useRouter();
 
-  const [registerNumber, setRegisterNumber] = useState("");
-  const [password, setPassword] = useState("");
+  const [step, setStep] = useState<Step>("phone");
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  /** Outside production the server hands the passcode back so the flow is testable. */
+  const [devOtp, setDevOtp] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRequestOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (!registerNumber.trim()) {
-      setError("Please enter your Register Number.");
-      return;
-    }
-    if (!password.trim()) {
-      setError("Please enter your password.");
+    if (!phone.trim()) {
+      setError("Please enter your mobile number.");
       return;
     }
 
@@ -36,22 +42,38 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await diagnosticApi.login(registerNumber.trim(), password.trim());
-      // Always show all options of sections upon login as requested:
-      // "when i login show me all the options of sections and then i can click the section and then i see the dashboard"
-      router.push("/join");
+      const res = await diagnosticApi.requestOtp(phone.trim());
+      setDevOtp(res.demoOtp || "");
+      setStep("otp");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Invalid credentials.";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Could not send the passcode.");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleQuickDemoFill() {
-    setRegisterNumber("2024-CS-042");
-    setPassword("password123");
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!otp.trim()) {
+      setError("Please enter the passcode we sent you.");
+      return;
+    }
+
+    setLoading(true);
     setError("");
+
+    try {
+      const res = await diagnosticApi.verifyOtp(otp.trim(), name.trim() || undefined);
+      if (!res.success) {
+        setError(res.message || "That passcode is wrong or has expired.");
+        return;
+      }
+      router.push("/join");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not sign you in.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -80,9 +102,13 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <span className="cp-sticker mb-2">Student Access</span>
-            <h1 className="cp-h-hero mt-2">Log in to Portal</h1>
+            <h1 className="cp-h-hero mt-2">
+              {step === "phone" ? "Log in to Portal" : "Enter your passcode"}
+            </h1>
             <p className="cp-hero__sub mt-2">
-              Sign in with your institutional register number and password to access your sections and coursework.
+              {step === "phone"
+                ? "Enter your mobile number and we will send you a one-time passcode."
+                : `We sent a 6-digit passcode to ${phone}. It expires in five minutes.`}
             </p>
           </div>
 
@@ -93,85 +119,133 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label
-                htmlFor="login-regnum"
-                className="ui-label ui-label--upper mb-1.5"
-              >
-                <GraduationCap className="w-4 h-4" /> Register Number / Roll No.
-              </label>
-              <input
-                id="login-regnum"
-                type="text"
-                value={registerNumber}
-                onChange={(e) => {
-                  setRegisterNumber(e.target.value.toUpperCase());
-                  setError("");
-                }}
-                placeholder="e.g. 2024-CS-042"
-                className="ui-input font-mono font-bold"
-                autoFocus
-                required
-              />
-            </div>
+          {step === "phone" ? (
+            <form onSubmit={handleRequestOtp} className="space-y-4">
+              <div>
+                <label htmlFor="login-phone" className="ui-label ui-label--upper mb-1.5">
+                  <Smartphone className="w-4 h-4" /> Mobile Number
+                </label>
+                <input
+                  id="login-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="+91 90000 00001"
+                  className="ui-input font-mono font-bold"
+                  autoFocus
+                  required
+                />
+              </div>
 
-            <div>
-              <label
-                htmlFor="login-password"
-                className="ui-label ui-label--upper mb-1.5"
-              >
-                <Lock className="w-4 h-4" /> Password
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError("");
-                }}
-                placeholder="••••••••"
-                className="ui-input font-mono"
-                required
-              />
-            </div>
+              <div>
+                <label htmlFor="login-name" className="ui-label ui-label--upper mb-1.5">
+                  Your Name <span className="normal-case font-normal">(first time only)</span>
+                </label>
+                <input
+                  id="login-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Aarav Sharma"
+                  className="ui-input"
+                />
+              </div>
 
-            {/* Quick Demo Helper */}
-            <div className="p-3 bg-white/80 border-2 border-ink rounded-lg flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-bold text-ink">
-                <Sparkles className="w-4 h-4 text-yellow-600" />
-                Demo Credentials:
-              </span>
-              <button
-                type="button"
-                onClick={handleQuickDemoFill}
-                className="cp-chip cp-chip--hot text-xs cursor-pointer font-bold"
-              >
-                Auto-fill Demo
-              </button>
-            </div>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading || !phone.trim()}
+                  className="ui-button ui-button-primary ui-button-lg w-full justify-center"
+                >
+                  {loading ? (
+                    <>
+                      <RotateCw className="w-5 h-5 animate-spin" />
+                      Sending passcode...
+                    </>
+                  ) : (
+                    <>
+                      Send Passcode
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label htmlFor="login-otp" className="ui-label ui-label--upper mb-1.5">
+                  <Lock className="w-4 h-4" /> 6-Digit Passcode
+                </label>
+                <input
+                  id="login-otp"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, ""));
+                    setError("");
+                  }}
+                  placeholder="000000"
+                  className="ui-input font-mono font-bold tracking-[0.4em] text-center"
+                  autoFocus
+                  required
+                />
+              </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading || !registerNumber.trim() || !password.trim()}
-                className="ui-button ui-button-primary ui-button-lg w-full justify-center"
-              >
-                {loading ? (
-                  <>
-                    <RotateCw className="w-5 h-5 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Log in & Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+              {devOtp && (
+                <div className="p-3 bg-white/80 border-2 border-ink rounded-lg flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-bold text-ink">
+                    <Sparkles className="w-4 h-4 text-yellow-600" />
+                    Dev passcode:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOtp(devOtp)}
+                    className="cp-chip cp-chip--hot text-xs cursor-pointer font-bold font-mono"
+                  >
+                    {devOtp}
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-2 space-y-2">
+                <button
+                  type="submit"
+                  disabled={loading || otp.trim().length < 4}
+                  className="ui-button ui-button-primary ui-button-lg w-full justify-center"
+                >
+                  {loading ? (
+                    <>
+                      <RotateCw className="w-5 h-5 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Log in &amp; Continue
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("phone");
+                    setOtp("");
+                    setError("");
+                  }}
+                  className="ui-button w-full justify-center text-sm"
+                >
+                  Use a different number
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-6 pt-4 border-t border-ink/20 text-center">
             <p className="cp-caption text-xs">
