@@ -105,7 +105,8 @@ export async function seedDatabase(): Promise<void> {
       sizeBytes: 18450200,
       durationSec: 1420
     },
-    status: 'ready_for_review',
+    status: 'published',
+    language: 'hi-IN',
     timings: {
       startedAt: new Date(Date.now() - 3600000),
       elapsedSec: 42
@@ -138,9 +139,12 @@ export async function seedDatabase(): Promise<void> {
       sectionId: section1._id,
       type: 'mcq',
       stem: 'What is the primary electron donor in the light-dependent reactions of oxygenic photosynthesis?',
+      stemLocal: 'ऑक्सीजनिक प्रकाश संश्लेषण की प्रकाश-निर्भर अभिक्रियाओं में प्राथमिक इलेक्ट्रॉन दाता क्या है?',
       options: ['Water (H2O)', 'Carbon Dioxide (CO2)', 'Glucose (C6H12O6)', 'NADPH'],
+      optionsLocal: ['जल (H2O)', 'कार्बन डाइऑक्साइड (CO2)', 'ग्लूकोज (C6H12O6)', 'NADPH'],
       correctIndex: 0,
       explanation: 'Photolysis of water provides the electrons necessary to replenish Photosystem II reaction center P680.',
+      explanationLocal: 'जल के प्रकाश-अपघटन से प्रकाश-तंत्र II (Photosystem II) को आवश्यक इलेक्ट्रॉन मिलते हैं।',
       topicTag: 'Light Reactions',
       difficulty: 'medium',
       status: 'approved',

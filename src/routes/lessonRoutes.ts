@@ -29,7 +29,7 @@ const upload = multer({
   }
 });
 
-import { quizSubmissions } from './studentQuizRoutes.js';
+import { quizSubmissions, getLessonAnalyticsHandler } from './studentQuizRoutes.js';
 
 router.get('/', getLessons);
 router.post('/', createLesson);
@@ -45,5 +45,6 @@ router.get('/:id/submissions', (req, res) => {
   const list = quizSubmissions.get(String(id)) || [];
   res.status(200).json({ submissions: list });
 });
+router.get('/:id/analytics', getLessonAnalyticsHandler);
 
 export default router;

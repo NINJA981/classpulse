@@ -50,7 +50,21 @@ export async function sarvamBatchTranscribe(
   opts: BatchOptions = {}
 ): Promise<BatchTranscription> {
   const model = opts.model || 'saaras:v3';
-  const languageCode = opts.languageCode && opts.languageCode !== 'en-IN' ? opts.languageCode : 'unknown';
+  const langMap: Record<string, string> = {
+    hi: 'hi-IN',
+    ta: 'ta-IN',
+    te: 'te-IN',
+    kn: 'kn-IN',
+    bn: 'bn-IN',
+    mr: 'mr-IN',
+    gu: 'gu-IN',
+    ml: 'ml-IN',
+    pa: 'pa-IN',
+    od: 'od-IN',
+    en: 'en-IN'
+  };
+  const resolved = opts.languageCode ? (langMap[opts.languageCode] || opts.languageCode) : 'unknown';
+  const languageCode = resolved;
 
   const headers = {
     'api-subscription-key': apiKey,

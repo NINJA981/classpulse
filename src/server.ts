@@ -15,6 +15,7 @@ import sectionRoutes from './routes/sectionRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import studentQuizRouter from './routes/studentQuizRoutes.js';
+import liveQuizRouter from './routes/liveQuizRoutes.js';
 import { pipelineHealth } from './services/pipelineClient.js';
 import { pipelineRouter } from './routes/pipelineRoutes.js';
 import { seedDatabase } from './scripts/seed.js';
@@ -54,6 +55,7 @@ app.use('/api/sections', sectionRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/student/quizzes', studentQuizRouter);
+app.use('/api/live-quiz', liveQuizRouter);
 app.use('/v1', pipelineRouter);
 
 // Health check endpoint (includes pipeline sidecar connectivity)

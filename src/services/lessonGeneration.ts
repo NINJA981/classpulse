@@ -63,10 +63,13 @@ function toQuestionDoc(
     lessonId,
     type,
     stem: pq.question,
+    stemLocal: pq.questionLocal,
     options,
+    optionsLocal: pq.optionsLocal,
     correctIndex,
     correctText,
     explanation: pq.answerExplanation || '',
+    explanationLocal: pq.answerExplanationLocal,
     topicTag: subject,
     difficulty: mapDifficulty(pq.difficulty),
     status: 'draft', // teacher approves during review

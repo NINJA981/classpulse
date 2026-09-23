@@ -1,12 +1,40 @@
 import type { RefinedChunk, PipelineQuestion } from './types.js';
 import { detectTopics, TOPIC_LIBRARY } from './library.js';
 
-interface GenerateQuizParams {
+export interface GenerateQuizParams {
   subject: string;
   chunks: RefinedChunk[];
   questionCount: number;
   difficulty: 'easy' | 'medium' | 'hard';
+  language?: string;
 }
+
+export interface RemedialNoteItem {
+  questionId: string;
+  topic: string;
+  accuracyPct: number;
+  misconception: string;
+  remedialNote: string;
+  suggestedAction: string;
+  sourceTimestamp?: string;
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  'hi-IN': 'Hindi (हिन्दी)',
+  'hi': 'Hindi (हिन्दी)',
+  'ta-IN': 'Tamil (தமிழ்)',
+  'ta': 'Tamil (தமிழ்)',
+  'te-IN': 'Telugu (తెలుగు)',
+  'te': 'Telugu (తెలుగు)',
+  'kn-IN': 'Kannada (ಕನ್ನಡ)',
+  'kn': 'Kannada (ಕನ್ನಡ)',
+  'bn-IN': 'Bengali (বাংলা)',
+  'bn': 'Bengali (বাংলা)',
+  'mr-IN': 'Marathi (मराठी)',
+  'mr': 'Marathi (मराठी)',
+  'gu-IN': 'Gujarati (ગુજરાતી)',
+  'gu': 'Gujarati (ગુજરાતી)'
+};
 
 /**
  * Deterministically balances the position of correct answers across questions.
@@ -147,23 +175,39 @@ export async function generateQuiz(params: GenerateQuizParams): Promise<Pipeline
     .map((c, i) => `[Segment ${i + 1} (${c.startTime}s - ${c.endTime}s)]: ${c.refinedText.slice(0, 300)}`)
     .join('\n\n');
 
+  const langLabel = params.language && params.language !== 'en' && params.language !== 'en-IN'
+    ? LANGUAGE_LABELS[params.language] || params.language
+    : null;
+
+  const bilingualInstruction = langLabel
+    ? `\nCRITICAL MULTILINGUAL INSTRUCTION:
+The lecture is in or targeted for ${langLabel}.
+You MUST generate dual-language output:
+- "question": clear English stem
+- "questionLocal": accurate natural vernacular question in ${langLabel} (retain essential technical terms in brackets)
+- "options": English options array [{ "id": "opt_1", "text": "...", "isCorrect": true }, ...]
+- "optionsLocal": matching localized options array of strings in ${langLabel} in exact same index order ["...", "..."]
+- "answerExplanation": English explanation
+- "answerExplanationLocal": localized explanation in ${langLabel}`
+    : '';
+
   const systemPrompt = `You are an expert educational assessment author for high-school and undergraduate students.
 Generate ${params.questionCount} rigorous quiz questions grounded strictly in the provided lecture transcript.
 Output ONLY a JSON array of question objects with the schema:
 [
   {
     "type": "mcq" | "true_false",
-    "question": "Clear stem",
+    "question": "Clear stem in English",${langLabel ? '\n    "questionLocal": "Vernacular stem in ' + langLabel + '",' : ''}
     "options": [
       { "id": "opt_1", "text": "...", "isCorrect": true },
       { "id": "opt_2", "text": "...", "isCorrect": false }
-    ],
-    "answerExplanation": "Why the correct answer is right according to the lecture",
+    ],${langLabel ? '\n    "optionsLocal": ["Vernacular opt 1", "Vernacular opt 2"],' : ''}
+    "answerExplanation": "Why the correct answer is right according to the lecture",${langLabel ? '\n    "answerExplanationLocal": "Vernacular explanation in ' + langLabel + '",' : ''}
     "difficulty": "${params.difficulty}",
     "sourceStartTime": 0,
     "sourceEndTime": 30
   }
-]`;
+]${bilingualInstruction}`;
 
   const userPrompt = `Lecture Subject: ${params.subject}\n\nTranscript Chunks:\n${contextSummary}`;
 
@@ -174,8 +218,11 @@ Output ONLY a JSON array of question objects with the schema:
       const parsed = JSON.parse(cleaned) as Array<{
         type?: string;
         question: string;
+        questionLocal?: string;
         options: Array<{ id?: string; text: string; isCorrect: boolean }>;
+        optionsLocal?: string[];
         answerExplanation: string;
+        answerExplanationLocal?: string;
         difficulty?: string;
         sourceStartTime?: number;
         sourceEndTime?: number;
@@ -186,12 +233,15 @@ Output ONLY a JSON array of question objects with the schema:
           id: `q_${idx + 1}`,
           type: item.type === 'true_false' ? 'true_false' : 'mcq',
           question: item.question,
+          questionLocal: item.questionLocal,
           options: item.options.map((o, optIdx) => ({
             id: o.id || `opt_${optIdx + 1}`,
             text: o.text,
             isCorrect: Boolean(o.isCorrect)
           })),
+          optionsLocal: Array.isArray(item.optionsLocal) ? item.optionsLocal : undefined,
           answerExplanation: item.answerExplanation || '',
+          answerExplanationLocal: item.answerExplanationLocal,
           difficulty: item.difficulty || params.difficulty,
           source: {
             startTime: Number(item.sourceStartTime ?? params.chunks[0]?.startTime ?? 0),
@@ -206,6 +256,64 @@ Output ONLY a JSON array of question objects with the schema:
   }
 
   return generateHeuristicQuiz(params);
+}
+
+/**
+ * Generates targeted remedial notes for concept gaps.
+ */
+export async function generateRemedialNotes(
+  subject: string,
+  gaps: Array<{ questionId: string; stem: string; explanation: string; accuracyPct: number; citation?: string; excerpt?: string }>
+): Promise<RemedialNoteItem[]> {
+  if (gaps.length === 0) return [];
+
+  const systemPrompt = `You are an expert pedagogical diagnostician.
+Analyze the following lecture questions where students had low accuracy (<75%).
+For each question, output a targeted JSON array of remedial notes with the schema:
+[
+  {
+    "questionId": "id",
+    "topic": "Specific sub-concept name",
+    "accuracyPct": 40,
+    "misconception": "Common trap or misconception that led students to fail this question",
+    "remedialNote": "A concise, high-yield ~60 second refresher explanation grounded in the lecture",
+    "suggestedAction": "Actionable 1-line check or exercise for teacher/student to verify mastery"
+  }
+]`;
+
+  const userPrompt = `Subject: ${subject}\n\nIdentified Concept Gaps:\n${JSON.stringify(gaps, null, 2)}`;
+
+  const responseText = await callChatCompletion(systemPrompt, userPrompt);
+  if (responseText) {
+    try {
+      const cleaned = responseText.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((item) => ({
+          questionId: item.questionId || '',
+          topic: item.topic || subject,
+          accuracyPct: Number(item.accuracyPct ?? 50),
+          misconception: item.misconception || 'Misunderstood fundamental relationship between core variables.',
+          remedialNote: item.remedialNote || item.explanation || 'Review the core definitions and key relationship steps.',
+          suggestedAction: item.suggestedAction || 'Re-read the lecture excerpt and re-attempt the practice problem.',
+          sourceTimestamp: gaps.find((g) => g.questionId === item.questionId)?.citation
+        }));
+      }
+    } catch {
+      // Fall through to heuristic
+    }
+  }
+
+  // Heuristic fallback for remedial notes
+  return gaps.map((g) => ({
+    questionId: g.questionId,
+    topic: subject,
+    accuracyPct: g.accuracyPct,
+    misconception: 'Tendency to confuse foundational definitions with peripheral examples.',
+    remedialNote: g.excerpt || g.explanation || `Revisit key principles introduced for ${g.stem}. Recall how this directly connects to lecture examples.`,
+    suggestedAction: `Review citation ${g.citation || 'in lecture'} and solve 1 contrast problem.`,
+    sourceTimestamp: g.citation
+  }));
 }
 
 /**

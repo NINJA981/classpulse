@@ -2,8 +2,11 @@ export interface PipelineQuestion {
   id: string;
   type: string; // mcq | true_false | fill_in_the_blank | short_answer
   question: string;
+  questionLocal?: string;
   options: Array<{ id: string; text: string; isCorrect: boolean }>;
+  optionsLocal?: string[];
   answerExplanation: string;
+  answerExplanationLocal?: string;
   difficulty: string;
   source: { startTime: number; endTime: number; chunkIds: string[] };
 }

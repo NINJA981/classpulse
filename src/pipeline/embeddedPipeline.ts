@@ -96,7 +96,8 @@ export async function ingestLectureFileInProcess(params: IngestParams): Promise<
     subject: params.subject,
     chunks: refinedChunks,
     questionCount: params.questionCount || 5,
-    difficulty: params.difficulty || 'medium'
+    difficulty: params.difficulty || 'medium',
+    language: languageCode
   });
 
   // Summary generation
