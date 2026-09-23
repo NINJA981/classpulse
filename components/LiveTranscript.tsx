@@ -21,6 +21,11 @@ interface LiveTranscriptProps {
   active: boolean;
   /** BCP-47 code Sarvam accepts, or 'auto' for a code-mixed classroom. */
   language?: string;
+  /**
+   * When the lesson already exists, the captions save straight onto it. Without this they
+   * are parked as a session and claimed by the next createLesson.
+   */
+  lessonId?: string;
   /** Every finalised line, so the parent can keep the text after recording stops. */
   onFinalLine?: (line: string) => void;
 }
@@ -31,6 +36,7 @@ export default function LiveTranscript({
   stream,
   active,
   language = 'auto',
+  lessonId,
   onFinalLine,
 }: LiveTranscriptProps) {
   const [status, setStatus] = useState<Status>('idle');
@@ -70,7 +76,7 @@ export default function LiveTranscript({
       return;
     }
 
-    const url = liveTranscriptUrl({ language });
+    const url = liveTranscriptUrl({ language, lessonId });
     if (!url) {
       setStatus('signed-out');
       setMessage('Sign in to the live backend to use live captions.');
@@ -179,7 +185,7 @@ export default function LiveTranscript({
       cancelled = true;
       teardown();
     };
-  }, [active, stream, language, teardown]);
+  }, [active, stream, language, lessonId, teardown]);
 
   if (status === 'idle' && lines.length === 0) return null;
 

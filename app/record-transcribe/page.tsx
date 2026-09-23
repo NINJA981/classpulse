@@ -512,11 +512,13 @@ export default function RecordTranscribePage() {
             </div>
           </div>
 
-          {/* Live captions tap the same stream the recorder uses. */}
+          {/* Live captions tap the same stream the recorder uses. When the session came
+              from New Lesson the lesson already exists, so captions save straight onto it. */}
           <LiveTranscript
             stream={mediaStream}
             active={isRecording && !isPaused}
             language="auto"
+            lessonId={session.lessonId}
             onFinalLine={handleFinalLine}
           />
         </div>
