@@ -28,39 +28,6 @@ interface TranscriptSegment {
   text: string;
 }
 
-const SAMPLE_TRANSCRIPTION_STREAM: TranscriptSegment[] = [
-  {
-    id: 'seg_1',
-    timestamp: '00:04',
-    speaker: 'Prof. Sharma',
-    text: 'Good morning everyone. Today we are diving into cellular energetics, specifically focusing on the Citric Acid or Krebs Cycle.'
-  },
-  {
-    id: 'seg_2',
-    timestamp: '00:18',
-    speaker: 'Prof. Sharma',
-    text: 'Before we discuss the matrix reactions, let us review where pyruvate originates. Pyruvate is produced during glycolysis in the cytoplasm.'
-  },
-  {
-    id: 'seg_3',
-    timestamp: '00:35',
-    speaker: 'Prof. Sharma',
-    text: 'Upon entering the mitochondrial matrix through active transport, pyruvate undergoes oxidative decarboxylation, catalyzed by the pyruvate dehydrogenase complex.'
-  },
-  {
-    id: 'seg_4',
-    timestamp: '00:52',
-    speaker: 'Prof. Sharma',
-    text: 'Notice that one carbon atom is eliminated as carbon dioxide, while NAD+ is reduced to NADH + H+. The remaining two-carbon acetyl group bonds to coenzyme A.'
-  },
-  {
-    id: 'seg_5',
-    timestamp: '01:10',
-    speaker: 'Prof. Sharma',
-    text: 'This generates Acetyl-CoA, which delivers the acetyl group directly to oxaloacetate, yielding citrate and kickstarting our cycle.'
-  }
-];
-
 export default function RecordTranscribePage() {
   const router = useRouter();
 
@@ -74,7 +41,7 @@ export default function RecordTranscribePage() {
   const [audioLevel, setAudioLevel] = useState(30);
 
   // Transcripts
-  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>(SAMPLE_TRANSCRIPTION_STREAM);
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
   const [copiedNotification, setCopiedNotification] = useState(false);
 

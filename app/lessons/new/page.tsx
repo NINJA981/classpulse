@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SourcePicker, { SelectedSourceData } from '../../../components/SourcePicker';
@@ -19,10 +19,17 @@ export default function NewLessonPage() {
   const [className, setClassName] = useState('Grade 10 - Section B');
 
   // Live session options
-  const [roomCode, setRoomCode] = useState('BIO-10B-' + Math.floor(1000 + Math.random() * 9000));
+  // Empty on the server, filled in after mount. Math.random() runs once during the server
+  // render and again in the browser, and the two never agree — which is what breaks
+  // hydration.
+  const [roomCode, setRoomCode] = useState('');
   const [enableLiveTranscription, setEnableLiveTranscription] = useState(true);
   const [enableLiveQA, setEnableLiveQA] = useState(true);
   const [enableAttendancePrompt, setEnableAttendancePrompt] = useState(true);
+
+  useEffect(() => {
+    setRoomCode(`BIO-10B-${Math.floor(1000 + Math.random() * 9000)}`);
+  }, []);
 
   // Curriculum source picker
   const [selectedSource, setSelectedSource] = useState<SelectedSourceData | null>(null);
@@ -245,7 +252,7 @@ export default function NewLessonPage() {
                   <span style={{ fontWeight: 800, fontSize: '12px' }}>Student Room Access Code</span>
                 </div>
                 <div className="text-mono" style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '0.08em', padding: '6px 0' }}>
-                  {roomCode}
+                  {roomCode || '\u2014'}
                 </div>
                 <p className="text-secondary" style={{ fontSize: '11px' }}>
                   Share this code on classroom board for instant student joining.

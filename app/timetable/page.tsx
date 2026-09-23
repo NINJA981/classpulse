@@ -16,139 +16,6 @@ interface TimetableSlot {
   isLiveNow?: boolean;
 }
 
-const WEEKLY_SCHEDULE: TimetableSlot[] = [
-  // Monday
-  {
-    id: 'slot_mon_1',
-    day: 'Monday',
-    time: '09:00 - 10:15 AM',
-    timeSlotIndex: 0,
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    room: 'Room 304 (Life Sci Lab)',
-    topicPlanned: 'Cellular Respiration & Krebs Cycle',
-    isLiveNow: true
-  },
-  {
-    id: 'slot_mon_2',
-    day: 'Monday',
-    time: '10:30 - 11:45 AM',
-    timeSlotIndex: 1,
-    subject: 'Physics',
-    className: 'Grade 11 - Section A',
-    room: 'Lecture Hall B',
-    topicPlanned: 'Newtonian Gravitation'
-  },
-  {
-    id: 'slot_mon_4',
-    day: 'Monday',
-    time: '01:30 - 02:45 PM',
-    timeSlotIndex: 3,
-    subject: 'General Science',
-    className: 'Grade 9 - Section C',
-    room: 'Room 202',
-    topicPlanned: 'Periodic Table Trends'
-  },
-
-  // Tuesday
-  {
-    id: 'slot_tue_1',
-    day: 'Tuesday',
-    time: '09:00 - 10:15 AM',
-    timeSlotIndex: 0,
-    subject: 'Biology Lab',
-    className: 'Grade 10 - Section B',
-    room: 'Microscopy Lab 1',
-    topicPlanned: 'Mitochondrial Staining & Cell Osmosis'
-  },
-  {
-    id: 'slot_tue_3',
-    day: 'Tuesday',
-    time: '11:45 - 01:00 PM',
-    timeSlotIndex: 2,
-    subject: 'Advanced Physics',
-    className: 'Grade 11 - Advanced',
-    room: 'Physics Lab 3',
-    topicPlanned: 'Rotational Dynamics & Torque'
-  },
-
-  // Wednesday
-  {
-    id: 'slot_wed_1',
-    day: 'Wednesday',
-    time: '09:00 - 10:15 AM',
-    timeSlotIndex: 0,
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    room: 'Room 304',
-    topicPlanned: 'ATP Synthesis & Chemiosmosis'
-  },
-  {
-    id: 'slot_wed_2',
-    day: 'Wednesday',
-    time: '10:30 - 11:45 AM',
-    timeSlotIndex: 1,
-    subject: 'Physics',
-    className: 'Grade 11 - Section A',
-    room: 'Lecture Hall B',
-    topicPlanned: 'Keplerian Planetary Orbits'
-  },
-  {
-    id: 'slot_wed_4',
-    day: 'Wednesday',
-    time: '01:30 - 02:45 PM',
-    timeSlotIndex: 3,
-    subject: 'Faculty Office Hours',
-    className: 'All Students',
-    room: 'Faculty Cabin 14',
-    topicPlanned: 'Individual doubt clearing & quiz reviews'
-  },
-
-  // Thursday
-  {
-    id: 'slot_thu_2',
-    day: 'Thursday',
-    time: '10:30 - 11:45 AM',
-    timeSlotIndex: 1,
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    room: 'Room 304',
-    topicPlanned: 'Anaerobic Fermentation Pathways'
-  },
-  {
-    id: 'slot_thu_3',
-    day: 'Thursday',
-    time: '11:45 - 01:00 PM',
-    timeSlotIndex: 2,
-    subject: 'General Science',
-    className: 'Grade 9 - Section C',
-    room: 'Room 202',
-    topicPlanned: 'Ionic and Covalent Bonding'
-  },
-
-  // Friday
-  {
-    id: 'slot_fri_1',
-    day: 'Friday',
-    time: '09:00 - 10:15 AM',
-    timeSlotIndex: 0,
-    subject: 'Physics Lab',
-    className: 'Grade 11 - Section A',
-    room: 'Mechanics Lab',
-    topicPlanned: 'Pendulum Period & Gravity Calculation'
-  },
-  {
-    id: 'slot_fri_4',
-    day: 'Friday',
-    time: '01:30 - 02:45 PM',
-    timeSlotIndex: 3,
-    subject: 'Weekly Review & Quiz',
-    className: 'Grade 10 - Section B',
-    room: 'Room 304',
-    topicPlanned: 'Module 3 Comprehensive Fast Test'
-  }
-];
-
 const TIME_SLOTS = [
   { index: 0, label: '09:00 - 10:15' },
   { index: 1, label: '10:30 - 11:45' },
@@ -161,7 +28,9 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
 
 export default function TimetablePage() {
   const [selectedDay, setSelectedDay] = useState<string>('All');
-  const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(WEEKLY_SCHEDULE[0]);
+  // No timetable endpoint exists yet, so there is nothing to load. See the note on the page.
+  const WEEKLY_SCHEDULE: TimetableSlot[] = [];
+  const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null);
 
   const filteredSlots =
     selectedDay === 'All'

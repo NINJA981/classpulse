@@ -120,6 +120,15 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
     audioChunksRef.current = [];
 
     try {
+      // A browser only exposes the microphone on a secure origin: https, or localhost.
+      // Opening the portal by LAN IP over plain http removes navigator.mediaDevices
+      // entirely, which reads as "unsupported browser" unless we say what really happened.
+      if (typeof window !== 'undefined' && window.isSecureContext === false) {
+        throw new Error(
+          `Recording needs a secure connection. You are on ${window.location.origin}, and browsers only allow the microphone over https:// or on localhost. Open this page at http://localhost:3001, or serve it over https.`,
+        );
+      }
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Audio recording is not supported in this browser. Please use Chrome on Android or desktop.');
       }

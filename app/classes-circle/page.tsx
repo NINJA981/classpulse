@@ -34,15 +34,6 @@ interface StudentCircleMember {
   lastTestSubmitted: string;
 }
 
-const DEFAULT_MEMBERS: StudentCircleMember[] = [
-  { id: 'st_1', name: 'Ananya Harish', rollNo: '10B-01', circleGroup: 'Circle Alpha (Bioenergetics)', testAverage: 94, attendanceRate: 98, lastTestSubmitted: '100% (60s Blitz)' },
-  { id: 'st_2', name: 'Vikram Sethi', rollNo: '10B-02', circleGroup: 'Circle Alpha (Bioenergetics)', testAverage: 88, attendanceRate: 92, lastTestSubmitted: '100% (60s Blitz)' },
-  { id: 'st_3', name: 'Rohan Verma', rollNo: '10B-03', circleGroup: 'Circle Beta (Genetics)', testAverage: 76, attendanceRate: 88, lastTestSubmitted: '66% (60s Blitz)' },
-  { id: 'st_4', name: 'Pooja Nair', rollNo: '10B-04', circleGroup: 'Circle Beta (Genetics)', testAverage: 84, attendanceRate: 95, lastTestSubmitted: '100% (60s Blitz)' },
-  { id: 'st_5', name: 'Deepak Mohan', rollNo: '10B-05', circleGroup: 'Circle Gamma (Cellular Lab)', testAverage: 72, attendanceRate: 85, lastTestSubmitted: '33% (60s Blitz)' },
-  { id: 'st_6', name: 'Sanya Mirza', rollNo: '10B-06', circleGroup: 'Circle Gamma (Cellular Lab)', testAverage: 90, attendanceRate: 96, lastTestSubmitted: '100% (60s Blitz)' }
-];
-
 export default function ClassesCirclePage() {
   const [activeTab, setActiveTab] = useState<'fast_test' | 'circles'>('fast_test');
 
@@ -107,7 +98,7 @@ export default function ClassesCirclePage() {
 
   // CIRCLES STATE
   const [selectedCircleClass, setSelectedCircleClass] = useState('Grade 10 - Section B');
-  const [members, setMembers] = useState<StudentCircleMember[]>(DEFAULT_MEMBERS);
+  const [members, setMembers] = useState<StudentCircleMember[]>([]);
   const [newMemberName, setNewMemberName] = useState('');
   const [newRollNo, setNewRollNo] = useState('');
   const [newGroup, setNewGroup] = useState('Circle Alpha (Bioenergetics)');
@@ -474,6 +465,12 @@ export default function ClassesCirclePage() {
                 </tr>
               </thead>
               <tbody>
+                {members.length === 0 && (
+                  <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    No students in this circle yet. Rosters come from the admin console;
+                    this screen has no endpoint behind it yet.
+                  </div>
+                )}
                 {members.map((st) => (
                   <tr key={st.id}>
                     <td>

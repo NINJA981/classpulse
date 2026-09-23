@@ -1,3 +1,5 @@
+import { api } from './api';
+
 export interface TeacherProfile {
   id: string;
   name: string;
@@ -10,59 +12,67 @@ export interface TeacherProfile {
   assignedClasses: string[];
 }
 
-export const DEMO_TEACHER: TeacherProfile = {
-  id: 'tch_001',
-  name: 'Prof. Priya Sharma',
-  title: 'Associate Professor of Life Sciences',
-  email: 'priya.sharma@apex.edu',
-  department: 'Department of Natural Sciences',
-  institution: 'Apex Institute of Technology & Higher Learning',
-  initials: 'PS',
-  assignedClasses: [
-    'Grade 10 - Section B',
-    'Grade 11 - Section A',
-    'Grade 9 - Section C',
-    'Grade 11 - Advanced Physics'
-  ]
-};
-
 const AUTH_STORAGE_KEY = 'clasepulse_teacher_auth_v1';
+const JWT_STORAGE_KEY = 'clasepulse_jwt_token';
 
 export function isBrowser(): boolean {
   return typeof window !== 'undefined';
 }
 
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+/**
+ * The API returns an account, not the richer profile this UI shows. The fields it has no
+ * column for are left blank rather than filled in with something plausible.
+ */
+function toProfile(teacher: { id: string; name: string; email: string }): TeacherProfile {
+  return {
+    id: teacher.id,
+    name: teacher.name,
+    title: '',
+    email: teacher.email,
+    department: '',
+    institution: '',
+    initials: initialsOf(teacher.name),
+    assignedClasses: []
+  };
+}
+
+/** The signed-in teacher, or null. Never invents a session. */
 export function getAuthTeacher(): TeacherProfile | null {
   if (!isBrowser()) return null;
   try {
+    // The profile is only meaningful alongside the token every API call needs.
+    if (!localStorage.getItem(JWT_STORAGE_KEY)) return null;
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) {
-      // Default to demo teacher for friction-free first-time experience
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(DEMO_TEACHER));
-      return DEMO_TEACHER;
-    }
-    return JSON.parse(raw);
+    return raw ? (JSON.parse(raw) as TeacherProfile) : null;
   } catch {
-    return DEMO_TEACHER;
+    return null;
   }
 }
 
-export function loginTeacher(email: string, _password?: string): TeacherProfile {
-  if (!isBrowser()) return DEMO_TEACHER;
-  const profile: TeacherProfile = {
-    ...DEMO_TEACHER,
-    email: email.trim() || DEMO_TEACHER.email
-  };
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(profile));
+/** Signs in against the backend. Throws when the credentials do not match. */
+export async function loginTeacher(email: string, password: string): Promise<TeacherProfile> {
+  const result = await api.login(email, password);
+  const profile = toProfile(result.teacher);
+  if (isBrowser()) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(profile));
   return profile;
 }
 
 export function logoutTeacher(): void {
   if (!isBrowser()) return;
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(JWT_STORAGE_KEY);
 }
 
 export function isTeacherAuthenticated(): boolean {
   if (!isBrowser()) return false;
-  return !!localStorage.getItem(AUTH_STORAGE_KEY);
+  return !!localStorage.getItem(JWT_STORAGE_KEY);
 }

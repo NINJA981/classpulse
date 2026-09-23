@@ -43,124 +43,11 @@ interface SyllabusUnit {
   topics: SyllabusTopic[];
 }
 
-const INITIAL_MATERIALS: StudyMaterial[] = [
-  {
-    id: 'mat_1',
-    title: 'Krebs Cycle & Cellular Respiration Master Notes',
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    tag: 'Lecture Slide',
-    fileType: 'pdf',
-    sizeFormatted: '4.8 MB',
-    uploadedAt: '2026-09-20',
-    downloadUrl: '#'
-  },
-  {
-    id: 'mat_2',
-    title: 'Newtonian Dynamics & Orbital Mechanics Problem Set',
-    subject: 'Physics',
-    className: 'Grade 11 - Section A',
-    tag: 'Problem Set',
-    fileType: 'docx',
-    sizeFormatted: '1.2 MB',
-    uploadedAt: '2026-09-18',
-    downloadUrl: '#'
-  },
-  {
-    id: 'mat_3',
-    title: 'Periodic Trends & Electron Configurations Summary Chart',
-    subject: 'Chemistry',
-    className: 'Grade 9 - Section C',
-    tag: 'Reference Handout',
-    fileType: 'pdf',
-    sizeFormatted: '2.4 MB',
-    uploadedAt: '2026-09-15',
-    downloadUrl: '#'
-  },
-  {
-    id: 'mat_4',
-    title: 'Mitochondrial Staining Lab Protocol & Safety Sheet',
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    tag: 'Lab Manual',
-    fileType: 'pdf',
-    sizeFormatted: '850 KB',
-    uploadedAt: '2026-09-14',
-    downloadUrl: '#'
-  }
-];
-
-const INITIAL_SYLLABUS: Record<string, SyllabusUnit[]> = {
-  'Grade 10 - Biology': [
-    {
-      id: 'unit_1',
-      unitNumber: 1,
-      unitTitle: 'Cellular Structure & Transport Mechanics',
-      topics: [
-        { id: 'top_1_1', title: 'Cell Membrane Fluid Mosaic Model', hours: 4, status: 'completed' },
-        { id: 'top_1_2', title: 'Passive Diffusion, Osmosis & Tonicity', hours: 4, status: 'completed' },
-        { id: 'top_1_3', title: 'Active Transport & Sodium-Potassium Pumps', hours: 3, status: 'completed' }
-      ]
-    },
-    {
-      id: 'unit_2',
-      unitNumber: 2,
-      unitTitle: 'Cellular Energetics & Respiration',
-      topics: [
-        { id: 'top_2_1', title: 'Glycolysis: Energy Investment & Payoff', hours: 4, status: 'completed' },
-        { id: 'top_2_2', title: 'Citric Acid (Krebs) Cycle Kinetics', hours: 5, status: 'in_progress' },
-        { id: 'top_2_3', title: 'Electron Transport Chain & ATP Synthase', hours: 5, status: 'pending' },
-        { id: 'top_2_4', title: 'Anaerobic Lactic & Alcoholic Fermentation', hours: 3, status: 'pending' }
-      ]
-    },
-    {
-      id: 'unit_3',
-      unitNumber: 3,
-      unitTitle: 'Photosynthesis & Carbon Fixation',
-      topics: [
-        { id: 'top_3_1', title: 'Light Reactions & Photophosphorylation', hours: 4, status: 'pending' },
-        { id: 'top_3_2', title: 'Calvin Cycle & C3 Carbon Fixation', hours: 4, status: 'pending' },
-        { id: 'top_3_3', title: 'C4 & CAM Environmental Adaptations', hours: 3, status: 'pending' }
-      ]
-    },
-    {
-      id: 'unit_4',
-      unitNumber: 4,
-      unitTitle: 'Molecular Genetics & DNA Replication',
-      topics: [
-        { id: 'top_4_1', title: 'DNA Double Helix & Semi-Conservative Replication', hours: 4, status: 'pending' },
-        { id: 'top_4_2', title: 'Transcription & RNA Processing', hours: 4, status: 'pending' },
-        { id: 'top_4_3', title: 'Translation & Ribosomal Peptide Synthesis', hours: 4, status: 'pending' }
-      ]
-    }
-  ],
-  'Grade 11 - Physics': [
-    {
-      id: 'phy_1',
-      unitNumber: 1,
-      unitTitle: 'Classical Kinematics & Vectors',
-      topics: [
-        { id: 'p_1_1', title: '1D & 2D Vector Kinematics', hours: 6, status: 'completed' },
-        { id: 'p_1_2', title: 'Projectile Motion on Inclines', hours: 5, status: 'completed' }
-      ]
-    },
-    {
-      id: 'phy_2',
-      unitNumber: 2,
-      unitTitle: 'Newtonian Dynamics & Gravitation',
-      topics: [
-        { id: 'p_2_1', title: 'Friction & Circular Motion Dynamics', hours: 5, status: 'completed' },
-        { id: 'p_2_2', title: 'Universal Gravitation & Orbital Velocity', hours: 6, status: 'in_progress' }
-      ]
-    }
-  ]
-};
-
 export default function NotesSyllabusPage() {
   const [activeTab, setActiveTab] = useState<'materials' | 'syllabus'>('materials');
 
   // Materials State
-  const [materials, setMaterials] = useState<StudyMaterial[]>(INITIAL_MATERIALS);
+  const [materials, setMaterials] = useState<StudyMaterial[]>([]);
   const [newTitle, setNewTitle] = useState('');
   const [newSubject, setNewSubject] = useState('Biology');
   const [newClass, setNewClass] = useState('Grade 10 - Section B');
@@ -170,7 +57,7 @@ export default function NotesSyllabusPage() {
 
   // Syllabus State
   const [selectedCourse, setSelectedCourse] = useState('Grade 10 - Biology');
-  const [syllabusData, setSyllabusData] = useState(INITIAL_SYLLABUS);
+  const [syllabusData, setSyllabusData] = useState<Record<string, SyllabusUnit[]>>({});
 
   // Compute Syllabus Progress
   const currentUnits = syllabusData[selectedCourse] || [];
@@ -369,6 +256,11 @@ export default function NotesSyllabusPage() {
                 </tr>
               </thead>
               <tbody>
+                {materials.length === 0 && (
+                  <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    No materials uploaded yet. This screen has no endpoint behind it yet.
+                  </div>
+                )}
                 {materials.map((item) => (
                   <tr key={item.id}>
                     <td>

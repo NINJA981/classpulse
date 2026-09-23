@@ -29,61 +29,8 @@ interface StudentQuestion {
   topicTag: string;
 }
 
-const INITIAL_QUESTIONS: StudentQuestion[] = [
-  {
-    id: 'q_1',
-    studentName: 'Ananya Harish',
-    className: 'Grade 10 - Section B',
-    timestamp: '4m ago',
-    question:
-      'In the electron transport chain, does cyanide inhibit Complex IV (Cytochrome c oxidase) directly, and why does this block Complex I as well?',
-    upvotes: 11,
-    isPinned: true,
-    status: 'unanswered',
-    topicTag: 'Cellular Respiration'
-  },
-  {
-    id: 'q_2',
-    studentName: 'Vikram Sethi',
-    className: 'Grade 10 - Section B',
-    timestamp: '12m ago',
-    question:
-      'Why is the net yield of ATP from glycolysis stated as 2 ATP, when 4 ATP molecules are actually generated?',
-    upvotes: 8,
-    isPinned: false,
-    status: 'answered',
-    teacherReply:
-      'Remember the energy investment phase consumes 2 ATP to phosphorylate glucose into fructose-1,6-bisphosphate before cleavage. Hence 4 generated - 2 invested = 2 net ATP.',
-    topicTag: 'Glycolysis'
-  },
-  {
-    id: 'q_3',
-    studentName: 'Rohan Verma',
-    className: 'Grade 10 - Section B',
-    timestamp: '18m ago',
-    question:
-      'What happens to pyruvate if oxygen levels drop below the threshold in human muscle tissue?',
-    upvotes: 6,
-    isPinned: false,
-    status: 'unanswered',
-    topicTag: 'Anaerobic Metabolism'
-  },
-  {
-    id: 'q_4',
-    studentName: 'Pooja Nair',
-    className: 'Grade 10 - Section B',
-    timestamp: '25m ago',
-    question:
-      'Could you clarify the exact difference between substrate-level phosphorylation and oxidative phosphorylation?',
-    upvotes: 4,
-    isPinned: false,
-    status: 'unanswered',
-    topicTag: 'Bioenergetics'
-  }
-];
-
 export default function LiveQAPage() {
-  const [questions, setQuestions] = useState<StudentQuestion[]>(INITIAL_QUESTIONS);
+  const [questions, setQuestions] = useState<StudentQuestion[]>([]);
   const [filterMode, setFilterMode] = useState<'all' | 'unanswered' | 'pinned'>('all');
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');

@@ -19,135 +19,76 @@ import {
   BookOpen
 } from 'lucide-react';
 
+/**
+ * Only what a lesson actually carries. Attendance, materials counts and average scores
+ * have no source in the backend yet, so they are not shown rather than invented.
+ */
 interface ClassArchiveItem {
   id: string;
   title: string;
   subject: string;
   className: string;
   date: string;
-  durationMinutes: number;
-  attendanceRate: number; // e.g. 94%
+  durationMinutes?: number;
   hasRecording: boolean;
-  notesCount: number;
   quizStatus: 'Published' | 'Draft' | 'Graded';
-  averageScore?: number;
-  transcriptExcerpt: string;
 }
 
-const SAMPLE_ARCHIVES: ClassArchiveItem[] = [
-  {
-    id: 'arc_1',
-    title: 'Cellular Respiration & Krebs Cycle Kinetics',
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    date: '2026-09-21T09:00:00Z',
-    durationMinutes: 52,
-    attendanceRate: 94,
-    hasRecording: true,
-    notesCount: 3,
-    quizStatus: 'Graded',
-    averageScore: 82,
-    transcriptExcerpt:
-      'We begin today with pyruvate decarboxylation in the mitochondrial matrix. Notice how acetyl-CoA is transferred to oxaloacetate to form citrate. This condensation reaction yields two molecules of CO2...'
-  },
-  {
-    id: 'arc_2',
-    title: 'Newtonian Gravitation & Orbital Velocity',
-    subject: 'Physics',
-    className: 'Grade 11 - Section A',
-    date: '2026-09-20T11:30:00Z',
-    durationMinutes: 48,
-    attendanceRate: 88,
-    hasRecording: true,
-    notesCount: 2,
-    quizStatus: 'Published',
-    averageScore: 78,
-    transcriptExcerpt:
-      'Remember that gravitational potential energy is defined with respect to infinity as zero. The escape velocity formula derives directly from the conservation of mechanical energy...'
-  },
-  {
-    id: 'arc_3',
-    title: 'The Calvin Cycle & C4 Adaptations in Grasses',
-    subject: 'Biology',
-    className: 'Grade 10 - Section B',
-    date: '2026-09-19T09:00:00Z',
-    durationMinutes: 45,
-    attendanceRate: 96,
-    hasRecording: true,
-    notesCount: 4,
-    quizStatus: 'Graded',
-    averageScore: 85,
-    transcriptExcerpt:
-      'RuBisCO exhibits both carboxylase and oxygenase activity. In arid climates, photorespiration can waste up to 25% of energy, which is why Kranz anatomy evolved in C4 plants...'
-  },
-  {
-    id: 'arc_4',
-    title: 'Periodic Trends & Electronegativity Gradients',
-    subject: 'Chemistry',
-    className: 'Grade 9 - Section C',
-    date: '2026-09-18T14:00:00Z',
-    durationMinutes: 50,
-    attendanceRate: 91,
-    hasRecording: false,
-    notesCount: 2,
-    quizStatus: 'Published',
-    averageScore: 74,
-    transcriptExcerpt:
-      'Moving left to right across Period 3, atomic radius decreases because nuclear charge increases without adding a new electron shell...'
-  },
-  {
-    id: 'arc_5',
-    title: 'Simple Harmonic Motion & Damped Oscillations',
-    subject: 'Physics',
-    className: 'Grade 11 - Section A',
-    date: '2026-09-17T11:30:00Z',
-    durationMinutes: 55,
-    attendanceRate: 89,
-    hasRecording: true,
-    notesCount: 3,
-    quizStatus: 'Graded',
-    averageScore: 80,
-    transcriptExcerpt:
-      'For small angular displacements, sin(theta) is approximately theta in radians. This linear restoring force is what allows us to model a pendulum as an oscillator...'
-  }
-];
 
 export default function PreviousClassesPage() {
-  const [archives, setArchives] = useState<ClassArchiveItem[]>(SAMPLE_ARCHIVES);
+  const [archives, setArchives] = useState<ClassArchiveItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('All');
   const [selectedClass, setSelectedClass] = useState('All');
   const [activeModalItem, setActiveModalItem] = useState<ClassArchiveItem | null>(null);
 
-  // Load from API lessons as well
   useEffect(() => {
     api.getLessons()
       .then((res) => {
-        if (res.lessons && res.lessons.length > 0) {
-          const apiMapped: ClassArchiveItem[] = res.lessons.map((les, index) => ({
+        setArchives(
+          (res.lessons || []).map((les) => ({
             id: les._id,
             title: les.title,
             subject: les.subject,
             className: les.className,
             date: les.createdAt,
-            durationMinutes: 45 + (index * 5) % 20,
-            attendanceRate: 90 + (index * 3) % 10,
+            durationMinutes: les.sourceFile?.durationSec
+              ? Math.round(les.sourceFile.durationSec / 60)
+              : undefined,
             hasRecording: les.sourceType === 'audio',
-            notesCount: 2,
-            quizStatus: les.status === 'published' ? 'Published' : 'Draft',
-            averageScore: 81,
-            transcriptExcerpt:
-              'Curriculum transcript recorded and processed by ClasePulse Teacher Terminal transcription pipeline.'
-          }));
-
-          // Merge without duplicate IDs
-          const existingIds = new Set(SAMPLE_ARCHIVES.map((a) => a.id));
-          const additions = apiMapped.filter((m) => !existingIds.has(m.id));
-          setArchives([...SAMPLE_ARCHIVES, ...additions]);
-        }
+            quizStatus: les.status === 'published' ? 'Published' : 'Draft'
+          }))
+        );
       })
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
+
+  // The excerpt is the real transcript, fetched when a row is opened rather than stored
+  // on the archive row — most rows are never opened.
+  const [transcriptExcerpt, setTranscriptExcerpt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeModalItem) return;
+    setTranscriptExcerpt(null);
+
+    let cancelled = false;
+    api.getTranscript(activeModalItem.id)
+      .then((res) => {
+        if (cancelled) return;
+        const chosen =
+          res.transcripts.find((t) => t.source === res.selected) ?? res.transcripts[0];
+        setTranscriptExcerpt(chosen ? chosen.text.slice(0, 400) : '');
+      })
+      .catch(() => {
+        if (!cancelled) setTranscriptExcerpt('');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModalItem]);
 
   const filteredArchives = archives.filter((item) => {
     const matchesSearch =
@@ -276,7 +217,6 @@ export default function PreviousClassesPage() {
                           <Radio size={11} /> Audio Captured
                         </span>
                       )}
-                      <span>• {item.notesCount} materials</span>
                     </div>
                   </td>
 
@@ -291,19 +231,10 @@ export default function PreviousClassesPage() {
                       })}
                     </div>
                     <div className="text-secondary" style={{ fontSize: '11px' }}>
-                      {item.durationMinutes} minutes
+                      {item.durationMinutes ? `${item.durationMinutes} minutes` : '—'}
                     </div>
                   </td>
 
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Users size={13} className="text-secondary" />
-                      <span style={{ fontWeight: 700, fontSize: '13px' }}>{item.attendanceRate}%</span>
-                    </div>
-                    <div className="text-secondary" style={{ fontSize: '10px' }}>
-                      Verified
-                    </div>
-                  </td>
 
                   <td>
                     <span
@@ -321,11 +252,6 @@ export default function PreviousClassesPage() {
                     >
                       {item.quizStatus}
                     </span>
-                    {item.averageScore && (
-                      <div className="text-secondary text-mono" style={{ fontSize: '10px', marginTop: '2px' }}>
-                        Avg: {item.averageScore}%
-                      </div>
-                    )}
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
@@ -385,15 +311,15 @@ export default function PreviousClassesPage() {
             >
               <div>
                 <span className="eyebrow" style={{ fontSize: '8px', margin: 0 }}>DURATION</span>
-                <strong style={{ fontSize: '14px' }}>{activeModalItem.durationMinutes} min</strong>
+                <strong style={{ fontSize: '14px' }}>
+                  {activeModalItem.durationMinutes ? `${activeModalItem.durationMinutes} min` : '—'}
+                </strong>
               </div>
               <div>
-                <span className="eyebrow" style={{ fontSize: '8px', margin: 0 }}>ATTENDANCE</span>
-                <strong style={{ fontSize: '14px' }}>{activeModalItem.attendanceRate}%</strong>
-              </div>
-              <div>
-                <span className="eyebrow" style={{ fontSize: '8px', margin: 0 }}>QUIZ SCORE</span>
-                <strong style={{ fontSize: '14px' }}>{activeModalItem.averageScore || 80}%</strong>
+                <span className="eyebrow" style={{ fontSize: '8px', margin: 0 }}>RECORDING</span>
+                <strong style={{ fontSize: '14px' }}>
+                  {activeModalItem.hasRecording ? 'Audio' : 'Document'}
+                </strong>
               </div>
               <div>
                 <span className="eyebrow" style={{ fontSize: '8px', margin: 0 }}>STATUS</span>
@@ -427,7 +353,11 @@ export default function PreviousClassesPage() {
             <div className="card card-solid mb-3">
               <span className="eyebrow">AUTOMATED SPEECH TRANSCRIPTION EXCERPT</span>
               <p style={{ fontSize: '13px', lineHeight: 1.6, fontStyle: 'italic', color: '#222' }}>
-                "{activeModalItem.transcriptExcerpt}"
+                {transcriptExcerpt === null
+                  ? 'Loading transcript…'
+                  : transcriptExcerpt === ''
+                  ? 'No transcript yet — this lesson has not been transcribed.'
+                  : `"${transcriptExcerpt}"`}
               </p>
             </div>
 

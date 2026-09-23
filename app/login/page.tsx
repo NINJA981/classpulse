@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginTeacher, DEMO_TEACHER } from '../../lib/auth';
+import { loginTeacher } from '../../lib/auth';
 import { LogIn, Shield, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -28,9 +28,7 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-      // Simulate authentication
-      await new Promise((resolve) => setTimeout(resolve, 350));
-      loginTeacher(email, password);
+      await loginTeacher(email, password);
       router.push('/dashboard');
     } catch (err: any) {
       setErrorMessage(err?.message || 'Authentication failed. Please verify credentials.');
@@ -39,9 +37,10 @@ export default function LoginPage() {
     }
   };
 
+  // The account `npm run seed` creates in SIH-backend. Override with SEED_EMAIL/SEED_PASSWORD.
   const handleAutofillDemo = () => {
-    setEmail(DEMO_TEACHER.email);
-    setPassword('FacultyPass2026!');
+    setEmail('demo@clasepulse.test');
+    setPassword('demo-password-123');
     setErrorMessage('');
   };
 
@@ -221,7 +220,7 @@ export default function LoginPage() {
               style={{ width: '100%' }}
             >
               <Sparkles size={13} />
-              Autofill Demo Credentials ({DEMO_TEACHER.name})
+              Autofill Seeded Account
             </button>
             <p className="text-secondary" style={{ fontSize: '11px', marginTop: '8px' }}>
               Test account pre-linked to Department of Natural Sciences
