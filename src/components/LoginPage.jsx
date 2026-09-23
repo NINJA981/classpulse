@@ -8,29 +8,34 @@ import { useClassPulse } from '../context/ClassPulseContext';
 // launches the Admin Control Center directly in-app.
 export const LoginPage = () => {
   const { login } = useClassPulse();
-  const [adminEmail, setAdminEmail] = useState('admin@classpulse.edu');
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [error, setError] = useState('');
 
   const [isNavigating, setIsNavigating] = useState(false);
   const [navTargetLabel, setNavTargetLabel] = useState('');
 
   const ADMIN_TARGET_LABEL = 'Admin Control Center';
 
-  const handleAdminSubmit = (e) => {
+  const handleAdminSubmit = async (e) => {
     e.preventDefault();
+    if (!adminEmail.trim() || !adminPassword) {
+      setError('Enter your staff email and password.');
+      return;
+    }
+
+    setError('');
     setIsNavigating(true);
     setNavTargetLabel(ADMIN_TARGET_LABEL);
 
-    // Transition smoothly and authorize the session in-app
-    setTimeout(() => {
-      login({
-        name: 'System Administrator',
-        email: adminEmail || 'admin@classpulse.edu',
-        role: 'admin',
-        staffId: 'ADM-101'
-      });
+    try {
+      // A real sign-in: the console cannot read institution data without a staff token.
+      await login(adminEmail.trim(), adminPassword);
+    } catch (err) {
+      setError(err.message || 'That email and password do not match.');
+    } finally {
       setIsNavigating(false);
-    }, 400);
+    }
   };
 
 
@@ -75,9 +80,15 @@ export const LoginPage = () => {
             </div>
 
             <form onSubmit={handleAdminSubmit} className="space-y-4" suppressHydrationWarning>
+              {error && (
+                <div className="border-2 border-red-500 bg-red-50 text-red-900 rounded-lg p-3 text-xs font-bold">
+                  {error}
+                </div>
+              )}
+
               <div className="cp-field" suppressHydrationWarning>
                 <label className="cp-label">
-                  <span>Admin Email or Staff ID</span>
+                  <span>Staff Email</span>
                 </label>
                 <input
                   type="email"
@@ -86,7 +97,7 @@ export const LoginPage = () => {
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   className="cp-input"
-                  placeholder="admin@classpulse.edu"
+                  placeholder="you@school.edu"
                   suppressHydrationWarning
                 />
               </div>

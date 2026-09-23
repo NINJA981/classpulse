@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { onboardingApi } from '../../mock/onboardingApi';
+import { onboardingApi } from '../../lib/onboardingApi';
 
 export const CourseSyllabusView = ({ onProceedToSections }) => {
   const [courses, setCourses] = useState([]);
@@ -12,6 +12,7 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
     isOpen: false,
     course: null,
     pdfName: '',
+    pdfFile: null,
     copoName: '',
     isSubmitting: false,
     error: ''
@@ -77,6 +78,7 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
       isOpen: true,
       course,
       pdfName: course.syllabusFileName || '',
+      pdfFile: null,
       copoName: course.copoFileName || '',
       isSubmitting: false,
       error: ''
@@ -85,10 +87,12 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
 
   const handleSubmitUpload = async (e) => {
     e.preventDefault();
-    if (!uploadModal.pdfName && !uploadModal.copoName) {
+    if (!uploadModal.pdfFile) {
       setUploadModal((prev) => ({
         ...prev,
-        error: 'Please provide either a syllabus PDF or a CO-PO mapping sheet.'
+        error:
+          'Attach a syllabus CSV with unit, order, title, coTags and bloomLevel columns. ' +
+          'The server stores concepts, so a PDF cannot be parsed here yet.'
       }));
       return;
     }
@@ -96,11 +100,11 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
     setUploadModal((prev) => ({ ...prev, isSubmitting: true, error: '' }));
     try {
       await onboardingApi.uploadSyllabus(uploadModal.course.id, {
-        syllabusFileName: uploadModal.pdfName || 'Course_Syllabus.pdf',
-        copoFileName: uploadModal.copoName || 'CO_PO_Matrix.xlsx'
+        syllabusFile: uploadModal.pdfFile,
+        syllabusFileName: uploadModal.pdfName || 'syllabus.csv'
       });
       await fetchCourses();
-      setUploadModal({ isOpen: false, course: null, pdfName: '', copoName: '', isSubmitting: false, error: '' });
+      setUploadModal({ isOpen: false, course: null, pdfName: '', pdfFile: null, copoName: '', isSubmitting: false, error: '' });
     } catch (err) {
       setUploadModal((prev) => ({ ...prev, isSubmitting: false, error: err.message }));
     }
@@ -278,7 +282,7 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
               </div>
               <button
                 type="button"
-                onClick={() => setUploadModal({ isOpen: false, course: null, pdfName: '', copoName: '', isSubmitting: false, error: '' })}
+                onClick={() => setUploadModal({ isOpen: false, course: null, pdfName: '', pdfFile: null, copoName: '', isSubmitting: false, error: '' })}
                 className="text-lg font-bold text-muted hover:text-ink leading-none p-1"
               >
                 ×
@@ -309,7 +313,7 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
                         accept=".pdf"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) setUploadModal((prev) => ({ ...prev, pdfName: file.name }));
+                          if (file) setUploadModal((prev) => ({ ...prev, pdfName: file.name, pdfFile: file }));
                         }}
                         className="hidden"
                       />
@@ -325,7 +329,18 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
                     onClick={() =>
                       setUploadModal((prev) => ({
                         ...prev,
-                        pdfName: `${uploadModal.course.code}_Syllabus_Official_2026.pdf`
+                        pdfName: `${uploadModal.course.code}_concepts.csv`,
+                        // A real file, so the demo path exercises the same parse + upload.
+                        pdfFile: new File(
+                          [
+                            'unit,order,title,coTags,bloomLevel\n' +
+                              'Unit 1: Foundations,1,Core Axioms & Scope,CO1,L2 Understand\n' +
+                              'Unit 1: Foundations,2,Mathematical Formulations,CO1|CO2,L3 Apply\n' +
+                              'Unit 2: Applied,3,Algorithmic Optimization,CO3,L4 Analyze\n'
+                          ],
+                          `${uploadModal.course.code}_concepts.csv`,
+                          { type: 'text/csv' }
+                        )
                       }))
                     }
                     className="text-[10px] text-secondary underline hover:text-ink"
@@ -381,7 +396,7 @@ export const CourseSyllabusView = ({ onProceedToSections }) => {
               <div className="cp-modal-footer border-t border-border pt-3.5 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => setUploadModal({ isOpen: false, course: null, pdfName: '', copoName: '', isSubmitting: false, error: '' })}
+                  onClick={() => setUploadModal({ isOpen: false, course: null, pdfName: '', pdfFile: null, copoName: '', isSubmitting: false, error: '' })}
                   className="cp-btn cp-btn-secondary min-h-0 h-8 px-3 text-xs"
                 >
                   Cancel

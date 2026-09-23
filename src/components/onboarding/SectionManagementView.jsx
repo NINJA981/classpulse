@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { onboardingApi } from '../../mock/onboardingApi';
+import { onboardingApi } from '../../lib/onboardingApi';
 
 export const SectionManagementView = () => {
   const [courses, setCourses] = useState([]);

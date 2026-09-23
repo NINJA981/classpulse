@@ -2,6 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
+  clearSession,
+  getStoredUser,
+  isSignedIn,
+  login as apiLogin
+} from '../lib/apiClient';
+import {
   INITIAL_PI_NODES,
   INITIAL_TRANSCRIPTS,
   SAMPLE_GENERATED_QUIZ,
@@ -154,11 +160,22 @@ export const ClassPulseProvider = ({ children }) => {
     staffId: 'ADM-101'
   };
 
-  const login = (customUser = null) => {
+  /** Puts the console into its signed-in state once a token exists. */
+  const applySession = (user) => {
     setUserRole('admin');
     setIsLoggedIn(true);
-    setCurrentUser(customUser || ADMIN_USER);
+    setCurrentUser({ ...ADMIN_USER, ...(user || {}) });
     setActiveTab('management');
+  };
+
+  /**
+   * Signs in against the real backend. The console reads and writes live institution data,
+   * so it needs a staff token — there is no local-only session any more.
+   */
+  const login = async (email, password) => {
+    const teacher = await apiLogin(email, password);
+    applySession({ id: teacher.id, name: teacher.name, email: teacher.email, role: 'admin' });
+    return teacher;
   };
 
   // Port-based & URL-based Auto Detection for the Admin services
@@ -173,16 +190,25 @@ export const ClassPulseProvider = ({ children }) => {
       : undefined;
     setCurrentPort(port);
 
-    if (port === '5174' || port === '5173' || (port !== '5171' && port !== '') || search.includes('role=admin') || envRole === 'admin') {
-      login();
+    const wantsConsole =
+      port === '5174' ||
+      port === '5173' ||
+      (port !== '5171' && port !== '') ||
+      search.includes('role=admin') ||
+      envRole === 'admin';
+
+    // The console can no longer log itself in: every admin call needs a real token, so a
+    // stored session is required and its absence sends the browser to the login portal.
+    if (wantsConsole && isSignedIn()) {
+      applySession(getStoredUser());
     } else {
-      // Dedicated Admin Login Portal (Port 5171 / admin-login) or any other entry point
       setUserRole('admin');
       setIsLoggedIn(false);
     }
   }, []);
 
   const logout = () => {
+    clearSession();
     setIsLoggedIn(false);
     if (typeof window !== 'undefined' && window.location.port !== '5171') {
       const host = window.location.hostname || 'localhost';

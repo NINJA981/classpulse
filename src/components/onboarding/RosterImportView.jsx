@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { onboardingApi } from '../../mock/onboardingApi';
+import { onboardingApi } from '../../lib/onboardingApi';
 import { useClassPulse } from '../../context/ClassPulseContext';
 
 const CSV_SLOTS = [
@@ -83,6 +83,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
   // Acknowledgment toggle required before confirming
   const [errorsAcknowledged, setErrorsAcknowledged] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [importError, setImportError] = useState('');
   const [confirmResult, setConfirmResult] = useState(null);
 
   // Check if any slot is populated
@@ -97,19 +98,52 @@ export const RosterImportView = ({ onProceedToCourses }) => {
         [slotId]: {
           name: file.name,
           size: `${(file.size / 1024).toFixed(1)} KB`,
-          isUploaded: true
+          isUploaded: true,
+          // The rows are parsed and uploaded, so the File has to be kept, not just its name.
+          file
         }
       }));
     }
   };
 
+  /**
+   * Builds real CSV files in memory so the demo path exercises the same upload, parse and
+   * validation the real one does — including two rows that are meant to fail.
+   */
   const handleLoadSampleCSVs = () => {
+    const csv = (name, text) =>
+      new File([text], name, { type: 'text/csv' });
+
+    const slot = (file) => ({
+      name: file.name,
+      size: `${(file.size / 1024).toFixed(1)} KB`,
+      isUploaded: true,
+      file
+    });
+
     setUploadedSlots({
-      departments: { name: 'departments.csv', size: '14.2 KB', isUploaded: true },
-      teachers: { name: 'teachers.csv', size: '32.4 KB', isUploaded: true },
-      courses: { name: 'courses.csv', size: '28.6 KB', isUploaded: true },
-      sections: { name: 'sections.csv', size: '18.1 KB', isUploaded: true },
-      students: { name: 'students.csv', size: '94.8 KB', isUploaded: true }
+      departments: null,
+      teachers: slot(
+        csv(
+          'teachers.csv',
+          'name,email\nDr. Anitha Raman,anitha.r@apex.edu\nProf. David Lee,david.l@apex.edu\nKarthik S,karthik.s\n'
+        )
+      ),
+      courses: slot(
+        csv(
+          'courses.csv',
+          'title,code,outcomes\nData Structures & Algorithms,CS301,CO1|CO2\nDatabase Management Systems,CS304,CO1\n'
+        )
+      ),
+      sections: slot(
+        csv('sections.csv', 'courseCode,name\nCS301,Section A (Core)\nCS304,Section A (Morning)\n')
+      ),
+      students: slot(
+        csv(
+          'students.csv',
+          'name,rollNumber,phone\nPriya Ram,21CS094,+919000000031\nRahul Nair,21CS095,+919000000032\nMissing Roll,,\n'
+        )
+      )
     });
   };
 
@@ -121,32 +155,26 @@ export const RosterImportView = ({ onProceedToCourses }) => {
     setStage('job_status');
     setJobStatus('pending');
     setJobProgressPercent(20);
+    setImportError('');
 
     try {
+      setJobStatus('processing');
+      setJobProgressPercent(65);
+
+      // The server parses and validates in the same call, so the job comes back settled.
       const { importJobId } = await onboardingApi.uploadRoster(uploadedSlots);
       setJobId(importJobId);
 
-      // Simulate pipeline: pending -> processing -> done
-      setTimeout(async () => {
-        setJobStatus('processing');
-        setJobProgressPercent(65);
-        await onboardingApi.advanceJobProgress(importJobId, 'processing');
-
-        setTimeout(async () => {
-          setJobStatus('done');
-          setJobProgressPercent(100);
-          await onboardingApi.advanceJobProgress(importJobId, 'done');
-          const details = await onboardingApi.getImportStatus(importJobId);
-          setJobData(details);
-          setErrorsList(details.errors || []);
-          // Transition to review after a brief pause
-          setTimeout(() => {
-            setStage('review');
-          }, 800);
-        }, 1200);
-      }, 900);
+      const details = await onboardingApi.getImportStatus(importJobId);
+      setJobStatus('done');
+      setJobProgressPercent(100);
+      setJobData(details);
+      setErrorsList(details.errors || []);
+      setTimeout(() => setStage('review'), 600);
     } catch (err) {
       console.error(err);
+      setImportError(err.message || 'Could not start the import.');
+      setStage('upload');
     }
   };
 
@@ -159,26 +187,24 @@ export const RosterImportView = ({ onProceedToCourses }) => {
     setFixStatus((prev) => ({ ...prev, [index]: { loading: true, message: 'Validating against schema...' } }));
 
     try {
-      const res = await onboardingApi.fixImportRow(jobId || 'job-init-101', err.row, err.field, editVal);
-      if (res.resolved) {
-        setFixStatus((prev) => ({
-          ...prev,
-          [index]: { loading: false, message: '✓ Resolved & verified', resolved: true }
-        }));
-        // Update local error list
-        setErrorsList((prev) => prev.filter((item) => !(item.row === err.row && item.field === err.field)));
-        if (jobData) {
-          setJobData({
-            ...jobData,
-            successCount: (jobData.successCount || 177) + 1
-          });
-        }
-      } else {
-        setFixStatus((prev) => ({
-          ...prev,
-          [index]: { loading: false, message: `× ${res.message}`, resolved: false }
-        }));
-      }
+      const res = await onboardingApi.fixImportRow(jobId, err.kind, err.row, err.field, editVal);
+
+      // The server re-validates everything, so the authoritative error list is the one it
+      // just returned — fixing a duplicate can clear a second row as well as this one.
+      setErrorsList(res.errors || []);
+      setJobData((prev) =>
+        prev ? { ...prev, successCount: res.successCount, rowCount: res.rowCount } : prev
+      );
+
+      const stillFailing = (res.errors || []).some(
+        (item) => item.kind === err.kind && item.row === err.row && item.field === err.field
+      );
+      setFixStatus((prev) => ({
+        ...prev,
+        [index]: stillFailing
+          ? { loading: false, message: '× Still invalid', resolved: false }
+          : { loading: false, message: '✓ Resolved & verified', resolved: true }
+      }));
     } catch (apiErr) {
       setFixStatus((prev) => ({
         ...prev,
@@ -193,7 +219,7 @@ export const RosterImportView = ({ onProceedToCourses }) => {
     }
     setIsConfirming(true);
     try {
-      const result = await onboardingApi.confirmImport(jobId || 'job-init-101');
+      const result = await onboardingApi.confirmImport(jobId);
       if (addBulkStudents) addBulkStudents(BATCH_STUDENTS);
       if (addBulkTeachers) addBulkTeachers(BATCH_TEACHERS);
       setConfirmResult(result);
@@ -302,6 +328,12 @@ export const RosterImportView = ({ onProceedToCourses }) => {
             })}
           </div>
 
+          {importError && (
+            <div className="border-2 border-red-500 bg-red-50 text-red-900 rounded-lg p-3 text-xs font-bold">
+              {importError}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             <div className="text-xs text-muted">
               {allSlotsFilled
@@ -309,6 +341,9 @@ export const RosterImportView = ({ onProceedToCourses }) => {
                 : someSlotsFilled
                 ? 'Files staged. Ready to run bulk ingestion.'
                 : 'Select files or click "Pre-populate Demo CSVs" to begin.'}
+              {' '}
+              {/* departments.csv has no collection behind it yet, so it is parsed but not imported. */}
+              <span className="opacity-70">teachers, courses, sections and students are imported.</span>
             </div>
 
             <button
