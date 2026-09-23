@@ -108,7 +108,10 @@ export async function sarvamBatchTranscribe(
   const putRes = await fetch(uploadEntry.file_url, {
     method: 'PUT',
     body: new Uint8Array(file.buffer),
-    headers: { 'Content-Type': file.mimeType || 'application/octet-stream' },
+    headers: {
+      'Content-Type': file.mimeType || 'application/octet-stream',
+      'x-ms-blob-type': 'BlockBlob'
+    },
     signal: AbortSignal.timeout(300_000)
   });
 

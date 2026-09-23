@@ -85,13 +85,36 @@ studentQuizRouter.get('/:lessonId', async (req: Request, res: Response): Promise
   }
 });
 
-// POST /api/student/quizzes/:lessonId/submit — grade a submission server-side
-const submissions = new Map<string, unknown>(); // demo-grade store; swap for Mongo collection in prod
+// In-memory submissions store keyed by lessonId
+export interface StoredSubmission {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  studentName: string;
+  correct: number;
+  total: number;
+  scorePct: number;
+  submittedAt: string;
+  results: Array<{ questionId: string; isCorrect: boolean; correctIndex?: number; correctText?: string; explanation: string }>;
+}
 
+export const quizSubmissions = new Map<string, StoredSubmission[]>();
+
+// GET /api/student/quizzes/:lessonId/submissions — list student submissions for this lesson
+studentQuizRouter.get('/:lessonId/submissions', (req: Request, res: Response): void => {
+  const { lessonId } = req.params;
+  const list = quizSubmissions.get(String(lessonId)) || [];
+  res.status(200).json({ submissions: list });
+});
+
+// POST /api/student/quizzes/:lessonId/submit — grade a submission server-side
 studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response): Promise<void> => {
   try {
     const { lessonId } = req.params;
-    const { answers } = req.body as { answers?: Array<{ questionId: string; selectedOption?: number; text?: string }> };
+    const { answers, studentName } = req.body as {
+      answers?: Array<{ questionId: string; selectedOption?: number; text?: string }>;
+      studentName?: string;
+    };
 
     if (!Array.isArray(answers) || answers.length === 0) {
       res.status(400).json({ error: 'answers array is required' });
@@ -112,7 +135,7 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
       if (!q) continue;
 
       if (q.type === 'short') {
-        // Keyword-overlap grading for short answers (teacher can review manually too)
+        // Keyword-overlap grading for short answers
         const expected = (q.correctText || '').toLowerCase().split(/\W+/).filter((w) => w.length > 4);
         const given = (answer.text || '').toLowerCase().split(/\W+/);
         const hits = expected.filter((w) => given.includes(w)).length;
@@ -127,15 +150,22 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
     }
 
     const scorePct = answers.length > 0 ? Math.round((correct / answers.length) * 100) : 0;
-    const payload = {
-      lessonId,
+    const payload: StoredSubmission = {
+      id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      lessonId: String(lessonId),
       lessonTitle: lesson.title,
+      studentName: studentName || 'Student 1',
       correct,
       total: answers.length,
       scorePct,
+      submittedAt: new Date().toISOString(),
       results
     };
-    submissions.set(String(lessonId), payload);
+
+    const list = quizSubmissions.get(String(lessonId)) || [];
+    list.unshift(payload);
+    quizSubmissions.set(String(lessonId), list);
+
     res.status(200).json(payload);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

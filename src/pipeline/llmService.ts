@@ -136,8 +136,15 @@ async function callChatCompletion(systemPrompt: string, userPrompt: string): Pro
  * Generates quiz questions using LLM with heuristic fallback.
  */
 export async function generateQuiz(params: GenerateQuizParams): Promise<PipelineQuestion[]> {
-  const contextSummary = params.chunks
-    .map((c, i) => `[Chunk ${i + 1} (${c.startTime}s - ${c.endTime}s)]: ${c.refinedText}`)
+  // Economical token management: sample up to 10 representative chunks across the lecture
+  let selectedChunks = params.chunks;
+  if (selectedChunks.length > 10) {
+    const step = selectedChunks.length / 10;
+    selectedChunks = Array.from({ length: 10 }, (_, i) => selectedChunks[Math.floor(i * step)]);
+  }
+
+  const contextSummary = selectedChunks
+    .map((c, i) => `[Segment ${i + 1} (${c.startTime}s - ${c.endTime}s)]: ${c.refinedText.slice(0, 300)}`)
     .join('\n\n');
 
   const systemPrompt = `You are an expert educational assessment author for high-school and undergraduate students.

@@ -173,7 +173,13 @@ export async function approveLesson(req: Request, res: Response): Promise<void> 
     lesson.status = 'published';
     await lesson.save();
 
-    res.status(200).json({ success: true, lesson });
+    res.status(200).json({
+      success: true,
+      lessonId: String(lesson._id),
+      publishedAt: lesson.updatedAt,
+      approvedQuestionsCount: approvedCount,
+      lesson
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

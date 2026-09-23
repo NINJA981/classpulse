@@ -29,12 +29,21 @@ const upload = multer({
   }
 });
 
+import { quizSubmissions } from './studentQuizRoutes.js';
+
 router.get('/', getLessons);
 router.post('/', createLesson);
 router.get('/:id', getLessonById);
 router.get('/:id/questions', getLessonQuestions);
 router.post('/:id/source', upload.single('file'), attachSource);
 router.post('/:id/generate', generateLesson);
+router.post('/:id/regenerate', generateLesson);
 router.post('/:id/approve', approveLesson);
+router.post('/:id/publish', approveLesson);
+router.get('/:id/submissions', (req, res) => {
+  const { id } = req.params;
+  const list = quizSubmissions.get(String(id)) || [];
+  res.status(200).json({ submissions: list });
+});
 
 export default router;
