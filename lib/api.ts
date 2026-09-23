@@ -240,12 +240,33 @@ export const api = {
   /**
    * POST /api/lessons
    */
-  async createLesson({ title, subject, className, sectionId, liveSessionId }: { title: string; subject: string; className: string; sectionId?: string; liveSessionId?: string }) {
+  async createLesson({
+    title,
+    subject,
+    className,
+    sectionId,
+    language,
+    liveSessionId
+  }: {
+    title: string;
+    subject: string;
+    className: string;
+    sectionId?: string;
+    language?: string;
+    liveSessionId?: string;
+  }) {
     // Claim whatever the recorder captured live, unless the caller passed one explicitly.
     const claimedSession = liveSessionId ?? takeLiveSession();
     const { lesson } = await request<{ lesson: Lesson }>('/lessons', {
       method: 'POST',
-      body: JSON.stringify({ title, subject, className, sectionId, liveSessionId: claimedSession })
+      body: JSON.stringify({
+        title,
+        subject,
+        className,
+        sectionId,
+        language: language || 'en',
+        liveSessionId: claimedSession
+      })
     });
     return normalizeLesson(lesson);
   },
@@ -377,4 +398,63 @@ export const api = {
       approvedQuestionsCount: questions.filter((q) => q.status === 'approved').length
     };
   },
+
+
+  /**
+   * GET /api/lessons/:id/submissions
+   */
+  async getLessonSubmissions(lessonId: string): Promise<{ submissions: any[] }> {
+    return request<{ submissions: any[] }>(`/lessons/${lessonId}/submissions`);
+  },
+
+  /**
+   * POST /api/live-quiz/create
+   */
+  async createLiveQuizSession(lessonId: string): Promise<{ success: boolean; pin: string; lessonId: string; title: string; questionCount: number }> {
+    return request<{ success: boolean; pin: string; lessonId: string; title: string; questionCount: number }>('/live-quiz/create', {
+      method: 'POST',
+      body: JSON.stringify({ lessonId })
+    });
+  },
+
+  /**
+   * GET /api/lessons/:id/analytics
+   */
+  async getLessonAnalytics(lessonId: string): Promise<{
+    lessonId: string;
+    lessonTitle: string;
+    subject: string;
+    className: string;
+    totalSubmissions: number;
+    classAveragePct: number;
+    criticalGapsCount: number;
+    moderateGapsCount: number;
+    masteredCount: number;
+    questions: Array<{
+      questionId: string;
+      stem: string;
+      stemLocal?: string;
+      topicTag: string;
+      difficulty: string;
+      totalAttempts: number;
+      correctAttempts: number;
+      accuracyPct: number;
+      status: 'critical' | 'moderate' | 'mastered';
+      sourceCitation?: string;
+      explanation: string;
+      explanationLocal?: string;
+    }>;
+    remedialNotes: Array<{
+      questionId: string;
+      topic: string;
+      accuracyPct: number;
+      misconception: string;
+      remedialNote: string;
+      suggestedAction: string;
+      sourceTimestamp?: string;
+    }>;
+  }> {
+        return request(`/lessons/${lessonId}/analytics`);
+  }
+
 };

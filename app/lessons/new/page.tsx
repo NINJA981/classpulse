@@ -17,6 +17,7 @@ export default function NewLessonPage() {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
 
+
   // The real section directory. A lesson published without a sectionId never shows up in
   // any student's quiz list, so the picker offers actual sections instead of invented labels.
   const [sections, setSections] = useState<
@@ -44,6 +45,19 @@ export default function NewLessonPage() {
   }, []);
 
   const selectedSection = sections.find((s) => s.id === sectionId) ?? null;
+  const [language, setLanguage] = useState('en-IN');
+
+  const languageOptions = [
+    { code: 'en-IN', label: 'English (Indian English)' },
+    { code: 'hi-IN', label: 'Hindi — हिन्दी' },
+    { code: 'ta-IN', label: 'Tamil — தமிழ்' },
+    { code: 'te-IN', label: 'Telugu — తెలుగు' },
+    { code: 'kn-IN', label: 'Kannada — ಕನ್ನಡ' },
+    { code: 'bn-IN', label: 'Bengali — বাংলা' },
+    { code: 'mr-IN', label: 'Marathi — मराठी' },
+    { code: 'gu-IN', label: 'Gujarati — ગુજરાતી' }
+  ];
+
 
   // Live session options
   // Empty on the server, filled in after mount. Math.random() runs once during the server
@@ -87,7 +101,8 @@ export default function NewLessonPage() {
         title: title.trim(),
         subject: subject.trim(),
         className: selectedSection.name,
-        sectionId: selectedSection.id
+        sectionId: selectedSection.id,
+        language
       });
 
       // Save live session config to localStorage for record-transcribe
@@ -144,7 +159,8 @@ export default function NewLessonPage() {
         title: title.trim(),
         subject: subject.trim(),
         className: selectedSection.name,
-        sectionId: selectedSection.id
+        sectionId: selectedSection.id,
+        language
       });
 
       // 2. Attach the source file
@@ -232,7 +248,7 @@ export default function NewLessonPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" htmlFor="live-subject">
                   Subject
@@ -264,6 +280,24 @@ export default function NewLessonPage() {
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} — {s.joinCode}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="live-language">
+                  Lecture Language
+                </label>
+                <select
+                  id="live-language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -376,7 +410,7 @@ export default function NewLessonPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" htmlFor="curriculum-subject">
                   Subject
@@ -408,6 +442,24 @@ export default function NewLessonPage() {
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} — {s.joinCode}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" htmlFor="curriculum-language">
+                  Target Language
+                </label>
+                <select
+                  id="curriculum-language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>

@@ -15,6 +15,8 @@ export default function LessonReviewPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Card-level inline edit state
@@ -52,14 +54,18 @@ export default function LessonReviewPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [lessonRes, questionsRes] = await Promise.all([
+      const [lessonRes, questionsRes, subRes, analyticsRes] = await Promise.all([
         api.getLesson(id),
-        api.getLessonQuestions(id)
+        api.getLessonQuestions(id),
+        api.getLessonSubmissions(id).catch(() => ({ submissions: [] })),
+        api.getLessonAnalytics(id).catch(() => null)
       ]);
 
       setLesson(lessonRes);
       setQuestions(questionsRes.questions || []);
       setAssignment(questionsRes.assignment || null);
+      setSubmissions(subRes?.submissions || []);
+      setAnalytics(analyticsRes);
     } catch (err) {
       console.error('Failed to load review data:', err);
     } finally {
@@ -316,6 +322,16 @@ export default function LessonReviewPage() {
               ? 'Publishing…'
               : 'Publish to Students'}
           </button>
+
+          {lesson?.status === 'published' && (
+            <Link
+              href={`/lessons/${id}/live-host`}
+              className="btn btn-primary"
+              style={{ background: '#10b981', borderColor: '#059669', color: '#fff', fontWeight: 800 }}
+            >
+              ⚡ Launch Live Quiz
+            </Link>
+          )}
         </div>
       </div>
 
@@ -402,6 +418,243 @@ export default function LessonReviewPage() {
 
       {/* What the class actually said — the questions were written from this. */}
       {id && <TranscriptPanel lessonId={id} />}
+
+      {/* Live Student Quiz Submissions & Diagnostic Concept Heatmap (When published) */}
+      {lesson?.status === 'published' && (
+        <div
+          className="card mb-4"
+          style={{
+            border: '2px solid var(--ink)',
+            background: '#faf9f6',
+            padding: '1.5rem'
+          }}
+        >
+          {/* Header */}
+          <div className="flex-between mb-3">
+            <div>
+              <span className="eyebrow" style={{ color: 'var(--ink)' }}>
+                DIAGNOSTIC ANALYTICS & CONCEPT MASTERY
+              </span>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, marginTop: '2px' }}>
+                Class Mastery Heatmap & AI Remedial Notes
+              </h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link
+                href={`/lessons/${id}/live-host`}
+                className="btn btn-sm btn-primary"
+                style={{ background: '#10b981', borderColor: '#059669', color: '#fff', fontWeight: 800 }}
+              >
+                ⚡ Launch Live In-Class Quiz
+              </Link>
+            </div>
+          </div>
+
+          {/* Aggregate Metrics Bar */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '12px',
+              marginBottom: '1.5rem'
+            }}
+          >
+            <div style={{ padding: '12px 14px', background: '#fff', border: '1px solid var(--hairline)', borderRadius: '6px' }}>
+              <span className="eyebrow" style={{ fontSize: '10px' }}>CLASS MASTERY</span>
+              <p style={{ fontSize: '1.6rem', fontWeight: 900, margin: '2px 0 0 0' }}>
+                {analytics?.classAveragePct ?? (submissions.length > 0 ? Math.round(submissions.reduce((a, b) => a + b.scorePct, 0) / submissions.length) : 0)}%
+              </p>
+              <span className="text-secondary" style={{ fontSize: '11px' }}>
+                {submissions.length} total attempt{submissions.length === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            <div style={{ padding: '12px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px' }}>
+              <span className="eyebrow" style={{ fontSize: '10px', color: '#dc2626' }}>CRITICAL GAPS (&lt;50%)</span>
+              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#dc2626', margin: '2px 0 0 0' }}>
+                {analytics?.criticalGapsCount ?? 0}
+              </p>
+              <span className="text-secondary" style={{ fontSize: '11px' }}>Requires immediate review</span>
+            </div>
+
+            <div style={{ padding: '12px 14px', background: '#fefce8', border: '1px solid #fef08a', borderRadius: '6px' }}>
+              <span className="eyebrow" style={{ fontSize: '10px', color: '#ca8a04' }}>MODERATE GAPS (50-75%)</span>
+              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ca8a04', margin: '2px 0 0 0' }}>
+                {analytics?.moderateGapsCount ?? 0}
+              </p>
+              <span className="text-secondary" style={{ fontSize: '11px' }}>Concept refresher helpful</span>
+            </div>
+
+            <div style={{ padding: '12px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px' }}>
+              <span className="eyebrow" style={{ fontSize: '10px', color: '#16a34a' }}>MASTERED (&gt;75%)</span>
+              <p style={{ fontSize: '1.6rem', fontWeight: 900, color: '#16a34a', margin: '2px 0 0 0' }}>
+                {analytics?.masteredCount ?? questions.length}
+              </p>
+              <span className="text-secondary" style={{ fontSize: '11px' }}>Solid understanding</span>
+            </div>
+          </div>
+
+          {/* Question Heatmap Cards */}
+          <div className="mb-4">
+            <span className="eyebrow" style={{ marginBottom: '8px', display: 'block' }}>
+              CONCEPT ACCURACY HEATMAP (BY QUESTION)
+            </span>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
+              {(analytics?.questions || questions).map((q: any, qIdx: number) => {
+                const acc = q.accuracyPct ?? 100;
+                const statusColor = acc < 50 ? '#ef4444' : acc < 75 ? '#f59e0b' : '#10b981';
+                const statusBg = acc < 50 ? '#fef2f2' : acc < 75 ? '#fffbeb' : '#f0fdf4';
+
+                return (
+                  <div
+                    key={q.questionId || q._id || qIdx}
+                    style={{
+                      border: `2px solid ${statusColor}`,
+                      background: statusBg,
+                      borderRadius: '6px',
+                      padding: '12px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '12px' }}>Q{qIdx + 1}: {q.topicTag || 'Concept'}</span>
+                      <span
+                        style={{
+                          fontWeight: 900,
+                          fontSize: '11px',
+                          color: statusColor,
+                          background: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: `1px solid ${statusColor}`
+                        }}
+                      >
+                        {q.totalAttempts > 0 ? `${acc}% accuracy` : 'Pending attempts'}
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: '12px', fontWeight: 600, margin: '4px 0', lineHeight: 1.4 }} className="line-clamp-2">
+                      {q.stem}
+                    </p>
+
+                    <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', margin: '8px 0 4px 0' }}>
+                      <div
+                        style={{
+                          width: `${q.totalAttempts > 0 ? acc : 100}%`,
+                          height: '100%',
+                          background: statusColor
+                        }}
+                      />
+                    </div>
+
+                    {q.sourceCitation && (
+                      <span className="text-secondary" style={{ fontSize: '10px' }}>
+                        📍 {q.sourceCitation}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* AI Remedial Refresher Notes */}
+          {analytics?.remedialNotes && analytics.remedialNotes.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
+              <span className="eyebrow" style={{ color: '#0284c7', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                ✨ TARGETED AI REMEDIAL REFRESHERS (BASED ON LECTURE TRANSCRIPT)
+              </span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {analytics.remedialNotes.map((rem: any, rIdx: number) => (
+                  <div
+                    key={rem.questionId || rIdx}
+                    style={{
+                      background: '#fff',
+                      border: '1px solid #cbd5e1',
+                      borderLeft: '4px solid #0284c7',
+                      borderRadius: '6px',
+                      padding: '12px 16px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a' }}>
+                        Concept: {rem.topic}
+                      </span>
+                      {rem.sourceTimestamp && (
+                        <span className="badge badge-ink" style={{ fontSize: '10px' }}>
+                          Timestamp: {rem.sourceTimestamp}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626' }}>ROOT MISCONCEPTION: </span>
+                      <span style={{ fontSize: '12px', color: '#334155' }}>{rem.misconception}</span>
+                    </div>
+
+                    <div style={{ marginBottom: '6px', background: '#f8fafc', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#0284c7' }}>~60s REFRESHER EXPLANATION: </span>
+                      <p style={{ fontSize: '12px', color: '#1e293b', margin: '2px 0 0 0', lineHeight: 1.4 }}>
+                        {rem.remedialNote}
+                      </p>
+                    </div>
+
+                    <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
+                      💡 Recommended Action: {rem.suggestedAction}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Student Submissions List */}
+          <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: '1.25rem' }}>
+            <span className="eyebrow" style={{ marginBottom: '8px', display: 'block' }}>
+              INDIVIDUAL STUDENT SUBMISSIONS ({submissions.length})
+            </span>
+
+            {submissions.length === 0 ? (
+              <p className="text-secondary" style={{ fontSize: '13px' }}>
+                No student submissions yet. Students can access this quiz in their student portal or via Live In-Class Quiz.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {submissions.map((sub, sIdx) => (
+                  <div
+                    key={sub.id || sIdx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: '#fff',
+                      border: '1px solid var(--hairline)',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '13px' }}>{sub.studentName}</span>
+                      <span className="text-secondary" style={{ fontSize: '11px' }}>
+                        {new Date(sub.submittedAt).toLocaleTimeString()} • {sub.correct}/{sub.total} correct
+                      </span>
+                    </div>
+                    <span
+                      className={`status-pill ${
+                        sub.scorePct >= 70 ? 'status-pill-ready' : sub.scorePct >= 40 ? 'status-pill-draft' : 'status-pill-failed'
+                      }`}
+                      style={{ fontWeight: 800 }}
+                    >
+                      {sub.scorePct}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Question Cards Stack */}
       <div>
