@@ -11,6 +11,7 @@ export interface LessonQuizSummary {
   title: string;
   subject: string;
   className: string;
+  language?: string;
   questionCount: number;
   summary: string | null;
   keyTakeaways: string[];
@@ -24,6 +25,7 @@ export interface LessonQuizDetail {
   title: string;
   subject: string;
   className: string;
+  language?: string;
   summary: string | null;
   keyTakeaways: string[];
   questions: Array<{
@@ -31,7 +33,9 @@ export interface LessonQuizDetail {
     id: string;
     type: "mcq" | "truefalse" | "short";
     stem: string;
+    stemLocal?: string | null;
     options: string[];
+    optionsLocal?: string[] | null;
     difficulty: string;
     sourceCitation: string | null;
   }>;
@@ -49,6 +53,7 @@ export interface LessonQuizResult {
     correctIndex?: number;
     correctText?: string;
     explanation: string;
+    explanationLocal?: string | null;
   }>;
 }
 

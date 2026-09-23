@@ -124,6 +124,55 @@ export default function QuizzesPage() {
         </div>
       </header>
 
+      {/* Live PIN Join Banner */}
+      <section className="mt-4 mb-2">
+        <div className="hypercard-static p-4 sm:p-6 bg-gradient-to-r from-sky-50 via-white to-emerald-50 border-2 border-ink">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500 text-white font-black text-xl shadow">
+                ⚡
+              </div>
+              <div>
+                <span className="cp-sticker">Kahoot / Quizizz In-Class Mode</span>
+                <h3 className="cp-h-card text-lg sm:text-xl font-black mt-0.5">
+                  Have a 6-digit Game PIN?
+                </h3>
+                <p className="text-xs text-ink/70">
+                  Join your teacher's real-time in-class arena and compete on the podium!
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.currentTarget as HTMLFormElement;
+                const pinInput = (form.elements.namedItem("pin") as HTMLInputElement)?.value;
+                if (pinInput && pinInput.trim()) {
+                  window.location.href = `/quizzes/live?pin=${pinInput.trim()}`;
+                }
+              }}
+              className="flex items-center gap-2 w-full sm:w-auto"
+            >
+              <input
+                name="pin"
+                type="text"
+                maxLength={6}
+                placeholder="PIN"
+                className="w-36 rounded-xl border-2 border-ink/20 bg-white px-3 py-2 text-center font-mono font-black tracking-widest text-lg outline-none focus:border-sky-500"
+                required
+              />
+              <button
+                type="submit"
+                className="ui-button ui-button-primary ui-button-sm whitespace-nowrap px-4 py-2 font-black cursor-pointer"
+              >
+                Join Live →
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* Summary (always mounted so the frame is stable while loading) */}
       <section className="cp-grid-3" aria-label="Summary">
 

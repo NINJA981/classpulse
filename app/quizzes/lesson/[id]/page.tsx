@@ -35,6 +35,7 @@ export default function LessonQuizPlayerPage() {
   const [answers, setAnswers] = useState<Record<string, { selectedOption?: number; text?: string }>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<LessonQuizResult | null>(null);
+  const [useVernacular, setUseVernacular] = useState(false);
 
   useEffect(() => {
     if (!lessonId) return;
@@ -44,6 +45,10 @@ export default function LessonQuizPlayerPage() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [lessonId]);
+
+  const hasVernacular = Boolean(
+    quiz?.questions.some((q) => Boolean(q.stemLocal)) || (quiz?.language && quiz?.language !== "en")
+  );
 
   if (loading) {
     return (
@@ -88,6 +93,19 @@ export default function LessonQuizPlayerPage() {
                 {result.correct} of {result.total} correct on <strong>{quiz.title}</strong>
               </p>
             </div>
+            {hasVernacular && (
+              <div className="cp-hero__pills">
+                <button
+                  type="button"
+                  onClick={() => setUseVernacular(!useVernacular)}
+                  className={`ui-pill font-bold transition cursor-pointer ${
+                    useVernacular ? "ui-pill-mint" : "ui-pill-dark"
+                  }`}
+                >
+                  🌐 {useVernacular ? "Switch to English" : "Switch to Vernacular"}
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -96,6 +114,10 @@ export default function LessonQuizPlayerPage() {
             {quiz.questions.map((q) => {
               const r = result.results.find((x) => x.questionId === q.id);
               const given = answers[q.id];
+              const stemDisplay = useVernacular && q.stemLocal ? q.stemLocal : q.stem;
+              const explanationDisplay =
+                useVernacular && r?.explanationLocal ? r.explanationLocal : r?.explanation;
+
               return (
                 <div key={q.id} className="cp-row cp-row--mint">
                   <div className="cp-row__main">
@@ -117,22 +139,44 @@ export default function LessonQuizPlayerPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="cp-row__title">{q.stem}</h3>
+                    <h3 className="cp-row__title">{stemDisplay}</h3>
+                    {useVernacular && q.stemLocal && (
+                      <p className="text-xs text-ink/50 italic mt-0.5">Original: {q.stem}</p>
+                    )}
                     <p className="cp-row__meta">
                       Your answer:{" "}
                       {q.type === "short"
                         ? given?.text || "—"
                         : given?.selectedOption !== undefined
-                          ? q.options[given.selectedOption]
+                          ? (useVernacular && q.optionsLocal?.[given.selectedOption]) || q.options[given.selectedOption]
                           : "—"}
                     </p>
                     {!r?.isCorrect && (r?.correctIndex !== undefined || r?.correctText) && (
                       <p className="cp-row__meta">
                         Correct:{" "}
-                        {r?.correctIndex !== undefined ? q.options[r.correctIndex] : r?.correctText}
+                        {r?.correctIndex !== undefined
+                          ? (useVernacular && q.optionsLocal?.[r.correctIndex]) || q.options[r.correctIndex]
+                          : r?.correctText}
                       </p>
                     )}
-                    {r?.explanation && <p className="cp-text mt-2">{r.explanation}</p>}
+                    {explanationDisplay && <p className="cp-text mt-2">{explanationDisplay}</p>}
+
+                    {/* Targeted Concept Refresher for Missed Questions */}
+                    {!r?.isCorrect && (
+                      <div className="mt-3 rounded-lg border border-red-200 bg-red-50/70 p-3 text-xs">
+                        <p className="font-bold text-red-800 flex items-center gap-1.5 mb-1">
+                          <Sparkles size={14} /> Targeted Concept Refresher
+                        </p>
+                        <p className="text-ink/90 leading-relaxed">
+                          {explanationDisplay || "Review the lecture discussion on this topic to reinforce your understanding."}
+                        </p>
+                        {q.sourceCitation && (
+                          <p className="mt-2 text-ink/60 font-semibold text-[11px]">
+                            📍 Grounded in lecture recording: {q.sourceCitation}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -216,6 +260,19 @@ export default function LessonQuizPlayerPage() {
             <h2 className="cp-h-hero">{quiz.title}</h2>
             <p className="cp-hero__sub">Answer at your own pace — explanations appear after you submit.</p>
           </div>
+          {hasVernacular && (
+            <div className="cp-hero__pills">
+              <button
+                type="button"
+                onClick={() => setUseVernacular(!useVernacular)}
+                className={`ui-pill font-bold transition cursor-pointer ${
+                  useVernacular ? "ui-pill-mint" : "ui-pill-dark"
+                }`}
+              >
+                🌐 {useVernacular ? "Switch to English" : "Switch to Vernacular"}
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -227,7 +284,12 @@ export default function LessonQuizPlayerPage() {
             </p>
             <span className="ui-pill ui-pill-yellow">{q.difficulty}</span>
           </div>
-          <h3 className="cp-h-card mt-3 text-balance">{q.stem}</h3>
+          <h3 className="cp-h-card mt-3 text-balance">
+            {useVernacular && q.stemLocal ? q.stemLocal : q.stem}
+          </h3>
+          {useVernacular && q.stemLocal && (
+            <p className="text-xs text-ink/60 mt-1 italic">Original English: {q.stem}</p>
+          )}
 
           {q.type === "short" ? (
             <textarea
@@ -241,6 +303,7 @@ export default function LessonQuizPlayerPage() {
             <div className="mt-4 space-y-2">
               {q.options.map((opt, idx) => {
                 const selected = answer.selectedOption === idx;
+                const optText = (useVernacular && q.optionsLocal && q.optionsLocal[idx]) || opt;
                 return (
                   <button
                     key={idx}
@@ -258,7 +321,7 @@ export default function LessonQuizPlayerPage() {
                     >
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    {opt}
+                    <span>{optText}</span>
                   </button>
                 );
               })}
