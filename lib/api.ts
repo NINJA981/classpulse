@@ -843,5 +843,15 @@ export const api = {
       publishedAt: new Date().toISOString(),
       approvedQuestionsCount: approvedQuestions.length
     };
+  },
+
+  /**
+   * GET /api/lessons/:id/submissions
+   */
+  async getLessonSubmissions(lessonId: string): Promise<{ submissions: any[] }> {
+    if (!USE_MOCK) {
+      return request<{ submissions: any[] }>(`/lessons/${lessonId}/submissions`);
+    }
+    return { submissions: [] };
   }
 };

@@ -14,6 +14,7 @@ export default function LessonReviewPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Card-level inline edit state
@@ -51,14 +52,16 @@ export default function LessonReviewPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [lessonRes, questionsRes] = await Promise.all([
+      const [lessonRes, questionsRes, subRes] = await Promise.all([
         api.getLesson(id),
-        api.getLessonQuestions(id)
+        api.getLessonQuestions(id),
+        api.getLessonSubmissions(id).catch(() => ({ submissions: [] }))
       ]);
 
       setLesson(lessonRes);
       setQuestions(questionsRes.questions || []);
       setAssignment(questionsRes.assignment || null);
+      setSubmissions(subRes?.submissions || []);
     } catch (err) {
       console.error('Failed to load review data:', err);
     } finally {
@@ -398,6 +401,72 @@ export default function LessonReviewPage() {
           )}
         </div>
       </div>
+
+      {/* Live Student Quiz Submissions & Performance (When published) */}
+      {lesson?.status === 'published' && (
+        <div
+          className="card mb-4"
+          style={{
+            border: '2px solid var(--ink)',
+            background: '#faf9f6',
+            padding: '1.25rem 1.5rem'
+          }}
+        >
+          <div className="flex-between mb-3">
+            <div>
+              <span className="eyebrow" style={{ color: 'var(--ink)' }}>
+                STUDENT QUIZ ACTIVITY & LIVE PERFORMANCE
+              </span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>
+                Student Attempts & Grading Breakdown ({submissions.length})
+              </h3>
+            </div>
+            {submissions.length > 0 && (
+              <span className="badge badge-ink" style={{ fontSize: '13px', padding: '6px 12px' }}>
+                Class Avg: {Math.round(submissions.reduce((a, b) => a + b.scorePct, 0) / submissions.length)}%
+              </span>
+            )}
+          </div>
+
+          {submissions.length === 0 ? (
+            <p className="text-secondary" style={{ fontSize: '13px' }}>
+              No student submissions yet. Students can access this quiz in their student portal under Lecture Quizzes.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {submissions.map((sub, sIdx) => (
+                <div
+                  key={sub.id || sIdx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    background: '#fff',
+                    border: '1px solid var(--hairline)',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '13px' }}>{sub.studentName}</span>
+                    <span className="text-secondary" style={{ fontSize: '11px' }}>
+                      {new Date(sub.submittedAt).toLocaleTimeString()} • {sub.correct}/{sub.total} correct
+                    </span>
+                  </div>
+                  <span
+                    className={`status-pill ${
+                      sub.scorePct >= 70 ? 'status-pill-ready' : sub.scorePct >= 40 ? 'status-pill-draft' : 'status-pill-failed'
+                    }`}
+                    style={{ fontWeight: 800 }}
+                  >
+                    {sub.scorePct}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Question Cards Stack */}
       <div>
