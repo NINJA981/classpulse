@@ -83,9 +83,13 @@ export interface TranscriptSegment {
  * The lesson transcript from GET /api/lessons/:id/transcript.
  * NOTE: the API returns `id` here, not `_id`.
  */
+/** Where a transcript came from: captured live, or produced from the uploaded file. */
+export type TranscriptSource = 'live' | 'upload';
+
 export interface Transcript {
   id: string;
   lessonId: string;
+  source: TranscriptSource;
   provider: 'sarvam' | 'whisper' | 'document';
   text: string;
   wordCount: number;

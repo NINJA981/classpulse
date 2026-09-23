@@ -5,7 +5,8 @@ import {
   Assignment,
   SourceType,
   SourceFile,
-  Transcript
+  Transcript,
+  TranscriptSource
 } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
@@ -358,6 +359,24 @@ const MOCK_TRANSCRIPT_TEXT =
   'the chain rule earns its keep: anything changing with time that depends on something ' +
   'else changing with time.';
 
+const LIVE_SESSION_KEY = 'clasepulse_live_session';
+
+/**
+ * The recorder runs on /lessons/new, before the lesson exists, so the captions are saved
+ * server-side as a session first. The id is parked here and handed to createLesson, which
+ * turns it into the lesson's live transcript.
+ */
+export function rememberLiveSession(sessionId: string): void {
+  if (isBrowser()) sessionStorage.setItem(LIVE_SESSION_KEY, sessionId);
+}
+
+export function takeLiveSession(): string | undefined {
+  if (!isBrowser()) return undefined;
+  const id = sessionStorage.getItem(LIVE_SESSION_KEY) ?? undefined;
+  sessionStorage.removeItem(LIVE_SESSION_KEY);
+  return id;
+}
+
 export function liveTranscriptUrl(options: { language?: string; lessonId?: string } = {}): string | null {
   if (!isBrowser()) return null;
   const token = localStorage.getItem('clasepulse_jwt_token');
@@ -382,28 +401,57 @@ export const api = {
    * GET /api/lessons/:id/transcript — what the class actually said, once ASR has run.
    * Null while the lesson is still a draft or still transcribing.
    */
-  async getTranscript(lessonId: string): Promise<{ transcript: Transcript | null }> {
+  /**
+   * GET /api/lessons/:id/transcript — a lesson can hold two: one captured live while the
+   * teacher spoke, one from the uploaded file. `selected` is the one the questions come from.
+   */
+  async getTranscript(lessonId: string): Promise<{ transcripts: Transcript[]; selected: TranscriptSource | null }> {
     if (!USE_MOCK) {
-      return request<{ transcript: Transcript | null }>(`/lessons/${lessonId}/transcript`);
+      return request<{ transcripts: Transcript[]; selected: TranscriptSource | null }>(
+        `/lessons/${lessonId}/transcript`,
+      );
     }
 
     const lesson = getStoredLessons().find((l) => l._id === lessonId);
     const ready = lesson && ['ready_for_review', 'published'].includes(lesson.status);
-    if (!ready) return { transcript: null };
+    if (!ready) return { transcripts: [], selected: null };
 
     const text = MOCK_TRANSCRIPT_TEXT;
     return {
-      transcript: {
-        id: `tr_${lessonId}`,
-        lessonId,
-        provider: lesson?.sourceType === 'document' ? 'document' : 'sarvam',
-        text,
-        wordCount: text.trim().split(/\s+/).length,
-        language: lesson?.language || 'en',
-        segments: [],
-        createdAt: new Date().toISOString(),
-      },
+      transcripts: [
+        {
+          id: `tr_${lessonId}`,
+          lessonId,
+          source: 'upload',
+          provider: lesson?.sourceType === 'document' ? 'document' : 'sarvam',
+          text,
+          wordCount: text.trim().split(/\s+/).length,
+          language: lesson?.language || 'en',
+          segments: [],
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      selected: 'upload',
     };
+  },
+
+  /** POST /api/lessons/:id/transcript/select — takes effect on the next regenerate. */
+  async selectTranscript(lessonId: string, source: TranscriptSource): Promise<Lesson> {
+    if (!USE_MOCK) {
+      const { lesson } = await request<{ lesson: Lesson }>(
+        `/lessons/${lessonId}/transcript/select`,
+        { method: 'POST', body: JSON.stringify({ source }) },
+      );
+      return lesson;
+    }
+
+    const lessons = getStoredLessons();
+    const found = lessons.find((l) => l._id === lessonId);
+    if (found) {
+      (found as Lesson & { transcriptSource?: TranscriptSource }).transcriptSource = source;
+      saveStoredLessons(lessons);
+    }
+    return found as Lesson;
   },
 
   async login(email?: string, password?: string) {
@@ -454,11 +502,13 @@ export const api = {
   /**
    * POST /api/lessons
    */
-  async createLesson({ title, subject, className }: { title: string; subject: string; className: string }) {
+  async createLesson({ title, subject, className, liveSessionId }: { title: string; subject: string; className: string; liveSessionId?: string }) {
+    // Claim whatever the recorder captured live, unless the caller passed one explicitly.
+    const claimedSession = liveSessionId ?? takeLiveSession();
     if (!USE_MOCK) {
       return request<Lesson>('/lessons', {
         method: 'POST',
-        body: JSON.stringify({ title, subject, className })
+        body: JSON.stringify({ title, subject, className, liveSessionId: claimedSession })
       });
     }
 

@@ -7,12 +7,13 @@
  * through an AudioContext, and streams 100 ms PCM frames to our backend, which relays them
  * to Sarvam and sends partial transcripts straight back.
  *
- * This is a preview, not the transcript of record: the questions are still generated from
- * the transcript the worker produces after the recording is uploaded.
+ * Everything finalised is saved server-side, and the lesson claims it on creation, so the
+ * teacher ends up with both this and the transcript made from the uploaded recording — and
+ * chooses which one the questions are written from.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { liveTranscriptUrl } from '../lib/api';
+import { liveTranscriptUrl, rememberLiveSession } from '../lib/api';
 
 interface LiveTranscriptProps {
   /** The recorder's stream. Null when not recording. */
@@ -84,7 +85,13 @@ export default function LiveTranscript({
     socketRef.current = socket;
 
     socket.onmessage = (event) => {
-      let payload: { event?: string; text?: string; message?: string; code?: number };
+      let payload: {
+        event?: string;
+        text?: string;
+        message?: string;
+        code?: number;
+        liveSessionId?: string;
+      };
       try {
         payload = JSON.parse(event.data as string);
       } catch {
@@ -93,6 +100,10 @@ export default function LiveTranscript({
 
       if (payload.event === 'relay.ready') {
         setStatus('listening');
+      } else if (payload.event === 'relay.saved') {
+        // The captions were written away server-side. Park the id so createLesson can claim
+        // it — this recording happens before the lesson exists.
+        if (payload.liveSessionId) rememberLiveSession(payload.liveSessionId);
       } else if (payload.event === 'transcript.partial' && payload.text) {
         setPartial(payload.text);
       } else if (payload.event === 'transcript.final' && payload.text) {
