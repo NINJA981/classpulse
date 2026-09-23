@@ -238,6 +238,26 @@ export const api = {
   },
 
   /**
+   * GET/PATCH /api/admin/settings/models — which STT and question models the pipeline uses.
+   */
+  async getModelSettings(): Promise<{
+    settings: { asrProvider: string; asrModel: string; llmProvider: string; llmModel: string };
+    options: {
+      asr: Array<{ provider: string; model: string; label: string; note?: string }>;
+      llm: Array<{ provider: string; model: string; label: string; note?: string }>;
+    };
+  }> {
+    return request('/admin/settings/models');
+  },
+
+  async updateModelSettings(body: {
+    asr?: { provider: string; model: string };
+    llm?: { provider: string; model: string };
+  }): Promise<void> {
+    await request('/admin/settings/models', { method: 'PATCH', body: JSON.stringify(body) });
+  },
+
+  /**
    * POST /api/lessons
    */
   async createLesson({

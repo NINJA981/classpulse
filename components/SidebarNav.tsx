@@ -335,6 +335,15 @@ export default function SidebarNav({
                   <span>Q&A / Live Interaction</span>
                   <span className="sidebar-badge-counter">4 New</span>
                 </Link>
+
+                <Link
+                  href="/model-settings"
+                  className={`sidebar-sub-item ${pathname === '/model-settings' ? 'active' : ''}`}
+                  onClick={onCloseMobile}
+                >
+                  <Radio size={14} />
+                  <span>AI Model Settings</span>
+                </Link>
               </div>
             )}
           </div>
