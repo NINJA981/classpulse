@@ -71,3 +71,25 @@ export interface Assignment {
   rubric: RubricCriterion[];
   status: 'draft' | 'approved' | 'rejected';
 }
+
+/** A segment of the transcript, as the ASR provider timed it. */
+export interface TranscriptSegment {
+  startSec: number;
+  endSec: number;
+  text: string;
+}
+
+/**
+ * The lesson transcript from GET /api/lessons/:id/transcript.
+ * NOTE: the API returns `id` here, not `_id`.
+ */
+export interface Transcript {
+  id: string;
+  lessonId: string;
+  provider: 'sarvam' | 'whisper' | 'document';
+  text: string;
+  wordCount: number;
+  language: string;
+  segments: TranscriptSegment[];
+  createdAt: string;
+}

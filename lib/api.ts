@@ -4,7 +4,8 @@ import {
   Question,
   Assignment,
   SourceType,
-  SourceFile
+  SourceFile,
+  Transcript
 } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
@@ -344,10 +345,67 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return data as T;
 }
 
+/**
+ * WebSocket URL for live captions while recording. The backend relays to Sarvam so the
+ * transcription key never reaches the browser. Returns null when nobody is signed in —
+ * live captions need a real backend session, not the mock one.
+ */
+/** Stand-in transcript for mock mode, so the panel has something to show in a demo. */
+const MOCK_TRANSCRIPT_TEXT =
+  'Today we will look at the chain rule. When you differentiate a composite function, ' +
+  'call the inside u, and the whole thing becomes u to the five. Students always forget ' +
+  'the factor at the front — the derivative of the inside has to come along. This is where ' +
+  'the chain rule earns its keep: anything changing with time that depends on something ' +
+  'else changing with time.';
+
+export function liveTranscriptUrl(options: { language?: string; lessonId?: string } = {}): string | null {
+  if (!isBrowser()) return null;
+  const token = localStorage.getItem('clasepulse_jwt_token');
+  if (!token) return null;
+
+  const base = API_BASE_URL.startsWith('http')
+    ? API_BASE_URL
+    : `${window.location.origin}${API_BASE_URL}`;
+  const url = new URL(`${base.replace(/\/$/, '')}/live`);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.searchParams.set('token', token);
+  if (options.language) url.searchParams.set('language', options.language);
+  if (options.lessonId) url.searchParams.set('lessonId', options.lessonId);
+  return url.toString();
+}
+
 export const api = {
   /**
    * POST /api/auth/login
    */
+  /**
+   * GET /api/lessons/:id/transcript — what the class actually said, once ASR has run.
+   * Null while the lesson is still a draft or still transcribing.
+   */
+  async getTranscript(lessonId: string): Promise<{ transcript: Transcript | null }> {
+    if (!USE_MOCK) {
+      return request<{ transcript: Transcript | null }>(`/lessons/${lessonId}/transcript`);
+    }
+
+    const lesson = getStoredLessons().find((l) => l._id === lessonId);
+    const ready = lesson && ['ready_for_review', 'published'].includes(lesson.status);
+    if (!ready) return { transcript: null };
+
+    const text = MOCK_TRANSCRIPT_TEXT;
+    return {
+      transcript: {
+        id: `tr_${lessonId}`,
+        lessonId,
+        provider: lesson?.sourceType === 'document' ? 'document' : 'sarvam',
+        text,
+        wordCount: text.trim().split(/\s+/).length,
+        language: lesson?.language || 'en',
+        segments: [],
+        createdAt: new Date().toISOString(),
+      },
+    };
+  },
+
   async login(email?: string, password?: string) {
     if (!USE_MOCK) {
       return request<{ token: string; teacher: any }>('/auth/login', {

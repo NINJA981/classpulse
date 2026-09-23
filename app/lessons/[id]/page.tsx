@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import TranscriptPanel from '../../../components/TranscriptPanel';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
@@ -204,6 +205,12 @@ export default function LessonProcessingPage() {
                 );
               })}
             </div>
+
+            {id && ['generating', 'validating', 'ready_for_review', 'published', 'failed'].includes(stage) && (
+              <div style={{ marginTop: '2rem' }}>
+                <TranscriptPanel lessonId={id} defaultOpen />
+              </div>
+            )}
 
             <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span className="text-secondary text-mono" style={{ fontSize: '11px' }}>

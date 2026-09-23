@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import LiveTranscript from './LiveTranscript';
 
 export interface AudioReadyData {
   file: File;
@@ -30,6 +31,10 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [recordedSize, setRecordedSize] = useState<number>(0);
+  // Live captions are opt-in: they stream audio to the server while recording.
+  const [liveCaptions, setLiveCaptions] = useState<boolean>(false);
+  const [liveStream, setLiveStream] = useState<MediaStream | null>(null);
+  const [liveText, setLiveText] = useState<string>('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -129,6 +134,7 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+      setLiveStream(stream);
 
       const mimeType = getSupportedMimeType();
       const options = mimeType ? { mimeType } : undefined;
@@ -210,6 +216,7 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       setRecordingState('stopped');
 
+      setLiveStream(null);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -279,14 +286,41 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
           <p className="text-secondary mb-3" style={{ fontSize: '13px' }}>
             Direct Android Chrome / Desktop capture. Speak clearly into your device microphone.
           </p>
-          <button
-            type="button"
-            className="btn btn-primary btn-lg"
-            onClick={startRecording}
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: '1rem',
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
           >
-            Start Audio Recording
-          </button>
+            <input
+              type="checkbox"
+              checked={liveCaptions}
+              onChange={(event) => setLiveCaptions(event.target.checked)}
+            />
+            Show live transcript while I record
+          </label>
+          <div>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              onClick={startRecording}
+            >
+              Start Audio Recording
+            </button>
+          </div>
         </div>
+      )}
+
+      {(recordingState === 'recording' || recordingState === 'paused') && liveCaptions && (
+        <LiveTranscript
+          stream={liveStream}
+          active={recordingState === 'recording'}
+          onFinalLine={(line) => setLiveText((current) => (current ? `${current} ${line}` : line))}
+        />
       )}
 
       {(recordingState === 'recording' || recordingState === 'paused') && (
@@ -323,6 +357,17 @@ export default function AudioRecorder({ onAudioReady, onReset }: AudioRecorderPr
               Stop & Finalize Audio
             </button>
           </div>
+        </div>
+      )}
+
+      {recordingState === 'stopped' && liveText && (
+        <div className="card mb-2" style={{ background: '#f5f8f6' }}>
+          <span className="eyebrow">LIVE TRANSCRIPT (PREVIEW)</span>
+          <p style={{ fontSize: '14px', lineHeight: 1.6, margin: '8px 0 0' }}>{liveText}</p>
+          <p className="text-secondary" style={{ fontSize: '12px', marginTop: 8 }}>
+            Captured live. The final transcript is produced from the uploaded recording and is
+            what the questions are written from.
+          </p>
         </div>
       )}
 
