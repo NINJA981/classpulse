@@ -4,7 +4,9 @@ import {
   Question,
   Assignment,
   SourceType,
-  SourceFile
+  SourceFile,
+  Transcript,
+  TranscriptSource
 } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
@@ -344,16 +346,165 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return data as T;
 }
 
+/**
+ * The API speaks `id`; this app's types were written around Mongo's `_id`, and the review
+ * screen keys off it everywhere. Rather than touch every component, responses are
+ * normalised here on the way in — one place that knows about both spellings.
+ */
+function normalizeLesson(raw: any): Lesson {
+  return { ...raw, _id: raw?._id ?? raw?.id };
+}
+
+/** Same idea, plus the citation the API calls `sourceLine` and this app calls `sourceCitation`. */
+function normalizeQuestion(raw: any): Question {
+  return {
+    ...raw,
+    _id: raw?._id ?? raw?.id,
+    sourceCitation: raw?.sourceCitation ?? raw?.sourceLine
+  };
+}
+
+function normalizeAssignment(raw: any): Assignment | null {
+  return raw ? ({ ...raw, _id: raw._id ?? raw.id } as Assignment) : null;
+}
+
+/** PATCH /questions/:id only accepts these. Sending `_id` back would be rejected. */
+const EDITABLE_QUESTION_FIELDS = [
+  'stem',
+  'options',
+  'correctIndex',
+  'correctText',
+  'explanation',
+  'topicTag',
+  'difficulty',
+  'status'
+] as const;
+
+function questionPatch(updates: Partial<Question>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const field of EDITABLE_QUESTION_FIELDS) {
+    if (updates[field] !== undefined) out[field] = updates[field];
+  }
+  return out;
+}
+
+/**
+ * WebSocket URL for live captions while recording. The backend relays to Sarvam so the
+ * transcription key never reaches the browser. Returns null when nobody is signed in —
+ * live captions need a real backend session, not the mock one.
+ */
+/** Stand-in transcript for mock mode, so the panel has something to show in a demo. */
+const MOCK_TRANSCRIPT_TEXT =
+  'Today we will look at the chain rule. When you differentiate a composite function, ' +
+  'call the inside u, and the whole thing becomes u to the five. Students always forget ' +
+  'the factor at the front — the derivative of the inside has to come along. This is where ' +
+  'the chain rule earns its keep: anything changing with time that depends on something ' +
+  'else changing with time.';
+
+const LIVE_SESSION_KEY = 'clasepulse_live_session';
+
+/**
+ * The recorder runs on /lessons/new, before the lesson exists, so the captions are saved
+ * server-side as a session first. The id is parked here and handed to createLesson, which
+ * turns it into the lesson's live transcript.
+ */
+export function rememberLiveSession(sessionId: string): void {
+  if (isBrowser()) sessionStorage.setItem(LIVE_SESSION_KEY, sessionId);
+}
+
+export function takeLiveSession(): string | undefined {
+  if (!isBrowser()) return undefined;
+  const id = sessionStorage.getItem(LIVE_SESSION_KEY) ?? undefined;
+  sessionStorage.removeItem(LIVE_SESSION_KEY);
+  return id;
+}
+
+export function liveTranscriptUrl(options: { language?: string; lessonId?: string } = {}): string | null {
+  if (!isBrowser()) return null;
+  const token = localStorage.getItem('clasepulse_jwt_token');
+  if (!token) return null;
+
+  const base = API_BASE_URL.startsWith('http')
+    ? API_BASE_URL
+    : `${window.location.origin}${API_BASE_URL}`;
+  const url = new URL(`${base.replace(/\/$/, '')}/live`);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.searchParams.set('token', token);
+  if (options.language) url.searchParams.set('language', options.language);
+  if (options.lessonId) url.searchParams.set('lessonId', options.lessonId);
+  return url.toString();
+}
+
 export const api = {
   /**
    * POST /api/auth/login
    */
+  /**
+   * GET /api/lessons/:id/transcript — what the class actually said, once ASR has run.
+   * Null while the lesson is still a draft or still transcribing.
+   */
+  /**
+   * GET /api/lessons/:id/transcript — a lesson can hold two: one captured live while the
+   * teacher spoke, one from the uploaded file. `selected` is the one the questions come from.
+   */
+  async getTranscript(lessonId: string): Promise<{ transcripts: Transcript[]; selected: TranscriptSource | null }> {
+    if (!USE_MOCK) {
+      return request<{ transcripts: Transcript[]; selected: TranscriptSource | null }>(
+        `/lessons/${lessonId}/transcript`,
+      );
+    }
+
+    const lesson = getStoredLessons().find((l) => l._id === lessonId);
+    const ready = lesson && ['ready_for_review', 'published'].includes(lesson.status);
+    if (!ready) return { transcripts: [], selected: null };
+
+    const text = MOCK_TRANSCRIPT_TEXT;
+    return {
+      transcripts: [
+        {
+          id: `tr_${lessonId}`,
+          lessonId,
+          source: 'upload',
+          provider: lesson?.sourceType === 'document' ? 'document' : 'sarvam',
+          text,
+          wordCount: text.trim().split(/\s+/).length,
+          language: lesson?.language || 'en',
+          segments: [],
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      selected: 'upload',
+    };
+  },
+
+  /** POST /api/lessons/:id/transcript/select — takes effect on the next regenerate. */
+  async selectTranscript(lessonId: string, source: TranscriptSource): Promise<Lesson> {
+    if (!USE_MOCK) {
+      const { lesson } = await request<{ lesson: Lesson }>(
+        `/lessons/${lessonId}/transcript/select`,
+        { method: 'POST', body: JSON.stringify({ source }) },
+      );
+      return normalizeLesson(lesson);
+    }
+
+    const lessons = getStoredLessons();
+    const found = lessons.find((l) => l._id === lessonId);
+    if (found) {
+      (found as Lesson & { transcriptSource?: TranscriptSource }).transcriptSource = source;
+      saveStoredLessons(lessons);
+    }
+    return found as Lesson;
+  },
+
   async login(email?: string, password?: string) {
     if (!USE_MOCK) {
-      return request<{ token: string; teacher: any }>('/auth/login', {
+      const result = await request<{ token: string; teacher: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
+      // Every other call reads the token back out of here.
+      if (isBrowser()) localStorage.setItem('clasepulse_jwt_token', result.token);
+      return result;
     }
 
     const teacher = {
@@ -377,7 +528,10 @@ export const api = {
       const params = new URLSearchParams();
       if (status) params.append('status', status);
       if (page) params.append('page', String(page));
-      return request<{ lessons: Lesson[]; page: number; total: number }>(`/lessons?${params.toString()}`);
+      const data = await request<{ items: any[]; page: number; pageSize: number; total: number }>(
+        `/lessons?${params.toString()}`
+      );
+      return { lessons: data.items.map(normalizeLesson), page: data.page, total: data.total };
     }
 
     let lessons = getStoredLessons();
@@ -396,12 +550,15 @@ export const api = {
   /**
    * POST /api/lessons
    */
-  async createLesson({ title, subject, className }: { title: string; subject: string; className: string }) {
+  async createLesson({ title, subject, className, liveSessionId }: { title: string; subject: string; className: string; liveSessionId?: string }) {
+    // Claim whatever the recorder captured live, unless the caller passed one explicitly.
+    const claimedSession = liveSessionId ?? takeLiveSession();
     if (!USE_MOCK) {
-      return request<Lesson>('/lessons', {
+      const { lesson } = await request<{ lesson: Lesson }>('/lessons', {
         method: 'POST',
-        body: JSON.stringify({ title, subject, className })
+        body: JSON.stringify({ title, subject, className, liveSessionId: claimedSession })
       });
+      return normalizeLesson(lesson);
     }
 
     const newLesson: Lesson = {
@@ -433,10 +590,11 @@ export const api = {
       const formData = new FormData();
       formData.append('file', fileOrBlob);
       formData.append('sourceType', sourceType);
-      return request<{ success: boolean; sourceFile: SourceFile }>(`/lessons/${lessonId}/source`, {
+      const { lesson } = await request<{ lesson: Lesson }>(`/lessons/${lessonId}/source`, {
         method: 'POST',
         body: formData
       });
+      return { success: true, sourceFile: lesson.sourceFile as SourceFile };
     }
 
     const lessons = getStoredLessons();
@@ -469,9 +627,11 @@ export const api = {
    */
   async generate(lessonId: string) {
     if (!USE_MOCK) {
-      return request<{ status: number; jobId: string; message: string }>(`/lessons/${lessonId}/generate`, {
-        method: 'POST'
-      });
+      const job = await request<{ lessonId: string; jobId: string; status: string }>(
+        `/lessons/${lessonId}/generate`,
+        { method: 'POST' }
+      );
+      return { status: 202, jobId: job.jobId, message: `Lesson ${job.status}` };
     }
 
     const lessons = getStoredLessons();
@@ -610,7 +770,8 @@ export const api = {
    */
   async getLesson(lessonId: string): Promise<Lesson> {
     if (!USE_MOCK) {
-      return request<Lesson>(`/lessons/${lessonId}`);
+      const { lesson } = await request<{ lesson: Lesson; job: any }>(`/lessons/${lessonId}`);
+      return normalizeLesson(lesson);
     }
 
     const lessons = getStoredLessons();
@@ -654,7 +815,14 @@ export const api = {
    */
   async getLessonQuestions(lessonId: string): Promise<{ lessonId: string; questions: Question[]; assignment: Assignment | null }> {
     if (!USE_MOCK) {
-      return request<{ lessonId: string; questions: Question[]; assignment: Assignment | null }>(`/lessons/${lessonId}/questions`);
+      const data = await request<{ questions: any[]; assignment: any }>(
+        `/lessons/${lessonId}/questions`
+      );
+      return {
+        lessonId,
+        questions: data.questions.map(normalizeQuestion),
+        assignment: normalizeAssignment(data.assignment)
+      };
     }
 
     const questionsMap = getStoredQuestions();
@@ -674,10 +842,11 @@ export const api = {
    */
   async updateQuestion(questionId: string, updates: Partial<Question>): Promise<Question> {
     if (!USE_MOCK) {
-      return request<Question>(`/questions/${questionId}`, {
+      const { question } = await request<{ question: Question }>(`/questions/${questionId}`, {
         method: 'PATCH',
-        body: JSON.stringify(updates)
+        body: JSON.stringify(questionPatch(updates))
       });
+      return normalizeQuestion(question);
     }
 
     const questionsMap = getStoredQuestions();
@@ -709,10 +878,12 @@ export const api = {
    */
   async approveQuestion(idOrIds: string | string[]): Promise<{ success: boolean; approvedCount: number }> {
     if (!USE_MOCK) {
-      return request<{ success: boolean; approvedCount: number }>('/questions/approve', {
-        method: 'POST',
-        body: JSON.stringify({ ids: Array.isArray(idOrIds) ? idOrIds : [idOrIds] })
-      });
+      const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+      const { approvedCount } = await request<{ questions: Question[]; approvedCount: number }>(
+        `/questions/${ids[0]}/approve`,
+        { method: 'POST', body: JSON.stringify({ ids }) }
+      );
+      return { success: true, approvedCount };
     }
 
     const idsToApprove = new Set(Array.isArray(idOrIds) ? idOrIds : [idOrIds]);
@@ -738,9 +909,11 @@ export const api = {
    */
   async rejectQuestion(questionId: string): Promise<Question> {
     if (!USE_MOCK) {
-      return request<Question>(`/questions/${questionId}/reject`, {
-        method: 'POST'
+      const { question } = await request<{ question: Question }>(`/questions/${questionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected' })
       });
+      return normalizeQuestion(question);
     }
 
     const questionsMap = getStoredQuestions();
@@ -768,10 +941,15 @@ export const api = {
    */
   async updateAssignment(lessonId: string, updates: Partial<Assignment>): Promise<Assignment> {
     if (!USE_MOCK) {
-      return request<Assignment>(`/lessons/${lessonId}/assignment`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
-      });
+      const { prompt, estimatedMinutes, rubric, status } = updates;
+      const { assignment } = await request<{ assignment: Assignment }>(
+        `/lessons/${lessonId}/assignment`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ prompt, estimatedMinutes, rubric, status })
+        }
+      );
+      return normalizeAssignment(assignment) as Assignment;
     }
 
     const asgMap = getStoredAssignments();
@@ -792,9 +970,11 @@ export const api = {
    */
   async regenerate(lessonId: string) {
     if (!USE_MOCK) {
-      return request<{ status: number; jobId: string; message: string }>(`/lessons/${lessonId}/regenerate`, {
-        method: 'POST'
-      });
+      const job = await request<{ lessonId: string; jobId: string; status: string }>(
+        `/lessons/${lessonId}/regenerate`,
+        { method: 'POST' }
+      );
+      return { status: 202, jobId: job.jobId, message: `Lesson ${job.status}` };
     }
     return this.generate(lessonId);
   },
@@ -805,9 +985,20 @@ export const api = {
    */
   async publishLesson(lessonId: string): Promise<{ success: boolean; lessonId: string; publishedAt: string; approvedQuestionsCount: number }> {
     if (!USE_MOCK) {
-      return request<{ success: boolean; lessonId: string; publishedAt: string; approvedQuestionsCount: number }>(`/lessons/${lessonId}/publish`, {
+      const { lesson } = await request<{ lesson: Lesson }>(`/lessons/${lessonId}/publish`, {
         method: 'POST'
       });
+      // The publish route answers with the lesson; the banner also wants the count, and
+      // the questions are already cached server-side by this point.
+      const { questions } = await request<{ questions: Question[] }>(
+        `/lessons/${lessonId}/questions`
+      );
+      return {
+        success: true,
+        lessonId: normalizeLesson(lesson)._id,
+        publishedAt: lesson.updatedAt,
+        approvedQuestionsCount: questions.filter((q) => q.status === 'approved').length
+      };
     }
 
     const questionsMap = getStoredQuestions();

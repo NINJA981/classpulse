@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import TranscriptPanel from '../../../../components/TranscriptPanel';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '../../../../lib/api';
@@ -401,6 +402,9 @@ export default function LessonReviewPage() {
           )}
         </div>
       </div>
+
+      {/* What the class actually said — the questions were written from this. */}
+      {id && <TranscriptPanel lessonId={id} />}
 
       {/* Live Student Quiz Submissions & Performance (When published) */}
       {lesson?.status === 'published' && (
