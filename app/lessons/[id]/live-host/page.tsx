@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../../../lib/api';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (typeof window !== 'undefined' ? `http://${window.location.hostname}:4000` : 'http://localhost:4000');
 
 interface Participant {
   studentId: string;
