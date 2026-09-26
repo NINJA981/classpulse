@@ -44,9 +44,7 @@ export default function Home() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Published quizzes for this student's section
-  const [publishedQuizCount, setPublishedQuizCount] = useState<number>(() => {
-    return typeof window !== "undefined" ? getDemoQuizSummaries().length : 5;
-  });
+  const [publishedQuizCount, setPublishedQuizCount] = useState<number>(0);
 
   useEffect(() => {
     function refreshData() {
@@ -54,12 +52,22 @@ export default function Home() {
       setEnrollment(enr);
       setDiagnosticState(diagnosticApi.getDiagnosticState());
       setCourseContent(diagnosticApi.getCourseContent());
-      lessonQuizApi.list()
-        .then((res) => setPublishedQuizCount(res.quizzes.length))
-        .catch(() => setPublishedQuizCount(getDemoQuizSummaries().length));
     }
 
     refreshData();
+
+    // Fetch fresh live data from backend
+    Promise.all([
+      diagnosticApi.fetchCourseContent(),
+      lessonQuizApi.list(),
+    ])
+      .then(([content, qList]) => {
+        setCourseContent(content);
+        setPublishedQuizCount(qList.quizzes.length);
+        setEnrollment(diagnosticApi.getCurrentEnrollment());
+      })
+      .catch((e) => console.error("Error loading live dashboard data", e));
+
     window.addEventListener("storage", refreshData);
     return () => window.removeEventListener("storage", refreshData);
   }, []);
@@ -189,7 +197,13 @@ export default function Home() {
         </div>
 
         <div className="cp-section__list">
-          {courseContent.upcoming.map((item) => {
+          {courseContent.upcoming.length === 0 ? (
+            <div className="p-8 text-center bg-white border-2 border-ink rounded-xl shadow-sm">
+              <p className="font-bold text-ink text-base">No pending coursework</p>
+              <p className="text-xs text-muted mt-1">All current class assignments and quizzes are up to date.</p>
+            </div>
+          ) : (
+            courseContent.upcoming.map((item) => {
             const rowClass =
               item.rowVariant === "yellow"
                 ? "cp-row cp-row--yellow"
@@ -244,7 +258,8 @@ export default function Home() {
                 </div>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </section>
     </DashboardShell>

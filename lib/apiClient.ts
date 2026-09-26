@@ -86,7 +86,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2500);
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   let res: Response;
   try {

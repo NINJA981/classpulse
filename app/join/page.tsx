@@ -69,14 +69,12 @@ export default function JoinSectionPage() {
     setErrorMessage("");
 
     try {
-      const roll = user?.registerNumber || "2024-CS-042";
+      const roll = user?.registerNumber || "";
       await diagnosticApi.joinEnrollment({
         code: section.code,
         rollNumber: roll,
       });
 
-      // Navigate immediately to dashboard as requested:
-      // "then i can click the section and then i see the dashboard"
       router.push("/");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to join section.";
@@ -107,7 +105,7 @@ export default function JoinSectionPage() {
     try {
       // First preview the code
       const section = await diagnosticApi.getSectionPreview(clean);
-      const roll = user?.registerNumber || "2024-CS-042";
+      const roll = user?.registerNumber || "";
 
       // Join and go straight to dashboard
       await diagnosticApi.joinEnrollment({
@@ -155,7 +153,7 @@ export default function JoinSectionPage() {
         <div className="flex items-center gap-3">
           <span className="ui-pill ui-pill-yellow font-mono text-xs">
             <GraduationCap className="w-3.5 h-3.5" />
-            {user?.registerNumber || "2024-CS-042"}
+            {user?.registerNumber || "Student"}
           </span>
 
           <Link
@@ -269,7 +267,7 @@ export default function JoinSectionPage() {
                   setManualCode(e.target.value.toUpperCase());
                   setErrorMessage("");
                 }}
-                placeholder="e.g. MATH10 or EXP100"
+                placeholder="e.g. MATH12"
                 className="ui-input font-mono font-bold text-sm uppercase tracking-wider py-1.5 px-3 w-full"
               />
             </div>
@@ -302,30 +300,25 @@ export default function JoinSectionPage() {
             </button>
           </form>
 
-          {/* Quick Demo Test Chips */}
-          <div className="mt-2 pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-mono text-faint text-[11px]">Test edge codes:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setManualCode("EXP100");
-                handleManualCodeSubmit(undefined, "EXP100");
-              }}
-              className="cp-chip cp-chip--pink text-[11px] py-0.5 px-1.5 hover:opacity-80 cursor-pointer"
-            >
-              EXP100 (Expired)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setManualCode("MATH10");
-                handleManualCodeSubmit(undefined, "MATH10");
-              }}
-              className="cp-chip cp-chip--yellow text-[11px] py-0.5 px-1.5 hover:opacity-80 cursor-pointer"
-            >
-              MATH10 (Calculus)
-            </button>
-          </div>
+          {/* Available Classes Chips */}
+          {availableSections.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-mono text-faint text-[11px]">Available classes:</span>
+              {availableSections.slice(0, 4).map((sec) => (
+                <button
+                  key={sec.code}
+                  type="button"
+                  onClick={() => {
+                    setManualCode(sec.code);
+                    handleManualCodeSubmit(undefined, sec.code);
+                  }}
+                  className="cp-chip cp-chip--yellow text-[11px] py-0.5 px-1.5 hover:opacity-80 cursor-pointer"
+                >
+                  {sec.code} ({sec.courseTitle})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
@@ -357,7 +350,7 @@ export default function JoinSectionPage() {
               </div>
 
               <p className="text-xs text-muted mt-4 max-w-xs">
-                Camera access simulated. Click below to simulate scanning section <strong>MATH10</strong>.
+                Scan your instructor&apos;s classroom QR code. Click below to verify section.
               </p>
             </div>
 
@@ -372,13 +365,14 @@ export default function JoinSectionPage() {
               <button
                 type="button"
                 onClick={() => {
+                  const codeToUse = availableSections[0]?.code || "MATH12";
                   setIsQrModalOpen(false);
-                  setManualCode("MATH10");
-                  handleManualCodeSubmit(undefined, "MATH10");
+                  setManualCode(codeToUse);
+                  handleManualCodeSubmit(undefined, codeToUse);
                 }}
                 className="ui-button ui-button-primary"
               >
-                Simulate QR Scan (MATH10)
+                Scan Code ({availableSections[0]?.code || "MATH12"})
               </button>
             </div>
           </div>

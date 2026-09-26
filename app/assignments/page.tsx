@@ -43,6 +43,13 @@ export default function AssignmentsPage() {
       setAssignments(content.assignments);
     }
     refreshData();
+    diagnosticApi.fetchCourseContent()
+      .then((content) => {
+        setCourseContent(content);
+        setAssignments(content.assignments);
+      })
+      .catch((e) => console.error("Failed to fetch course assignments", e));
+
     window.addEventListener("storage", refreshData);
     return () => window.removeEventListener("storage", refreshData);
   }, []);
@@ -212,8 +219,13 @@ export default function AssignmentsPage() {
         </div>
 
         <div className="cp-section__list">
-
-          {filteredAssignments.map((assignment) => (
+          {filteredAssignments.length === 0 ? (
+            <div className="p-8 text-center bg-white border-2 border-ink rounded-xl shadow-sm">
+              <p className="font-bold text-ink text-base">No assignments found</p>
+              <p className="text-xs text-muted mt-1">There are no assignments matching the selected filter.</p>
+            </div>
+          ) : (
+            filteredAssignments.map((assignment) => (
             <div
               key={assignment.id}
               className={
@@ -227,11 +239,22 @@ export default function AssignmentsPage() {
                   <p className="cp-sticker">
                     {assignment.subject}
                   </p>
+                  {assignment.estimatedMinutes ? (
+                    <span className="text-[11px] font-mono text-muted ml-1">
+                      ~{assignment.estimatedMinutes} mins
+                    </span>
+                  ) : null}
                 </div>
 
                 <h3 className="cp-row__title">
                   {assignment.title}
                 </h3>
+
+                {assignment.prompt ? (
+                  <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-2.5 my-2 leading-relaxed">
+                    {assignment.prompt}
+                  </p>
+                ) : null}
 
                 <p className="cp-row__meta">
                   <span className="cp-row__meta-item">
@@ -276,24 +299,8 @@ export default function AssignmentsPage() {
                 )}
               </div>
             </div>
-          ))}
-
-          {filteredAssignments.length === 0 && (
-            <div className="cp-empty">
-              <p className="cp-sticker">
-                Nothing here
-              </p>
-
-              <h3 className="cp-h-card mt-3">
-                No assignments found
-              </h3>
-
-              <p className="cp-empty__hand mt-2">
-                Try another filter.
-              </p>
-            </div>
+          ))
           )}
-
         </div>
       </section>
 

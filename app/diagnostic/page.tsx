@@ -59,10 +59,12 @@ export default function DiagnosticPage() {
     let active = true;
     async function init() {
       try {
-        const q = await diagnosticApi.getCourseDiagnostic("MATH10");
+        const enr = diagnosticApi.getCurrentEnrollment();
+        const code = enr?.sectionCode || "diagnostic";
+        const q = await diagnosticApi.getCourseDiagnostic(code);
         if (!active) return;
         if (!q) {
-          const res = await diagnosticApi.completeDiagnostic("MATH10");
+          const res = await diagnosticApi.completeDiagnostic(code);
           if (!active) return;
           setSummaryText(res.summaryText);
           setIsCompleted(true);
@@ -89,14 +91,16 @@ export default function DiagnosticPage() {
     setSubmitting(true);
 
     try {
-      const res = await diagnosticApi.submitDiagnosticAnswer("MATH10", {
+      const enr = diagnosticApi.getCurrentEnrollment();
+      const code = enr?.sectionCode || "diagnostic";
+      const res = await diagnosticApi.submitDiagnosticAnswer(code, {
         questionId: question.questionId,
         answer: selectedOption,
         confidence: selectedConfidence,
       });
 
       if (res.completed || !res.nextQuestion) {
-        const finishRes = await diagnosticApi.completeDiagnostic("MATH10");
+        const finishRes = await diagnosticApi.completeDiagnostic(code);
         setSummaryText(finishRes.summaryText);
         setIsCompleted(true);
       } else {

@@ -37,7 +37,12 @@ export default function LoginPage() {
 
     try {
       await diagnosticApi.login(registerNumber.trim(), password.trim());
-      router.push("/join");
+      const enr = diagnosticApi.getCurrentEnrollment();
+      if (enr) {
+        router.push("/");
+      } else {
+        router.push("/join");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials.";
       setError(msg);
@@ -48,7 +53,7 @@ export default function LoginPage() {
 
   function handleQuickDemoFill() {
     setRegisterNumber("12A-01");
-    setPassword("student123");
+    setPassword("Password123!");
     setError("");
   }
 

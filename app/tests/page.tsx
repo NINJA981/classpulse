@@ -33,6 +33,13 @@ export default function TestsPage() {
       setTests(content.tests);
     }
     refreshData();
+    diagnosticApi.fetchCourseContent()
+      .then((content) => {
+        setCourseContent(content);
+        setTests(content.tests);
+      })
+      .catch((e) => console.error("Failed to load tests", e));
+
     window.addEventListener("storage", refreshData);
     return () => window.removeEventListener("storage", refreshData);
   }, []);

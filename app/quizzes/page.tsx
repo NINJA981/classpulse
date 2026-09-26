@@ -16,7 +16,6 @@ import { diagnosticApi } from "@/lib/diagnosticApi";
 import {
   lessonQuizApi,
   LessonQuizSummary,
-  getDemoQuizSummaries,
 } from "@/lib/lessonQuizApi";
 
 interface Enrollment {
@@ -40,17 +39,16 @@ export default function QuizzesPage() {
       : null;
   });
 
-  const [quizzes, setQuizzes] = useState<LessonQuizSummary[]>(() => {
-    return typeof window !== "undefined" ? getDemoQuizSummaries() : [];
-  });
+  const [quizzes, setQuizzes] = useState<LessonQuizSummary[]>([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let active = true;
 
     async function load() {
+      setLoading(true);
       try {
         const localEnr = diagnosticApi.getCurrentEnrollment();
         let enr: Enrollment | null = localEnr
@@ -63,7 +61,7 @@ export default function QuizzesPage() {
           : null;
 
         const token = getToken();
-        if (token && !token.startsWith("demo_token_")) {
+        if (token) {
           try {
             const enrollments = await request<{ items: Enrollment[] }>("/student/enrollments");
             if (enrollments?.items?.[0]) enr = enrollments.items[0];
@@ -83,13 +81,15 @@ export default function QuizzesPage() {
         setErrorMessage(
           err instanceof Error ? err.message : "Could not load your quizzes."
         );
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
     void load();
 
     function refreshScores() {
-      setQuizzes(getDemoQuizSummaries());
+      lessonQuizApi.list().then((res) => setQuizzes(res.quizzes)).catch(() => {});
       const localEnr = diagnosticApi.getCurrentEnrollment();
       if (localEnr) {
         setEnrollment({
@@ -302,6 +302,14 @@ export default function QuizzesPage() {
                 <h3 className="cp-h-card">Could not load quizzes</h3>
                 <p className="cp-state__msg">{errorMessage}</p>
               </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {ready && quizzes.length === 0 && (
+            <div className="p-8 text-center bg-white border-2 border-ink rounded-xl shadow-sm">
+              <p className="font-bold text-ink text-base">No quizzes published yet</p>
+              <p className="text-xs text-muted mt-1">Your teacher has not published any lesson quizzes for this class yet.</p>
             </div>
           )}
 

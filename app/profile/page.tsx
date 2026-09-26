@@ -188,7 +188,7 @@ export default function ProfilePage() {
           <div className="cp-hero__pills">
             <span className="ui-pill ui-pill-yellow font-mono text-xs">
               <GraduationCap className="w-3.5 h-3.5" />
-              {profile?.registerNumber || "2024-CS-042"}
+              {profile?.registerNumber || "Student"}
             </span>
 
             <button
@@ -238,7 +238,7 @@ export default function ProfilePage() {
               <GraduationCap className="w-3.5 h-3.5 text-ink" /> Register Number
             </p>
             <p className="font-mono font-bold text-ink text-base">
-              {profile?.registerNumber || "2024-CS-042"}
+              {profile?.registerNumber || "Not registered"}
             </p>
           </div>
 
@@ -247,7 +247,7 @@ export default function ProfilePage() {
               <Mail className="w-3.5 h-3.5 text-ink" /> Institutional Email
             </p>
             <p className="font-sans font-bold text-ink text-sm truncate">
-              {profile?.email || "aarav.sharma@institution.edu"}
+              {profile?.email || "No email linked"}
             </p>
           </div>
 
@@ -258,7 +258,7 @@ export default function ProfilePage() {
             <p className="font-sans font-bold text-ink text-sm truncate">
               {enrollment?.institutionName ||
                 profile?.institutionName ||
-                "National Institute of Technology"}
+                "ClasePulse"}
             </p>
           </div>
 
@@ -267,10 +267,10 @@ export default function ProfilePage() {
               <BookOpen className="w-3.5 h-3.5 text-ink" /> Enrolled Class
             </p>
             <p className="font-sans font-bold text-ink text-sm truncate">
-              {enrollment?.courseTitle || "Advanced Calculus & Linear Algebra"}
+              {enrollment?.courseTitle || "No active course"}
             </p>
             <p className="text-[11px] font-mono text-faint">
-              {enrollment ? `Code: ${enrollment.enrollmentId.replace("enr-", "")}` : "Code: MATH10"}
+              {enrollment ? `Section: ${enrollment.sectionCode || enrollment.enrollmentId}` : "Not enrolled"}
             </p>
           </div>
         </div>
