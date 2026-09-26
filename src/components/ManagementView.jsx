@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
 import {
   RefreshCw,
@@ -16,7 +16,11 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Calendar,
-  Sparkles
+  Sparkles,
+  Pencil,
+  Trash2,
+  UserCheck,
+  Plus
 } from 'lucide-react';
 
 export const ManagementView = () => {
@@ -30,6 +34,12 @@ export const ManagementView = () => {
     students = [],
     timetables = {},
     addTimetableSlot,
+    updateTimetableSlot,
+    deleteTimetableSlot,
+    timetableMode,
+    setTimetableMode,
+    selectedFacultyTimetable,
+    setSelectedFacultyTimetable,
     adminSubTab = 'overview',
     accessControls,
     toggleUserPermission,
@@ -42,20 +52,32 @@ export const ManagementView = () => {
 
   const activeSubTab = adminSubTab;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
+      if (e.key === 'Escape') {
+        if (isModalOpen) setIsModalOpen(false);
+        if (isEditModalOpen) setIsEditModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
+  }, [isModalOpen, isEditModalOpen]);
 
   // Timetable State
+  const [activeTimetableMode, setActiveTimetableMode] = useState(timetableMode || 'classroom'); // 'classroom' | 'faculty'
   const [selectedTimetableClass, setSelectedTimetableClass] = useState(classrooms[0]?.name || 'Class 12-A');
+  const [selectedTeacher, setSelectedTeacher] = useState(selectedFacultyTimetable || teachers[0]?.name || 'Demo Teacher');
   const [selectedTimetableDay, setSelectedTimetableDay] = useState('Monday');
+
+  useEffect(() => {
+    if (selectedFacultyTimetable) {
+      setSelectedTeacher(selectedFacultyTimetable);
+      setActiveTimetableMode('faculty');
+    }
+  }, [selectedFacultyTimetable]);
 
   useEffect(() => {
     if (classrooms.length > 0 && !classrooms.some(c => c.name === selectedTimetableClass)) {
@@ -63,13 +85,115 @@ export const ManagementView = () => {
     }
   }, [classrooms, selectedTimetableClass]);
 
-  // Timetable Slot Form
+  useEffect(() => {
+    if (teachers.length > 0 && (!selectedTeacher || !teachers.some(t => t.name === selectedTeacher))) {
+      setSelectedTeacher(teachers[0].name);
+    }
+  }, [teachers, selectedTeacher]);
+
+  // Timetable Slot Form (Create)
   const [newSlotForm, setNewSlotForm] = useState({
     time: '02:30 - 03:30 PM',
     subject: courses[0]?.title || 'Mathematics XII',
     teacher: teachers[0]?.name || 'Demo Teacher',
+    className: classrooms[0]?.name || 'Class 12-A',
+    day: 'Monday',
     room: 'Science Lab 2'
   });
+
+  // Timetable Slot Form (Edit)
+  const [editSlotForm, setEditSlotForm] = useState({
+    time: '',
+    subject: '',
+    teacher: '',
+    className: '',
+    day: 'Monday',
+    room: ''
+  });
+
+  const currentSlots = useMemo(() => {
+    if (activeTimetableMode === 'faculty') {
+      if (!selectedTeacher) return [];
+      const list = [];
+      Object.entries(timetables || {}).forEach(([className, days]) => {
+        const daySlots = days?.[selectedTimetableDay] || [];
+        daySlots.forEach((slot, slotIndex) => {
+          if (
+            slot.teacher?.toLowerCase() === selectedTeacher?.toLowerCase() ||
+            slot.teacher?.toLowerCase().includes(selectedTeacher?.toLowerCase())
+          ) {
+            list.push({
+              ...slot,
+              className,
+              slotIndex
+            });
+          }
+        });
+      });
+      return list;
+    } else {
+      return (timetables[selectedTimetableClass]?.[selectedTimetableDay] || []).map((slot, slotIndex) => ({
+        ...slot,
+        className: selectedTimetableClass,
+        slotIndex
+      }));
+    }
+  }, [activeTimetableMode, selectedTeacher, selectedTimetableClass, selectedTimetableDay, timetables]);
+
+  const handleOpenEdit = (slot) => {
+    setEditingSlot(slot);
+    setEditSlotForm({
+      time: slot.time || '09:00 - 10:00 AM',
+      subject: slot.subject || (courses[0]?.title || 'Mathematics XII'),
+      teacher: slot.teacher || (teachers[0]?.name || 'Demo Teacher'),
+      className: slot.className || selectedTimetableClass,
+      day: selectedTimetableDay,
+      room: slot.room || 'Science Lab 2'
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (editingSlot) {
+      if (editSlotForm.className === editingSlot.className) {
+        updateTimetableSlot(editingSlot.className, selectedTimetableDay, editingSlot.slotIndex, {
+          time: editSlotForm.time,
+          subject: editSlotForm.subject,
+          teacher: editSlotForm.teacher,
+          room: editSlotForm.room
+        });
+      } else {
+        deleteTimetableSlot(editingSlot.className, selectedTimetableDay, editingSlot.slotIndex);
+        addTimetableSlot(editSlotForm.className, selectedTimetableDay, {
+          time: editSlotForm.time,
+          subject: editSlotForm.subject,
+          teacher: editSlotForm.teacher,
+          room: editSlotForm.room
+        });
+      }
+    }
+    setIsEditModalOpen(false);
+    setEditingSlot(null);
+  };
+
+  const handleDeleteSlot = (slot) => {
+    if (window.confirm(`Remove ${slot.subject} (${slot.time}) taught by ${slot.teacher} from ${slot.className}?`)) {
+      deleteTimetableSlot(slot.className, selectedTimetableDay, slot.slotIndex);
+    }
+  };
+
+  const handleCreateSlot = (e) => {
+    e.preventDefault();
+    const targetClass = newSlotForm.className || selectedTimetableClass;
+    addTimetableSlot(targetClass, selectedTimetableDay, {
+      time: newSlotForm.time,
+      subject: newSlotForm.subject,
+      teacher: newSlotForm.teacher,
+      room: newSlotForm.room
+    });
+    setIsModalOpen(false);
+  };
 
   const permissionRows = [
     { key: 'manageClassrooms', label: 'Create & Manage Classrooms Stream' },
@@ -369,43 +493,111 @@ export const ManagementView = () => {
         {/* ----------------- SECTION 2: TIMETABLE & SCHEDULES ----------------- */}
         {activeSubTab === 'timetables' && (
           <div className="border border-border bg-surface shadow-sm">
-            {/* Top Timetable Header with Stream Selector & Add Slot Button */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-surface">
+            {/* Top Timetable Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-border bg-surface">
               <div>
-                <span className="cp-eyebrow">Schedules</span>
-                <h3 className="cp-h3 mt-0.5">Schedule Management: {selectedTimetableClass}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="cp-eyebrow">Schedules & Timetable Matrix</span>
+                  <span className="cp-badge bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px]">
+                    LIVE SYNCED
+                  </span>
+                </div>
+                <h3 className="cp-h3 mt-0.5">
+                  {activeTimetableMode === 'faculty'
+                    ? `Faculty Teaching Schedule: ${selectedTeacher || 'Instructor'}`
+                    : `Classroom Cohort Schedule: ${selectedTimetableClass || 'Section'}`}
+                </h3>
               </div>
 
+              {/* Mode Toggle & Selectors */}
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <label className="cp-label text-[10px] text-muted whitespace-nowrap" htmlFor="timetable-stream-select">
-                    Stream:
-                  </label>
-                  <select
-                    id="timetable-stream-select"
-                    value={selectedTimetableClass}
-                    onChange={(e) => setSelectedTimetableClass(e.target.value)}
-                    className="cp-select text-xs py-1 px-3 h-8"
+                {/* View Mode Toggle: Classroom vs Faculty */}
+                <div className="inline-flex border border-border p-0.5 bg-surface-sunken">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTimetableMode('classroom')}
+                    className={`px-3 py-1 text-xs font-bold transition-colors ${
+                      activeTimetableMode === 'classroom'
+                        ? 'bg-ink text-white shadow-sm'
+                        : 'text-secondary hover:text-ink'
+                    }`}
                   >
-                    {classrooms.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    Classroom View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTimetableMode('faculty')}
+                    className={`px-3 py-1 text-xs font-bold transition-colors ${
+                      activeTimetableMode === 'faculty'
+                        ? 'bg-ink text-white shadow-sm'
+                        : 'text-secondary hover:text-ink'
+                    }`}
+                  >
+                    Faculty View
+                  </button>
                 </div>
 
+                {/* Selector based on active mode */}
+                {activeTimetableMode === 'classroom' ? (
+                  <div className="flex items-center gap-2">
+                    <label className="cp-label text-[10px] text-muted whitespace-nowrap" htmlFor="timetable-stream-select">
+                      Classroom:
+                    </label>
+                    <select
+                      id="timetable-stream-select"
+                      value={selectedTimetableClass}
+                      onChange={(e) => setSelectedTimetableClass(e.target.value)}
+                      className="cp-select text-xs py-1 px-3 h-8 font-bold"
+                    >
+                      {classrooms.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <label className="cp-label text-[10px] text-muted whitespace-nowrap" htmlFor="timetable-teacher-select">
+                      Instructor:
+                    </label>
+                    <select
+                      id="timetable-teacher-select"
+                      value={selectedTeacher}
+                      onChange={(e) => setSelectedTeacher(e.target.value)}
+                      className="cp-select text-xs py-1 px-3 h-8 font-bold"
+                    >
+                      {teachers.map((t) => (
+                        <option key={t.id} value={t.name}>
+                          {t.name} ({t.department || 'Faculty'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="cp-btn cp-btn-primary min-h-0 h-8 px-3 text-xs shrink-0"
+                  onClick={() => {
+                    setNewSlotForm({
+                      time: '02:30 - 03:30 PM',
+                      subject: courses[0]?.title || 'Mathematics XII',
+                      teacher: activeTimetableMode === 'faculty' ? selectedTeacher : (teachers[0]?.name || 'Demo Teacher'),
+                      className: activeTimetableMode === 'classroom' ? selectedTimetableClass : (classrooms[0]?.name || 'Class 12-A'),
+                      day: selectedTimetableDay,
+                      room: 'Science Lab 2'
+                    });
+                    setIsModalOpen(true);
+                  }}
+                  className="cp-btn cp-btn-primary min-h-0 h-8 px-3 text-xs shrink-0 flex items-center gap-1.5"
                 >
-                  <span aria-hidden="true">＋</span>
-                  <span>Add Timetable Slot</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{activeTimetableMode === 'faculty' ? 'Assign Teaching Slot' : 'Add Timetable Slot'}</span>
                 </button>
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-4">
+              {/* Day Segment */}
               <div className="cp-segment flex-wrap">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
                   <button
@@ -418,23 +610,77 @@ export const ManagementView = () => {
                 ))}
               </div>
 
-              <div className="cp-list-bordered">
-                {(timetables[selectedTimetableClass]?.[selectedTimetableDay] || []).map((slot, idx) => (
-                  <div key={idx} className="cp-row">
-                    <span className="cp-row-icon" aria-hidden="true">
-                      □
-                    </span>
-                    <div className="cp-row-content">
-                      <div className="cp-row-title flex items-center gap-2 flex-wrap">
-                        <span>{slot.time}</span>
-                        <span className="cp-badge">{slot.subject}</span>
-                      </div>
-                      <p className="cp-row-sub">
-                        Instructor: {slot.teacher} • Location: {slot.room}
-                      </p>
-                    </div>
+              {/* Slots List */}
+              <div className="space-y-2">
+                {currentSlots.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-border bg-surface-sunken">
+                    <p className="text-xs font-bold text-ink">
+                      {activeTimetableMode === 'faculty'
+                        ? `No teaching periods assigned to ${selectedTeacher} on ${selectedTimetableDay}.`
+                        : `No timetable slots scheduled for ${selectedTimetableClass} on ${selectedTimetableDay}.`}
+                    </p>
+                    <p className="text-[11px] mt-1 text-secondary">
+                      Click the button above to assign and update periods for this {activeTimetableMode === 'faculty' ? 'instructor' : 'cohort'}.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  currentSlots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="border border-border bg-surface p-3 flex flex-wrap items-center justify-between gap-3 hover:border-ink transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 bg-surface-sunken border border-border flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-xs text-ink">{slot.time}</span>
+                            <span className="cp-badge bg-surface-sunken border border-border font-bold">
+                              {slot.subject}
+                            </span>
+                            {activeTimetableMode === 'faculty' ? (
+                              <span className="cp-badge bg-blue-50 text-blue-900 border border-blue-200 font-bold">
+                                Cohort: {slot.className}
+                              </span>
+                            ) : (
+                              <span className="cp-badge bg-amber-50 text-amber-900 border border-amber-200 font-bold">
+                                Instructor: {slot.teacher}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-secondary mt-1">
+                            {activeTimetableMode === 'faculty'
+                              ? `Location: ${slot.room} • Section: ${slot.className}`
+                              : `Instructor: ${slot.teacher} • Location: ${slot.room}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons on slot */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(slot)}
+                          className="cp-btn cp-btn-ghost h-7 px-2.5 text-xs flex items-center gap-1.5 border border-border hover:bg-surface-sunken"
+                          title="Edit & update this timetable slot"
+                        >
+                          <Pencil className="w-3 h-3 text-secondary" />
+                          <span>Edit Slot</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSlot(slot)}
+                          className="cp-btn cp-btn-ghost h-7 px-2 text-xs flex items-center gap-1 border border-red-200 text-red-700 hover:bg-red-50"
+                          title="Remove this timetable slot"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-600" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -444,11 +690,15 @@ export const ManagementView = () => {
       {/* ----------------- CREATION MODAL ----------------- */}
       {isModalOpen && (
         <div className="cp-overlay">
-          <div className="cp-modal">
+          <div className="cp-modal max-w-md">
             <div className="cp-modal-header flex items-center justify-between gap-4">
               <div>
-                <span className="cp-eyebrow is-tight">Management</span>
-                <h2>Create New Timetable Slot</h2>
+                <span className="cp-eyebrow is-tight">Timetable Management</span>
+                <h2 className="text-base font-bold text-ink">
+                  {activeTimetableMode === 'faculty'
+                    ? `Assign Teaching Slot to ${selectedTeacher}`
+                    : `Add Slot to ${selectedTimetableClass}`}
+                </h2>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -460,14 +710,39 @@ export const ManagementView = () => {
               </button>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addTimetableSlot(selectedTimetableClass, selectedTimetableDay, newSlotForm);
-                setIsModalOpen(false);
-              }}
-            >
+            <form onSubmit={handleCreateSlot}>
               <div className="cp-modal-body space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="cp-field">
+                    <label className="cp-label">Day of Week</label>
+                    <select
+                      value={selectedTimetableDay}
+                      onChange={(e) => setSelectedTimetableDay(e.target.value)}
+                      className="cp-select text-xs"
+                    >
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Target Cohort / Section</label>
+                    <select
+                      value={newSlotForm.className || selectedTimetableClass}
+                      onChange={(e) => setNewSlotForm({ ...newSlotForm, className: e.target.value })}
+                      className="cp-select text-xs"
+                    >
+                      {classrooms.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="cp-field">
                   <label className="cp-label">Time Interval</label>
                   <input
@@ -475,36 +750,57 @@ export const ManagementView = () => {
                     required
                     value={newSlotForm.time}
                     onChange={(e) => setNewSlotForm({ ...newSlotForm, time: e.target.value })}
-                    className="cp-input"
-                    placeholder="02:30 - 03:30 PM"
+                    className="cp-input text-xs"
+                    placeholder="09:00 - 10:00 AM"
                   />
                 </div>
+
                 <div className="cp-field">
-                  <label className="cp-label">Subject</label>
-                  <input
-                    type="text"
-                    required
+                  <label className="cp-label">Subject / Course</label>
+                  <select
                     value={newSlotForm.subject}
                     onChange={(e) => setNewSlotForm({ ...newSlotForm, subject: e.target.value })}
-                    className="cp-input"
-                    placeholder="Biology Lab"
-                  />
+                    className="cp-select text-xs"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.title}>
+                        {c.title} ({c.code})
+                      </option>
+                    ))}
+                    <option value="Physics Lab 1">Physics Lab</option>
+                    <option value="Biology Lab">Biology Lab</option>
+                    <option value="Computer Science Lab">Computer Science Lab</option>
+                  </select>
                 </div>
+
                 <div className="cp-field">
-                  <label className="cp-label">Assigned Teacher</label>
+                  <label className="cp-label">Assigned Faculty Instructor</label>
                   <select
                     value={newSlotForm.teacher}
                     onChange={(e) => setNewSlotForm({ ...newSlotForm, teacher: e.target.value })}
-                    className="cp-select"
+                    className="cp-select text-xs"
                   >
                     {teachers.map((t) => (
                       <option key={t.id} value={t.name}>
-                        {t.name}
+                        {t.name} ({t.department || 'Faculty'})
                       </option>
                     ))}
                   </select>
                 </div>
+
+                <div className="cp-field">
+                  <label className="cp-label">Room / Laboratory</label>
+                  <input
+                    type="text"
+                    required
+                    value={newSlotForm.room}
+                    onChange={(e) => setNewSlotForm({ ...newSlotForm, room: e.target.value })}
+                    className="cp-input text-xs"
+                    placeholder="Science Lab 2"
+                  />
+                </div>
               </div>
+
               <div className="cp-modal-footer">
                 <button
                   type="button"
@@ -514,7 +810,129 @@ export const ManagementView = () => {
                   Cancel
                 </button>
                 <button type="submit" className="cp-btn cp-btn-primary">
-                  Add Slot
+                  Save Slot
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- EDIT / UPDATE MODAL ----------------- */}
+      {isEditModalOpen && (
+        <div className="cp-overlay">
+          <div className="cp-modal max-w-md">
+            <div className="cp-modal-header flex items-center justify-between gap-4">
+              <div>
+                <span className="cp-eyebrow is-tight">Timetable Management</span>
+                <h2 className="text-base font-bold text-ink">Update Timetable Slot</h2>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="cp-icon-btn shrink-0"
+                title="Close"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit}>
+              <div className="cp-modal-body space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="cp-field">
+                    <label className="cp-label">Day of Week</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={selectedTimetableDay}
+                      className="cp-input text-xs bg-surface-sunken"
+                    />
+                  </div>
+                  <div className="cp-field">
+                    <label className="cp-label">Assigned Cohort</label>
+                    <select
+                      value={editSlotForm.className}
+                      onChange={(e) => setEditSlotForm({ ...editSlotForm, className: e.target.value })}
+                      className="cp-select text-xs"
+                    >
+                      {classrooms.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="cp-field">
+                  <label className="cp-label">Time Interval</label>
+                  <input
+                    type="text"
+                    required
+                    value={editSlotForm.time}
+                    onChange={(e) => setEditSlotForm({ ...editSlotForm, time: e.target.value })}
+                    className="cp-input text-xs"
+                    placeholder="09:00 - 10:00 AM"
+                  />
+                </div>
+
+                <div className="cp-field">
+                  <label className="cp-label">Subject / Course</label>
+                  <select
+                    value={editSlotForm.subject}
+                    onChange={(e) => setEditSlotForm({ ...editSlotForm, subject: e.target.value })}
+                    className="cp-select text-xs"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.title}>
+                        {c.title} ({c.code})
+                      </option>
+                    ))}
+                    <option value="Physics Lab 1">Physics Lab</option>
+                    <option value="Biology Lab">Biology Lab</option>
+                    <option value="Computer Science Lab">Computer Science Lab</option>
+                  </select>
+                </div>
+
+                <div className="cp-field">
+                  <label className="cp-label">Assigned Faculty Instructor</label>
+                  <select
+                    value={editSlotForm.teacher}
+                    onChange={(e) => setEditSlotForm({ ...editSlotForm, teacher: e.target.value })}
+                    className="cp-select text-xs"
+                  >
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name} ({t.department || 'Faculty'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="cp-field">
+                  <label className="cp-label">Room / Laboratory</label>
+                  <input
+                    type="text"
+                    required
+                    value={editSlotForm.room}
+                    onChange={(e) => setEditSlotForm({ ...editSlotForm, room: e.target.value })}
+                    className="cp-input text-xs"
+                    placeholder="Science Lab 2"
+                  />
+                </div>
+              </div>
+
+              <div className="cp-modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="cp-btn cp-btn-ghost"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="cp-btn cp-btn-primary">
+                  Update Slot
                 </button>
               </div>
             </form>

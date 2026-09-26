@@ -246,13 +246,14 @@ export const ClassPulseProvider = ({ children }) => {
     if (!isSignedIn()) return;
     setLoadingData(true);
     try {
-      const [overviewRes, teachersRes, studentsRes, sectionsRes, coursesRes, lessonsRes] = await Promise.allSettled([
+      const [overviewRes, teachersRes, studentsRes, sectionsRes, coursesRes, lessonsRes, timetablesRes] = await Promise.allSettled([
         request('/admin/overview'),
         request('/admin/teachers'),
         request('/admin/students'),
         request('/admin/sections'),
         request('/admin/courses'),
-        request('/lessons?page=1&pageSize=50')
+        request('/lessons?page=1&pageSize=50'),
+        request('/admin/timetables')
       ]);
 
       let tMap = {};
@@ -292,16 +293,22 @@ export const ClassPulseProvider = ({ children }) => {
         setLessons(lessonsRes.value.lessons);
       }
 
-      if (loadedSections.length > 0) {
-        setTimetables(prev => {
-          const updated = { ...prev };
-          loadedSections.forEach(sec => {
-            if (!updated[sec.name]) {
-              updated[sec.name] = generateTimetableForClass(sec.name, loadedTeachers, loadedCourses);
-            }
-          });
-          return updated;
+      let hasSavedTimetables = false;
+      if (timetablesRes.status === 'fulfilled' && timetablesRes.value?.timetables && Object.keys(timetablesRes.value.timetables).length > 0) {
+        setTimetables(timetablesRes.value.timetables);
+        hasSavedTimetables = true;
+      }
+
+      if (!hasSavedTimetables && loadedSections.length > 0) {
+        const generated = {};
+        loadedSections.forEach(sec => {
+          generated[sec.name] = generateTimetableForClass(sec.name, loadedTeachers, loadedCourses);
         });
+        setTimetables(generated);
+        request('/admin/timetables', {
+          method: 'PUT',
+          body: JSON.stringify({ timetables: generated })
+        }).catch(err => console.error('Failed to init timetables:', err));
       }
     } catch (err) {
       console.error('Failed to load backend data:', err);
@@ -385,6 +392,8 @@ export const ClassPulseProvider = ({ children }) => {
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [timetables, setTimetables] = useState(INITIAL_TIMETABLES);
+  const [timetableMode, setTimetableMode] = useState('classroom'); // 'classroom' | 'faculty'
+  const [selectedFacultyTimetable, setSelectedFacultyTimetable] = useState('');
   const [accessControls, setAccessControls] = useState(INITIAL_ACCESS_CONTROLS);
 
   // Admin Actions with Backend Integration
@@ -549,6 +558,18 @@ export const ClassPulseProvider = ({ children }) => {
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, className } : s));
   };
 
+  const saveTimetables = async (updated) => {
+    setTimetables(updated);
+    try {
+      await request('/admin/timetables', {
+        method: 'PUT',
+        body: JSON.stringify({ timetables: updated })
+      });
+    } catch (err) {
+      console.error('Failed to persist timetables:', err);
+    }
+  };
+
   // Update Timetable slot
   const updateTimetableSlot = (className, day, slotIndex, updatedSlot) => {
     setTimetables(prev => {
@@ -557,13 +578,15 @@ export const ClassPulseProvider = ({ children }) => {
       const newDaySlots = [...daySlots];
       newDaySlots[slotIndex] = updatedSlot;
 
-      return {
+      const updated = {
         ...prev,
         [className]: {
           ...classTimetable,
           [day]: newDaySlots
         }
       };
+      saveTimetables(updated);
+      return updated;
     });
   };
 
@@ -572,14 +595,34 @@ export const ClassPulseProvider = ({ children }) => {
     setTimetables(prev => {
       const classTimetable = prev[className] || {};
       const daySlots = classTimetable[day] || [];
-
-      return {
+      const updated = {
         ...prev,
         [className]: {
           ...classTimetable,
           [day]: [...daySlots, slot]
         }
       };
+      saveTimetables(updated);
+      return updated;
+    });
+  };
+
+  // Delete Timetable slot
+  const deleteTimetableSlot = (className, day, slotIndex) => {
+    setTimetables(prev => {
+      const classTimetable = prev[className] || {};
+      const daySlots = classTimetable[day] || [];
+      const newDaySlots = daySlots.filter((_, idx) => idx !== slotIndex);
+
+      const updated = {
+        ...prev,
+        [className]: {
+          ...classTimetable,
+          [day]: newDaySlots
+        }
+      };
+      saveTimetables(updated);
+      return updated;
     });
   };
 
@@ -700,6 +743,12 @@ export const ClassPulseProvider = ({ children }) => {
         timetables,
         updateTimetableSlot,
         addTimetableSlot,
+        deleteTimetableSlot,
+        saveTimetables,
+        timetableMode,
+        setTimetableMode,
+        selectedFacultyTimetable,
+        setSelectedFacultyTimetable,
         assignTeacherToClassroom,
         assignStudentToClassroom,
         accessControls,

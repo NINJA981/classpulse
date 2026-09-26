@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Calendar } from 'lucide-react';
 import { useClassPulse } from '../../context/ClassPulseContext';
 
 export const FacultyDirectoryView = () => {
   const {
     teachers,
     addTeacher,
-    deleteTeacher
+    deleteTeacher,
+    setSelectedFacultyTimetable,
+    setTimetableMode,
+    setActiveTab,
+    setAdminSubTab
   } = useClassPulse();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,6 +121,22 @@ export const FacultyDirectoryView = () => {
                   <span>Email:</span>
                   <strong className="text-ink">{t.email}</strong>
                 </div>
+              </div>
+
+              <div className="pt-2 border-t border-border-faint">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (setSelectedFacultyTimetable) setSelectedFacultyTimetable(t.name);
+                    if (setTimetableMode) setTimetableMode('faculty');
+                    if (setActiveTab) setActiveTab('management');
+                    if (setAdminSubTab) setAdminSubTab('timetables');
+                  }}
+                  className="cp-btn cp-btn-ghost h-7 px-2.5 text-xs flex items-center gap-1.5 border border-border hover:bg-surface-sunken w-full justify-center"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-secondary" />
+                  <span>View & Update Timetable →</span>
+                </button>
               </div>
             </div>
           ))}
