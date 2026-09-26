@@ -9,6 +9,11 @@ const nextConfig = {
         destination: '/dashboard',
         permanent: false,
       },
+      {
+        source: '/model-settings',
+        destination: '/dashboard',
+        permanent: false,
+      },
     ];
   },
 };
