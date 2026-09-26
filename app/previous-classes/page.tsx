@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 import { Lesson } from '../../types';
@@ -13,6 +13,8 @@ import {
   FileText,
   CheckCircle,
   Play,
+  Pause,
+  Headphones,
   ArrowUpRight,
   X,
   Radio,
@@ -42,6 +44,25 @@ export default function PreviousClassesPage() {
   const [selectedSubject, setSelectedSubject] = useState('All');
   const [selectedClass, setSelectedClass] = useState('All');
   const [activeModalItem, setActiveModalItem] = useState<ClassArchiveItem | null>(null);
+  const [activeAudioItem, setActiveAudioItem] = useState<ClassArchiveItem | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleToggleAudio = (item: ClassArchiveItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (activeAudioItem?.id === item.id) {
+      if (isPlaying) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current?.play();
+        setIsPlaying(true);
+      }
+    } else {
+      setActiveAudioItem(item);
+      setIsPlaying(true);
+    }
+  };
 
   useEffect(() => {
     api.getLessons()
@@ -193,12 +214,12 @@ export default function PreviousClassesPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: '34%' }}>Lecture Topic & Subject</th>
+                <th style={{ width: '28%' }}>Lecture Topic & Subject</th>
                 <th style={{ width: '18%' }}>Class Cohort</th>
                 <th style={{ width: '14%' }}>Date & Duration</th>
-                <th style={{ width: '12%' }}>Attendance</th>
+                <th style={{ width: '10%' }}>Attendance</th>
                 <th style={{ width: '10%' }}>Quiz Status</th>
-                <th style={{ width: '12%', textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '20%', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -213,8 +234,8 @@ export default function PreviousClassesPage() {
                     <div className="text-secondary" style={{ fontSize: '11px', marginTop: '3px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span className="timetable-tag">{item.subject}</span>
                       {item.hasRecording && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          <Radio size={11} /> Audio Captured
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: '#00875a', fontWeight: 700 }}>
+                          <Radio size={11} /> Audio Captured (MinIO S3)
                         </span>
                       )}
                     </div>
@@ -255,16 +276,45 @@ export default function PreviousClassesPage() {
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveModalItem(item);
-                      }}
-                    >
-                      Inspect <ArrowUpRight size={12} />
-                    </button>
+                    <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                      {item.hasRecording && (
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${activeAudioItem?.id === item.id && isPlaying ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={(e) => handleToggleAudio(item, e)}
+                          title="Listen to class recording from MinIO S3"
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            border: activeAudioItem?.id === item.id && isPlaying ? '2px solid #111' : undefined
+                          }}
+                        >
+                          {activeAudioItem?.id === item.id && isPlaying ? (
+                            <>
+                              <Pause size={12} /> Pause
+                            </>
+                          ) : (
+                            <>
+                              <Headphones size={12} /> Listen Audio
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveModalItem(item);
+                        }}
+                        style={{ padding: '4px 10px', fontSize: '12px' }}
+                      >
+                        Inspect <ArrowUpRight size={12} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -327,25 +377,28 @@ export default function PreviousClassesPage() {
               </div>
             </div>
 
-            {/* Simulated Audio Playback if recorded */}
+            {/* Real Audio Playback from MinIO S3 */}
             {activeModalItem.hasRecording && (
-              <div className="card card-solid mb-3" style={{ padding: '1rem' }}>
+              <div className="card card-solid mb-3" style={{ padding: '1.25rem', border: '2px solid #111', background: '#faf9f6' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span className="eyebrow" style={{ color: 'var(--ink)', margin: 0 }}>
-                    ● ARCHIVED AUDIO RECORDING
-                  </span>
-                  <span className="text-mono" style={{ fontSize: '11px' }}>
-                    00:00 / {activeModalItem.durationMinutes}:00
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button type="button" className="btn btn-sm btn-primary" style={{ padding: '6px 12px' }}>
-                    <Play size={12} /> Play Lecture
-                  </button>
-                  <div style={{ flex: 1, height: '6px', background: 'var(--hairline)', position: 'relative' }}>
-                    <div style={{ width: '25%', height: '100%', background: 'var(--ink)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Headphones size={15} />
+                    <span className="eyebrow" style={{ color: 'var(--ink)', margin: 0 }}>
+                      ● ARCHIVED AUDIO RECORDING (MINIO S3 STORAGE)
+                    </span>
                   </div>
+                  <span className="status-pill status-pill-ready">
+                    MinIO S3
+                  </span>
                 </div>
+                <p className="text-secondary" style={{ fontSize: '12px', marginBottom: '10px' }}>
+                  Stream captured lecture audio on demand from MinIO S3 object storage.
+                </p>
+                <audio
+                  controls
+                  src={api.getLessonAudioUrl(activeModalItem.id)}
+                  style={{ width: '100%', outline: 'none' }}
+                />
               </div>
             )}
 
@@ -374,6 +427,71 @@ export default function PreviousClassesPage() {
               </Link>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Bottom Audio Player Dock when listening from table */}
+      {activeAudioItem && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            left: 'max(1.5rem, calc(260px + 1.5rem))',
+            zIndex: 999,
+            background: '#ffffff',
+            border: '2px solid #111111',
+            boxShadow: '4px 4px 0px #111111',
+            padding: '1rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.25rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ minWidth: '180px', flex: '1 1 200px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="recording-dot" style={{ background: '#00875a' }} />
+              <span className="eyebrow" style={{ margin: 0, color: '#00875a', fontSize: '9px' }}>
+                STREAMING AUDIO • MINIO S3 OBJECT STORAGE
+              </span>
+            </div>
+            <div style={{ fontWeight: 800, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {activeAudioItem.title}
+            </div>
+            <div className="text-secondary" style={{ fontSize: '11px' }}>
+              {activeAudioItem.subject} • {activeAudioItem.className}
+            </div>
+          </div>
+
+          <div style={{ flex: '2 1 300px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <audio
+              ref={audioRef}
+              controls
+              autoPlay
+              src={api.getLessonAudioUrl(activeAudioItem.id)}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onEnded={() => setIsPlaying(false)}
+              style={{ width: '100%', height: '36px' }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              if (audioRef.current) {
+                audioRef.current.pause();
+              }
+              setActiveAudioItem(null);
+              setIsPlaying(false);
+            }}
+            title="Close audio player"
+            style={{ padding: '6px' }}
+          >
+            <X size={15} />
+          </button>
         </div>
       )}
     </div>

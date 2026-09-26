@@ -325,6 +325,15 @@ export const api = {
   },
 
   /**
+   * Returns streaming audio URL from MinIO S3 for a lesson.
+   */
+  getLessonAudioUrl(lessonId: string): string {
+    const token = isBrowser() ? localStorage.getItem('clasepulse_jwt_token') : '';
+    const base = resolveApiBase();
+    return `${base}/lessons/${lessonId}/audio${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  },
+
+  /**
    * GET /api/lessons/:id/questions
    */
   async getLessonQuestions(lessonId: string): Promise<{ lessonId: string; questions: Question[]; assignment: Assignment | null }> {

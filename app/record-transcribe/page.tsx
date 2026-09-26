@@ -10,6 +10,7 @@ import {
   Play,
   Square,
   Pause,
+  Headphones,
   Copy,
   Sparkles,
   FileText,
@@ -55,6 +56,7 @@ export default function RecordTranscribePage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(30);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [captureError, setCaptureError] = useState('');
 
   // The live MediaStream, shared with the caption relay.
@@ -89,6 +91,19 @@ export default function RecordTranscribePage() {
       console.error(err);
     }
   }, []);
+
+  // Create playback URL whenever a recording blob is captured
+  useEffect(() => {
+    if (!recordingBlob) {
+      setAudioPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(recordingBlob);
+    setAudioPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [recordingBlob]);
 
   // Timer & waveform animation loop
   useEffect(() => {
@@ -511,6 +526,41 @@ export default function RecordTranscribePage() {
               )}
             </div>
           </div>
+
+          {/* Captured Audio Playback Section */}
+          {audioPreviewUrl && !isRecording && (
+            <div
+              className="card mt-3"
+              style={{
+                background: '#faf9f6',
+                border: '2px solid #111111',
+                padding: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Headphones size={16} />
+                  <span className="eyebrow" style={{ color: '#111', margin: 0 }}>
+                    LISTEN TO CAPTURED CLASS AUDIO
+                  </span>
+                </div>
+                <span className="status-pill status-pill-ready">
+                  {recordingBlob ? `${(recordingBlob.size / 1024 / 1024).toFixed(2)} MB` : 'Ready'} • MinIO S3 Ready
+                </span>
+              </div>
+              <p className="text-secondary" style={{ fontSize: '12px', marginBottom: '10px' }}>
+                Listen back to verify audio clarity before converting into quiz questions and persisting to MinIO S3 object storage.
+              </p>
+              <audio controls src={audioPreviewUrl} style={{ width: '100%', outline: 'none' }} />
+            </div>
+          )}
 
           {/* Live captions tap the same stream the recorder uses. When the session came
               from New Lesson the lesson already exists, so captions save straight onto it. */}
