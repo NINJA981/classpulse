@@ -10,7 +10,8 @@ export const ClassroomsDirectoryView = () => {
     addClassroom,
     deleteClassroom,
     students,
-    teachers
+    teachers,
+    courses = []
   } = useClassPulse();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,9 +22,10 @@ export const ClassroomsDirectoryView = () => {
   const [classroomForm, setClassroomForm] = useState({
     name: '',
     room: '',
-    gradeLevel: 'Grade 10',
-    leadTeacher: teachers[0]?.name || 'Dr. Anitha',
-    studentCount: 35,
+    gradeLevel: 'Grade 12',
+    courseId: '',
+    leadTeacher: '',
+    studentCount: 0,
     description: 'General Academic Stream'
   });
 
@@ -268,9 +270,23 @@ export const ClassroomsDirectoryView = () => {
                   />
                 </div>
                 <div className="cp-field">
+                  <label className="cp-label">Associated Course / Curriculum</label>
+                  <select
+                    value={classroomForm.courseId || courses[0]?.id || ''}
+                    onChange={(e) => setClassroomForm({ ...classroomForm, courseId: e.target.value })}
+                    className="cp-select"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title} ({c.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="cp-field">
                   <label className="cp-label">Lead Teacher</label>
                   <select
-                    value={classroomForm.leadTeacher}
+                    value={classroomForm.leadTeacher || teachers[0]?.name || ''}
                     onChange={(e) => setClassroomForm({ ...classroomForm, leadTeacher: e.target.value })}
                     className="cp-select"
                   >

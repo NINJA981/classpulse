@@ -21,14 +21,15 @@ import {
   ChevronDown,
   ChevronRight,
   ShieldCheck,
-  Calendar
+  Calendar,
+  LayoutDashboard
 } from 'lucide-react';
 
 export const Sidebar = () => {
   const {
     activeTab,
     setActiveTab,
-    adminSubTab = 'access',
+    adminSubTab = 'overview',
     setAdminSubTab,
     onboardingStep = 'institution',
     setOnboardingStep,
@@ -37,7 +38,8 @@ export const Sidebar = () => {
     logout,
     classrooms = [],
     teachers = [],
-    students = []
+    students = [],
+    courses = []
   } = useClassPulse();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,6 +57,7 @@ export const Sidebar = () => {
   }, [activeTab]);
 
   const managementSubItems = [
+    { id: 'overview', label: 'Institutional Overview', icon: LayoutDashboard },
     { id: 'access', label: 'Access Control (RBAC)', icon: ShieldCheck },
     { id: 'timetables', label: 'Schedules & Timetables', icon: Calendar }
   ];

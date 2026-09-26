@@ -2,16 +2,42 @@
 
 import React, { useState, useEffect } from 'react';
 import { useClassPulse } from '../context/ClassPulseContext';
+import {
+  RefreshCw,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Building2,
+  Users,
+  BookOpen,
+  School,
+  BrainCircuit,
+  Layers,
+  ArrowUpRight,
+  ShieldCheck,
+  Calendar,
+  Sparkles
+} from 'lucide-react';
 
 export const ManagementView = () => {
   const {
-    classrooms,
-    teachers,
-    timetables,
+    overview,
+    institution,
+    courses = [],
+    lessons = [],
+    classrooms = [],
+    teachers = [],
+    students = [],
+    timetables = {},
     addTimetableSlot,
-    adminSubTab = 'access',
+    adminSubTab = 'overview',
     accessControls,
-    toggleUserPermission
+    toggleUserPermission,
+    refreshData,
+    loadingData,
+    backendConnected,
+    setActiveTab,
+    setOnboardingStep
   } = useClassPulse();
 
   const activeSubTab = adminSubTab;
@@ -28,14 +54,20 @@ export const ManagementView = () => {
   }, [isModalOpen]);
 
   // Timetable State
-  const [selectedTimetableClass, setSelectedTimetableClass] = useState(classrooms[0]?.name || 'Grade 10-A');
+  const [selectedTimetableClass, setSelectedTimetableClass] = useState(classrooms[0]?.name || 'Class 12-A');
   const [selectedTimetableDay, setSelectedTimetableDay] = useState('Monday');
+
+  useEffect(() => {
+    if (classrooms.length > 0 && !classrooms.some(c => c.name === selectedTimetableClass)) {
+      setSelectedTimetableClass(classrooms[0].name);
+    }
+  }, [classrooms, selectedTimetableClass]);
 
   // Timetable Slot Form
   const [newSlotForm, setNewSlotForm] = useState({
     time: '02:30 - 03:30 PM',
-    subject: 'Biology Lab',
-    teacher: teachers[0]?.name || 'Dr. Anitha',
+    subject: courses[0]?.title || 'Mathematics XII',
+    teacher: teachers[0]?.name || 'Demo Teacher',
     room: 'Science Lab 2'
   });
 
@@ -49,9 +81,239 @@ export const ManagementView = () => {
     { key: 'viewAnalytics', label: 'View Performance Analytics & Logs' }
   ];
 
+  const instData = institution || overview?.institution;
+  const counts = overview?.counts || {};
+  const recentLessons = overview?.recentLessons || [];
+  const lessonsByStatus = overview?.lessonsByStatus || [];
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'published':
+        return <span className="cp-badge bg-emerald-100 text-emerald-900 border border-emerald-300">Published</span>;
+      case 'ready_for_review':
+        return <span className="cp-badge bg-amber-100 text-amber-900 border border-amber-300">Ready for Review</span>;
+      case 'queued':
+      case 'transcribing':
+      case 'generating':
+        return <span className="cp-badge bg-sky-100 text-sky-900 border border-sky-300">Processing</span>;
+      case 'failed':
+        return <span className="cp-badge bg-red-100 text-red-900 border border-red-300">Failed</span>;
+      case 'draft':
+      default:
+        return <span className="cp-badge bg-gray-100 text-gray-800 border border-gray-300">Draft</span>;
+    }
+  };
+
   return (
     <>
-      <section className="space-y-4">
+      <section className="space-y-5">
+        {/* ----------------- SECTION 0: INSTITUTIONAL OVERVIEW (LIVE BACKEND) ----------------- */}
+        {activeSubTab === 'overview' && (
+          <div className="space-y-5">
+            {/* Live Institution Banner */}
+            <div className="border border-border bg-surface shadow-sm p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-ink text-white flex items-center justify-center font-mono font-black text-sm shadow-[2px_2px_0_#111]">
+                    CP
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="cp-h2 font-black">
+                        {instData?.name || 'ClasePulse Institutional Command'}
+                      </h2>
+                      <span className="cp-badge is-ink font-mono text-[9px]">
+                        CODE: {instData?.code || 'INST-01'}
+                      </span>
+                    </div>
+                    <p className="text-secondary text-xs mt-0.5">
+                      Academic Year: <strong>{instData?.academicYear || '2026-2027'}</strong> • Timezone: <strong>{instData?.timezone || 'Asia/Kolkata'}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`cp-badge ${backendConnected ? 'bg-emerald-50 text-emerald-800 border border-emerald-400' : 'bg-amber-50 text-amber-800 border border-amber-400'} flex items-center gap-1.5 py-1 px-2.5 text-[10px]`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{backendConnected ? 'LIVE BACKEND CONNECTED' : 'CONNECTING API...'}</span>
+                  </span>
+                  {refreshData && (
+                    <button
+                      onClick={refreshData}
+                      disabled={loadingData}
+                      className="cp-btn cp-btn-ghost h-8 px-3 text-xs flex items-center gap-1.5 border border-border"
+                      title="Sync live records from backend"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? 'animate-spin' : ''}`} />
+                      <span>{loadingData ? 'Syncing...' : 'Refresh'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* KPI Statistics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Faculty</span>
+                    <Users className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.teachers ?? teachers.length}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">Instructors</p>
+                  </div>
+                </div>
+
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Students</span>
+                    <School className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.students ?? students.length}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">Enrolled</p>
+                  </div>
+                </div>
+
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Courses</span>
+                    <BookOpen className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.courses ?? courses.length}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">Curricula</p>
+                  </div>
+                </div>
+
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Sections</span>
+                    <Layers className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.sections ?? classrooms.length}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">Cohorts</p>
+                  </div>
+                </div>
+
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Lessons</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.lessons ?? lessons.length}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">{counts.publishedLessons ?? 0} Published</p>
+                  </div>
+                </div>
+
+                <div className="border border-border bg-surface-sunken p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-muted text-xs">
+                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">Questions</span>
+                    <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" />
+                  </div>
+                  <div className="mt-2">
+                    <strong className="text-2xl font-black text-ink">{counts.questions ?? 0}</strong>
+                    <p className="text-[10px] text-muted mt-0.5">{counts.approvedQuestions ?? 0} Approved</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Pipeline Distribution */}
+            {lessonsByStatus.length > 0 && (
+              <div className="border border-border bg-surface shadow-sm p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="cp-eyebrow">Pipeline Lifecycle</span>
+                  <span className="text-xs text-muted font-bold">Total: {counts.lessons || 0} Lessons</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {lessonsByStatus.map((row) => (
+                    <div key={row.status} className="border border-border p-3 bg-surface-sunken flex items-center justify-between">
+                      <div>
+                        {getStatusBadge(row.status)}
+                      </div>
+                      <span className="text-lg font-black text-ink">{row.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Live Recent Lectures Table */}
+            <div className="border border-border bg-surface shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-surface">
+                <div>
+                  <span className="cp-eyebrow">Realtime Activity</span>
+                  <h3 className="cp-h3 mt-0.5">Recent Classroom Lessons & Ingestion Jobs</h3>
+                  <p className="text-secondary text-xs mt-0.5">
+                    Live telemetry from audio recordings, syllabus uploads, and AI evaluation pipeline.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (setActiveTab) setActiveTab('onboarding');
+                    if (setOnboardingStep) setOnboardingStep('classrooms');
+                  }}
+                  className="cp-btn cp-btn-ghost h-8 text-xs flex items-center gap-1 border border-border"
+                >
+                  <span>Classrooms Directory</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="cp-table w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-surface-sunken text-[10px] uppercase font-black tracking-wider text-muted">
+                      <th className="py-2.5 px-4">Lecture / Topic Title</th>
+                      <th className="py-2.5 px-4">Subject</th>
+                      <th className="py-2.5 px-4">Classroom Cohort</th>
+                      <th className="py-2.5 px-4 text-center">Pipeline Status</th>
+                      <th className="py-2.5 px-4 text-right">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentLessons.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-muted text-xs">
+                          No recent lessons found in the backend database.
+                        </td>
+                      </tr>
+                    ) : (
+                      recentLessons.map((item) => (
+                        <tr key={item.id} className="border-b border-border-faint last:border-b-0 hover:bg-surface-hover">
+                          <td className="py-3 px-4 font-bold text-xs text-primary">
+                            {item.title}
+                          </td>
+                          <td className="py-3 px-4 text-xs font-semibold text-muted">
+                            <span className="cp-badge">{item.subject || 'General'}</span>
+                          </td>
+                          <td className="py-3 px-4 text-xs font-medium text-ink">
+                            {item.className || 'General Cohort'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {getStatusBadge(item.status)}
+                          </td>
+                          <td className="py-3 px-4 text-right text-[11px] font-mono text-muted">
+                            {new Date(item.updatedAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ----------------- SECTION 1: ACCESS CONTROL (RBAC MATRIX) ----------------- */}
         {activeSubTab === 'access' && (
           <div className="border border-border bg-surface shadow-sm">

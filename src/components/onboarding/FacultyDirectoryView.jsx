@@ -181,6 +181,16 @@ export const FacultyDirectoryView = () => {
                     placeholder="Computer Science"
                   />
                 </div>
+                <div className="cp-field">
+                  <label className="cp-label">Faculty Email Address</label>
+                  <input
+                    type="email"
+                    value={teacherForm.email}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })}
+                    className="cp-input"
+                    placeholder="faculty@clasepulse.test"
+                  />
+                </div>
               </div>
               <div className="cp-modal-footer">
                 <button

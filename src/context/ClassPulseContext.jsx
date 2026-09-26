@@ -5,7 +5,8 @@ import {
   clearSession,
   getStoredUser,
   isSignedIn,
-  login as apiLogin
+  login as apiLogin,
+  request
 } from '../lib/apiClient';
 import {
   INITIAL_PI_NODES,
@@ -134,11 +135,71 @@ const INITIAL_ACCESS_CONTROLS = {
   }
 };
 
+function mapBackendTeacher(t) {
+  return {
+    id: t.id,
+    name: t.name || 'Faculty Member',
+    staffId: t.staffId || `FAC-${t.id.slice(-4).toUpperCase()}`,
+    email: t.email || 'faculty@clasepulse.test',
+    department: t.department || 'Faculty Staff',
+    assignedClasses: t.assignedClasses || ['Class 12-A'],
+    status: 'Active',
+    createdAt: t.createdAt
+  };
+}
+
+function mapBackendStudent(s) {
+  return {
+    id: s.id,
+    name: s.name || 'Student',
+    rollNo: s.rollNumber || `STU-${s.id.slice(-4).toUpperCase()}`,
+    className: s.className || 'Class 12-A',
+    nickname: s.nickname || (s.name ? s.name.split(' ')[0] : 'Student'),
+    email: s.email || `${s.rollNumber ? s.rollNumber.toLowerCase() : 'student'}@clasepulse.edu`,
+    status: 'Active',
+    createdAt: s.createdAt
+  };
+}
+
+function mapSectionToClassroom(s, teachersMap = {}) {
+  return {
+    id: s.id,
+    name: s.name,
+    room: s.joinCode ? `Code: ${s.joinCode}` : 'Room 101',
+    joinCode: s.joinCode,
+    courseId: s.courseId,
+    gradeLevel: s.name.match(/\d+/)?.[0] ? `Grade ${s.name.match(/\d+/)[0]}` : 'General',
+    leadTeacher: (s.teacherNames && s.teacherNames[0]) || (s.teacherIds && teachersMap[s.teacherIds[0]]) || 'Faculty Lead',
+    studentCount: s.enrolledCount ?? 0,
+    status: 'Active',
+    description: `Section join code: ${s.joinCode || 'N/A'}`
+  };
+}
+
+function generateTimetableForClass(className, teachersList = [], coursesList = []) {
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const times = ['09:00 - 10:00 AM', '10:00 - 11:00 AM', '11:15 - 12:15 PM', '01:30 - 02:30 PM'];
+  const schedule = {};
+  days.forEach((day, dIdx) => {
+    schedule[day] = times.map((time, tIdx) => {
+      const course = coursesList[(dIdx + tIdx) % Math.max(coursesList.length, 1)];
+      const teacher = teachersList[(dIdx + tIdx) % Math.max(teachersList.length, 1)];
+      return {
+        time,
+        subject: course?.title || (tIdx % 2 === 0 ? 'Mathematics XII' : 'Chemistry XII'),
+        teacher: teacher?.name || 'Demo Teacher',
+        room: `Lab ${(tIdx % 3) + 1}`
+      };
+    });
+  });
+  return schedule;
+}
+
 export const ClassPulseProvider = ({ children }) => {
   // Authentication & Role State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState('admin'); // only 'admin' can sign in to this app
-  const [currentPort, setCurrentPort] = useState('5173');
+  const [userRole, setUserRole] = useState('admin');
+  const [currentPort, setCurrentPort] = useState('5171');
   const [currentUser, setCurrentUser] = useState({
     id: 'usr-admin-01',
     name: 'Head Administrator',
@@ -148,16 +209,105 @@ export const ClassPulseProvider = ({ children }) => {
   });
 
   const [activeTab, setActiveTab] = useState('management');
-  const [adminSubTab, setAdminSubTab] = useState('access');
+  const [adminSubTab, setAdminSubTab] = useState('overview');
   const [onboardingStep, setOnboardingStep] = useState('institution');
 
-  // Login handler — only administrators can sign in to this application.
+  // Backend live data states
+  const [overview, setOverview] = useState({
+    counts: {
+      teachers: 0,
+      students: 0,
+      courses: 0,
+      sections: 0,
+      lessons: 0,
+      publishedLessons: 0,
+      questions: 0,
+      approvedQuestions: 0
+    },
+    lessonsByStatus: [],
+    recentLessons: [],
+    institution: null
+  });
+  const [institution, setInstitution] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(false);
+
   const ADMIN_USER = {
     id: 'usr-admin-01',
     name: 'Principal Administrator',
     email: 'admin@classpulse.edu',
     role: 'admin',
     staffId: 'ADM-101'
+  };
+
+  const fetchBackendData = async () => {
+    if (!isSignedIn()) return;
+    setLoadingData(true);
+    try {
+      const [overviewRes, teachersRes, studentsRes, sectionsRes, coursesRes, lessonsRes] = await Promise.allSettled([
+        request('/admin/overview'),
+        request('/admin/teachers'),
+        request('/admin/students'),
+        request('/admin/sections'),
+        request('/admin/courses'),
+        request('/lessons?page=1&pageSize=50')
+      ]);
+
+      let tMap = {};
+      let loadedTeachers = [];
+      if (teachersRes.status === 'fulfilled' && teachersRes.value?.items) {
+        loadedTeachers = teachersRes.value.items.map(mapBackendTeacher);
+        setTeachers(loadedTeachers);
+        loadedTeachers.forEach(t => { tMap[t.id] = t.name; });
+      }
+
+      let loadedSections = [];
+      if (sectionsRes.status === 'fulfilled' && sectionsRes.value?.items) {
+        loadedSections = sectionsRes.value.items.map(s => mapSectionToClassroom(s, tMap));
+        setClassrooms(loadedSections);
+      }
+
+      if (studentsRes.status === 'fulfilled' && studentsRes.value?.items) {
+        const loadedStudents = studentsRes.value.items.map(mapBackendStudent);
+        setStudents(loadedStudents);
+      }
+
+      let loadedCourses = [];
+      if (coursesRes.status === 'fulfilled' && coursesRes.value?.items) {
+        loadedCourses = coursesRes.value.items;
+        setCourses(loadedCourses);
+      }
+
+      if (overviewRes.status === 'fulfilled' && overviewRes.value) {
+        setOverview(overviewRes.value);
+        if (overviewRes.value.institution) {
+          setInstitution(overviewRes.value.institution);
+        }
+        setBackendConnected(true);
+      }
+
+      if (lessonsRes.status === 'fulfilled' && lessonsRes.value?.lessons) {
+        setLessons(lessonsRes.value.lessons);
+      }
+
+      if (loadedSections.length > 0) {
+        setTimetables(prev => {
+          const updated = { ...prev };
+          loadedSections.forEach(sec => {
+            if (!updated[sec.name]) {
+              updated[sec.name] = generateTimetableForClass(sec.name, loadedTeachers, loadedCourses);
+            }
+          });
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load backend data:', err);
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   /** Puts the console into its signed-in state once a token exists. */
@@ -168,39 +318,22 @@ export const ClassPulseProvider = ({ children }) => {
     setActiveTab('management');
   };
 
-  /**
-   * Signs in against the real backend. The console reads and writes live institution data,
-   * so it needs a staff token — there is no local-only session any more.
-   */
   const login = async (email, password) => {
     const teacher = await apiLogin(email, password);
     applySession({ id: teacher.id, name: teacher.name, email: teacher.email, role: 'admin' });
+    await fetchBackendData();
     return teacher;
   };
 
-  // Port-based & URL-based Auto Detection for the Admin services
-  // Port 5171 -> Admin Dedicated Login Portal (logged out, shows LoginPage)
-  // Port 5174 (or 5173 / any non-5171 port) -> Admin Control Center (ManagementView, auto-logged-in admin)
+  // Session detection for single unified Admin Portal
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const port = window.location.port || '5171';
-    const search = window.location.search;
-    const envRole = typeof process !== 'undefined' && process.env
-      ? (process.env.NEXT_PUBLIC_APP_ROLE || process.env.APP_ROLE)
-      : undefined;
     setCurrentPort(port);
 
-    const wantsConsole =
-      port === '5174' ||
-      port === '5173' ||
-      (port !== '5171' && port !== '') ||
-      search.includes('role=admin') ||
-      envRole === 'admin';
-
-    // The console can no longer log itself in: every admin call needs a real token, so a
-    // stored session is required and its absence sends the browser to the login portal.
-    if (wantsConsole && isSignedIn()) {
+    if (isSignedIn()) {
       applySession(getStoredUser());
+      fetchBackendData();
     } else {
       setUserRole('admin');
       setIsLoggedIn(false);
@@ -210,10 +343,6 @@ export const ClassPulseProvider = ({ children }) => {
   const logout = () => {
     clearSession();
     setIsLoggedIn(false);
-    if (typeof window !== 'undefined' && window.location.port !== '5171') {
-      const host = window.location.hostname || 'localhost';
-      window.location.replace(`http://${host}:5171/`);
-    }
   };
 
   // Data simulation states
@@ -251,86 +380,70 @@ export const ClassPulseProvider = ({ children }) => {
   const [globalMute, setGlobalMute] = useState(false);
   const [isSimulatingLive, setIsSimulatingLive] = useState(true);
 
-  // Admin Management State
-  const [classrooms, setClassrooms] = useState([
-    { 
-      id: '10A', 
-      name: 'Grade 10-A', 
-      room: 'Science Lab 2', 
-      gradeLevel: 'Grade 10',
-      leadTeacher: 'Dr. Anitha', 
-      studentCount: 38, 
-      status: 'Active',
-      description: 'Science & Biology specialization stream'
-    },
-    { 
-      id: '9B', 
-      name: 'Grade 9-B', 
-      room: 'Physics Lab 1', 
-      gradeLevel: 'Grade 9',
-      leadTeacher: 'Prof. Rajesh Kumar', 
-      studentCount: 35, 
-      status: 'Active',
-      description: 'General Science & Physical studies'
-    },
-    { 
-      id: '11C', 
-      name: 'Grade 11-C', 
-      room: 'Chemistry Lab 3', 
-      gradeLevel: 'Grade 11',
-      leadTeacher: 'Dr. Meena Sundaram', 
-      studentCount: 40, 
-      status: 'Standby',
-      description: 'Advanced Physical Sciences & Organic Chemistry'
-    }
-  ]);
-
-  const [students, setStudents] = useState([
-    { id: 's1', name: 'Siddharth Verma', rollNo: 'STU-1001', className: 'Grade 10-A', nickname: 'Siddharth', email: 'siddharth@classpulse.edu', status: 'Active' },
-    { id: 's2', name: 'Rahul Sharma', rollNo: 'STU-1002', className: 'Grade 10-A', nickname: 'RahulS', email: 'rahul@classpulse.edu', status: 'Active' },
-    { id: 's3', name: 'Maya Patel', rollNo: 'STU-1003', className: 'Grade 9-B', nickname: 'MayaP', email: 'maya@classpulse.edu', status: 'Active' },
-    { id: 's4', name: 'Karthik Raja', rollNo: 'STU-1004', className: 'Grade 11-C', nickname: 'Karthik', email: 'karthik@classpulse.edu', status: 'Active' },
-    { id: 's5', name: 'Priya Mohan', rollNo: 'STU-1005', className: 'Grade 10-A', nickname: 'PriyaM', email: 'priya@classpulse.edu', status: 'Active' },
-    { id: 's6', name: 'Vikram Singh', rollNo: 'STU-1006', className: 'Grade 9-B', nickname: 'Vikram', email: 'vikram@classpulse.edu', status: 'Active' }
-  ]);
-
-  const [teachers, setTeachers] = useState([
-    { id: 't1', name: 'Dr. Anitha', staffId: 'TCH-501', email: 'anitha@classpulse.edu', department: 'Science & Biology', assignedClasses: ['Grade 10-A', 'Grade 11-C'], status: 'Active' },
-    { id: 't2', name: 'Prof. Rajesh Kumar', staffId: 'TCH-502', email: 'rajesh@classpulse.edu', department: 'Physics', assignedClasses: ['Grade 9-B'], status: 'Active' },
-    { id: 't3', name: 'Dr. Meena Sundaram', staffId: 'TCH-503', email: 'meena@classpulse.edu', department: 'Chemistry', assignedClasses: ['Grade 11-C'], status: 'Active' },
-    { id: 't4', name: 'Prof. Vikram Seth', staffId: 'TCH-504', email: 'vikram@classpulse.edu', department: 'Mathematics', assignedClasses: ['Grade 10-A'], status: 'Active' }
-  ]);
-
+  // Admin Management State - loaded dynamically from live Fastify backend
+  const [classrooms, setClassrooms] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [timetables, setTimetables] = useState(INITIAL_TIMETABLES);
   const [accessControls, setAccessControls] = useState(INITIAL_ACCESS_CONTROLS);
 
-  // Admin Actions
-  const addClassroom = (newClass) => {
+  // Admin Actions with Backend Integration
+  const addClassroom = async (newClass) => {
+    try {
+      const targetCourseId = newClass.courseId || courses[0]?.id;
+      const matchedTeacher = teachers.find(t => t.name === newClass.leadTeacher);
+      if (targetCourseId) {
+        await request('/admin/sections', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: newClass.name,
+            courseId: targetCourseId,
+            teacherIds: matchedTeacher ? [matchedTeacher.id] : []
+          })
+        });
+        await fetchBackendData();
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to add classroom on backend:', err);
+    }
     const item = { 
       ...newClass, 
       id: `cls-${Date.now().toString().slice(-4)}`,
-      studentCount: newClass.studentCount || 30,
+      studentCount: newClass.studentCount || 0,
       status: 'Active'
     };
     setClassrooms(prev => [...prev, item]);
-    // Initialize empty timetable if not existing
-    if (!timetables[newClass.name]) {
-      setTimetables(prev => ({
-        ...prev,
-        [newClass.name]: {
-          Monday: [
-            { time: '09:00 - 10:00 AM', subject: 'General Science', teacher: newClass.leadTeacher || 'Dr. Anitha', room: newClass.room }
-          ]
-        }
-      }));
-    }
   };
 
-  const deleteClassroom = (id) => {
+  const deleteClassroom = async (id) => {
+    try {
+      await request(`/admin/sections/${id}`, { method: 'DELETE' });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to delete section on backend:', err);
+    }
     setClassrooms(prev => prev.filter(c => c.id !== id));
   };
 
-  const addStudent = (newStudent) => {
+  const addStudent = async (newStudent) => {
+    try {
+      const targetSection = classrooms.find(c => c.name === newStudent.className || c.id === newStudent.sectionId);
+      await request('/admin/students', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newStudent.name,
+          rollNumber: newStudent.rollNo || `STU-${Date.now().toString().slice(-4)}`,
+          email: newStudent.email || undefined,
+          sectionId: targetSection?.id || undefined
+        })
+      });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to add student on backend:', err);
+    }
     const item = { ...newStudent, id: `stu-${Date.now().toString().slice(-4)}`, status: 'Active' };
     setStudents(prev => [...prev, item]);
   };
@@ -343,11 +456,31 @@ export const ClassPulseProvider = ({ children }) => {
     });
   };
 
-  const deleteStudent = (id) => {
+  const deleteStudent = async (id) => {
+    try {
+      await request(`/admin/students/${id}`, { method: 'DELETE' });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to delete student on backend:', err);
+    }
     setStudents(prev => prev.filter(s => s.id !== id));
   };
 
-  const addTeacher = (newTeacher) => {
+  const addTeacher = async (newTeacher) => {
+    try {
+      await request('/admin/teachers', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newTeacher.name,
+          email: newTeacher.email || `${newTeacher.name.toLowerCase().replace(/\s+/g, '.')}@clasepulse.test`
+        })
+      });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to add teacher on backend:', err);
+    }
     const item = { 
       ...newTeacher, 
       id: `tch-${Date.now().toString().slice(-4)}`, 
@@ -367,12 +500,31 @@ export const ClassPulseProvider = ({ children }) => {
     });
   };
 
-  const deleteTeacher = (id) => {
+  const deleteTeacher = async (id) => {
+    try {
+      await request(`/admin/teachers/${id}`, { method: 'DELETE' });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to delete teacher on backend:', err);
+    }
     setTeachers(prev => prev.filter(t => t.id !== id));
   };
 
   // Assign Teacher to Classroom
-  const assignTeacherToClassroom = (classroomId, teacherId) => {
+  const assignTeacherToClassroom = async (classroomId, teacherId) => {
+    try {
+      await request(`/admin/sections/${classroomId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          teacherIds: [teacherId]
+        })
+      });
+      await fetchBackendData();
+      return;
+    } catch (err) {
+      console.error('Failed to assign teacher on backend:', err);
+    }
     const targetClass = classrooms.find(c => c.id === classroomId);
     const targetTeacher = teachers.find(t => t.id === teacherId);
     if (!targetClass || !targetTeacher) return;
@@ -527,6 +679,13 @@ export const ClassPulseProvider = ({ children }) => {
         isSimulatingLive,
         setIsSimulatingLive,
         analytics: INITIAL_ANALYTICS,
+        overview,
+        institution,
+        courses,
+        lessons,
+        loadingData,
+        backendConnected,
+        refreshData: fetchBackendData,
         classrooms,
         addClassroom,
         deleteClassroom,
