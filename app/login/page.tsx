@@ -57,6 +57,25 @@ export default function LoginPage() {
       <div style={{ maxWidth: '460px', width: '100%' }}>
         {/* Terminal Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              background: 'var(--ink)',
+              color: 'var(--surface)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 900,
+              fontSize: '15px',
+              letterSpacing: '1px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem auto',
+              boxShadow: 'var(--shadow-offset-sm)'
+            }}
+          >
+            CP
+          </div>
           <span className="eyebrow" style={{ letterSpacing: '0.2em' }}>
             CLASEPULSE / FACULTY WORKSPACE
           </span>
