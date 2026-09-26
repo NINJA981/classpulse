@@ -57,14 +57,14 @@ export default function LoginPage() {
       {/* Top Bar */}
       <header className="max-w-md w-full mx-auto flex items-center justify-between pb-4 border-b-2 border-ink">
         <div className="cp-brand">
-          <div className="cp-brand__icon" aria-hidden="true">
-            <School />
+          <div className="cp-brand__icon font-mono font-black text-sm" aria-hidden="true">
+            CP
           </div>
           <div className="min-w-0">
             <p className="cp-brand__name">
-              Student <em>Dashboard</em>
+              Clase<em>Pulse</em>
             </p>
-            <p className="cp-brand__tag">Academic Portal</p>
+            <p className="cp-brand__tag">Student Portal</p>
           </div>
         </div>
 

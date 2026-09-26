@@ -44,14 +44,14 @@ const NAV_ITEMS: NavItem[] = [
 export function BrandMark() {
   return (
     <div className="cp-brand">
-      <div className="cp-brand__icon" aria-hidden="true">
-        <School />
+      <div className="cp-brand__icon font-mono font-black text-sm" aria-hidden="true">
+        CP
       </div>
       <div className="min-w-0">
         <p className="cp-brand__name">
-          Student <em>Dashboard</em>
+          Clase<em>Pulse</em>
         </p>
-        <p className="cp-brand__tag">Academic Portal</p>
+        <p className="cp-brand__tag">Student Portal</p>
       </div>
     </div>
   );

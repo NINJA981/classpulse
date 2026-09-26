@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
@@ -33,7 +33,7 @@ interface ActiveQuestion {
   timeLimitSec: number;
 }
 
-export default function StudentLiveArenaPage() {
+function LiveArenaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -515,5 +515,19 @@ export default function StudentLiveArenaPage() {
         </div>
       )}
     </DashboardShell>
+  );
+}
+
+export default function StudentLiveArenaPage() {
+  return (
+    <Suspense fallback={
+      <DashboardShell>
+        <div className="flex items-center justify-center p-12 text-center text-ink/60">
+          <p className="font-semibold text-sm">Loading live arena...</p>
+        </div>
+      </DashboardShell>
+    }>
+      <LiveArenaContent />
+    </Suspense>
   );
 }
