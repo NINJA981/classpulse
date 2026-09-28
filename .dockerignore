@@ -1,5 +1,7 @@
 # Node.js dependencies & builds
 node_modules
+.next
+out
 dist
 build
 .npm

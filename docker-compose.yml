@@ -17,7 +17,7 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_APP_ROLE=admin
-    command: npm run dev:admin
+    command: npm run dev
 
   # ================================================
   # 2. Admin Login Portal Service (Port 5171)
