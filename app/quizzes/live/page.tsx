@@ -20,7 +20,9 @@ import {
 import DashboardShell from "@/components/DashboardShell";
 import Link from "next/link";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api\/?$/, "") ||
   (typeof window !== "undefined" ? `http://${window.location.hostname}:4000` : "http://localhost:4000");
 
 interface ActiveQuestion {
