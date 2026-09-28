@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin, Users, Play, Plus, BookOpen } from 'lucide-react';
-import { api } from '../../lib/api';
 
 interface TimetableSlot {
   id: string;
@@ -29,54 +28,14 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
 
 export default function TimetablePage() {
   const [selectedDay, setSelectedDay] = useState<string>('All');
-  const [weeklySchedule, setWeeklySchedule] = useState<TimetableSlot[]>([]);
+  // No timetable endpoint exists yet, so there is nothing to load. See the note on the page.
+  const WEEKLY_SCHEDULE: TimetableSlot[] = [];
   const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null);
-
-  useEffect(() => {
-    api.getTimetables().then((res) => {
-      const slots: TimetableSlot[] = [];
-      const sectionRoomMap = new Map<string, string>();
-      (res.sections || []).forEach((s: any) => {
-        sectionRoomMap.set(s.id, s.room || 'Room 204');
-        sectionRoomMap.set(s.name, s.room || 'Room 204');
-      });
-      const timetables = res.timetables || {};
-      Object.entries(timetables).forEach(([secKey, grid]: [string, any]) => {
-        const secObj = (res.sections || []).find((s: any) => s.id === secKey || s.name === secKey);
-        const className = secObj ? secObj.name : secKey;
-        const defaultRoom = secObj?.room || sectionRoomMap.get(secKey) || 'Room 204';
-        DAYS.forEach((day) => {
-          const dayArr = grid?.[day];
-          if (Array.isArray(dayArr)) {
-            dayArr.forEach((cell: any, idx: number) => {
-              if (cell && cell.subject && idx < TIME_SLOTS.length) {
-                slots.push({
-                  id: `${secKey}-${day}-${idx}`,
-                  day,
-                  time: TIME_SLOTS[idx].label,
-                  timeSlotIndex: idx,
-                  subject: cell.subject,
-                  className,
-                  room: cell.room || defaultRoom,
-                  topicPlanned: cell.topic || `${cell.subject} Curriculum Session`,
-                  isLiveNow: day === 'Monday' && idx === 0
-                });
-              }
-            });
-          }
-        });
-      });
-      setWeeklySchedule(slots);
-    }).catch(() => {});
-  }, []);
-
-  const WEEKLY_SCHEDULE = weeklySchedule;
 
   const filteredSlots =
     selectedDay === 'All'
       ? WEEKLY_SCHEDULE
       : WEEKLY_SCHEDULE.filter((s) => s.day === selectedDay);
-
 
   return (
     <div>
