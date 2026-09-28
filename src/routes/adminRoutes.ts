@@ -8,7 +8,38 @@ import { Institution } from '../models/Institution.js';
 
 const router = Router();
 
-let storedTimetables: Record<string, any> = {};
+let storedTimetables: Record<string, any> = {
+  'Grade 10 - Section B': {
+    Monday: [
+      { time: '09:00 - 10:00 AM', subject: 'Biology & Genetics', teacher: 'Dr. Anitha', room: 'Science Lab 2' },
+      { time: '10:00 - 11:00 AM', subject: 'Physics & Thermodynamics', teacher: 'Prof. Rajesh Kumar', room: 'Physics Lab 1' }
+    ],
+    Tuesday: [
+      { time: '09:00 - 10:00 AM', subject: 'Biology & Genetics', teacher: 'Dr. Anitha', room: 'Room 304' },
+      { time: '11:15 - 12:15 PM', subject: 'Physics & Thermodynamics', teacher: 'Prof. Rajesh Kumar', room: 'Room 201' }
+    ],
+    Wednesday: [
+      { time: '10:00 - 11:00 AM', subject: 'Biology Lab', teacher: 'Dr. Anitha', room: 'Science Lab 2' }
+    ],
+    Thursday: [
+      { time: '09:00 - 10:00 AM', subject: 'Physics & Thermodynamics', teacher: 'Prof. Rajesh Kumar', room: 'Physics Lab 1' }
+    ],
+    Friday: [
+      { time: '09:00 - 10:00 AM', subject: 'Biology Revision & Live Quiz', teacher: 'Dr. Anitha', room: 'Science Lab 2' }
+    ]
+  },
+  'Grade 10 - Section A': {
+    Monday: [
+      { time: '10:00 - 11:00 AM', subject: 'Physics & Thermodynamics', teacher: 'Prof. Rajesh Kumar', room: 'Physics Lab 1' }
+    ],
+    Wednesday: [
+      { time: '09:00 - 10:00 AM', subject: 'Physics & Thermodynamics', teacher: 'Prof. Rajesh Kumar', room: 'Room 105' }
+    ],
+    Friday: [
+      { time: '11:15 - 12:15 PM', subject: 'Thermodynamics Lab', teacher: 'Prof. Rajesh Kumar', room: 'Physics Lab 1' }
+    ]
+  }
+};
 let storedModelSettings = {
   asrProvider: 'sarvam',
   asrModel: 'saaras:v3',

@@ -343,6 +343,7 @@ export async function approveLesson(req: Request, res: Response): Promise<void> 
 
     lesson.status = 'published';
     await lesson.save();
+    await Assignment.updateMany({ lessonId: lesson._id }, { status: 'published' });
 
     res.status(200).json({
       success: true,
