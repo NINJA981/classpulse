@@ -19,7 +19,9 @@ import {
 } from 'lucide-react';
 import { api } from '../../../../lib/api';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ||
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api\/?$/, '') ||
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:4000` : 'http://localhost:4000');
 
 interface Participant {
