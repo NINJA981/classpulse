@@ -8,6 +8,10 @@ import {
   attachSource,
   generateLesson,
   getLessonQuestions,
+  updateLessonAssignment,
+  getLessonTranscript,
+  selectLessonTranscript,
+  streamLessonAudio,
   approveLesson
 } from '../controllers/lessonController.js';
 
@@ -34,7 +38,11 @@ import { quizSubmissions, getLessonAnalyticsHandler } from './studentQuizRoutes.
 router.get('/', getLessons);
 router.post('/', createLesson);
 router.get('/:id', getLessonById);
+router.get('/:id/audio', streamLessonAudio);
+router.get('/:id/transcript', getLessonTranscript);
+router.post('/:id/transcript/select', selectLessonTranscript);
 router.get('/:id/questions', getLessonQuestions);
+router.patch('/:id/assignment', updateLessonAssignment);
 router.post('/:id/source', upload.single('file'), attachSource);
 router.post('/:id/generate', generateLesson);
 router.post('/:id/regenerate', generateLesson);

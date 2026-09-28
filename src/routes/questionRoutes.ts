@@ -13,6 +13,7 @@ const router = Router();
 router.get('/', getQuestions);
 router.post('/', createQuestion);
 router.post('/approve', approveQuestions);
+router.post('/:id/approve', approveQuestions);
 router.patch('/:id', updateQuestion);
 router.put('/:id', updateQuestion);
 router.post('/:id/reject', rejectQuestion);

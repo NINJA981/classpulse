@@ -32,14 +32,16 @@ export async function login(req: Request, res: Response): Promise<void> {
         { expiresIn: '7d' }
       );
 
+      const userPayload = {
+        id: String(newUser._id),
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+      };
       res.status(200).json({
         token,
-        user: {
-          id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role
-        }
+        user: userPayload,
+        teacher: userPayload
       });
       return;
     }
@@ -56,15 +58,17 @@ export async function login(req: Request, res: Response): Promise<void> {
       { expiresIn: '7d' }
     );
 
+    const userPayload = {
+      id: String(user._id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      rollNumber: user.rollNumber
+    };
     res.status(200).json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        rollNumber: user.rollNumber
-      }
+      user: userPayload,
+      teacher: userPayload
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

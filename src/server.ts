@@ -15,6 +15,8 @@ import sectionRoutes from './routes/sectionRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import studentQuizRouter from './routes/studentQuizRoutes.js';
+import studentRoutes from './routes/studentRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import liveQuizRouter from './routes/liveQuizRoutes.js';
 import { pipelineHealth } from './services/pipelineClient.js';
 import { pipelineRouter } from './routes/pipelineRoutes.js';
@@ -38,6 +40,7 @@ app.use(cors({
       callback(null, true); // Permissive in dev
     }
   },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
 
@@ -49,12 +52,14 @@ app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Mount API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/sections', sectionRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/student/quizzes', studentQuizRouter);
+app.use('/api/student', studentRoutes);
 app.use('/api/live-quiz', liveQuizRouter);
 app.use('/v1', pipelineRouter);
 
