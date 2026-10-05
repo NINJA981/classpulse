@@ -20,7 +20,7 @@ import {
  * configured value.
  */
 function resolveApiBase(): string {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
   if (typeof window === 'undefined') return configured;
   try {
     const url = new URL(configured, window.location.origin);
