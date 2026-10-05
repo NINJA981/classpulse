@@ -484,6 +484,31 @@ export const api = {
     }>;
   }> {
         return request(`/lessons/${lessonId}/analytics`);
+  },
+
+  /**
+   * GET /api/admin/timetables
+   */
+  async getTimetables(): Promise<{ sections: Array<{ id: string; name: string; room?: string }>; timetables: Record<string, any> }> {
+    return request('/admin/timetables');
+  },
+
+  /**
+   * GET /api/admin/students
+   */
+  async getStudents(): Promise<{ students: Array<{ id: string; name: string; rollNumber: string; sectionName: string; attendanceRate?: number; testAverage?: number }> }> {
+    return request('/admin/students');
+  },
+
+  /**
+   * POST /api/admin/students
+   */
+  async createStudent(payload: { name: string; rollNumber: string; sectionName: string }): Promise<{ student: any }> {
+    return request('/admin/students', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
 };
+
