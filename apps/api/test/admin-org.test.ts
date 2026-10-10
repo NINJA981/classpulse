@@ -106,6 +106,15 @@ describe('admin: model settings', () => {
 
     const bad = await as(world.admin).patch('/api/admin/settings/models').send({ questionsPerLesson: 99 });
     expect(bad.status).toBe(400);
+
+    // Models come from the dropdown lists; switching provider picks that provider's default model.
+    const unknown = await as(world.admin).patch('/api/admin/settings/models').send({ llmModel: 'gpt-3' });
+    expect(unknown.status).toBe(400);
+    expect(unknown.body.error).toMatchObject({ code: 'VALIDATION_FAILED', details: [{ path: 'llmModel' }] });
+    const whisper = await as(world.admin).patch('/api/admin/settings/models').send({ sttProvider: 'openai' });
+    expect(whisper.body).toMatchObject({ sttProvider: 'openai', sttModel: 'whisper-1' });
+    const mismatch = await as(world.admin).patch('/api/admin/settings/models').send({ sttModel: 'saaras:v3' });
+    expect(mismatch.status).toBe(400);
   });
 });
 

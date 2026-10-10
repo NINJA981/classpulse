@@ -222,6 +222,9 @@ describe('lessons: generate / publish', () => {
     const detail = await as(w.teacher).get(`/api/lessons/${lesson.id}`);
     expect(detail.body.status).toBe('queued');
     expect(detail.body.progress).toMatchObject({ status: 'queued', attempt: 1 });
+    const row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    // Defaults: the school's questions-per-lesson setting, mixed difficulty, a fresh quiz.
+    expect(row!.quizRequest).toEqual({ questionCount: 5, difficulty: 'mixed', mode: 'replace_all' });
 
     expect((await as(w.teacher).post(`/api/lessons/${lesson.id}/generate`).send({})).status).toBe(409);
     expect((await as(w.admin).post(`/api/lessons/${lesson.id}/generate`).send({})).status).toBe(403);
@@ -245,6 +248,51 @@ describe('lessons: generate / publish', () => {
     expect(row!.publishedAt).toBeNull();
     const [a] = await db.select().from(assignments).where(eq(assignments.lessonId, lesson.id));
     expect(a!.status).toBe('draft');
+  });
+
+  it('append needs no confirmation; replacing confirms only when questions would be removed', async () => {
+    const w = await createWorld();
+    const lesson = await lessonFor(w, { withAudio: true, status: 'ready_for_review' });
+    await insertQuestions(lesson.id, 2, 'approved');
+    const gen = (body: object) => as(w.teacher).post(`/api/lessons/${lesson.id}/generate`).send(body);
+
+    expect((await gen({ questionCount: 31 })).status).toBe(400);
+    expect((await gen({ difficulty: 'impossible' })).status).toBe(400);
+    // Every question is approved, so replace_unapproved removes nothing and needs no confirmation.
+    const keep = await gen({ questionCount: 3, difficulty: 'hard', mode: 'replace_unapproved' });
+    expect(keep.status).toBe(202);
+    let row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row!.quizRequest).toEqual({ questionCount: 3, difficulty: 'hard', mode: 'replace_unapproved' });
+
+    await db.update(lessons).set({ status: 'ready_for_review' }).where(eq(lessons.id, lesson.id));
+    expect((await gen({ questionCount: 4, mode: 'append' })).status).toBe(202);
+    await db.update(lessons).set({ status: 'ready_for_review' }).where(eq(lessons.id, lesson.id));
+    const refused = await gen({ mode: 'replace_all' });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.message).toMatch(/remove 2 existing questions/);
+    expect((await gen({ mode: 'replace_all', confirmRegenerate: true })).status).toBe(202);
+    row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row!.quizRequest).toMatchObject({ mode: 'replace_all' });
+  });
+
+  it('upload transcribes automatically; /transcribe re-runs transcription only', async () => {
+    const w = await createWorld();
+    const lesson = await lessonFor(w);
+    const file = await writeTempFile('lecture.wav', makeWav(2));
+    const up = await as(w.teacher).post(`/api/lessons/${lesson.id}/audio`).attach('file', file, { contentType: 'audio/wav' });
+    expect(up.status).toBe(200);
+    expect(up.body.status).toBe('queued');
+    expect(queued).toEqual([{ lessonId: lesson.id, attempt: 1 }]);
+    let row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row!.quizRequest).toBeNull();
+
+    expect((await as(w.teacher).post(`/api/lessons/${lesson.id}/transcribe`)).status).toBe(409); // busy
+    await db.update(lessons).set({ status: 'failed' }).where(eq(lessons.id, lesson.id));
+    const again = await as(w.teacher).post(`/api/lessons/${lesson.id}/transcribe`);
+    expect(again.status).toBe(202);
+    row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row).toMatchObject({ status: 'queued', generationAttempt: 2, quizRequest: null });
+    expect((await as(w.student).post(`/api/lessons/${lesson.id}/transcribe`)).status).toBe(403);
   });
 
   it('publish needs ready_for_review and an approved question; unpublish reverts', async () => {

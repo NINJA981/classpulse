@@ -2,12 +2,12 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
-import type { TranscriptSegment } from '@classpulse/shared';
+import type { QuizRequest, TranscriptSegment } from '@classpulse/shared';
 import { db } from '../../src/db/client.js';
 import { lessons, questions, quizAttemptAnswers, quizAttempts } from '../../src/db/schema/index.js';
 import { storage, storageKeys } from '../../src/lib/storage.js';
 import { parseGenerationOutput, promptBlocks } from '../../src/pipeline/llm.js';
-import type { GenerateInput, GenerateResult, TranscribeResult } from '../../src/pipeline/types.js';
+import type { GenerateInput, GenerateQuestionsResult, GenerateResult, TranscribeResult } from '../../src/pipeline/types.js';
 
 /** 16-bit PCM mono WAV containing a sine tone. */
 export function makeWav(seconds = 3, sampleRate = 16000, freq = 440): Buffer {
@@ -48,6 +48,7 @@ export async function insertLesson(opts: {
   language?: string;
   generationAttempt?: number;
   audioExpiresAt?: Date;
+  quizRequest?: QuizRequest | null;
 }) {
   const [lesson] = await db
     .insert(lessons)
@@ -60,6 +61,7 @@ export async function insertLesson(opts: {
       language: opts.language ?? 'en-IN',
       status: opts.status ?? 'draft',
       generationAttempt: opts.generationAttempt ?? 0,
+      quizRequest: opts.quizRequest ?? null,
     })
     .returning();
   if (!opts.withAudio) return lesson!;
@@ -186,7 +188,18 @@ export async function mockGenerate(input: GenerateInput): Promise<GenerateResult
     questionCount: input.questionsPerLesson,
     blocks,
     local: false,
+    difficulty: input.difficulty,
   });
   if (!parsed.ok) throw new Error(parsed.issues.join('; '));
   return { ...parsed.value, meta: { provider: 'openai', model: input.model, demoFallback: false } };
+}
+
+/** Questions-only generator over canned output; new stems never repeat `existingStems`. */
+export async function mockGenerateQuestions(input: GenerateInput): Promise<GenerateQuestionsResult> {
+  const blocks = promptBlocks(input.segments);
+  const raw = rawModelOutput(input.existingStems.length + input.questionsPerLesson);
+  raw.questions = raw.questions.slice(input.existingStems.length);
+  const parsed = parseGenerationOutput(raw, { questionCount: input.questionsPerLesson, blocks, local: false, difficulty: input.difficulty });
+  if (!parsed.ok) throw new Error(parsed.issues.join('; '));
+  return { questions: parsed.value.questions, meta: { provider: 'openai', model: input.model, demoFallback: false } };
 }

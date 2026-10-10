@@ -1,5 +1,5 @@
 /** Lesson business rules: visibility/ownership, state machine, publish, assignment, manual questions. */
-import { and, count, eq, inArray, max } from 'drizzle-orm';
+import { and, count, eq, inArray, max, or } from 'drizzle-orm';
 import type {
   Assignment,
   AssignmentInput,
@@ -12,6 +12,7 @@ import type {
   Paginated,
   Question,
   QuestionInput,
+  QuizRequest,
   SessionUser,
   UpdateLessonInput,
 } from '@classpulse/shared';
@@ -20,6 +21,7 @@ import { assignments, lessons, questions, quizAttempts, sections, sectionTeacher
 import { badRequest, forbidden, invalidState, notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { storage } from '../../lib/storage.js';
+import { defaultQuestionCount } from '../settings/service.js';
 import { queueLessonGeneration } from './audio.js';
 import { hasLiveAudio, toAssignment, toLessonDetail, toLessonSummary, toQuestion, type LessonRow } from './mappers.js';
 import {
@@ -36,8 +38,13 @@ import {
 } from './repo.js';
 
 export async function buildLessonDetail(lesson: LessonRow, dbx: DbOrTx = db): Promise<LessonDetail> {
-  const [names, qs, assignment] = await Promise.all([lessonNames(lesson, dbx), lessonQuestions(lesson.id, dbx), lessonAssignment(lesson.id, dbx)]);
-  return toLessonDetail({ lesson, ...names }, qs, assignment);
+  const [names, qs, assignment, defaultCount] = await Promise.all([
+    lessonNames(lesson, dbx),
+    lessonQuestions(lesson.id, dbx),
+    lessonAssignment(lesson.id, dbx),
+    defaultQuestionCount(lesson.institutionId),
+  ]);
+  return toLessonDetail({ lesson, ...names }, qs, assignment, defaultCount);
 }
 
 export async function listLessons(user: SessionUser, query: ListLessonsQuery): Promise<Paginated<LessonSummary>> {
@@ -89,8 +96,8 @@ export async function updateLesson(user: SessionUser, id: string, input: UpdateL
 
 export async function deleteLesson(user: SessionUser, id: string): Promise<void> {
   const lesson = await getOwnedLesson(user, id);
-  if (lesson.status !== 'draft' && lesson.status !== 'failed') {
-    throw invalidState('Only draft or failed lessons can be deleted.');
+  if (lesson.status !== 'draft' && lesson.status !== 'failed' && lesson.status !== 'transcribed') {
+    throw invalidState('Only draft, failed or ready-for-quiz lessons can be deleted.');
   }
   const [attempts] = await db.select({ n: count() }).from(quizAttempts).where(eq(quizAttempts.lessonId, id));
   if ((attempts?.n ?? 0) > 0) throw invalidState('This lesson has quiz attempts and cannot be deleted.');
@@ -104,13 +111,13 @@ export async function deleteLesson(user: SessionUser, id: string): Promise<void>
  * Audio
  * ------------------------------------------------------------------------- */
 
-const AUDIO_UPLOAD_STATUSES = new Set(['draft', 'failed', 'ready_for_review']);
+const AUDIO_UPLOAD_STATUSES = new Set(['draft', 'failed', 'transcribed', 'ready_for_review']);
 
 /** Checked before accepting an upload body, and again before attaching it. */
 export async function assertCanUploadAudio(user: SessionUser, id: string): Promise<LessonRow> {
   const lesson = await getOwnedLesson(user, id);
   if (!AUDIO_UPLOAD_STATUSES.has(lesson.status)) {
-    throw invalidState('Audio can only be uploaded to draft, failed or ready-for-review lessons.');
+    throw invalidState('Audio can only be uploaded to draft, failed, ready-for-quiz or ready-for-review lessons.');
   }
   return lesson;
 }
@@ -132,22 +139,56 @@ export async function getTranscript(user: SessionUser, id: string): Promise<Less
  * Generation / publishing
  * ------------------------------------------------------------------------- */
 
+/**
+ * Generate the quiz the teacher asked for (number of questions, difficulty, and whether to add to, partly
+ * replace or replace the current questions). Uses the stored transcript, or transcribes first.
+ */
 export async function requestGeneration(user: SessionUser, id: string, input: GenerateLessonInput): Promise<{ jobId: string }> {
   const lesson = await getOwnedLesson(user, id);
   if (isBusy(lesson.status)) throw invalidState('This lesson is already being recorded or processed.');
-  if (!hasLiveAudio(lesson)) throw invalidState('Upload or record the lesson audio before generating questions.');
+  const hasTranscript = !!lesson.transcriptSegments?.length;
+  if (!hasTranscript && !hasLiveAudio(lesson)) throw invalidState('Upload or record the lesson audio before generating questions.');
 
-  const hasQuestions = (await countQuestions(id)) > 0;
-  if ((hasQuestions || lesson.status === 'published') && input.confirmRegenerate !== true) {
+  const total = await countQuestions(id);
+  const removed =
+    input.mode === 'replace_all'
+      ? total
+      : input.mode === 'replace_unapproved'
+        ? total - (await countKeptQuestions(id))
+        : 0;
+  if ((removed > 0 || lesson.status === 'published') && input.confirmRegenerate !== true) {
     throw invalidState(
       lesson.status === 'published'
-        ? 'This lesson is published. Regenerating will unpublish it and replace its questions — confirm to continue.'
-        : 'This lesson already has questions. Regenerating will replace them — confirm to continue.',
+        ? 'This lesson is published. Changing its questions will unpublish it — confirm to continue.'
+        : `This will remove ${removed} existing question${removed === 1 ? '' : 's'} — confirm to continue.`,
     );
   }
   if (lesson.status === 'published') await setPublished(lesson.id, false);
-  const jobId = await queueLessonGeneration(id);
+  const request: QuizRequest = {
+    questionCount: input.questionCount ?? (await defaultQuestionCount(lesson.institutionId)),
+    difficulty: input.difficulty,
+    mode: input.mode,
+  };
+  const jobId = await queueLessonGeneration(id, request);
   return { jobId };
+}
+
+/** Re-run transcription only (e.g. after a failed transcription); the lesson ends `transcribed`. */
+export async function requestTranscription(user: SessionUser, id: string): Promise<{ jobId: string }> {
+  const lesson = await getOwnedLesson(user, id);
+  if (isBusy(lesson.status)) throw invalidState('This lesson is already being recorded or processed.');
+  if (lesson.status === 'published') throw invalidState('Unpublish the lesson before transcribing it again.');
+  if (!hasLiveAudio(lesson)) throw invalidState('Upload or record the lesson audio first.');
+  return { jobId: await queueLessonGeneration(id, null) };
+}
+
+/** Questions that `replace_unapproved` keeps: approved or edited by the teacher. */
+async function countKeptQuestions(lessonId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(questions)
+    .where(and(eq(questions.lessonId, lessonId), or(eq(questions.status, 'approved'), eq(questions.editedByTeacher, true))));
+  return row?.n ?? 0;
 }
 
 async function setPublished(lessonId: string, published: boolean): Promise<LessonRow> {

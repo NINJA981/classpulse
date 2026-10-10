@@ -93,11 +93,15 @@ export function toLessonDetail(
   row: Omit<LessonSummaryRow, 'questionCount'>,
   questionRows: QuestionRow[],
   assignment: AssignmentRow | null,
+  defaultQuestionCount: number,
 ): LessonDetail {
   const l = row.lesson;
   const summary = toLessonSummary({ ...row, questionCount: questionRows.filter((q) => q.status !== 'rejected').length });
   return {
     ...summary,
+    defaultQuestionCount,
+    hasTranscript: !!l.transcriptSegments?.length,
+    pendingQuiz: LESSON_PROCESSING_STATUSES.includes(l.status) ? (l.quizRequest ?? null) : null,
     summary: l.summary,
     keyTakeaways: l.keyTakeaways,
     failureReason: l.failureReason,

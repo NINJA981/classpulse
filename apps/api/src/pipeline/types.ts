@@ -1,4 +1,4 @@
-import type { Difficulty, Language, LessonAnalytics, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
+import type { Difficulty, Language, LessonAnalytics, QuizDifficulty, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
 
 export interface TranscribeInput {
   /** Configured STT provider for the institution. */
@@ -28,7 +28,11 @@ export interface GenerateInput {
   subject: string;
   language: Language;
   segments: TranscriptSegment[];
+  /** How many questions the teacher asked for. */
   questionsPerLesson: number;
+  difficulty: QuizDifficulty;
+  /** Stems of questions the quiz keeps; new questions must test other points. */
+  existingStems: string[];
   bilingual: boolean;
   model: string;
 }
@@ -59,7 +63,13 @@ export interface GenerateResult {
   keyTakeaways: string[];
   questions: GeneratedQuestion[];
   assignment: GeneratedAssignment;
-  meta: { provider: string; model: string; demoFallback: boolean; repaired?: boolean };
+  meta: { provider: string; model: string; demoFallback: boolean; repaired?: boolean; questionsRequested?: number };
+}
+
+/** Questions only (adding to or replacing part of a quiz; summary and assignment are kept). */
+export interface GenerateQuestionsResult {
+  questions: GeneratedQuestion[];
+  meta: GenerateResult['meta'];
 }
 
 export interface RemedialInput {

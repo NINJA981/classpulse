@@ -10,7 +10,8 @@ import { PipelineError } from '../src/pipeline/errors.js';
 import { setPipelineProvidersForTests } from '../src/pipeline/providers.js';
 import { setLocalEmitter } from '../src/realtime/notify.js';
 import { as, createWorld } from './helpers.js';
-import { insertLesson, mockGenerate, mockTranscription } from './fixtures/lessons.js';
+import type { QuizRequest } from '@classpulse/shared';
+import { insertLesson, mockGenerate, mockGenerateQuestions, mockTranscription } from './fixtures/lessons.js';
 
 const ctx = (attemptNumber = 1) => ({ attemptNumber, maxAttempts: 3 });
 
@@ -37,12 +38,14 @@ beforeEach(() => {
   queued = [];
   setLocalEmitter((userId, event, payload) => events.push({ userId, event, payload }));
   setInProcessRunner((d) => queued.push(d));
-  setPipelineProvidersForTests({ transcribe: async () => mockTranscription(), generate: mockGenerate });
+  setPipelineProvidersForTests({ transcribe: async () => mockTranscription(), generate: mockGenerate, generateQuestions: mockGenerateQuestions });
 });
 
 afterEach(() => setPipelineProvidersForTests(null));
 
-async function queuedLesson() {
+const FIVE_MIXED: QuizRequest = { questionCount: 5, difficulty: 'mixed', mode: 'replace_all' };
+
+async function queuedLesson(quizRequest: QuizRequest | null = FIVE_MIXED) {
   const w = await createWorld();
   const lesson = await insertLesson({
     institutionId: w.institution.id,
@@ -51,8 +54,15 @@ async function queuedLesson() {
     withAudio: true,
     status: 'queued',
     generationAttempt: 1,
+    quizRequest,
   });
   return { w, lesson, data: { lessonId: lesson.id, attempt: 1 } };
+}
+
+/** Queue the next job on a lesson that already has a quiz (as requestGeneration does). */
+async function requeue(lessonId: string, attempt: number, quizRequest: QuizRequest | null) {
+  await db.update(lessons).set({ status: 'queued', generationAttempt: attempt, quizRequest }).where(eq(lessons.id, lessonId));
+  return { lessonId, attempt };
 }
 
 describe('processLessonJob', () => {
@@ -70,7 +80,8 @@ describe('processLessonJob', () => {
     expect(row!.pipelineMeta?.approximateTimestamps).toBe(false);
 
     const qs = await db.select().from(questions).where(eq(questions.lessonId, lesson.id));
-    expect(qs).toHaveLength(5); // DEFAULT_MODEL_SETTINGS.questionsPerLesson
+    expect(qs).toHaveLength(5); // the teacher's request
+    expect(row!.quizRequest).toBeNull();
     expect(qs.every((q) => q.status === 'draft')).toBe(true);
     expect(qs.map((q) => q.position).sort()).toEqual([1, 2, 3, 4, 5]);
     for (const q of qs) {
@@ -91,6 +102,84 @@ describe('processLessonJob', () => {
     expect(detail.body.assignment.title).toBe('Leaf experiment');
     const transcript = await as(w.teacher).get(`/api/lessons/${lesson.id}/transcript`);
     expect(transcript.body.segments[1]).toEqual({ startSec: 14.2, endSec: 29.8, text: expect.any(String) });
+  });
+
+  it('without a quiz request it only transcribes and waits for the teacher (transcribed)', async () => {
+    let llmCalls = 0;
+    setPipelineProvidersForTests({
+      transcribe: async () => mockTranscription(),
+      generate: async (input) => {
+        llmCalls++;
+        return mockGenerate(input);
+      },
+    });
+    const { w, lesson, data } = await queuedLesson(null);
+    await runLikeWorker(data);
+    const row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row!.status).toBe('transcribed');
+    expect(row!.transcriptSegments).toHaveLength(3);
+    expect(row!.summary).toBeNull();
+    expect(llmCalls).toBe(0);
+    expect(await db.select().from(questions).where(eq(questions.lessonId, lesson.id))).toHaveLength(0);
+    const statuses = events.filter((e) => e.userId === w.teacher.id).map((e) => (e.payload as { status: string }).status);
+    expect(statuses).toEqual(['transcribing', 'transcribed']);
+    const detail = await as(w.teacher).get(`/api/lessons/${lesson.id}`);
+    expect(detail.body).toMatchObject({ status: 'transcribed', hasTranscript: true, defaultQuestionCount: 5, progress: null });
+  });
+
+  it('applies a fixed difficulty, then appends questions on new points (transcript reused, summary kept)', async () => {
+    const { lesson, data } = await queuedLesson({ questionCount: 3, difficulty: 'hard', mode: 'replace_all' });
+    await runLikeWorker(data);
+    const first = await db.select().from(questions).where(eq(questions.lessonId, lesson.id));
+    expect(first).toHaveLength(3);
+    expect(first.every((q) => q.difficulty === 'hard')).toBe(true);
+    await db.update(questions).set({ status: 'approved' }).where(eq(questions.lessonId, lesson.id));
+
+    let stt = 0;
+    let full = 0;
+    setPipelineProvidersForTests({
+      transcribe: async () => {
+        stt++;
+        return mockTranscription();
+      },
+      generate: async (input) => {
+        full++;
+        return mockGenerate(input);
+      },
+      generateQuestions: mockGenerateQuestions,
+    });
+    await db.update(lessons).set({ summary: 'Teacher-edited summary' }).where(eq(lessons.id, lesson.id));
+    await runLikeWorker(await requeue(lesson.id, 2, { questionCount: 2, difficulty: 'easy', mode: 'append' }));
+
+    expect(stt).toBe(0);
+    expect(full).toBe(0);
+    const row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
+    expect(row!.status).toBe('ready_for_review');
+    expect(row!.summary).toBe('Teacher-edited summary');
+    const all = await db.select().from(questions).where(eq(questions.lessonId, lesson.id));
+    const byPos = [...all].sort((a, b) => a.position - b.position);
+    expect(byPos.map((q) => q.position)).toEqual([1, 2, 3, 4, 5]);
+    expect(byPos.slice(0, 3).map((q) => q.id).sort()).toEqual(first.map((q) => q.id).sort());
+    expect(byPos.slice(3).map((q) => [q.status, q.difficulty])).toEqual([
+      ['draft', 'easy'],
+      ['draft', 'easy'],
+    ]);
+    expect(new Set(all.map((q) => q.stem)).size).toBe(5);
+  });
+
+  it('replace_unapproved keeps approved and teacher-edited questions and renumbers them first', async () => {
+    const { lesson, data } = await queuedLesson({ questionCount: 4, difficulty: 'mixed', mode: 'replace_all' });
+    await runLikeWorker(data);
+    const qs = [...(await db.select().from(questions).where(eq(questions.lessonId, lesson.id)))].sort((a, b) => a.position - b.position);
+    await db.update(questions).set({ status: 'approved' }).where(eq(questions.id, qs[1]!.id));
+    await db.update(questions).set({ editedByTeacher: true }).where(eq(questions.id, qs[3]!.id));
+
+    await runLikeWorker(await requeue(lesson.id, 2, { questionCount: 3, difficulty: 'medium', mode: 'replace_unapproved' }));
+    const after = [...(await db.select().from(questions).where(eq(questions.lessonId, lesson.id)))].sort((a, b) => a.position - b.position);
+    expect(after).toHaveLength(5);
+    expect(after.map((q) => q.position)).toEqual([1, 2, 3, 4, 5]);
+    expect(after.slice(0, 2).map((q) => q.id)).toEqual([qs[1]!.id, qs[3]!.id]);
+    expect(after.slice(2).every((q) => q.difficulty === 'medium' && q.status === 'draft')).toBe(true);
   });
 
   it('STT failure (non-retryable) marks the lesson failed with a friendly reason and no questions', async () => {
@@ -183,6 +272,7 @@ describe('processLessonJob', () => {
     expect(queued).toEqual([{ lessonId: lesson.id, attempt: 2 }]);
     const row = await db.query.lessons.findFirst({ where: eq(lessons.id, lesson.id) });
     expect(row!.status).toBe('queued');
+    expect(row!.quizRequest).toEqual(FIVE_MIXED); // the teacher's request survives the restart
   });
 
   it('isRetryable honours PipelineError and retries unknown errors', () => {

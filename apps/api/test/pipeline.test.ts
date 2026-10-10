@@ -51,6 +51,8 @@ const genInput = (over: Partial<GenerateInput> = {}): GenerateInput => ({
   language: 'en-IN',
   segments: MOCK_SEGMENTS,
   questionsPerLesson: 2,
+  difficulty: 'mixed',
+  existingStems: [],
   bilingual: true,
   model: 'gpt-4o-mini',
   ...over,
@@ -65,9 +67,25 @@ describe('LLM output validation', () => {
     if (!r.ok) expect(r.issues.join(' ')).toMatch(/exactly one option must be correct/);
   });
 
-  it('rejects the wrong question count and citations of non-existent blocks', () => {
-    expect(parseGenerationOutput(rawModelOutput(3), { questionCount: 2, blocks, local: false }).ok).toBe(false);
+  it('trims extra questions, reports missing ones, and rejects output with no valid question', () => {
+    const extra = parseGenerationOutput(rawModelOutput(3), { questionCount: 2, blocks, local: false });
+    expect(extra.ok && extra.value.questions.length).toBe(2);
+    expect(extra.ok && extra.missing).toBe(0);
+    const short = parseGenerationOutput(rawModelOutput(1), { questionCount: 3, blocks, local: false });
+    expect(short.ok && short.missing).toBe(2);
     expect(parseGenerationOutput(rawModelOutput(2, { cited: [9] }), { questionCount: 2, blocks, local: false }).ok).toBe(false);
+  });
+
+  it('drops invalid and duplicate questions but keeps the valid ones', () => {
+    const raw = rawModelOutput(3);
+    raw.questions[1]!.options[1]!.isCorrect = true; // two correct answers
+    raw.questions[2]!.stem = raw.questions[0]!.stem; // duplicate
+    const r = parseGenerationOutput(raw, { questionCount: 3, blocks, local: false });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.questions).toHaveLength(1);
+    expect(r.missing).toBe(2);
+    expect(r.issues.join(' ')).toMatch(/exactly one option must be correct.*duplicate question/);
   });
 
   it('requires local-language fields only when bilingual and not English', () => {
@@ -125,6 +143,39 @@ describe('OpenAI generation (stubbed fetch)', () => {
     expect((calls[0]!.init!.headers as Record<string, string>).Authorization).toBe('Bearer test-key');
     expect(result.questions).toHaveLength(2);
     expect(result.meta.repaired).toBe(true);
+  });
+
+  it('tops up a short quiz with follow-up requests for the missing questions', async () => {
+    env.OPENAI_API_KEY = 'test-key';
+    let n = 0;
+    stubFetch(() => {
+      n++;
+      if (n === 1) return chatResponse(rawModelOutput(1));
+      // follow-up: two new questions (one repeats the first stem and is dropped)
+      const more = rawModelOutput(3).questions.slice(0, 3);
+      return chatResponse({ questions: more });
+    });
+    const result = await generateWithOpenAI(genInput({ questionsPerLesson: 3 }));
+    expect(calls).toHaveLength(2);
+    const followUp = JSON.parse(String(calls[1]!.init!.body)) as { messages: { content: string }[] };
+    expect(followUp.messages.at(-1)!.content).toMatch(/Write 2 MORE questions/);
+    expect(result.questions.map((q) => q.stem)).toEqual(rawModelOutput(3).questions.map((q) => q.stem));
+    expect(result.meta.questionsRequested).toBe(3);
+  });
+
+  it('keeps a shorter quiz when the lecture supports no more questions, but not one under the minimum', async () => {
+    env.OPENAI_API_KEY = 'test-key';
+    let n = 0;
+    stubFetch(() => (++n === 1 ? chatResponse(rawModelOutput(3)) : chatResponse({ questions: [] })));
+    const short = await generateWithOpenAI(genInput({ questionsPerLesson: 5 }));
+    expect(short.questions).toHaveLength(3);
+
+    n = 0;
+    calls.length = 0;
+    stubFetch(() => (++n === 1 ? chatResponse(rawModelOutput(2)) : chatResponse({ questions: [] })));
+    const err = (await generateWithOpenAI(genInput({ questionsPerLesson: 5 })).catch((e: unknown) => e)) as PipelineError;
+    expect(err).toBeInstanceOf(PipelineError);
+    expect(err.userMessage).toMatch(/only write a few valid questions/);
   });
 
   it('fails non-retryably when output stays invalid after the repair round', async () => {

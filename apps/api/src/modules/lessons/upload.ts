@@ -13,7 +13,7 @@ import { env } from '../../config/env.js';
 import { AppError, badRequest } from '../../lib/errors.js';
 import { normalizeToWav, probeDurationSec } from '../../lib/ffmpeg.js';
 import { storage, storageKeys } from '../../lib/storage.js';
-import { attachLessonAudio } from './audio.js';
+import { attachLessonAudio, queueLessonGeneration } from './audio.js';
 import { assertCanUploadAudio, buildLessonDetail } from './service.js';
 import { getOwnedLesson } from './repo.js';
 
@@ -83,6 +83,8 @@ export async function processUploadedAudio(
     const stat = await storage.putFile(storedKey, wavPath);
     await attachLessonAudio({ lessonId, objectKey: storedKey, sizeBytes: stat.size, durationSec, sourceType: 'upload' });
     storedKey = null; // now owned by the lesson
+    // Transcribe right away; the teacher then chooses the number of questions and difficulty.
+    await queueLessonGeneration(lessonId, null);
     return buildLessonDetail(await getOwnedLesson(user, lessonId));
   } finally {
     await rm(file.path, { force: true }).catch(() => undefined);

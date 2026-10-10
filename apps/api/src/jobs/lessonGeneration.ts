@@ -1,12 +1,15 @@
 /**
- * Lesson generation job: STT (Sarvam) -> LLM (OpenAI) -> questions/assignment.
- * Signatures are part of the frozen contract used by lessonWorker.ts.
+ * Lesson processing job: STT (Sarvam/Whisper), then — only when the teacher has
+ * asked for a quiz (`lessons.quiz_request`) — LLM (OpenAI) questions/assignment.
+ * Without a request the lesson ends `transcribed`, waiting for the teacher's
+ * number of questions and difficulty. Signatures are part of the frozen contract
+ * used by lessonWorker.ts.
  *
  * Every write is guarded by `generation_attempt`, so a stale job (superseded by
  * a regenerate) can never overwrite newer state. There is no fake content: on
  * failure the job throws and, after the final attempt, the lesson is `failed`.
  */
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray } from 'drizzle-orm';
 import {
   DEFAULT_MODEL_SETTINGS,
   LESSON_PROCESSING_STATUSES,
@@ -83,8 +86,13 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
   let segments: TranscriptSegment[];
   const reusable =
     !!lesson.transcript && !!lesson.transcriptSegments?.length && meta.transcriptAudioKey === lesson.audioObjectKey && !meta.sttDemo;
+  const request = lesson.quizRequest;
   if (reusable) {
     segments = lesson.transcriptSegments!;
+    if (!request) {
+      await finishTranscribed(lesson, data, {});
+      return;
+    }
     if (!(await advance(lesson, data, 'generating', 60, 'Writing questions'))) return;
     log.info('Reusing stored transcript for this audio');
   } else {
@@ -113,29 +121,44 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
       transcriptAudioKey: lesson.audioObjectKey,
     });
     if (stt.meta.demoFallback) meta.demoFallback = true;
-    const saved = await advance(lesson, data, 'generating', 60, 'Writing questions', {
-      transcript: stt.transcript,
-      transcriptSegments: stt.segments,
-      pipelineMeta: meta,
-    });
+    const transcriptFields = { transcript: stt.transcript, transcriptSegments: stt.segments, pipelineMeta: { ...meta, timingsMs: timings } };
+    if (!request) {
+      await finishTranscribed(lesson, data, transcriptFields);
+      log.info({ timings }, 'Transcription complete; waiting for the teacher to generate the quiz');
+      return;
+    }
+    const saved = await advance(lesson, data, 'generating', 60, 'Writing questions', transcriptFields);
     if (!saved) return;
   }
 
-  // 2. Generate questions, summary and assignment
-  const started = Date.now();
-  const gen = await providers.generate({
+  // 2. Generate what the teacher asked for. Questions they keep (append / replace_unapproved) are sent as
+  //    context so the new ones test other points; a fresh quiz also gets the summary and assignment.
+  const existing = await db
+    .select({ id: questions.id, stem: questions.stem, status: questions.status, editedByTeacher: questions.editedByTeacher })
+    .from(questions)
+    .where(eq(questions.lessonId, lesson.id))
+    .orderBy(asc(questions.position));
+  const keep =
+    request.mode === 'append'
+      ? existing
+      : request.mode === 'replace_unapproved'
+        ? existing.filter((q) => q.status === 'approved' || q.editedByTeacher)
+        : [];
+  const full = request.mode === 'replace_all' || !lesson.summary;
+  const genInput = {
     title: lesson.title,
     subject: lesson.subject,
     language,
     segments,
-    questionsPerLesson: settings.questionsPerLesson,
+    questionsPerLesson: request.questionCount,
+    difficulty: request.difficulty,
+    existingStems: keep.map((q) => q.stem),
     bilingual: settings.bilingual,
     model: settings.llmModel,
-  });
+  };
+  const started = Date.now();
+  const gen = full ? await providers.generate(genInput) : { ...(await providers.generateQuestions(genInput)), summary: null };
   timings.llmMs = Date.now() - started;
-  if (gen.questions.length !== settings.questionsPerLesson) {
-    throw new PipelineError('Generator returned the wrong number of questions', { retryable: false, userMessage: GENERIC_FAILURE_MESSAGE });
-  }
 
   // 3. Persist atomically (only if this job is still current)
   const finalMeta: PipelineMeta = {
@@ -154,11 +177,17 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
       .where(and(guard(data), eq(lessons.status, 'generating')))
       .for('update');
     if (!current) return false;
-    await tx.delete(questions).where(eq(questions.lessonId, lesson.id));
+    const keepIds = keep.map((q) => q.id);
+    await tx
+      .delete(questions)
+      .where(keepIds.length ? and(eq(questions.lessonId, lesson.id), notInArray(questions.id, keepIds)) : eq(questions.lessonId, lesson.id));
+    for (const [i, id] of keepIds.entries()) {
+      await tx.update(questions).set({ position: i + 1 }).where(eq(questions.id, id));
+    }
     await tx.insert(questions).values(
       gen.questions.map((q, i) => ({
         lessonId: lesson.id,
-        position: i + 1,
+        position: keepIds.length + i + 1,
         stem: q.stem,
         stemLocal: q.stemLocal,
         options: q.options,
@@ -174,27 +203,30 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
         editedByTeacher: false,
       })),
     );
-    const assignment = {
-      title: gen.assignment.title,
-      prompt: gen.assignment.prompt,
-      rubric: gen.assignment.rubric,
-      estimatedMinutes: gen.assignment.estimatedMinutes,
-      status: 'draft' as const,
-    };
-    await tx
-      .insert(assignments)
-      .values({ lessonId: lesson.id, ...assignment })
-      .onConflictDoUpdate({ target: assignments.lessonId, set: assignment });
+    if (gen.summary !== null) {
+      const assignment = {
+        title: gen.assignment.title,
+        prompt: gen.assignment.prompt,
+        rubric: gen.assignment.rubric,
+        estimatedMinutes: gen.assignment.estimatedMinutes,
+        status: 'draft' as const,
+      };
+      // Starting over replaces the assignment; otherwise a teacher-edited one is kept.
+      const upsert = tx.insert(assignments).values({ lessonId: lesson.id, ...assignment });
+      await (request.mode === 'replace_all'
+        ? upsert.onConflictDoUpdate({ target: assignments.lessonId, set: assignment })
+        : upsert.onConflictDoNothing({ target: assignments.lessonId }));
+    }
     await tx
       .update(lessons)
       .set({
-        summary: gen.summary,
-        keyTakeaways: gen.keyTakeaways,
+        ...(gen.summary !== null ? { summary: gen.summary, keyTakeaways: gen.keyTakeaways } : {}),
         pipelineMeta: finalMeta,
         status: 'ready_for_review',
         progressPct: 100,
         progressMessage: 'Ready for review',
         failureReason: null,
+        quizRequest: null,
         remedial: null,
       })
       .where(eq(lessons.id, lesson.id));
@@ -205,7 +237,21 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
     return;
   }
   pushProgress(lesson, data, 'ready_for_review', 100, 'Ready for review');
-  log.info({ questions: gen.questions.length, timings, demo: finalMeta.demoFallback }, 'Lesson generation complete');
+  log.info(
+    { questions: gen.questions.length, kept: keep.length, mode: request.mode, timings, demo: finalMeta.demoFallback },
+    'Lesson generation complete',
+  );
+}
+
+/** Transcription-only run: the lesson waits for the teacher's quiz settings. */
+async function finishTranscribed(lesson: LessonRow, data: LessonJobData, extra: Partial<typeof lessons.$inferInsert>): Promise<void> {
+  const message = 'Transcript ready. Choose the number of questions and the difficulty.';
+  const rows = await db
+    .update(lessons)
+    .set({ status: 'transcribed', progressPct: 100, progressMessage: message, failureReason: null, quizRequest: null, ...extra })
+    .where(and(guard(data), inArray(lessons.status, [...LESSON_PROCESSING_STATUSES])))
+    .returning({ id: lessons.id });
+  if (rows.length) pushProgress(lesson, data, 'transcribed', 100, message);
 }
 
 /** Called once after the final attempt fails: mark the lesson `failed` with a sanitized reason. */
@@ -215,7 +261,7 @@ export async function markLessonJobFailed(data: LessonJobData, err: Error): Prom
   try {
     const [row] = await db
       .update(lessons)
-      .set({ status: 'failed', failureReason: reason.slice(0, 500), progressMessage: null })
+      .set({ status: 'failed', failureReason: reason.slice(0, 500), progressMessage: null, quizRequest: null })
       .where(and(guard(data), inArray(lessons.status, [...LESSON_PROCESSING_STATUSES])))
       .returning({ id: lessons.id, teacherId: lessons.teacherId, progressPct: lessons.progressPct });
     if (row) pushProgress(row, data, 'failed', row.progressPct, reason);
@@ -227,7 +273,7 @@ export async function markLessonJobFailed(data: LessonJobData, err: Error): Prom
 /** On worker startup: re-enqueue or fail lessons stuck in queued/transcribing/generating with no live job. */
 export async function recoverStuckLessons(): Promise<void> {
   const stuck = await db
-    .select({ id: lessons.id, attempt: lessons.generationAttempt, audioObjectKey: lessons.audioObjectKey })
+    .select({ id: lessons.id, attempt: lessons.generationAttempt, audioObjectKey: lessons.audioObjectKey, quizRequest: lessons.quizRequest })
     .from(lessons)
     .where(inArray(lessons.status, [...LESSON_PROCESSING_STATUSES]));
   for (const lesson of stuck) {
@@ -240,7 +286,7 @@ export async function recoverStuckLessons(): Promise<void> {
         }));
         continue;
       }
-      await queueLessonGeneration(lesson.id);
+      await queueLessonGeneration(lesson.id, lesson.quizRequest ?? null);
       logger.warn({ lessonId: lesson.id }, 'Re-queued lesson stuck in processing');
     } catch (err) {
       logger.error({ err, lessonId: lesson.id }, 'Failed to recover stuck lesson');

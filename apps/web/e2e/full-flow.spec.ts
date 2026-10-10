@@ -1,7 +1,8 @@
 /**
  * Full pilot flow, A → Z, against a running stack with REAL AI providers:
  *   admin onboarding → teacher (forced password change) uploads a lecture →
- *   AI transcription + quiz generation → review/edit/publish → student joins by
+ *   AI transcription → teacher picks the number of questions + difficulty →
+ *   AI quiz generation → review/edit/publish → student joins by
  *   code and takes the quiz → teacher analytics → live quiz with 2 students.
  *
  * Requires: `npm run dev` (or the prod stack via E2E_BASE_URL), seeded DB, and a
@@ -78,6 +79,17 @@ function startAgent(configPath: string): ChildProcess {
   return child;
 }
 
+/** Waits for the transcript (real STT), then generates a 5-question mixed quiz and waits for the draft questions. */
+async function generateQuiz(page: Page) {
+  const generate = page.getByRole('button', { name: 'Generate quiz' });
+  await expect(generate).toBeVisible({ timeout: 6 * 60_000 });
+  await page.getByLabel(/^Number of questions/).fill('5');
+  await page.getByRole('group', { name: 'Difficulty' }).getByRole('radio', { name: 'Mixed' }).check();
+  await generate.click();
+  // Real OpenAI quiz generation.
+  await expect(page.getByRole('button', { name: 'Approve all' })).toBeVisible({ timeout: 4 * 60_000 });
+}
+
 async function newPage(browser: Browser): Promise<Page> {
   const ctx = await browser.newContext();
   return ctx.newPage();
@@ -96,7 +108,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
     if (process.env.E2E_STT_PROVIDER) {
       await page.goto('/admin/settings');
       await page.getByLabel('STT provider').selectOption(process.env.E2E_STT_PROVIDER);
-      await page.getByLabel(/^STT model/).fill(process.env.E2E_STT_MODEL ?? 'whisper-1');
+      await page.getByLabel(/^STT model/).selectOption(process.env.E2E_STT_MODEL ?? 'whisper-1');
       await page.getByRole('button', { name: /save/i }).click();
       await expect(page.getByText(/saved/i).first()).toBeVisible();
     }
@@ -148,8 +160,8 @@ test.describe.serial('ClassPulse pilot flow', () => {
     await page.context().close();
   });
 
-  test('2. teacher uploads a lecture; AI transcribes and drafts the quiz', async ({ browser }) => {
-    test.setTimeout(8 * 60_000);
+  test('2. teacher uploads a lecture; AI transcribes, teacher generates the quiz', async ({ browser }) => {
+    test.setTimeout(12 * 60_000);
     const page = await newPage(browser);
     await staffLogin(page, state.teacherEmail, state.teacherPassword);
     await changePassword(page, state.teacherPassword);
@@ -161,12 +173,12 @@ test.describe.serial('ClassPulse pilot flow', () => {
     await page.getByLabel('Lesson title').fill(`Measures of central tendency ${RUN}`);
     await page.getByLabel('Subject').fill('Mathematics');
     await page.getByLabel('Audio file').setInputFiles(LECTURE);
-    await page.getByRole('button', { name: 'Upload and generate quiz' }).click();
+    await page.getByRole('button', { name: 'Upload and transcribe' }).click();
 
     await expect(page).toHaveURL(/\/teacher\/lessons\/[0-9a-f-]{36}/, { timeout: 120_000 });
     state.lessonUrl = new URL(page.url()).pathname;
-    // Real Sarvam/Whisper + OpenAI run here.
-    await expect(page.getByRole('button', { name: 'Approve all' })).toBeVisible({ timeout: 6 * 60_000 });
+    // Real Sarvam/Whisper transcription, then OpenAI with the teacher's settings.
+    await generateQuiz(page);
     await expect(page.getByRole('button', { name: 'Edit question 1' })).toBeVisible();
     await page.context().close();
   });
@@ -268,7 +280,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
   });
 
   test('6. classroom Raspberry Pi records a class end-to-end', async ({ browser }) => {
-    test.setTimeout(10 * 60_000);
+    test.setTimeout(14 * 60_000);
     // Admin provisions a device for the section's room.
     const admin = await newPage(browser);
     await staffLogin(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -338,8 +350,8 @@ test.describe.serial('ClassPulse pilot flow', () => {
       await teacher.getByRole('button', { name: 'Stop and upload' }).click();
       // Once the device finalizes, the recording panel moves the teacher to the lesson.
       await teacher.waitForURL(/\/teacher\/lessons\/[0-9a-f-]{36}/, { timeout: 3 * 60_000 });
-      // Real AI generation on the Pi-recorded audio.
-      await expect(teacher.getByRole('button', { name: 'Approve all' })).toBeVisible({ timeout: 6 * 60_000 });
+      // Real AI transcription of the Pi-recorded audio, then the teacher generates the quiz.
+      await generateQuiz(teacher);
       await teacher.context().close();
     } finally {
       agent.kill();

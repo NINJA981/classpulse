@@ -6,7 +6,15 @@
  * Timestamps are spread over the REAL audio duration.
  */
 import type { RemedialPlan, TranscriptSegment } from '@classpulse/shared';
-import type { GenerateInput, GenerateResult, GeneratedQuestion, RemedialInput, TranscribeInput, TranscribeResult } from './types.js';
+import type {
+  GenerateInput,
+  GenerateQuestionsResult,
+  GenerateResult,
+  GeneratedQuestion,
+  RemedialInput,
+  TranscribeInput,
+  TranscribeResult,
+} from './types.js';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -25,24 +33,33 @@ export function demoTranscribe(input: TranscribeInput): TranscribeResult {
   };
 }
 
-export function demoGenerate(input: GenerateInput): GenerateResult {
+function demoQuestions(input: GenerateInput): GeneratedQuestion[] {
   const segs = input.segments.length ? input.segments : [{ startSec: 0, endSec: 0, text: '' }];
-  const questions: GeneratedQuestion[] = Array.from({ length: input.questionsPerLesson }, (_, i) => {
+  const offset = input.existingStems.length;
+  return Array.from({ length: input.questionsPerLesson }, (_, i) => {
     const seg = segs[i % segs.length]!;
     return {
-      stem: `[Demo] Placeholder question ${i + 1} about ${input.subject}. Replace or edit before publishing.`,
+      stem: `[Demo] Placeholder question ${offset + i + 1} about ${input.subject}. Replace or edit before publishing.`,
       stemLocal: null,
       options: ['[Demo] Option A', '[Demo] Option B', '[Demo] Option C', '[Demo] Option D'],
       optionsLocal: null,
       correctIndex: i % 4,
       explanation: '[Demo] Generated without an AI provider; this is not real lesson content.',
       explanationLocal: null,
-      difficulty: (['easy', 'medium', 'hard'] as const)[i % 3]!,
+      difficulty: input.difficulty === 'mixed' ? (['easy', 'medium', 'hard'] as const)[i % 3]! : input.difficulty,
       topicTag: 'Demo',
       citationStartSec: seg.startSec,
       citationEndSec: seg.endSec,
     };
   });
+}
+
+export function demoGenerateQuestions(input: GenerateInput): GenerateQuestionsResult {
+  return { questions: demoQuestions(input), meta: { provider: 'demo', model: 'demo', demoFallback: true } };
+}
+
+export function demoGenerate(input: GenerateInput): GenerateResult {
+  const questions = demoQuestions(input);
   return {
     summary: `[Demo] Question generation is not configured. This placeholder summary for "${input.title}" is not real lesson content.`,
     keyTakeaways: [

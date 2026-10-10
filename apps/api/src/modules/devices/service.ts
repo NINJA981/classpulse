@@ -449,7 +449,7 @@ export async function finalizeRecording(
       logger.warn({ err, sessionId }, 'Failed to delete recording chunks');
     });
     try {
-      await queueLessonGeneration(session.lessonId);
+      await queueLessonGeneration(session.lessonId, null);
     } catch (err) {
       // The lesson stays `queued`; stuck-lesson recovery re-enqueues it.
       logger.error({ err, lessonId: session.lessonId }, 'Failed to enqueue generation for a finalized recording');

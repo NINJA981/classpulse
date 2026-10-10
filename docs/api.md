@@ -97,7 +97,7 @@ Students created by an admin must change their password on first login.
 | Method | Path | Body | Response |
 |---|---|---|---|
 | GET | `/` | — | `ModelSettings` |
-| PATCH | `/` | `UpdateModelSettingsInput` | `ModelSettings` |
+| PATCH | `/` | `UpdateModelSettingsInput` | `ModelSettings`; models must come from `STT_MODELS[provider]` / `LLM_MODELS` (else `400`), and switching provider alone picks that provider's default model |
 
 ### `/api/admin/devices`
 | Method | Path | Body | Response |
@@ -123,10 +123,11 @@ Students created by an admin must change their password on first login.
 | GET | `/:id` | — | `LessonDetail` |
 | PATCH | `/:id` | `UpdateLessonInput` | `LessonDetail` |
 | DELETE | `/:id` | — | `204`; only for `draft` or `failed` lessons with no attempts |
-| POST | `/:id/audio` | multipart field `file` (audio/*) | `LessonDetail`; audio is normalized to 16 kHz mono WAV |
+| POST | `/:id/audio` | multipart field `file` (audio/*) | `LessonDetail`; audio is normalized to 16 kHz mono WAV and transcription starts (status `queued` → `transcribed`) |
 | GET | `/:id/audio` | `Range` supported | `audio/wav` stream (teacher owner or admin) |
 | GET | `/:id/transcript` | — | `LessonTranscript` |
-| POST | `/:id/generate` | `GenerateLessonInput` | `202 { jobId }` (rate-limited) |
+| POST | `/:id/generate` | `GenerateLessonInput` | `202 { jobId }` (rate-limited). The teacher's quiz: `questionCount` (1–30, default from AI settings), `difficulty` (`easy`/`medium`/`hard`/`mixed`), `mode` (`append`, `replace_unapproved`, `replace_all`). `409` unless `confirmRegenerate: true` when questions would be removed or the lesson is published (it is unpublished first) |
+| POST | `/:id/transcribe` | — | `202 { jobId }`: re-runs transcription only (e.g. after it failed) |
 | POST | `/:id/publish` | — | `LessonDetail`; needs ≥1 approved question and status `ready_for_review` |
 | POST | `/:id/unpublish` | — | `LessonDetail` (back to `ready_for_review`) |
 | POST | `/:id/questions` | `QuestionInput` | `Question` (201, approved, marked as edited by teacher) |

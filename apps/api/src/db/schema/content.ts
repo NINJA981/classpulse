@@ -13,7 +13,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import type { RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
+import type { QuizRequest, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
 import {
   assignmentStatus,
   difficulty,
@@ -71,6 +71,8 @@ export const lessons = pgTable(
     progressMessage: varchar('progress_message', { length: 300 }),
     failureReason: varchar('failure_reason', { length: 500 }),
     pipelineMeta: jsonb('pipeline_meta').$type<PipelineMeta>(),
+    /** The teacher's quiz request while a generation job runs; null for transcription-only jobs. */
+    quizRequest: jsonb('quiz_request').$type<QuizRequest>(),
     remedial: jsonb('remedial').$type<RemedialPlan>(),
 
     publishedAt: timestamp('published_at', { withTimezone: true }),

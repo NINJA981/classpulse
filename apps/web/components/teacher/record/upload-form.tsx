@@ -12,12 +12,12 @@ import {
   type Section,
 } from '@classpulse/shared';
 import { Button, Card, CardBody, CardHeader, Field, InlineError, Input, Select, useToast } from '@/components/ui';
-import { ApiError, api, errorMessage } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { AudioFileField, useAudioUpload } from '@/components/teacher/audio-upload';
 
-type Phase = 'idle' | 'creating' | 'uploading' | 'generating';
+type Phase = 'idle' | 'creating' | 'uploading';
 
-/** Create a lesson, upload its audio with progress, queue generation, open the lesson. */
+/** Create a lesson, upload its audio with progress (the API queues transcription), open the lesson. */
 export function UploadForm({ section }: { section: Section }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -50,13 +50,7 @@ export function UploadForm({ section }: { section: Section }) {
       }
       setPhase('uploading');
       await upload(current.id, file);
-      setPhase('generating');
-      try {
-        await api.post<{ jobId: string }>(`/lessons/${current.id}/generate`, {});
-        toast('Audio uploaded. Generating the transcript and quiz…');
-      } catch (genErr) {
-        toast(`Audio uploaded, but generation could not start: ${errorMessage(genErr)}`, 'error');
-      }
+      toast('Audio uploaded. Transcribing the recording…');
       qc.invalidateQueries({ queryKey: ['lessons'] });
       qc.invalidateQueries({ queryKey: ['teacher', 'dashboard'] });
       router.push(`/teacher/lessons/${current.id}`);
@@ -132,11 +126,9 @@ export function UploadForm({ section }: { section: Section }) {
                   ? 'Creating lesson…'
                   : phase === 'uploading'
                     ? 'Uploading…'
-                    : phase === 'generating'
-                      ? 'Starting generation…'
-                      : lesson
-                        ? 'Retry upload'
-                        : 'Upload and generate quiz'}
+                    : lesson
+                      ? 'Retry upload'
+                      : 'Upload and transcribe'}
               </Button>
               {phase === 'uploading' && (
                 <Button variant="secondary" size="lg" onClick={abort}>

@@ -1,6 +1,6 @@
 /**
  * Shared by browser uploads (lessons module) and classroom-device recordings
- * (recordings module): attach normalized audio to a lesson and queue generation.
+ * (recordings module): attach normalized audio to a lesson and queue processing.
  */
 import { addDays } from '../../lib/time.js';
 import { and, eq, sql } from 'drizzle-orm';
@@ -11,7 +11,7 @@ import { lessons } from '../../db/schema/index.js';
 import { enqueueLessonGeneration } from '../../jobs/queue.js';
 import { storage } from '../../lib/storage.js';
 import { AppError, notFound } from '../../lib/errors.js';
-import type { LessonSourceType } from '@classpulse/shared';
+import type { LessonSourceType, QuizRequest } from '@classpulse/shared';
 
 export interface AttachAudioInput {
   lessonId: string;
@@ -46,13 +46,16 @@ export async function attachLessonAudio(input: AttachAudioInput, tx: DbOrTx = db
 
 /**
  * Move the lesson to `queued`, bump its generation attempt and enqueue the job.
+ * `request` null transcribes only (the lesson ends `transcribed`, waiting for the
+ * teacher's quiz settings); otherwise the job also generates the quiz.
  * Callers must already have validated ownership and state.
  */
-export async function queueLessonGeneration(lessonId: string): Promise<string> {
+export async function queueLessonGeneration(lessonId: string, request: QuizRequest | null): Promise<string> {
   const [row] = await db
     .update(lessons)
     .set({
       status: 'queued',
+      quizRequest: request,
       generationAttempt: sql`${lessons.generationAttempt} + 1`,
       progressPct: 0,
       progressMessage: 'Waiting for a worker',

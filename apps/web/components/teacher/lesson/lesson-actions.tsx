@@ -2,44 +2,25 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, EyeOff, Radio, RefreshCw, Send, Sparkles, Trash2 } from 'lucide-react';
-import type { GenerateLessonInput, LessonDetail } from '@classpulse/shared';
+import { BarChart3, EyeOff, Radio, Send, Trash2 } from 'lucide-react';
+import type { LessonDetail } from '@classpulse/shared';
 import { Button, ButtonLink, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { lessonKey } from './use-lesson';
 
-/** POST /lessons/:id/generate, flipping the cached lesson to `queued` so the processing view shows at once. */
-export function useGenerate(lesson: LessonDetail) {
-  const qc = useQueryClient();
-  const toast = useToast();
-  return useMutation({
-    mutationFn: (input: GenerateLessonInput) => api.post<{ jobId: string }>(`/lessons/${lesson.id}/generate`, input),
-    onSuccess: () => {
-      const prev = qc.getQueryData<LessonDetail>(lessonKey(lesson.id));
-      if (prev) qc.setQueryData<LessonDetail>(lessonKey(lesson.id), { ...prev, status: 'queued', progress: null, failureReason: null });
-      qc.invalidateQueries({ queryKey: lessonKey(lesson.id) });
-      qc.invalidateQueries({ queryKey: ['lessons', lesson.id, 'transcript'] });
-      toast('Quiz generation started');
-    },
-  });
-}
+type Confirm = 'delete' | 'unpublish' | null;
 
-type Confirm = 'generate' | 'regenerate' | 'delete' | 'unpublish' | null;
-
-/** Header actions for the lesson workspace. */
+/** Header actions for the lesson workspace. Generating / changing the quiz lives in QuizGenerator. */
 export function LessonActions({ lesson }: { lesson: LessonDetail }) {
   const qc = useQueryClient();
   const router = useRouter();
   const toast = useToast();
   const [confirm, setConfirm] = useState<Confirm>(null);
-  const generate = useGenerate(lesson);
 
   const approved = lesson.questions.filter((q) => q.status === 'approved').length;
   const s = lesson.status;
-  const canGenerate = lesson.hasAudio && (s === 'draft' || s === 'failed');
-  const canRegenerate = lesson.hasAudio && (s === 'ready_for_review' || s === 'published');
-  const canDelete = s === 'draft' || s === 'failed';
+  const canDelete = s === 'draft' || s === 'failed' || s === 'transcribed';
 
   const transition = useMutation({
     mutationFn: (kind: 'publish' | 'unpublish') => api.post<LessonDetail>(`/lessons/${lesson.id}/${kind}`),
@@ -63,18 +44,8 @@ export function LessonActions({ lesson }: { lesson: LessonDetail }) {
     },
   });
 
-  function runGenerate() {
-    if (lesson.questions.length > 0) setConfirm('generate');
-    else generate.mutate({});
-  }
-
   return (
     <>
-      {canGenerate && (
-        <Button icon={<Sparkles className="size-4" aria-hidden />} loading={generate.isPending} onClick={runGenerate}>
-          Generate quiz
-        </Button>
-      )}
       {s === 'ready_for_review' && (
         <Button
           icon={<Send className="size-4" aria-hidden />}
@@ -99,38 +70,18 @@ export function LessonActions({ lesson }: { lesson: LessonDetail }) {
           </Button>
         </>
       )}
-      {canRegenerate && (
-        <Button variant="secondary" icon={<RefreshCw className="size-4" aria-hidden />} onClick={() => setConfirm('regenerate')}>
-          Regenerate
-        </Button>
-      )}
       {canDelete && (
         <Button variant="ghost" icon={<Trash2 className="size-4" aria-hidden />} onClick={() => setConfirm('delete')}>
           Delete
         </Button>
       )}
 
-      {!confirm && (generate.error || transition.error) ? (
+      {!confirm && transition.error ? (
         <div className="w-full">
-          <InlineError error={generate.error ?? transition.error} />
+          <InlineError error={transition.error} />
         </div>
       ) : null}
 
-      <ConfirmDialog
-        open={confirm === 'generate' || confirm === 'regenerate'}
-        onClose={() => setConfirm(null)}
-        title="Replace the questions?"
-        description={
-          s === 'published'
-            ? 'The lesson is unpublished and every current question — including your edits — is replaced with a new set. Students will not see the quiz until you publish again.'
-            : 'Every current question — including your edits — is replaced with a newly generated set.'
-        }
-        confirmLabel="Replace questions"
-        danger
-        loading={generate.isPending}
-        error={generate.error}
-        onConfirm={() => generate.mutate({ confirmRegenerate: true }, { onSuccess: () => setConfirm(null) })}
-      />
       <ConfirmDialog
         open={confirm === 'unpublish'}
         onClose={() => setConfirm(null)}

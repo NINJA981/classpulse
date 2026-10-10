@@ -145,6 +145,11 @@ router.post('/:id/generate', teacherOnly, aiLimiter, async (req, res) => {
   res.status(202).json(await service.requestGeneration(currentUser(req), id, parseBody(req, GenerateLessonInput)));
 });
 
+router.post('/:id/transcribe', teacherOnly, aiLimiter, async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  res.status(202).json(await service.requestTranscription(currentUser(req), id));
+});
+
 router.post('/:id/publish', teacherOnly, async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.json(await service.publishLesson(currentUser(req), id));

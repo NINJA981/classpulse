@@ -18,7 +18,8 @@ export function AudioTranscript({
   audioRef: RefObject<HTMLAudioElement | null>;
   onSeek: (sec: number) => void;
 }) {
-  const transcriptReady = lesson.hasAudio && !['recording', 'queued', 'transcribing'].includes(lesson.status);
+  // Stays visible while a quiz is generated from an existing transcript.
+  const transcriptReady = lesson.hasAudio && lesson.hasTranscript;
   const q = useQuery({
     queryKey: ['lessons', lesson.id, 'transcript'],
     queryFn: () => api.get<LessonTranscript>(`/lessons/${lesson.id}/transcript`),

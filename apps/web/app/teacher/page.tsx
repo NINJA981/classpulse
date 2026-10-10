@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, CalendarDays, ClipboardCheck, Mic, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, ClipboardCheck, Mic, Sparkles, Users } from 'lucide-react';
 import { LESSON_STATUSES, type TeacherDashboard } from '@classpulse/shared';
 import {
   ButtonLink,
@@ -54,10 +54,27 @@ export default function TeacherDashboardPage() {
   const d = q.data;
   const totalLessons = Object.values(d.lessonsByStatus).reduce((a, b) => a + b, 0);
   const statusRows = LESSON_STATUSES.filter((s) => (d.lessonsByStatus[s] ?? 0) > 0);
+  // Transcribed lessons wait for the teacher to choose the quiz settings and generate.
+  const readyForQuiz = d.lessonsByStatus.transcribed ?? 0;
 
   return (
     <>
       {header}
+
+      {readyForQuiz > 0 && (
+        <Card className="mb-6 flex flex-col gap-3 border-line-strong p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Sparkles className="size-6 shrink-0" aria-hidden />
+            <div>
+              <p className="font-display text-base font-extrabold">
+                {readyForQuiz} {readyForQuiz === 1 ? 'lesson is' : 'lessons are'} ready for a quiz
+              </p>
+              <p className="text-sm text-muted">The transcript is ready. Choose the number of questions and the difficulty, then generate the quiz.</p>
+            </div>
+          </div>
+          <ButtonLink href="/teacher/lessons?status=transcribed">Generate quizzes</ButtonLink>
+        </Card>
+      )}
 
       {d.needsReview > 0 && (
         <Card className="mb-6 flex flex-col gap-3 border-line-strong p-5 sm:flex-row sm:items-center sm:justify-between">

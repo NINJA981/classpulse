@@ -62,7 +62,7 @@ export function RecordingPanel({ recordingId, onNew }: { recordingId: string; on
     const prev = prevStatus.current;
     prevStatus.current = session.status;
     if (prev && prev !== 'finalized' && session.status === 'finalized') {
-      toast('Recording saved. Generating the quiz…');
+      toast('Recording saved. Transcribing the class…');
       qc.invalidateQueries({ queryKey: ['lessons'] });
       router.push(`/teacher/lessons/${session.lessonId}`);
     }
@@ -137,7 +137,7 @@ export function RecordingPanel({ recordingId, onNew }: { recordingId: string; on
             <div className="flex flex-col items-center gap-3">
               <CheckCircle2 className="size-8 text-success" aria-hidden />
               <p className="font-display text-xl font-extrabold">Recording saved</p>
-              <p className="text-sm text-muted">The transcript and quiz are being generated.</p>
+              <p className="text-sm text-muted">The class is being transcribed. Then choose the quiz settings on the lesson page.</p>
               <ButtonLink href={`/teacher/lessons/${s.lessonId}`}>Open the lesson</ButtonLink>
             </div>
           )}
@@ -210,7 +210,7 @@ export function RecordingPanel({ recordingId, onNew }: { recordingId: string; on
         open={confirm === 'stop'}
         onClose={() => setConfirm(null)}
         title="Stop the recording?"
-        description="The device will upload any remaining audio, then the transcript and quiz are generated automatically."
+        description="The device will upload any remaining audio, then the class is transcribed automatically. You choose the quiz settings afterwards."
         confirmLabel="Stop and upload"
         danger
         loading={action.isPending}

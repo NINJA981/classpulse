@@ -21,9 +21,10 @@
 ## A teaching day
 
 1. The teacher opens **Record a class**, picks the section and confirms the room device is *online*, then presses **Start recording**.
-2. At the end of class, the teacher presses **Stop recording**. Processing usually finishes in 2–6 minutes, depending on lecture length.
-3. The teacher reviews the questions, edits or approves them, and presses **Publish**. Students see the quiz immediately.
-4. Optional: **Start live quiz**, then open the projector view. Students join at `/student/live` with the PIN or by scanning the QR code.
+2. At the end of class, the teacher presses **Stop recording**. Transcription usually finishes in 1–3 minutes, depending on lecture length; the lesson is then *Ready for quiz*.
+3. On the lesson page the teacher picks the **number of questions** and the **difficulty** (Easy, Medium, Hard or Mixed) and presses **Generate quiz** (about 30 seconds).
+4. The teacher reviews the questions, edits or approves them, and presses **Publish**. Students see the quiz immediately. **Change questions** adds more questions, replaces the unapproved ones, or starts over.
+5. Optional: **Start live quiz**, then open the projector view. Students join at `/student/live` with the PIN or by scanning the QR code.
 
 ## Incident playbook
 

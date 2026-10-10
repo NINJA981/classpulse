@@ -3,10 +3,11 @@ import { useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { ErrorState, LoadingBlock, PageHeader } from '@/components/ui';
 import { AssignmentEditor } from '@/components/teacher/lesson/assignment-editor';
-import { LessonActions, useGenerate } from '@/components/teacher/lesson/lesson-actions';
+import { LessonActions } from '@/components/teacher/lesson/lesson-actions';
 import { LessonAudioUpload } from '@/components/teacher/lesson/lesson-audio-upload';
 import { FailedView, ProcessingView, RecordingNotice } from '@/components/teacher/lesson/processing-view';
 import { QuestionList } from '@/components/teacher/lesson/question-list';
+import { QuizGenerator, useTranscribe } from '@/components/teacher/lesson/quiz-generator';
 import { SummaryEditor } from '@/components/teacher/lesson/summary-editor';
 import { AudioTranscript } from '@/components/teacher/lesson/transcript-panel';
 import { useLesson } from '@/components/teacher/lesson/use-lesson';
@@ -31,8 +32,14 @@ export default function LessonWorkspacePage() {
 
 function Workspace({ lesson }: { lesson: LessonDetail }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const generate = useGenerate(lesson);
+  const transcribe = useTranscribe(lesson);
   const processing = isProcessing(lesson.status);
+  const s = lesson.status;
+  // The teacher generates / changes the quiz once a transcript exists (failed generations included).
+  const showGenerator =
+    !processing && lesson.hasTranscript && (s === 'transcribed' || s === 'ready_for_review' || s === 'published' || s === 'failed');
+  // Transcribed, no quiz yet: the generator takes the questions' place.
+  const awaitingQuiz = s === 'transcribed' && lesson.questions.length === 0;
 
   const seek = useCallback((sec: number) => {
     const a = audioRef.current;
@@ -66,18 +73,18 @@ function Workspace({ lesson }: { lesson: LessonDetail }) {
         {lesson.status === 'failed' && (
           <FailedView
             lesson={lesson}
-            retrying={generate.isPending}
-            error={generate.error}
-            onRetry={
-              lesson.hasAudio ? () => generate.mutate(lesson.questions.length ? { confirmRegenerate: true } : {}) : null
-            }
+            retrying={transcribe.isPending}
+            error={transcribe.error}
+            // With a transcript the generator below retries the quiz; without one, transcribe again.
+            onRetry={lesson.hasAudio && !lesson.hasTranscript ? () => transcribe.mutate() : null}
           />
         )}
         {!lesson.hasAudio && (lesson.status === 'draft' || lesson.status === 'failed') && <LessonAudioUpload lesson={lesson} />}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div className="min-w-0 lg:col-span-3">
-            {processing ? null : <QuestionList lesson={lesson} onSeek={lesson.hasAudio ? seek : null} />}
+          <div className="min-w-0 space-y-6 lg:col-span-3">
+            {showGenerator && <QuizGenerator key={lesson.questions.length > 0 ? 'change' : 'new'} lesson={lesson} />}
+            {processing || awaitingQuiz ? null : <QuestionList lesson={lesson} onSeek={lesson.hasAudio ? seek : null} />}
           </div>
           <div className="min-w-0 space-y-6 lg:col-span-2">
             <AudioTranscript lesson={lesson} audioRef={audioRef} onSeek={seek} />
@@ -85,7 +92,7 @@ function Workspace({ lesson }: { lesson: LessonDetail }) {
           </div>
         </div>
 
-        {!processing && lesson.status !== 'recording' && <AssignmentEditor lesson={lesson} />}
+        {!processing && !awaitingQuiz && lesson.status !== 'recording' && <AssignmentEditor lesson={lesson} />}
       </div>
     </>
   );

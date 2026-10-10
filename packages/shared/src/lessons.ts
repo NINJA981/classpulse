@@ -11,6 +11,7 @@ export const LESSON_STATUSES = [
   'queued', // audio ready, generation job queued
   'transcribing',
   'generating',
+  'transcribed', // transcript ready; waiting for the teacher to generate the quiz
   'ready_for_review', // teacher must review/approve questions
   'published', // visible to enrolled students
   'failed',
@@ -49,11 +50,37 @@ export const ListLessonsQuery = z.object({
 });
 export type ListLessonsQuery = z.infer<typeof ListLessonsQuery>;
 
+/** Difficulty the teacher asks for; `mixed` spreads questions across easy, medium and hard. */
+export const QuizDifficulty = z.enum(['easy', 'medium', 'hard', 'mixed']);
+export type QuizDifficulty = z.infer<typeof QuizDifficulty>;
+
+/**
+ * - `append`: add new questions on points the quiz does not test yet; existing questions stay.
+ * - `replace_unapproved`: keep approved and teacher-edited questions, replace the rest.
+ * - `replace_all`: start over (questions, summary and assignment).
+ * With no questions yet, every mode generates a fresh quiz.
+ */
+export const QuizGenerationMode = z.enum(['append', 'replace_unapproved', 'replace_all']);
+export type QuizGenerationMode = z.infer<typeof QuizGenerationMode>;
+
+export const MAX_QUESTIONS_PER_REQUEST = 30;
+
 export const GenerateLessonInput = z.object({
-  /** Must be true to regenerate a lesson that already has questions or is published. */
+  /** Defaults to the school's "questions per lesson" setting. */
+  questionCount: z.number().int().min(1).max(MAX_QUESTIONS_PER_REQUEST).optional(),
+  difficulty: QuizDifficulty.default('mixed'),
+  mode: QuizGenerationMode.default('replace_all'),
+  /** Must be true to replace existing questions or change a published lesson (it is unpublished first). */
   confirmRegenerate: z.boolean().optional(),
 });
 export type GenerateLessonInput = z.infer<typeof GenerateLessonInput>;
+
+/** What the teacher asked the generator for (stored on the lesson while the job runs). */
+export interface QuizRequest {
+  questionCount: number;
+  difficulty: QuizDifficulty;
+  mode: QuizGenerationMode;
+}
 
 export interface LessonSummary {
   id: Id;
@@ -78,6 +105,12 @@ export interface TranscriptSegment {
 }
 
 export interface LessonDetail extends LessonSummary {
+  /** The school's default for the "number of questions" field. */
+  defaultQuestionCount: number;
+  /** Whether a transcript exists, so a quiz can be generated without transcribing again. */
+  hasTranscript: boolean;
+  /** While processing: the quiz being generated, or null for a transcription-only run. */
+  pendingQuiz: QuizRequest | null;
   summary: string | null;
   keyTakeaways: string[];
   failureReason: string | null;

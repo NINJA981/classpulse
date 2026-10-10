@@ -19,7 +19,8 @@ if (!env.REDIS_URL) {
   await storage.ensureWritable();
   const worker = startLessonWorker();
   const periodic = startPeriodicTasks(maintenanceTasks);
-  await recoverStuckLessons();
+  // A failed recovery pass (e.g. the database is mid-migration) must not take the worker down with it.
+  await recoverStuckLessons().catch((err: unknown) => logger.error({ err }, 'Stuck-lesson recovery failed; continuing'));
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Worker shutting down');
