@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "PORT=5171 next dev -p 5171",
+    "dev": "next dev -p 5171",
     "build": "next build",
-    "start": "PORT=5171 next start -p 5171",
+    "start": "next start -p 5171",
     "lint": "next lint"
   },
   "dependencies": {
