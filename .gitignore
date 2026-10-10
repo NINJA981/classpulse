@@ -1,0 +1,48 @@
+# --- Original standalone repos (history imported under legacy/; kept on disk untouched) ---
+/SIH-backend/
+/SIH-admin/
+/SIH-teacher/
+/SIH-student/
+/classroom-agent/
+/scripts/
+/nginx/
+/youtube-audio.mp3
+
+# --- Dependencies & build output ---
+node_modules/
+dist/
+build/
+.next/
+.next-*/
+out/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# --- Env & secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+
+# --- Runtime data ---
+uploads/
+storage/
+.pg-data/
+*.log
+logs/
+playwright-report/
+test-results/
+
+# --- Python ---
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
