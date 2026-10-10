@@ -131,7 +131,8 @@ export const QuestionInput = z.object({
 });
 export type QuestionInput = z.infer<typeof QuestionInput>;
 
-export const UpdateQuestionInput = QuestionInput.partial();
+// Explicit optional difficulty: a .partial() of a defaulted field would still apply the default on PATCH.
+export const UpdateQuestionInput = QuestionInput.extend({ difficulty: Difficulty.optional() }).partial();
 export type UpdateQuestionInput = z.infer<typeof UpdateQuestionInput>;
 
 /** Full question — teachers/admins only. Never sent to students before grading. */

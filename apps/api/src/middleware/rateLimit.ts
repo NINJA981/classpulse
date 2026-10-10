@@ -1,4 +1,4 @@
-import { rateLimit, type Options } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit, type Options } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { ApiErrorBody } from '@classpulse/shared';
 import { isTest } from '../config/env.js';
@@ -24,7 +24,7 @@ function limiter(prefix: string, windowMs: number, limit: number, keyExtra?: (bo
     store: store(prefix),
     keyGenerator: (req) => {
       const extra = keyExtra?.(req.body);
-      const ip = req.ip ?? 'unknown';
+      const ip = ipKeyGenerator(req.ip ?? 'unknown');
       return extra ? `${ip}:${extra.toLowerCase()}` : ip;
     },
     message: body,

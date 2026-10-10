@@ -4,6 +4,11 @@ import bcrypt from 'bcryptjs';
 const BCRYPT_COST = 12;
 
 export const hashPassword = (plain: string) => bcrypt.hash(plain, BCRYPT_COST);
+/**
+ * Random admin-issued initial passwords are high-entropy and must be changed at first
+ * login, so a lower cost keeps bulk roster imports fast without weakening real passwords.
+ */
+export const hashInitialPassword = (plain: string) => bcrypt.hash(plain, 10);
 export const verifyPassword = (plain: string, hash: string) => bcrypt.compare(plain, hash);
 
 export const sha256Hex = (input: string | Buffer) => createHash('sha256').update(input).digest('hex');

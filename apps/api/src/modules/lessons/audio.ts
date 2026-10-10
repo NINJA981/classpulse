@@ -3,13 +3,14 @@
  * (recordings module): attach normalized audio to a lesson and queue generation.
  */
 import { addDays } from '../../lib/time.js';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { logger } from '../../lib/logger.js';
 import { env } from '../../config/env.js';
 import { db, type DbOrTx } from '../../db/client.js';
 import { lessons } from '../../db/schema/index.js';
 import { enqueueLessonGeneration } from '../../jobs/queue.js';
 import { storage } from '../../lib/storage.js';
-import { notFound } from '../../lib/errors.js';
+import { AppError, notFound } from '../../lib/errors.js';
 import type { LessonSourceType } from '@classpulse/shared';
 
 export interface AttachAudioInput {
@@ -60,5 +61,15 @@ export async function queueLessonGeneration(lessonId: string): Promise<string> {
     .where(eq(lessons.id, lessonId))
     .returning({ attempt: lessons.generationAttempt });
   if (!row) throw notFound('Lesson');
-  return enqueueLessonGeneration({ lessonId, attempt: row.attempt });
+  try {
+    return await enqueueLessonGeneration({ lessonId, attempt: row.attempt });
+  } catch (err) {
+    // Don't leave the lesson stuck in `queued` when the queue is unreachable.
+    logger.error({ err, lessonId }, 'Failed to enqueue lesson generation');
+    await db
+      .update(lessons)
+      .set({ status: 'failed', failureReason: 'Could not start processing. Please try again.', progressMessage: null })
+      .where(and(eq(lessons.id, lessonId), eq(lessons.generationAttempt, row.attempt)));
+    throw new AppError('INTERNAL', 'Could not start processing. Please try again.');
+  }
 }
