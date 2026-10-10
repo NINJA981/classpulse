@@ -354,8 +354,20 @@ const DIFFICULTY_PROMPT: Record<QuizDifficulty, string> = {
   easy: 'Every question is easy (difficulty "easy"): direct recall of a fact or definition stated in the lecture.',
   medium: 'Every question is medium (difficulty "medium"): understanding or applying an idea from the lecture to a simple case.',
   hard: 'Every question is hard (difficulty "hard"): analysis, multi-step reasoning, or comparing ideas from the lecture.',
-  mixed: 'Mix difficulties roughly evenly: easy (recall), medium (understanding/application) and hard (analysis).',
+  mixed: '',
 };
+
+/** Mixed quizzes get explicit counts; "mix them" alone tends to produce no hard questions at all. */
+function difficultyPrompt(difficulty: QuizDifficulty, count: number): string {
+  if (difficulty !== 'mixed') return DIFFICULTY_PROMPT[difficulty];
+  const easy = Math.ceil(count / 3);
+  const medium = Math.ceil((count - easy) / 2);
+  const hard = count - easy - medium;
+  return (
+    `Difficulties: ${easy} easy (recall of facts/definitions), ${medium} medium (understanding/application)` +
+    (hard ? ` and ${hard} hard (analysis, multi-step reasoning, comparing ideas).` : '.')
+  );
+}
 
 function generationMessages(input: GenerateInput, blocks: TranscriptSegment[], local: boolean): ChatMessage[] {
   const langName = languageName(input.language);
@@ -369,7 +381,7 @@ function generationMessages(input: GenerateInput, blocks: TranscriptSegment[], l
     '- summary: 2-4 sentences in English describing what the lecture taught.',
     '- keyTakeaways: 3 to 6 short English bullet points.',
     `- questions: ${input.questionsPerLesson} multiple-choice questions in English, each on a different point of the lecture. Each has exactly 4 options, exactly ONE option with isCorrect=true, plausible distractors, no "all/none of the above".`,
-    `  explanation says why the correct answer is right, referring to the lecture. ${DIFFICULTY_PROMPT[input.difficulty]}`,
+    `  explanation says why the correct answer is right, referring to the lecture. ${difficultyPrompt(input.difficulty, input.questionsPerLesson)}`,
     '  topicTag is a 1-4 word sub-topic name. citedSegments lists the block indices that contain the evidence for the answer.',
     local
       ? `  Also give natural ${langName} translations: stemLocal, optionsLocal (same order as options), explanationLocal. Write them the way the teacher speaks in class: keep subject terms (for example mean, median, JDBC, inheritance) in English, in Latin script, exactly as they appear in the transcript, and translate only the surrounding sentence.`
@@ -466,7 +478,7 @@ async function topUpQuestions(
   const schema = obj({ questions: arr(questionJsonSchema(local)) });
   for (let round = 1; round <= rounds && out.length < input.questionsPerLesson; round++) {
     const want = input.questionsPerLesson - out.length;
-    const messages = generationMessages({ ...input, existingStems: [] }, blocks, local);
+    const messages = generationMessages({ ...input, questionsPerLesson: want, existingStems: [] }, blocks, local);
     const existing = [...input.existingStems, ...out.map((q) => q.stem)];
     messages.push({
       role: 'user',

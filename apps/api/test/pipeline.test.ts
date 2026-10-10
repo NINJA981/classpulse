@@ -163,6 +163,20 @@ describe('OpenAI generation (stubbed fetch)', () => {
     expect(result.meta.questionsRequested).toBe(3);
   });
 
+  it('asks for explicit counts per difficulty in a mixed quiz, and one level for a fixed difficulty', async () => {
+    env.OPENAI_API_KEY = 'test-key';
+    stubFetch(() => chatResponse(rawModelOutput(2)));
+    await generateWithOpenAI(genInput({ questionsPerLesson: 20 })).catch(() => undefined); // only the prompt matters here
+    const system = (JSON.parse(String(calls[0]!.init!.body)) as { messages: { content: string }[] }).messages[0]!.content;
+    expect(system).toMatch(/7 easy .*7 medium .*6 hard/);
+
+    calls.length = 0;
+    stubFetch(() => chatResponse(rawModelOutput(2)));
+    const hard = await generateWithOpenAI(genInput({ difficulty: 'hard' }));
+    expect((JSON.parse(String(calls[0]!.init!.body)) as { messages: { content: string }[] }).messages[0]!.content).toMatch(/Every question is hard/);
+    expect(hard.questions.every((q) => q.difficulty === 'hard')).toBe(true);
+  });
+
   it('keeps a shorter quiz when the lecture supports no more questions, but not one under the minimum', async () => {
     env.OPENAI_API_KEY = 'test-key';
     let n = 0;
