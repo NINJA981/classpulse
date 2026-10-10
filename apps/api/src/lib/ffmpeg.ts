@@ -4,7 +4,6 @@
  */
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { writeFile } from 'node:fs/promises';
 import { AppError } from './errors.js';
 
 const require = createRequire(import.meta.url);
@@ -71,19 +70,6 @@ export async function normalizeToWav(inputPath: string, outputPath: string): Pro
   } catch {
     throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'The audio file could not be converted. Upload MP3, WAV, M4A, OGG or WEBM audio.');
   }
-}
-
-/** Concatenate raw s16le/16k/mono PCM chunk files (in order) into one WAV file. */
-export async function pcmChunksToWav(chunkPaths: string[], listPath: string, outputPath: string): Promise<void> {
-  const list = chunkPaths.map((p) => `file '${p.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n');
-  await writeFile(listPath, list);
-  await run(FFMPEG, [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'concat', '-safe', '0',
-    '-f', 's16le', '-ar', '16000', '-ac', '1',
-    '-i', listPath,
-    '-c:a', 'pcm_s16le', outputPath,
-  ]);
 }
 
 /** Cut a segment of a WAV file (used to split long audio for STT). */

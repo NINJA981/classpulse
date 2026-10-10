@@ -1,0 +1,207 @@
+/**
+ * Full pilot flow, A → Z, against a running stack with REAL AI providers:
+ *   admin onboarding → teacher (forced password change) uploads a lecture →
+ *   AI transcription + quiz generation → review/edit/publish → student joins by
+ *   code and takes the quiz → teacher analytics → live quiz with 2 students.
+ *
+ * Requires: `npm run dev` (or the prod stack via E2E_BASE_URL), seeded DB, and a
+ * lecture recording at .e2e-fixtures/lecture-150s.mp3 (see docs/pilot-runbook.md).
+ */
+import { expect, test, type Browser, type Page } from '@playwright/test';
+import path from 'node:path';
+
+const RUN = Date.now().toString(36).slice(-5).toUpperCase();
+const LECTURE = path.resolve(import.meta.dirname, '../../../.e2e-fixtures/lecture-150s.mp3');
+const NEW_PASSWORD = 'Pilot@2026!';
+
+const state: {
+  teacherEmail: string;
+  teacherPassword: string;
+  sectionName: string;
+  joinCode: string;
+  students: { name: string; roll: string; password: string }[];
+  lessonUrl: string;
+} = {
+  teacherEmail: `teacher.${RUN.toLowerCase()}@demo.school`,
+  teacherPassword: '',
+  sectionName: `E2E Section ${RUN}`,
+  joinCode: '',
+  students: [],
+  lessonUrl: '',
+};
+
+async function staffLogin(page: Page, email: string, password: string) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'));
+}
+
+async function studentLogin(page: Page, roll: string, password: string) {
+  await page.goto('/login');
+  await page.getByRole('tab', { name: 'Student' }).click();
+  await page.getByLabel('Roll number').fill(roll);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'));
+}
+
+async function changePassword(page: Page, current: string) {
+  await expect(page).toHaveURL(/\/change-password/);
+  await page.getByLabel('Current password').fill(current);
+  await page.getByLabel(/^New password/).fill(NEW_PASSWORD);
+  await page.getByLabel('Confirm new password').fill(NEW_PASSWORD);
+  await page.getByRole('button', { name: 'Save and continue' }).click();
+}
+
+async function readOneTimePassword(page: Page): Promise<string> {
+  const secret = page.getByRole('dialog').getByLabel('Initial password', { exact: true });
+  await expect(secret).toBeVisible();
+  const value = (await secret.textContent())?.trim() ?? '';
+  expect(value).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{2}$/);
+  await page.getByRole('button', { name: 'I have saved it' }).click();
+  return value;
+}
+
+async function newPage(browser: Browser): Promise<Page> {
+  const ctx = await browser.newContext();
+  return ctx.newPage();
+}
+
+test.describe.serial('ClassPulse pilot flow', () => {
+  test('1. admin onboards a room, teacher, section and students', async ({ browser }) => {
+    const page = await newPage(browser);
+    await staffLogin(page, 'admin@demo.school', 'Admin@12345');
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const dialog = page.getByRole('dialog');
+
+    // Room
+    await page.goto('/admin/rooms');
+    await page.getByRole('button', { name: /add room/i }).first().click();
+    await dialog.getByLabel('Room name').fill(`E2E Room ${RUN}`);
+    await dialog.getByRole('button', { name: /create room|save room|add room/i }).click();
+    await expect(page.getByRole('cell', { name: `E2E Room ${RUN}`, exact: true })).toBeVisible();
+
+    // Teacher (initial password shown once)
+    await page.goto('/admin/teachers');
+    await page.getByRole('button', { name: 'Add teacher' }).first().click();
+    await dialog.getByLabel('Full name').fill(`E2E Teacher ${RUN}`);
+    await dialog.getByLabel('Email').fill(state.teacherEmail);
+    await dialog.getByRole('button', { name: 'Create teacher' }).click();
+    state.teacherPassword = await readOneTimePassword(page);
+
+    // Section with room + teacher
+    await page.goto('/admin/sections');
+    await page.getByRole('button', { name: 'Create section' }).first().click();
+    await dialog.getByLabel('Section name').fill(state.sectionName);
+    await dialog.getByLabel('Grade').fill('9');
+    await dialog.getByLabel('Subject').fill('Mathematics');
+    await dialog.getByLabel('Room').selectOption({ label: `E2E Room ${RUN}` });
+    await dialog.getByLabel(`E2E Teacher ${RUN}`).check();
+    await dialog.getByRole('button', { name: 'Create section' }).click();
+    await expect(page.getByRole('cell', { name: state.sectionName, exact: true })).toBeVisible();
+    const sections = (await (await page.request.get('/api/admin/sections')).json()) as { name: string; joinCode: string }[];
+    state.joinCode = sections.find((s) => s.name === state.sectionName)!.joinCode;
+    expect(state.joinCode).toMatch(/^[A-Z0-9]{6}$/);
+
+    // Two students: one enrolled by the admin, one who will join with the code
+    await page.goto('/admin/students');
+    for (const [i, enrol] of [
+      [1, true],
+      [2, false],
+    ] as const) {
+      const s = { name: `E2E Student ${RUN}-${i}`, roll: `E2E-${RUN}-${i}`, password: '' };
+      await page.getByRole('button', { name: 'Add student' }).first().click();
+      await dialog.getByLabel('Full name').fill(s.name);
+      await dialog.getByLabel('Roll number').fill(s.roll);
+      if (enrol) await dialog.getByLabel('Section').selectOption({ label: state.sectionName });
+      await dialog.getByRole('button', { name: /create student|add student/i }).click();
+      s.password = await readOneTimePassword(page);
+      state.students.push(s);
+    }
+    await page.context().close();
+  });
+
+  test('2. teacher uploads a lecture; AI transcribes and drafts the quiz', async ({ browser }) => {
+    test.setTimeout(8 * 60_000);
+    const page = await newPage(browser);
+    await staffLogin(page, state.teacherEmail, state.teacherPassword);
+    await changePassword(page, state.teacherPassword);
+    await expect(page).toHaveURL(/\/teacher$/);
+
+    await page.goto('/teacher/record');
+    await page.getByRole('tab', { name: 'Upload audio file' }).click();
+    await page.getByLabel('Section').selectOption({ label: `${state.sectionName} — Mathematics` });
+    await page.getByLabel('Lesson title').fill(`Measures of central tendency ${RUN}`);
+    await page.getByLabel('Subject').fill('Mathematics');
+    await page.getByLabel('Audio file').setInputFiles(LECTURE);
+    await page.getByRole('button', { name: 'Upload and generate quiz' }).click();
+
+    await expect(page).toHaveURL(/\/teacher\/lessons\/[0-9a-f-]{36}/, { timeout: 120_000 });
+    state.lessonUrl = new URL(page.url()).pathname;
+    // Real Sarvam/Whisper + OpenAI run here.
+    await expect(page.getByRole('button', { name: 'Approve all' })).toBeVisible({ timeout: 6 * 60_000 });
+    await expect(page.getByRole('button', { name: 'Edit question 1' })).toBeVisible();
+    await page.context().close();
+  });
+
+  test('3. teacher edits, approves and publishes', async ({ browser }) => {
+    const page = await newPage(browser);
+    await staffLogin(page, state.teacherEmail, NEW_PASSWORD);
+    await page.goto(state.lessonUrl);
+
+    await page.getByRole('button', { name: 'Edit question 1' }).click();
+    const editor = page.getByRole('dialog');
+    const stem = editor.getByRole('textbox', { name: /^Question\s*\*?$/ });
+    await stem.fill(`${await stem.inputValue()} (reviewed)`);
+    await editor.getByRole('button', { name: /save/i }).click();
+    await expect(page.getByText('(reviewed)').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Approve all' }).click();
+    await expect(page.getByRole('button', { name: 'Publish' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Publish' }).click();
+    await expect(page.getByRole('button', { name: 'Unpublish' })).toBeVisible();
+    await page.context().close();
+  });
+
+  test('4. students sign in, join by code and take the quiz', async ({ browser }) => {
+    for (const [i, s] of state.students.entries()) {
+      const page = await newPage(browser);
+      await studentLogin(page, s.roll, s.password);
+      await changePassword(page, s.password);
+      await expect(page).toHaveURL(/\/student$/);
+
+      if (i === 1) {
+        await page.goto(`/student/join?code=${state.joinCode}`);
+        await page.getByRole('button', { name: 'Join class' }).click();
+        await expect(page).toHaveURL(/\/student$/);
+      }
+
+      await page.goto('/student/quizzes');
+      await page.getByRole('link', { name: new RegExp(`Measures of central tendency ${RUN}`) }).first().click();
+      await page.getByRole('button', { name: 'Start quiz' }).click();
+      const radios = page.getByRole('radio');
+      for (let q = 0; q < 5; q++) {
+        await expect(radios.first()).toBeVisible();
+        await radios.nth((q + i) % 4).click();
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
+      }
+      await page.getByRole('button', { name: 'Submit quiz' }).click();
+      await expect(page.getByRole('button', { name: 'Retake quiz' })).toBeVisible();
+      await expect(page.getByText(/%/).first()).toBeVisible();
+      await page.context().close();
+    }
+  });
+
+  test('5. teacher sees analytics for the attempts', async ({ browser }) => {
+    const page = await newPage(browser);
+    await staffLogin(page, state.teacherEmail, NEW_PASSWORD);
+    await page.goto(`${state.lessonUrl}/analytics`);
+    await expect(page.getByText(state.students[0]!.name)).toBeVisible();
+    await expect(page.getByText(state.students[1]!.name)).toBeVisible();
+    await page.context().close();
+  });
+});

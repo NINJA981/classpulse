@@ -1,6 +1,6 @@
 'use client';
 import { Suspense, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Users } from 'lucide-react';
 import {
   Card,
@@ -38,7 +38,6 @@ export default function RecordPage() {
 }
 
 function RecordContent() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const recordingId = params.get('recording');
@@ -53,7 +52,8 @@ function RecordContent() {
       else sp.set(k, v);
     }
     const qs = sp.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    // Shallow URL update: keeps typed form state (router.replace would re-run the route and remount the forms).
+    window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }
 
   if (recordingId) return <RecordingPanel recordingId={recordingId} onNew={() => setParams({ recording: null })} />;

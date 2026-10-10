@@ -1,0 +1,12 @@
+{
+  "server_url": "https://app.classpulse.example",
+  "device_id": "rpi5-room-101",
+  "enrollment_token": "PASTE-THE-TOKEN-FROM-ADMIN-DEVICES",
+  "alsa_device": "plughw:CARD=Device,DEV=0",
+  "chunk_seconds": 60,
+  "heartbeat_interval_sec": 30,
+  "data_dir": "/var/lib/classpulse",
+  "min_free_disk_mb": 500,
+  "allow_insecure_http": false,
+  "audio_source": { "type": "arecord" }
+}

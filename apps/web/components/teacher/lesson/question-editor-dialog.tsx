@@ -56,7 +56,7 @@ export function QuestionEditorDialog({
       open={open}
       onClose={close}
       size="lg"
-      title={question ? `Edit question ${question.position + 1}` : 'Add a question'}
+      title={question ? `Edit question ${question.position}` : 'Add a question'}
       description={question ? 'Saving marks this question as edited by you.' : 'New questions are added as approved.'}
       footer={
         <>
