@@ -16,6 +16,9 @@ import path from 'node:path';
 const RUN = Date.now().toString(36).slice(-5).toUpperCase();
 const LECTURE = path.resolve(import.meta.dirname, '../../../.e2e-fixtures/lecture-150s.mp3');
 const NEW_PASSWORD = 'Pilot@2026!';
+// Defaults match the dev seed; against a deployed stack, point these at a throwaway test school's admin.
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@demo.school';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Admin@12345';
 
 const state: {
   teacherEmail: string;
@@ -83,7 +86,7 @@ async function newPage(browser: Browser): Promise<Page> {
 test.describe.serial('ClassPulse pilot flow', () => {
   test('1. admin onboards a room, teacher, section and students', async ({ browser }) => {
     const page = await newPage(browser);
-    await staffLogin(page, 'admin@demo.school', 'Admin@12345');
+    await staffLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
@@ -268,7 +271,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
     test.setTimeout(10 * 60_000);
     // Admin provisions a device for the section's room.
     const admin = await newPage(browser);
-    await staffLogin(admin, 'admin@demo.school', 'Admin@12345');
+    await staffLogin(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
     await admin.goto('/admin/devices');
     await admin.getByRole('button', { name: 'Add classroom device' }).first().click();
     const dlg = admin.getByRole('dialog');

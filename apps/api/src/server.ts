@@ -20,6 +20,10 @@ await storage.ensureWritable();
 
 const app = createApp();
 const server = createServer(app);
+// Outlive the reverse proxy's pooled idle connections (Caddy keepalive 30 s). With Node's 5 s default, the proxy
+// can reuse a socket at the moment Node closes it and the client never gets its response.
+server.keepAliveTimeout = 75_000;
+server.headersTimeout = 76_000;
 const sockets = attachSockets(server);
 
 // Without Redis (dev only) the API process also runs the generation worker and maintenance tasks.

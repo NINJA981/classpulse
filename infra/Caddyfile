@@ -27,15 +27,21 @@
 	@backend path /api/* /socket.io/*
 	handle @backend {
 		reverse_proxy api:5000 {
-			# Device command long-polls hold for up to 25 s.
+			# Device command long-polls hold for up to 25 s. Pooled connections are dropped well before the
+			# upstream's own keep-alive timeout (75 s) so a request never lands on a socket being closed.
 			transport http {
 				read_timeout 120s
+				keepalive 30s
 			}
 		}
 	}
 
 	handle {
-		reverse_proxy web:3000
+		reverse_proxy web:3000 {
+			transport http {
+				keepalive 30s
+			}
+		}
 	}
 
 	log {

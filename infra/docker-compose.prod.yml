@@ -112,6 +112,7 @@ services:
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:5000
+      KEEP_ALIVE_TIMEOUT: '75000' # longer than the proxy's 30 s pooled-connection keepalive
     networks: [internal]
     depends_on:
       - api
