@@ -12,8 +12,8 @@ export interface ModelOption {
 /** Speech-to-text models offered per provider (the first is the default). */
 export const STT_MODELS: Record<SttProvider, readonly ModelOption[]> = {
   sarvam: [
-    { id: 'saaras:v3', label: 'Sarvam Saaras v3: Indian languages mixed with English (recommended)' },
-    { id: 'saarika:v2.5', label: 'Sarvam Saarika v2.5: single-language transcription' },
+    { id: 'saaras:v3', label: 'Saaras v3: mixed-language speech (recommended)' },
+    { id: 'saarika:v2.5', label: 'Saarika v2.5: single-language speech' },
   ],
   openai: [{ id: 'whisper-1', label: 'OpenAI Whisper' }],
 };

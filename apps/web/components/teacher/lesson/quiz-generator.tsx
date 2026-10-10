@@ -201,12 +201,12 @@ export function QuizGenerator({ lesson }: { lesson: LessonDetail }) {
 
               <fieldset className="min-w-0" aria-describedby={`${id}-difficulty-hint`} disabled={generate.isPending}>
                 <legend className="mb-1.5 text-xs font-bold text-ink-2">Difficulty</legend>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5">
                   {DIFFICULTIES.map((d) => (
                     <label
                       key={d.value}
                       className={clsx(
-                        'inline-flex h-10 min-w-[5rem] flex-1 cursor-pointer items-center justify-center border border-line px-3 text-sm font-bold rounded-control',
+                        'inline-flex h-10 min-w-0 cursor-pointer items-center justify-center border border-line px-1 text-sm font-bold rounded-control',
                         'hover:bg-surface-2 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-canvas',
                         'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink',
                         'has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60',
