@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Lesson } from '../models/Lesson.js';
 import { Question } from '../models/Question.js';
+import { StudentSubmission, ISubmissionResult } from '../models/StudentSubmission.js';
 import { generateRemedialNotes, RemedialNoteItem } from '../pipeline/llmService.js';
 
 /**
@@ -90,12 +91,12 @@ studentQuizRouter.get('/:lessonId', async (req: Request, res: Response): Promise
   }
 });
 
-// In-memory submissions store keyed by lessonId
 export interface StoredSubmission {
   id: string;
   lessonId: string;
   lessonTitle: string;
   studentName: string;
+  rollNumber?: string;
   correct: number;
   total: number;
   scorePct: number;
@@ -110,13 +111,41 @@ export interface StoredSubmission {
   }>;
 }
 
+// In-memory cache kept for instant sub-millisecond lookup, populated from DB
 export const quizSubmissions = new Map<string, StoredSubmission[]>();
 
 // GET /api/student/quizzes/:lessonId/submissions — list student submissions for this lesson
-studentQuizRouter.get('/:lessonId/submissions', (req: Request, res: Response): void => {
-  const { lessonId } = req.params;
-  const list = quizSubmissions.get(String(lessonId)) || [];
-  res.status(200).json({ submissions: list });
+studentQuizRouter.get('/:lessonId/submissions', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { lessonId } = req.params;
+    const dbSubmissions = await StudentSubmission.find({ lessonId })
+      .sort({ submittedAt: -1 })
+      .lean();
+
+    const formatted: StoredSubmission[] = dbSubmissions.map((s) => ({
+      id: String(s._id),
+      lessonId: String(s.lessonId),
+      lessonTitle: s.lessonTitle,
+      studentName: s.studentName,
+      rollNumber: s.rollNumber,
+      correct: s.correct,
+      total: s.total,
+      scorePct: s.scorePct,
+      submittedAt: s.submittedAt ? s.submittedAt.toISOString() : new Date().toISOString(),
+      results: (s.results || []).map((r) => ({
+        questionId: r.questionId,
+        isCorrect: r.isCorrect,
+        correctIndex: r.correctIndex,
+        correctText: r.correctText,
+        explanation: r.explanation,
+        explanationLocal: r.explanationLocal
+      }))
+    }));
+
+    res.status(200).json({ submissions: formatted });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // GET /api/student/quizzes/:lessonId/analytics — Concept Gap Heatmap & AI Remedial Notes
@@ -133,11 +162,12 @@ export const getLessonAnalyticsHandler = async (req: Request, res: Response): Pr
       .sort({ createdAt: 1 })
       .lean();
 
-    const submissions = quizSubmissions.get(String(lessonId)) || [];
-    const totalSubmissions = submissions.length;
+    const dbSubmissions = await StudentSubmission.find({ lessonId }).lean();
+    const totalSubmissions = dbSubmissions.length;
     const classAveragePct = totalSubmissions > 0
-      ? Math.round(submissions.reduce((acc, s) => acc + s.scorePct, 0) / totalSubmissions)
+      ? Math.round(dbSubmissions.reduce((acc, s) => acc + s.scorePct, 0) / totalSubmissions)
       : 0;
+
 
     let criticalCount = 0;
     let moderateCount = 0;
@@ -147,8 +177,8 @@ export const getLessonAnalyticsHandler = async (req: Request, res: Response): Pr
       let attempts = 0;
       let correct = 0;
 
-      for (const sub of submissions) {
-        const r = sub.results.find((res) => res.questionId === String(q._id));
+      for (const sub of dbSubmissions) {
+        const r = (sub.results || []).find((res: any) => res.questionId === String(q._id));
         if (r) {
           attempts += 1;
           if (r.isCorrect) correct += 1;
@@ -237,18 +267,40 @@ export const getLessonAnalyticsHandler = async (req: Request, res: Response): Pr
 
 studentQuizRouter.get('/:lessonId/analytics', getLessonAnalyticsHandler);
 
-// POST /api/student/quizzes/:lessonId/submit — grade a submission server-side
+// POST /api/student/quizzes/:lessonId/submit — grade a submission server-side and persist to DB
 studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response): Promise<void> => {
   try {
     const { lessonId } = req.params;
-    const { answers, studentName } = req.body as {
+    const { answers, studentName, rollNumber } = req.body as {
       answers?: Array<{ questionId: string; selectedOption?: number; text?: string }>;
       studentName?: string;
+      rollNumber?: string;
     };
 
     if (!Array.isArray(answers) || answers.length === 0) {
       res.status(400).json({ error: 'answers array is required' });
       return;
+    }
+
+    // Idempotency check: prevent duplicate submissions on client retry
+    const idempotencyKey = (req.headers['idempotency-key'] || req.body?.idempotencyKey) as string | undefined;
+    if (idempotencyKey) {
+      const existing = await StudentSubmission.findOne({ idempotencyKey }).lean();
+      if (existing) {
+        res.status(200).json({
+          id: String(existing._id),
+          lessonId: String(existing.lessonId),
+          lessonTitle: existing.lessonTitle,
+          studentName: existing.studentName,
+          rollNumber: existing.rollNumber,
+          correct: existing.correct,
+          total: existing.total,
+          scorePct: existing.scorePct,
+          submittedAt: existing.submittedAt.toISOString(),
+          results: existing.results
+        });
+        return;
+      }
     }
 
     const lesson = await Lesson.findOne({ _id: lessonId, status: 'published' }).lean();
@@ -260,6 +312,7 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
     let correct = 0;
     const results: Array<{
       questionId: string;
+      selectedOption?: number;
       isCorrect: boolean;
       correctIndex?: number;
       correctText?: string;
@@ -280,6 +333,7 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
         if (isCorrect) correct += 1;
         results.push({
           questionId: String(q._id),
+          selectedOption: answer.selectedOption,
           isCorrect,
           correctText: q.correctText,
           explanation: q.explanation,
@@ -290,6 +344,7 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
         if (isCorrect) correct += 1;
         results.push({
           questionId: String(q._id),
+          selectedOption: answer.selectedOption,
           isCorrect,
           correctIndex: q.correctIndex,
           explanation: q.explanation,
@@ -299,18 +354,36 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
     }
 
     const scorePct = answers.length > 0 ? Math.round((correct / answers.length) * 100) : 0;
-    const payload: StoredSubmission = {
-      id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      lessonId: String(lessonId),
+    const assignedRoll = (rollNumber || `STU-${Date.now().toString().slice(-4)}`).trim().toUpperCase();
+
+    // Persist to database
+    const createdSubmission = await StudentSubmission.create({
+      lessonId: lesson._id,
       lessonTitle: lesson.title,
       studentName: studentName || 'Student 1',
+      rollNumber: assignedRoll,
       correct,
       total: answers.length,
       scorePct,
-      submittedAt: new Date().toISOString(),
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+      results,
+      submittedAt: new Date()
+    });
+
+    const payload: StoredSubmission = {
+      id: String(createdSubmission._id),
+      lessonId: String(lessonId),
+      lessonTitle: lesson.title,
+      studentName: createdSubmission.studentName,
+      rollNumber: createdSubmission.rollNumber,
+      correct,
+      total: answers.length,
+      scorePct,
+      submittedAt: createdSubmission.submittedAt.toISOString(),
       results
     };
 
+    // Keep memory cache updated
     const list = quizSubmissions.get(String(lessonId)) || [];
     list.unshift(payload);
     quizSubmissions.set(String(lessonId), list);
@@ -322,4 +395,5 @@ studentQuizRouter.post('/:lessonId/submit', async (req: Request, res: Response):
 });
 
 export default studentQuizRouter;
+
 

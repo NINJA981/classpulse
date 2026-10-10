@@ -33,7 +33,7 @@ const upload = multer({
   }
 });
 
-import { quizSubmissions, getLessonAnalyticsHandler } from './studentQuizRoutes.js';
+import { getLessonAnalyticsHandler } from './studentQuizRoutes.js';
 
 router.get('/', getLessons);
 router.post('/', createLesson);
@@ -48,11 +48,38 @@ router.post('/:id/generate', generateLesson);
 router.post('/:id/regenerate', generateLesson);
 router.post('/:id/approve', approveLesson);
 router.post('/:id/publish', approveLesson);
-router.get('/:id/submissions', (req, res) => {
-  const { id } = req.params;
-  const list = quizSubmissions.get(String(id)) || [];
-  res.status(200).json({ submissions: list });
+router.get('/:id/submissions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { StudentSubmission } = await import('../models/StudentSubmission.js');
+    const list = await StudentSubmission.find({ lessonId: String(id) }).sort({ submittedAt: -1 }).lean();
+    res.status(200).json({ submissions: list });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
 router.get('/:id/analytics', getLessonAnalyticsHandler);
+
+router.get('/:id/job-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { getJobStatus } = await import('../services/queueService.js');
+    const status = await getJobStatus(String(id));
+    res.status(200).json(status);
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+router.post('/:id/retry', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { enqueueLessonJob } = await import('../services/queueService.js');
+    const result = await enqueueLessonJob(String(id));
+    res.status(200).json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
 
 export default router;

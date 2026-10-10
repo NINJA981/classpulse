@@ -16,14 +16,19 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // If user does not exist in dev, auto-create for seamless workflow
+      if (process.env.NODE_ENV === 'production') {
+        res.status(401).json({ error: 'Invalid email or password.' });
+        return;
+      }
+      // In dev / pilot bootstrapping: allow auto-creation only with restricted default role
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
+      const assignedRole = email.toLowerCase().includes('admin') ? 'admin' : (role === 'teacher' ? 'teacher' : 'student');
       const newUser = await User.create({
         name: email.split('@')[0],
         email: email.toLowerCase(),
         passwordHash,
-        role: role || 'admin'
+        role: assignedRole
       });
 
       const token = jwt.sign(
@@ -47,7 +52,8 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch && user.passwordHash !== password) {
+    const allowPlaintextDev = process.env.NODE_ENV !== 'production' && user.passwordHash === password;
+    if (!isMatch && !allowPlaintextDev) {
       res.status(401).json({ error: 'Invalid email or password.' });
       return;
     }

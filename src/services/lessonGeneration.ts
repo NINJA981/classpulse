@@ -182,7 +182,9 @@ export async function runGenerationJob(lessonId: string): Promise<void> {
   }
 }
 
-/** Fire-and-forget kick-off used by the route handler. */
-export function startGenerationJob(lessonId: string): void {
-  void runGenerationJob(lessonId);
+/** Kick-off used by the route handler — enqueued in BullMQ background queue with resilient fallback */
+export async function startGenerationJob(lessonId: string): Promise<void> {
+  const { enqueueLessonJob } = await import('./queueService.js');
+  await enqueueLessonJob(lessonId);
 }
+

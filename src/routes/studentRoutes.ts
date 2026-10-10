@@ -6,22 +6,11 @@ import { Section } from '../models/Section.js';
 import { Assignment } from '../models/Assignment.js';
 import { Lesson } from '../models/Lesson.js';
 import { Institution } from '../models/Institution.js';
+import { Guardian } from '../models/Guardian.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'classpulse_super_secret_jwt_key_2026';
 
-interface StoredGuardian {
-  id: string;
-  studentId: string;
-  name: string;
-  relation: string;
-  phone: string;
-  email?: string;
-  verified: boolean;
-  createdAt: string;
-}
-
-const guardiansStore: StoredGuardian[] = [];
 
 function getStudentFromHeader(req: Request): { id?: string; rollNumber?: string; name?: string } {
   const authHeader = req.headers.authorization;
@@ -370,29 +359,65 @@ router.get('/assignments', async (_req: Request, res: Response) => {
 });
 
 // GET/POST/DELETE /api/student/guardians
-router.get('/guardians', (_req: Request, res: Response) => {
-  res.status(200).json({ items: guardiansStore });
+router.get('/guardians', async (req: Request, res: Response) => {
+  try {
+    const student = getStudentFromHeader(req);
+    const filter = student.id ? { studentId: student.id } : {};
+    const list = await Guardian.find(filter).sort({ createdAt: -1 }).lean();
+    const items = list.map((g) => ({
+      id: String(g._id),
+      studentId: g.studentId,
+      name: g.name,
+      phone: g.phone,
+      relation: g.relation,
+      email: g.email,
+      verified: g.verified,
+      createdAt: g.createdAt ? g.createdAt.toISOString() : new Date().toISOString()
+    }));
+    res.status(200).json({ items });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
 
-router.post('/guardians', (req: Request, res: Response) => {
-  const { name, phone, relation } = req.body || {};
-  const guardian: StoredGuardian = {
-    id: `grd_${Date.now()}`,
-    studentId: 'stu_1',
-    name: name || 'Guardian',
-    phone: phone || '',
-    relation: relation || 'guardian',
-    verified: true,
-    createdAt: new Date().toISOString()
-  };
-  guardiansStore.push(guardian);
-  res.status(201).json({ guardian });
+router.post('/guardians', async (req: Request, res: Response) => {
+  try {
+    const student = getStudentFromHeader(req);
+    const { name, phone, relation, email } = req.body || {};
+    const guardian = await Guardian.create({
+      studentId: student.id || 'stu_1',
+      studentRollNumber: student.rollNumber,
+      name: name || 'Guardian',
+      phone: phone || '',
+      relation: relation || 'guardian',
+      email: email || '',
+      verified: true
+    });
+    res.status(201).json({
+      guardian: {
+        id: String(guardian._id),
+        studentId: guardian.studentId,
+        name: guardian.name,
+        phone: guardian.phone,
+        relation: guardian.relation,
+        email: guardian.email,
+        verified: guardian.verified,
+        createdAt: guardian.createdAt.toISOString()
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
 
-router.delete('/guardians/:id', (req: Request, res: Response) => {
-  const idx = guardiansStore.findIndex((g) => g.id === req.params.id);
-  if (idx !== -1) guardiansStore.splice(idx, 1);
-  res.status(204).send();
+router.delete('/guardians/:id', async (req: Request, res: Response) => {
+  try {
+    await Guardian.findByIdAndDelete(req.params.id);
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
+
 
 export default router;

@@ -18,6 +18,7 @@ import studentQuizRouter from './routes/studentQuizRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import liveQuizRouter from './routes/liveQuizRoutes.js';
+import { deviceRouter } from './routes/deviceRoutes.js';
 import { pipelineHealth } from './services/pipelineClient.js';
 import { pipelineRouter } from './routes/pipelineRoutes.js';
 import { seedDatabase } from './scripts/seed.js';
@@ -61,7 +62,39 @@ app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/student/quizzes', studentQuizRouter);
 app.use('/api/student', studentRoutes);
 app.use('/api/live-quiz', liveQuizRouter);
+app.use('/api/device', deviceRouter);
 app.use('/v1', pipelineRouter);
+
+// Institution metadata endpoint
+app.get('/api/institution', async (_req, res) => {
+  try {
+    const { Institution } = await import('./models/Institution.js');
+    let inst: any = await Institution.findOne().lean();
+    if (!inst) {
+      const created = await Institution.create({
+        name: 'Apex Academy',
+        code: 'APEX-01',
+        emailDomains: ['apex.edu', 'school.edu.in'],
+        timezone: 'Asia/Kolkata',
+        academicYear: '2025-2026'
+      });
+      inst = created.toObject();
+    }
+    res.status(200).json({
+      institution: {
+        id: String(inst._id),
+        name: inst.name,
+        code: inst.code,
+        emailDomains: inst.emailDomains,
+        timezone: inst.timezone,
+        academicYear: inst.academicYear
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
 
 // Health check endpoint (includes pipeline sidecar connectivity)
 app.get('/api/health', async (req, res) => {
@@ -90,6 +123,8 @@ async function start() {
   try {
     await connectDB();
     await seedDatabase();
+    const { initializeQueue } = await import('./services/queueService.js');
+    await initializeQueue().catch((qErr) => console.warn('[Queue] Queue init warning:', qErr.message));
 
     server.listen(PORT, () => {
       console.log(`=========================================`);

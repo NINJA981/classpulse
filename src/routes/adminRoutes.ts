@@ -5,8 +5,16 @@ import { Section } from '../models/Section.js';
 import { Lesson } from '../models/Lesson.js';
 import { Question } from '../models/Question.js';
 import { Institution } from '../models/Institution.js';
+import { Timetable } from '../models/Timetable.js';
+import { ModelSetting } from '../models/ModelSetting.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = Router();
+
+// Protect all admin endpoints with admin role check
+router.use(authenticateToken as any);
+router.use(requireRole(['admin']) as any);
+
 
 let storedTimetables: Record<string, any> = {
   'Grade 10 - Section B': {
@@ -385,39 +393,110 @@ router.get('/courses', async (_req: Request, res: Response) => {
 });
 
 // GET /api/admin/timetables & PUT /api/admin/timetables
-router.get('/timetables', (_req: Request, res: Response) => {
-  res.status(200).json({ timetables: storedTimetables });
+router.get('/timetables', async (_req: Request, res: Response) => {
+  try {
+    const list = await Timetable.find().lean();
+    if (list.length === 0) {
+      // Seed default timetables if DB is fresh
+      for (const [secName, sched] of Object.entries(storedTimetables)) {
+        await Timetable.create({ sectionName: secName, schedule: sched }).catch(() => null);
+      }
+      res.status(200).json({ timetables: storedTimetables });
+      return;
+    }
+    const map: Record<string, any> = {};
+    for (const item of list) {
+      map[item.sectionName] = item.schedule;
+    }
+    res.status(200).json({ timetables: map });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
 
-router.put('/timetables', (req: Request, res: Response) => {
-  if (req.body?.timetables && typeof req.body.timetables === 'object') {
-    storedTimetables = req.body.timetables;
+router.put('/timetables', async (req: Request, res: Response) => {
+  try {
+    const timetablesObj = req.body?.timetables;
+    if (timetablesObj && typeof timetablesObj === 'object') {
+      for (const [secName, sched] of Object.entries(timetablesObj)) {
+        await Timetable.findOneAndUpdate(
+          { sectionName: secName },
+          { schedule: sched },
+          { upsert: true, new: true }
+        );
+      }
+      storedTimetables = timetablesObj;
+    }
+    res.status(200).json({ timetables: req.body?.timetables || storedTimetables });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
   }
-  res.status(200).json({ timetables: storedTimetables });
 });
 
 // GET & PATCH /api/admin/settings/models
-router.get('/settings/models', (_req: Request, res: Response) => {
-  res.status(200).json({
-    settings: storedModelSettings,
-    options: MODEL_OPTIONS
-  });
+router.get('/settings/models', async (_req: Request, res: Response) => {
+  try {
+    let setting: any = await ModelSetting.findOne({ key: 'global_model_settings' }).lean();
+    if (!setting) {
+      setting = await ModelSetting.create({
+        key: 'global_model_settings',
+        ...storedModelSettings
+      });
+    }
+    res.status(200).json({
+      settings: {
+        asrProvider: setting.asrProvider,
+        asrModel: setting.asrModel,
+        llmProvider: setting.llmProvider,
+        llmModel: setting.llmModel,
+        ttsProvider: setting.ttsProvider || 'sarvam-bulbul-v3'
+      },
+      options: MODEL_OPTIONS
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
+  }
 });
 
-router.patch('/settings/models', (req: Request, res: Response) => {
-  const { asr, llm } = req.body || {};
-  if (asr?.provider && asr?.model) {
-    storedModelSettings.asrProvider = asr.provider;
-    storedModelSettings.asrModel = asr.model;
+router.patch('/settings/models', async (req: Request, res: Response) => {
+  try {
+    const { asr, llm, tts } = req.body || {};
+    const update: Record<string, any> = {};
+    if (asr?.provider && asr?.model) {
+      update.asrProvider = asr.provider;
+      update.asrModel = asr.model;
+      storedModelSettings.asrProvider = asr.provider;
+      storedModelSettings.asrModel = asr.model;
+    }
+    if (llm?.provider && llm?.model) {
+      update.llmProvider = llm.provider;
+      update.llmModel = llm.model;
+      storedModelSettings.llmProvider = llm.provider;
+      storedModelSettings.llmModel = llm.model;
+    }
+    if (tts?.provider) {
+      update.ttsProvider = tts.provider;
+    }
+
+    const updated = await ModelSetting.findOneAndUpdate(
+      { key: 'global_model_settings' },
+      update,
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      settings: {
+        asrProvider: updated.asrProvider,
+        asrModel: updated.asrModel,
+        llmProvider: updated.llmProvider,
+        llmModel: updated.llmModel,
+        ttsProvider: updated.ttsProvider || 'sarvam-bulbul-v3'
+      },
+      options: MODEL_OPTIONS
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err.message } });
   }
-  if (llm?.provider && llm?.model) {
-    storedModelSettings.llmProvider = llm.provider;
-    storedModelSettings.llmModel = llm.model;
-  }
-  res.status(200).json({
-    settings: storedModelSettings,
-    options: MODEL_OPTIONS
-  });
 });
 
 export default router;

@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { Lesson } from '../models/Lesson.js';
 import { Question } from '../models/Question.js';
 import { QuizSession } from '../models/QuizSession.js';
+import { StudentSubmission } from '../models/StudentSubmission.js';
 import { quizSubmissions, StoredSubmission } from '../routes/studentQuizRoutes.js';
 
 export interface LiveRoomQuestion {
@@ -17,18 +18,27 @@ export interface LiveRoomQuestion {
   timeLimitSec: number;
 }
 
+export interface LiveParticipantAnswer {
+  questionIndex: number;
+  selectedOption: number;
+  isCorrect: boolean;
+  points: number;
+  timeSpentSec: number;
+  submittedAt: number;
+  revisions: Array<{
+    previousOption: number;
+    changedAt: number;
+  }>;
+}
+
 export interface LiveParticipant {
   studentId: string;
   studentName: string;
+  socketId: string;
+  connected: boolean;
   score: number;
   streak: number;
-  answers: Array<{
-    questionIndex: number;
-    selectedOption: number;
-    isCorrect: boolean;
-    points: number;
-    timeSpentSec: number;
-  }>;
+  answers: LiveParticipantAnswer[];
 }
 
 export interface LiveQuizRoom {
@@ -40,6 +50,7 @@ export interface LiveQuizRoom {
   questions: LiveRoomQuestion[];
   activeQuestionIndex: number;
   questionStartedAt: number;
+  questionDeadline: number;
   participants: Map<string, LiveParticipant>;
   hostSocketId?: string;
 }
@@ -91,6 +102,7 @@ export async function createLiveSession(lessonId: string): Promise<LiveQuizRoom>
     questions,
     activeQuestionIndex: 0,
     questionStartedAt: 0,
+    questionDeadline: 0,
     participants: new Map()
   };
 
@@ -132,12 +144,18 @@ export function setupQuizSockets(io: Server) {
         title: room.title,
         status: room.status,
         questionCount: room.questions.length,
-        participants: Array.from(room.participants.values())
+        participants: Array.from(room.participants.values()).map((p) => ({
+          studentId: p.studentId,
+          studentName: p.studentName,
+          score: p.score,
+          streak: p.streak,
+          connected: p.connected
+        }))
       });
       console.log(`[Socket] Host joined room ${pin}`);
     });
 
-    // --- Student Joins Room ---
+    // --- Student Joins / Reconnects to Room ---
     socket.on('quiz:join', ({ pin, studentName, studentId }: { pin: string; studentName: string; studentId?: string }) => {
       const room = liveRooms.get(pin);
       if (!room) {
@@ -146,45 +164,80 @@ export function setupQuizSockets(io: Server) {
       }
 
       const sId = studentId || socket.id;
-      (socket as any).data = { ...(socket as any).data, studentId: sId };
-      const sName = studentName?.trim() || `Player ${room.participants.size + 1}`;
+      (socket as any).data = { ...(socket as any).data, studentId: sId, pin };
 
-      const participant: LiveParticipant = {
-        studentId: sId,
-        studentName: sName,
-        score: 0,
-        streak: 0,
-        answers: []
-      };
+      let participant = room.participants.get(sId);
+      let isReconnecting = false;
 
-      room.participants.set(sId, participant);
+      if (participant) {
+        // Reconnection flow: preserve state, score, answers, and streak
+        isReconnecting = true;
+        participant.socketId = socket.id;
+        participant.connected = true;
+        if (studentName?.trim()) {
+          participant.studentName = studentName.trim();
+        }
+        console.log(`[Socket] Student ${participant.studentName} (${sId}) reconnected to PIN ${pin}`);
+      } else {
+        // New participant
+        const sName = studentName?.trim() || `Player ${room.participants.size + 1}`;
+        participant = {
+          studentId: sId,
+          studentName: sName,
+          socketId: socket.id,
+          connected: true,
+          score: 0,
+          streak: 0,
+          answers: []
+        };
+        room.participants.set(sId, participant);
+        console.log(`[Socket] Student ${sName} (${sId}) joined PIN ${pin}`);
+      }
+
       socket.join(pin);
+
+      const activeQ = room.questions[room.activeQuestionIndex];
+      const existingAnswer = participant.answers.find((a) => a.questionIndex === room.activeQuestionIndex);
 
       socket.emit('quiz:joined_success', {
         pin,
         title: room.title,
         subject: room.subject,
         studentId: sId,
-        studentName: sName,
+        studentName: participant.studentName,
         status: room.status,
         questionCount: room.questions.length,
-        activeQuestionIndex: room.activeQuestionIndex
+        activeQuestionIndex: room.activeQuestionIndex,
+        currentScore: participant.score,
+        currentStreak: participant.streak,
+        reconnected: isReconnecting,
+        activeQuestion: room.status === 'in_progress' && activeQ ? {
+          questionIndex: room.activeQuestionIndex,
+          stem: activeQ.stem,
+          stemLocal: activeQ.stemLocal,
+          options: activeQ.options,
+          optionsLocal: activeQ.optionsLocal,
+          timeLimitSec: activeQ.timeLimitSec,
+          startedAt: room.questionStartedAt,
+          deadline: room.questionDeadline,
+          hasAnswered: Boolean(existingAnswer),
+          selectedOption: existingAnswer ? existingAnswer.selectedOption : null
+        } : null
       });
 
       const participantList = Array.from(room.participants.values()).map((p) => ({
         studentId: p.studentId,
         studentName: p.studentName,
-        score: p.score
+        score: p.score,
+        connected: p.connected
       }));
 
       io.to(pin).emit('quiz:player_joined', {
         studentId: sId,
-        studentName: sName,
+        studentName: participant.studentName,
         participantsCount: room.participants.size,
         participants: participantList
       });
-
-      console.log(`[Socket] Student ${sName} (${sId}) joined PIN ${pin}`);
     });
 
     // --- Host Starts Quiz ---
@@ -195,11 +248,12 @@ export function setupQuizSockets(io: Server) {
       room.status = 'in_progress';
       room.activeQuestionIndex = 0;
       room.questionStartedAt = Date.now();
-
       const q = room.questions[0];
       if (!q) return;
 
-      // Broadcast question to students without correct answer
+      room.questionDeadline = room.questionStartedAt + q.timeLimitSec * 1000;
+
+      // Broadcast question to students without leaking correct answer
       io.to(pin).emit('quiz:question_started', {
         questionIndex: 0,
         totalQuestions: room.questions.length,
@@ -208,10 +262,11 @@ export function setupQuizSockets(io: Server) {
         options: q.options,
         optionsLocal: q.optionsLocal,
         timeLimitSec: q.timeLimitSec,
-        startedAt: room.questionStartedAt
+        startedAt: room.questionStartedAt,
+        deadline: room.questionDeadline
       });
 
-      // Host receives with correctIndex for teaching HUD
+      // Host receives HUD with correct answer and monitoring counts
       socket.emit('quiz:host_question_active', {
         questionIndex: 0,
         totalQuestions: room.questions.length,
@@ -229,7 +284,7 @@ export function setupQuizSockets(io: Server) {
       console.log(`[Socket] Live Quiz ${pin} started Question 1/${room.questions.length}`);
     });
 
-    // --- Student Submits Answer ---
+    // --- Student Submits or Modifies Answer (Server-Side Validation & Auditing) ---
     socket.on('quiz:submit_answer', ({
       pin,
       studentId,
@@ -244,35 +299,97 @@ export function setupQuizSockets(io: Server) {
       timeRemainingSec?: number;
     }) => {
       const room = liveRooms.get(pin);
-      if (!room || room.status !== 'in_progress') return;
+      if (!room || room.status !== 'in_progress') {
+        socket.emit('quiz:error', { message: 'Quiz session is not currently accepting answers.' });
+        return;
+      }
+
+      // Reject stale question submission
+      if (room.activeQuestionIndex !== questionIndex) {
+        socket.emit('quiz:error', { message: 'Question is no longer active. Submission rejected.' });
+        return;
+      }
 
       const q = room.questions[questionIndex];
       const participant = room.participants.get(studentId) || room.participants.get((socket as any).data?.studentId);
-      if (!q || !participant) return;
+      if (!q || !participant) {
+        socket.emit('quiz:error', { message: 'Participant or question not recognized.' });
+        return;
+      }
 
-      // Prevent duplicate answers for the same question
-      if (participant.answers.some((a) => a.questionIndex === questionIndex)) {
+      // Check deadline with 2-second network latency buffer
+      const now = Date.now();
+      const networkGraceMs = 2000;
+      if (room.questionDeadline > 0 && now > room.questionDeadline + networkGraceMs) {
+        socket.emit('quiz:error', { message: 'Deadline has passed for this question.' });
+        return;
+      }
+
+      // Server-side validation of selected option bounds
+      if (typeof selectedOption !== 'number' || selectedOption < 0 || selectedOption >= q.options.length) {
+        socket.emit('quiz:error', { message: 'Invalid option selected.' });
         return;
       }
 
       const isCorrect = selectedOption === q.correctIndex;
-      const timeLeft = Math.max(0, Math.min(20, timeRemainingSec ?? 10));
-      // Kahoot speed bonus: 500 base + up to 500 for fast answering
-      const speedScore = isCorrect ? Math.round(500 + (timeLeft / 20) * 500) : 0;
+      const timeLeft = typeof timeRemainingSec === 'number'
+        ? Math.max(0, Math.min(q.timeLimitSec, timeRemainingSec))
+        : Math.max(0, Math.round((room.questionDeadline - now) / 1000));
+
+      const speedScore = isCorrect ? Math.round(500 + (timeLeft / q.timeLimitSec) * 500) : 0;
       const streakBonus = isCorrect && participant.streak >= 2 ? 100 : 0;
       const totalPoints = speedScore + streakBonus;
 
-      participant.score += totalPoints;
-      participant.streak = isCorrect ? participant.streak + 1 : 0;
-      participant.answers.push({
+      const existingIdx = participant.answers.findIndex((a) => a.questionIndex === questionIndex);
+
+      if (existingIdx !== -1) {
+        // Answer modification before deadline: preserve auditable revision history
+        const prevAnswer = participant.answers[existingIdx];
+        participant.score = Math.max(0, participant.score - prevAnswer.points) + totalPoints;
+        participant.streak = isCorrect ? (prevAnswer.isCorrect ? participant.streak : participant.streak + 1) : 0;
+
+        const revisions = prevAnswer.revisions || [];
+        revisions.push({
+          previousOption: prevAnswer.selectedOption,
+          changedAt: prevAnswer.submittedAt
+        });
+
+        participant.answers[existingIdx] = {
+          questionIndex,
+          selectedOption,
+          isCorrect,
+          points: totalPoints,
+          timeSpentSec: Math.max(1, q.timeLimitSec - timeLeft),
+          submittedAt: now,
+          revisions
+        };
+
+        console.log(`[Socket] Student ${participant.studentName} updated Q${questionIndex + 1} to option ${selectedOption} (Rev #${revisions.length})`);
+      } else {
+        // First answer submission
+        participant.score += totalPoints;
+        participant.streak = isCorrect ? participant.streak + 1 : 0;
+        participant.answers.push({
+          questionIndex,
+          selectedOption,
+          isCorrect,
+          points: totalPoints,
+          timeSpentSec: Math.max(1, q.timeLimitSec - timeLeft),
+          submittedAt: now,
+          revisions: []
+        });
+        console.log(`[Socket] Student ${participant.studentName} answered Q${questionIndex + 1}: option ${selectedOption}`);
+      }
+
+      // Confirm submission receipt
+      socket.emit('quiz:answer_acknowledged', {
         questionIndex,
         selectedOption,
-        isCorrect,
-        points: totalPoints,
-        timeSpentSec: Math.max(1, Math.round(20 - timeLeft))
+        totalScore: participant.score,
+        canChangeUntil: room.questionDeadline
       });
 
-      // Send grading immediately to the answering student
+      // Provide instant feedback to student
       socket.emit('quiz:answer_result', {
         isCorrect,
         pointsEarned: totalPoints,
@@ -283,7 +400,7 @@ export function setupQuizSockets(io: Server) {
         explanationLocal: q.explanationLocal
       });
 
-      // Notify host of live count
+      // Notify host of live progress
       const answeredCount = Array.from(room.participants.values()).filter((p) =>
         p.answers.some((a) => a.questionIndex === questionIndex)
       ).length;
@@ -299,7 +416,7 @@ export function setupQuizSockets(io: Server) {
       });
     });
 
-    // --- Host Requests Leaderboard / Next Question ---
+    // --- Host Requests Leaderboard ---
     socket.on('quiz:show_leaderboard', ({ pin }: { pin: string }) => {
       const room = liveRooms.get(pin);
       if (!room) return;
@@ -321,6 +438,7 @@ export function setupQuizSockets(io: Server) {
       });
     });
 
+    // --- Host Advances Question ---
     socket.on('quiz:next_question', ({ pin }: { pin: string }) => {
       const room = liveRooms.get(pin);
       if (!room || room.status !== 'in_progress') return;
@@ -331,6 +449,7 @@ export function setupQuizSockets(io: Server) {
         room.activeQuestionIndex = nextIndex;
         room.questionStartedAt = Date.now();
         const nextQ = room.questions[nextIndex];
+        room.questionDeadline = room.questionStartedAt + nextQ.timeLimitSec * 1000;
 
         io.to(pin).emit('quiz:question_started', {
           questionIndex: nextIndex,
@@ -340,7 +459,8 @@ export function setupQuizSockets(io: Server) {
           options: nextQ.options,
           optionsLocal: nextQ.optionsLocal,
           timeLimitSec: nextQ.timeLimitSec,
-          startedAt: room.questionStartedAt
+          startedAt: room.questionStartedAt,
+          deadline: room.questionDeadline
         });
 
         io.to(pin).emit('quiz:host_question_active', {
@@ -367,7 +487,7 @@ export function setupQuizSockets(io: Server) {
       handleEndGame(room, pin);
     });
 
-    function handleEndGame(room: LiveQuizRoom, pin: string) {
+    async function handleEndGame(room: LiveQuizRoom, pin: string) {
       room.status = 'ended';
 
       const finalLeaderboard = Array.from(room.participants.values())
@@ -387,11 +507,41 @@ export function setupQuizSockets(io: Server) {
         leaderboard: finalLeaderboard
       });
 
-      // Persist each student's results into the unified submissions pool
+      // Persist all participant scores into the unified StudentSubmission database
       for (const p of room.participants.values()) {
         const correctCount = p.answers.filter((a) => a.isCorrect).length;
         const scorePct = room.questions.length > 0 ? Math.round((correctCount / room.questions.length) * 100) : 0;
 
+        const results = room.questions.map((rq, qIdx) => {
+          const studentAns = p.answers.find((a) => a.questionIndex === qIdx);
+          return {
+            questionId: rq.id,
+            selectedOption: studentAns?.selectedOption,
+            isCorrect: studentAns ? studentAns.isCorrect : false,
+            correctIndex: rq.correctIndex,
+            explanation: rq.explanation,
+            explanationLocal: rq.explanationLocal
+          };
+        });
+
+        // 1. Write to database
+        try {
+          await StudentSubmission.create({
+            lessonId: room.lessonId,
+            lessonTitle: room.title,
+            studentName: `${p.studentName} (Live)`,
+            rollNumber: `LIVE-${p.studentId.slice(-4).toUpperCase()}`,
+            correct: correctCount,
+            total: room.questions.length,
+            scorePct,
+            results,
+            submittedAt: new Date()
+          });
+        } catch (dbErr) {
+          console.warn('[LiveQuiz] Failed to persist StudentSubmission to Mongo:', dbErr);
+        }
+
+        // 2. Keep memory cache for instant lookup
         const submission: StoredSubmission = {
           id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           lessonId: room.lessonId,
@@ -417,10 +567,46 @@ export function setupQuizSockets(io: Server) {
         quizSubmissions.set(room.lessonId, list);
       }
 
+      // Update QuizSession in Mongo
+      try {
+        await QuizSession.findOneAndUpdate(
+          { joinPin: pin },
+          {
+            status: 'ended',
+            activeQuestionIndex: room.questions.length - 1,
+            participants: Array.from(room.participants.values()).map((p) => ({
+              studentId: p.studentId,
+              studentName: p.studentName,
+              score: p.score,
+              streak: p.streak,
+              answers: p.answers.map((a) => ({
+                questionIndex: a.questionIndex,
+                selectedOption: a.selectedOption,
+                isCorrect: a.isCorrect
+              }))
+            }))
+          }
+        );
+      } catch (err) {
+        console.warn('[LiveQuiz] Failed to update QuizSession in Mongo:', err);
+      }
+
       console.log(`[Socket] Live Quiz ${pin} finished! Podium: ${podium.map((p) => p.studentName).join(', ')}`);
     }
 
     socket.on('disconnect', () => {
+      const pin = (socket as any).data?.pin;
+      const studentId = (socket as any).data?.studentId;
+      if (pin && studentId) {
+        const room = liveRooms.get(pin);
+        if (room) {
+          const participant = room.participants.get(studentId);
+          if (participant) {
+            participant.connected = false;
+            console.log(`[Socket] Student ${participant.studentName} temporarily disconnected from PIN ${pin}`);
+          }
+        }
+      }
       console.log(`[Socket] Disconnected: ${socket.id}`);
     });
   });
