@@ -5,7 +5,7 @@ import { PipelineError } from '../src/pipeline/errors.js';
 import { httpRetryPolicy } from '../src/pipeline/http.js';
 import { generateRemedialPlan, generateWithOpenAI, llmRetryPolicy, parseGenerationOutput, promptBlocks, wantsLocal } from '../src/pipeline/llm.js';
 import { providers, setPipelineProvidersForTests } from '../src/pipeline/providers.js';
-import { parseSarvamOutput, sarvamTiming, transcribeWithSarvam } from '../src/pipeline/sarvam.js';
+import { parseSarvamOutput, sarvamMode, sarvamTiming, transcribeWithSarvam } from '../src/pipeline/sarvam.js';
 import { distributeSentences } from '../src/pipeline/segments.js';
 import type { GenerateInput } from '../src/pipeline/types.js';
 import { MOCK_SEGMENTS, makeWav, rawModelOutput, writeTempFile } from './fixtures/lessons.js';
@@ -77,6 +77,13 @@ describe('LLM output validation', () => {
     expect(parseGenerationOutput(rawModelOutput(2), { questionCount: 2, blocks, local: true }).ok).toBe(false);
   });
 
+  it('cites one contiguous stretch of the lecture, not blocks from opposite ends', () => {
+    const r = parseGenerationOutput(rawModelOutput(2, { cited: [2, 0] }), { questionCount: 2, blocks, local: false });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.questions[0]).toMatchObject({ citationStartSec: 0, citationEndSec: 14.2 });
+  });
+
   it('maps citations to real segment times and keeps the correct answer after shuffling', () => {
     const r = parseGenerationOutput(rawModelOutput(2, { cited: [0, 1] }), { questionCount: 2, blocks, local: false });
     expect(r.ok).toBe(true);
@@ -91,6 +98,11 @@ describe('LLM output validation', () => {
 });
 
 describe('OpenAI generation (stubbed fetch)', () => {
+  it('asks saaras:v3 for code-mixed output and sends no mode to saarika', () => {
+    expect(sarvamMode('saaras:v3')).toEqual({ mode: 'codemix' });
+    expect(sarvamMode('saarika:v2.5')).toEqual({});
+  });
+
   it('fails non-retryably without an API key', async () => {
     env.OPENAI_API_KEY = '';
     const err = await generateWithOpenAI(genInput()).catch((e: unknown) => e);
@@ -200,7 +212,7 @@ describe('Sarvam batch STT (stubbed fetch)', () => {
     );
     const res = await transcribeWithSarvam(await input());
     const init = JSON.parse(String(calls[0]!.init!.body)) as { job_parameters: Record<string, unknown> };
-    expect(init.job_parameters).toMatchObject({ with_timestamps: true, language_code: 'hi-IN', model: 'saaras:v3' });
+    expect(init.job_parameters).toMatchObject({ with_timestamps: true, language_code: 'hi-IN', model: 'saaras:v3', mode: 'codemix' });
     expect((calls[0]!.init!.headers as Record<string, string>)['api-subscription-key']).toBe('sarvam-key');
     expect(res.segments).toEqual([
       { startSec: 0.4, endSec: 2.1, text: 'नमस्ते.' },

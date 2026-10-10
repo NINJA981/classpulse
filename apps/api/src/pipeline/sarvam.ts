@@ -179,6 +179,15 @@ function outputNames(status: JobStatus, parts: Part[]): Map<string, string> {
   return map;
 }
 
+/**
+ * saaras:v3 supports output modes. Classroom speech is usually code-mixed (e.g. Tamil + English terms), and
+ * `codemix` keeps English words in Latin script, which the question generator handles far better than
+ * transliterated English. saarika models take no mode.
+ */
+export function sarvamMode(model: string): { mode?: 'codemix' } {
+  return model.startsWith('saaras:v3') ? { mode: 'codemix' } : {};
+}
+
 export async function transcribeWithSarvam(input: TranscribeInput): Promise<TranscribeResult> {
   const apiKey = env.SARVAM_API_KEY;
   if (!apiKey) {
@@ -202,7 +211,7 @@ export async function transcribeWithSarvam(input: TranscribeInput): Promise<Tran
         method: 'POST',
         headers,
         body: JSON.stringify({
-          job_parameters: { language_code: input.language, model: input.model, mode: 'transcribe', with_timestamps: true },
+          job_parameters: { language_code: input.language, model: input.model, ...sarvamMode(input.model), with_timestamps: true },
         }),
       },
       step('init'),

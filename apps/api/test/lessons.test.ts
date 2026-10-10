@@ -148,6 +148,15 @@ describe('lessons: audio', () => {
     expect((await as(w.teacher).post(`/api/lessons/${lesson.id}/audio`)).status).toBe(400);
   });
 
+  it('accepts phone recordings in an MP4/MPEG container that browsers label video/*', async () => {
+    const w = await createWorld();
+    const lesson = await lessonFor(w);
+    const file = await writeTempFile('recording.m4a.mp4', makeWav(2));
+    const res = await as(w.teacher).post(`/api/lessons/${lesson.id}/audio`).attach('file', file, { contentType: 'video/mp4' });
+    expect(res.status).toBe(200);
+    expect(res.body.durationSec).toBeCloseTo(2, 1);
+  });
+
   it('rejects oversized uploads with 413', async () => {
     const w = await createWorld();
     const lesson = await lessonFor(w);

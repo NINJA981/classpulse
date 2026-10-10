@@ -32,8 +32,12 @@ const AUDIO_MIME_TYPES = new Set([
   'audio/webm',
   'audio/flac',
   'audio/x-flac',
+  // Phone recorders and messaging apps often save audio in an MP4/MPEG container; browsers then report a
+  // video/* type. The file is probed and normalized by ffmpeg afterwards, so a file with no audio still fails.
+  'video/mp4',
+  'video/mpeg',
 ]);
-const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a', '.mp4', '.aac', '.ogg', '.oga', '.opus', '.webm', '.flac']);
+const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a', '.mp4', '.aac', '.ogg', '.oga', '.opus', '.webm', '.flac', '.mpeg', '.mpga']);
 
 const unsupported = () =>
   new AppError('UNSUPPORTED_MEDIA_TYPE', 'Unsupported file type. Upload MP3, WAV, M4A, AAC, OGG, WEBM or FLAC audio.');

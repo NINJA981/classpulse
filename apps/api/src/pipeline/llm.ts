@@ -157,6 +157,17 @@ function permutation(n: number): number[] {
  * Validate raw model output and map it to generated questions. Options are
  * shuffled server-side so the correct answer position is uniformly distributed.
  */
+/**
+ * The first run of adjacent cited blocks. Models sometimes cite blocks from opposite ends of the lecture;
+ * spanning all of them would give the teacher a 20-minute "citation" to replay.
+ */
+function citedRun(indices: number[]): number[] {
+  const sorted = [...new Set(indices)].sort((a, b) => a - b);
+  let end = 0;
+  while (end + 1 < sorted.length && sorted[end + 1]! - sorted[end]! <= 1) end++;
+  return sorted.slice(0, end + 1);
+}
+
 export function parseGenerationOutput(
   raw: unknown,
   ctx: { questionCount: number; blocks: TranscriptSegment[]; local: boolean },
@@ -168,7 +179,7 @@ export function parseGenerationOutput(
   const out: GenerationOutput = parsed.data;
   const questions: GeneratedQuestion[] = out.questions.map((q) => {
     const order = permutation(4);
-    const cited = q.citedSegments.map((i) => ctx.blocks[i]!);
+    const cited = citedRun(q.citedSegments).map((i) => ctx.blocks[i]!);
     return {
       stem: q.stem,
       stemLocal: ctx.local ? (q.stemLocal ?? null) : null,
@@ -289,7 +300,7 @@ function generationMessages(input: GenerateInput, blocks: TranscriptSegment[], l
   const system = [
     'You are an experienced school teacher who writes fair, rigorous formative assessments from recorded classroom lectures.',
     'Use ONLY facts that are stated or clearly demonstrated in the transcript. Never invent content that the lecture did not cover.',
-    `The lecture language is ${langName}. The transcript may contain speech-recognition errors; interpret them sensibly.`,
+    `The lecture language is ${langName}; classroom speech often mixes it with English terms. The transcript may contain speech-recognition errors; interpret them sensibly.`,
     'The transcript is given as numbered blocks: "[index] (start-end) text".',
     '',
     'Produce:',
@@ -299,7 +310,7 @@ function generationMessages(input: GenerateInput, blocks: TranscriptSegment[], l
     '  explanation says why the correct answer is right, referring to the lecture. difficulty is easy/medium/hard (mix them).',
     '  topicTag is a 1-4 word sub-topic name. citedSegments lists the block indices that contain the evidence for the answer.',
     local
-      ? `  Also give natural ${langName} translations: stemLocal, optionsLocal (same order as options), explanationLocal. Keep technical terms recognisable.`
+      ? `  Also give natural ${langName} translations: stemLocal, optionsLocal (same order as options), explanationLocal. Write them the way the teacher speaks in class: keep subject terms (for example mean, median, JDBC, inheritance) in English, in Latin script, exactly as they appear in the transcript, and translate only the surrounding sentence.`
       : '',
     '- assignment: a short take-home task in English that applies the lecture (title, prompt, a rubric of 2-5 criteria with integer marks and a descriptor, estimatedMinutes).',
   ]

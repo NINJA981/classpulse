@@ -50,3 +50,10 @@ Thumbs.db
 .test-storage/
 
 .e2e-fixtures/
+
+# --- Local credentials & sample recordings (never commit) ---
+*.key
+/*.mp3
+/*.mpeg
+/*.mp4
+/*.m4a

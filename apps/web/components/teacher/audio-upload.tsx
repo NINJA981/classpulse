@@ -52,7 +52,7 @@ export function AudioFileField({
           <Input
             {...p}
             type="file"
-            accept="audio/*"
+            accept="audio/*,.m4a,.mp4,.mpeg"
             disabled={disabled}
             className="py-1.5 file:mr-3 file:border-0 file:bg-surface-2 file:px-3 file:py-1 file:text-xs file:font-bold"
             onChange={(e) => onChange(e.target.files?.[0] ?? null)}
