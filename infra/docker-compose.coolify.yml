@@ -1,0 +1,132 @@
+# ClassPulse on Coolify (Docker Compose build pack). See docs/deployment.md → "Deploying on Coolify".
+# Coolify's Traefik terminates TLS for the domain assigned to `router`; nothing else is exposed.
+# Set these in Coolify → Environment variables:
+#   PUBLIC_ORIGIN, POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET, SARVAM_API_KEY, OPENAI_API_KEY
+#   optional: AUDIO_RETENTION_DAYS, GENERATION_CONCURRENCY, LOG_LEVEL
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '20m'
+    max-file: '5'
+
+x-api-build: &api-build
+  context: ..
+  dockerfile: apps/api/Dockerfile
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgres://classpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/classpulse
+  REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (>=32 random chars)}
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN, e.g. https://classpulse.example.org}
+  TRUST_PROXY_HOPS: 2
+  STORAGE_DIR: /data/storage
+  AUDIO_RETENTION_DAYS: ${AUDIO_RETENTION_DAYS:-30}
+  SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GENERATION_CONCURRENCY: ${GENERATION_CONCURRENCY:-1}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: classpulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: classpulse
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U classpulse -d classpulse']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server --requirepass ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+      --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  api:
+    image: classpulse-api:latest
+    build: *api-build
+    restart: unless-stopped
+    # Migrations run before the API starts (idempotent), so there is no one-shot container for Coolify to
+    # report as exited. The worker waits for the API to be healthy, i.e. for the schema to be current.
+    command: ['sh', '-c', 'node dist/db/migrate.js && exec node dist/server.js']
+    environment: *api-env
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *logging
+
+  worker:
+    image: classpulse-api:latest
+    build: *api-build
+    restart: unless-stopped
+    command: ['node', 'dist/worker.js']
+    environment: *api-env
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    logging: *logging
+
+  web:
+    image: classpulse-web:latest
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:5000
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+
+  router:
+    image: classpulse-router:latest
+    build:
+      context: ..
+      dockerfile: infra/router.Dockerfile
+    restart: unless-stopped
+    environment:
+      # Coolify: the public domain is attached to this service on port 80.
+      SERVICE_FQDN_ROUTER_80: ''
+    depends_on:
+      - web
+      - api
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/api/health/live >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging: *logging
+
+volumes:
+  pg_data:
+  redis_data:
+  storage_data:

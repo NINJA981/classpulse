@@ -75,6 +75,51 @@ curl -fsS https://$DOMAIN/api/health/ready
 
 Point an uptime monitor (for example UptimeRobot) at `https://$DOMAIN/api/health/ready`.
 
+## Deploying on Coolify
+
+Coolify is the alternative to running compose by hand. The pilot runs this way at `https://classpulse.benxsolutions.in`.
+
+Coolify's Traefik terminates TLS. It forwards the domain to the internal `router` service, which runs Caddy with `infra/Caddyfile.coolify` baked into its image. `router` sends `/api` and `/socket.io` to the API and everything else to the web app. The API runs the migrations itself before it starts.
+
+1. **DNS:** create an A record for the domain pointing at the server.
+2. **Proxy timeouts:** in Coolify → Servers → Proxy, add these to the Traefik command, then restart the proxy. Traefik's default 60 s read timeout would cut off long lecture uploads.
+   ```
+   - '--entrypoints.https.transport.respondingTimeouts.readTimeout=600s'
+   - '--entrypoints.https.transport.respondingTimeouts.writeTimeout=600s'
+   - '--entrypoints.https.transport.respondingTimeouts.idleTimeout=600s'
+   ```
+3. **Create the resource:** New resource → Private repository (GitHub App) → this repo, branch `main` → build pack **Docker Compose**.
+   - Base directory: `/`
+   - Compose file: `/infra/docker-compose.coolify.yml`
+4. **Domain:** give the `router` service the domain `https://classpulse.example.org`. No other service gets a domain.
+5. **Environment variables:**
+
+   | Variable | Value |
+   |---|---|
+   | `PUBLIC_ORIGIN` | the same `https://` URL as the domain |
+   | `POSTGRES_PASSWORD`, `REDIS_PASSWORD` | `openssl rand -hex 24` |
+   | `JWT_SECRET` | `openssl rand -base64 48` |
+   | `SARVAM_API_KEY`, `OPENAI_API_KEY` | your provider keys |
+   | `GENERATION_CONCURRENCY` | defaults to 1; raise it on servers with more than 2 vCPU |
+
+6. **Deploy.** The first build on a 2-vCPU ARM server takes about 10–15 minutes. Add swap first if the server has less than 8 GB of RAM.
+7. **First administrator:** run this on the server.
+   ```bash
+   API=$(sudo docker ps -qf label=com.docker.compose.service=api -f label=com.docker.compose.project=<resource-uuid>)
+   sudo docker exec -it $API node dist/scripts/createAdmin.js --email principal@school.org --name "Principal" \
+     --institution-name "Your School" --institution-code SCHOOL
+   ```
+
+**Updates.** Push to `main`; the GitHub App webhook redeploys. To roll back, use Coolify → Deployments → redeploy an earlier commit. Migrations only ever move forward, so roll back code only to commits that use the same schema.
+
+**Backups.** Create `/etc/classpulse/backup.env` (root, mode 600) containing `COMPOSE_PROJECT=<resource-uuid>`, `BACKUP_DIR=/var/backups/classpulse` and `BACKUP_AGE_RECIPIENT=age1…`. Then add a root cron job:
+
+```bash
+30 2 * * * ENV_FILE=/etc/classpulse/backup.env /opt/classpulse/infra/backup.sh >> /var/log/classpulse-backup.log 2>&1
+```
+
+`backup.sh` and `restore.sh` find the containers and the audio volume by their compose labels, so they keep working across redeploys. `/opt/classpulse` is a plain checkout of this repo, used only for these scripts.
+
 ## Local production check
 
 ```bash

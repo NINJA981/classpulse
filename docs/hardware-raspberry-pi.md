@@ -45,7 +45,7 @@ This is the single source of truth for the classroom device. It replaces older n
    Set the following in `/etc/classpulse/agent.json`:
    ```json
    {
-     "server_url": "https://app.school.org",
+     "server_url": "https://classpulse.benxsolutions.in",
      "device_id": "rpi5-room-101",
      "enrollment_token": "<token from step 3>",
      "alsa_device": "plughw:2,0"

@@ -37,6 +37,8 @@ const EnvSchema = z
     SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 30).default(12),
     /** Public origin of the web app, e.g. https://app.classpulse.in. Used for CORS + cookie security. */
     PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
+    /** Reverse proxies in front of the API (Caddy = 1; Coolify's Traefik + Caddy = 2). Used for client IPs. */
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
     /** Extra comma-separated origins allowed in development. */
     DEV_EXTRA_ORIGINS: z.string().optional().default(''),
 

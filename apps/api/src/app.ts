@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { randomUUID } from 'node:crypto';
-import { allowedOrigins } from './config/env.js';
+import { allowedOrigins, env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './modules/health/routes.js';
@@ -14,7 +14,7 @@ export function createApp(): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  app.set('trust proxy', 1); // behind exactly one reverse proxy (Caddy)
+  app.set('trust proxy', env.TRUST_PROXY_HOPS); // Caddy, or Traefik + Caddy on Coolify
   app.set('query parser', 'simple'); // no nested objects in query strings
 
   app.use(
