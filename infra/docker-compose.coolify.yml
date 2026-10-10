@@ -1,5 +1,7 @@
 # ClassPulse on Coolify (Docker Compose build pack). See docs/deployment.md → "Deploying on Coolify".
 # Coolify's Traefik terminates TLS for the domain assigned to `router`; nothing else is exposed.
+# Coolify runs compose with the repo root as the project directory, so build contexts are `.`; locally use
+#   docker compose --project-directory . -f infra/docker-compose.coolify.yml ...
 # Set these in Coolify → Environment variables:
 #   PUBLIC_ORIGIN, POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET, SARVAM_API_KEY, OPENAI_API_KEY
 #   optional: AUDIO_RETENTION_DAYS, GENERATION_CONCURRENCY, LOG_LEVEL
@@ -11,7 +13,7 @@ x-logging: &logging
     max-file: '5'
 
 x-api-build: &api-build
-  context: ..
+  context: .
   dockerfile: apps/api/Dockerfile
 
 x-api-env: &api-env
@@ -97,7 +99,7 @@ services:
   web:
     image: classpulse-web:latest
     build:
-      context: ..
+      context: .
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
     environment:
@@ -110,7 +112,7 @@ services:
   router:
     image: classpulse-router:latest
     build:
-      context: ..
+      context: .
       dockerfile: infra/router.Dockerfile
     restart: unless-stopped
     environment:
