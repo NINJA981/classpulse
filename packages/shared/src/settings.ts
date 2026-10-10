@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SttProvider = z.enum(['sarvam']);
+export const SttProvider = z.enum(['sarvam', 'openai']);
 export const LlmProvider = z.enum(['openai']);
 
 export const ModelSettingsInput = z.object({

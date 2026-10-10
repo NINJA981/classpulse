@@ -176,6 +176,7 @@ describe('Sarvam batch STT (stubbed fetch)', () => {
   };
 
   const input = async (durationSec = 30) => ({
+    provider: 'sarvam' as const,
     audioPath: await writeTempFile('lecture.wav', makeWav(1)),
     language: 'hi-IN' as const,
     durationSec,
@@ -244,10 +245,10 @@ describe('demo fallback', () => {
   it('is used only when enabled and the key is missing, and is clearly labelled', async () => {
     env.SARVAM_API_KEY = '';
     env.PIPELINE_DEMO_FALLBACK = false;
-    await expect(providers.transcribe({ audioPath: 'x', language: 'en-IN', durationSec: 90, model: 'm' })).rejects.toBeInstanceOf(PipelineError);
+    await expect(providers.transcribe({ provider: 'sarvam', audioPath: 'x', language: 'en-IN', durationSec: 90, model: 'm' })).rejects.toBeInstanceOf(PipelineError);
 
     env.PIPELINE_DEMO_FALLBACK = true;
-    const stt = await providers.transcribe({ audioPath: 'x', language: 'en-IN', durationSec: 90, model: 'm' });
+    const stt = await providers.transcribe({ provider: 'sarvam', audioPath: 'x', language: 'en-IN', durationSec: 90, model: 'm' });
     expect(stt.meta.demoFallback).toBe(true);
     expect(stt.segments.at(-1)!.endSec).toBe(90);
     env.OPENAI_API_KEY = '';

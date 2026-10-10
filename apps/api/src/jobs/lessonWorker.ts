@@ -30,7 +30,10 @@ function startBullWorker(): LessonWorkerHandle {
       try {
         await processLessonJob(job.data, { attemptNumber: job.attemptsMade + 1, maxAttempts: LESSON_JOB_ATTEMPTS });
       } catch (err) {
-        if (!isRetryable(err)) throw new UnrecoverableError(err instanceof Error ? err.message : String(err));
+        if (!isRetryable(err)) {
+          // Keep the original error (with its user-facing message) for markLessonJobFailed.
+          throw Object.assign(new UnrecoverableError(err instanceof Error ? err.message : String(err)), { cause: err });
+        }
         throw err;
       }
     },
@@ -41,7 +44,7 @@ function startBullWorker(): LessonWorkerHandle {
     if (!job) return;
     const exhausted = job.attemptsMade >= LESSON_JOB_ATTEMPTS || err instanceof UnrecoverableError || err.name === 'UnrecoverableError';
     logger.warn({ jobId: job.id, attempt: job.attemptsMade, exhausted, err: err.message }, 'Lesson job attempt failed');
-    if (exhausted) void markLessonJobFailed(job.data, err);
+    if (exhausted) void markLessonJobFailed(job.data, err.cause instanceof Error ? err.cause : err);
   });
   worker.on('error', (err) => logger.error({ err: err.message }, 'Lesson worker error'));
   logger.info({ concurrency: env.GENERATION_CONCURRENCY }, 'Lesson worker started (BullMQ)');

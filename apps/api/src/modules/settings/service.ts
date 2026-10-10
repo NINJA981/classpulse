@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import {
   DEFAULT_MODEL_SETTINGS,
+  SttProvider,
   type ModelSettings,
   type ModelSettingsInput,
   type UpdateModelSettingsInput,
@@ -16,7 +17,7 @@ function configured(): ModelSettings['configured'] {
 function toInput(row: typeof modelSettings.$inferSelect): ModelSettingsInput {
   // Stored values were validated on write; fall back to defaults if a provider value is ever unknown.
   return {
-    sttProvider: row.sttProvider === 'sarvam' ? row.sttProvider : DEFAULT_MODEL_SETTINGS.sttProvider,
+    sttProvider: SttProvider.safeParse(row.sttProvider).data ?? DEFAULT_MODEL_SETTINGS.sttProvider,
     sttModel: row.sttModel,
     llmProvider: row.llmProvider === 'openai' ? row.llmProvider : DEFAULT_MODEL_SETTINGS.llmProvider,
     llmModel: row.llmModel,

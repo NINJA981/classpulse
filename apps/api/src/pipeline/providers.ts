@@ -12,6 +12,7 @@ import { env } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { demoGenerate, demoRemedial, demoTranscribe } from './demo.js';
 import { generateRemedialPlan, generateWithOpenAI } from './llm.js';
+import { transcribeWithOpenAI } from './openaiStt.js';
 import { transcribeWithSarvam } from './sarvam.js';
 import type { GenerateInput, GenerateResult, RemedialInput, TranscribeInput, TranscribeResult } from './types.js';
 
@@ -28,7 +29,10 @@ const useDemo = (key: string, what: string) => {
 };
 
 const defaults: PipelineProviders = {
-  transcribe: async (input) => (useDemo(env.SARVAM_API_KEY, 'stt') ? demoTranscribe(input) : transcribeWithSarvam(input)),
+  transcribe: async (input) => {
+    if (input.provider === 'openai') return useDemo(env.OPENAI_API_KEY, 'stt') ? demoTranscribe(input) : transcribeWithOpenAI(input);
+    return useDemo(env.SARVAM_API_KEY, 'stt') ? demoTranscribe(input) : transcribeWithSarvam(input);
+  },
   generate: async (input) => (useDemo(env.OPENAI_API_KEY, 'llm') ? demoGenerate(input) : generateWithOpenAI(input)),
   remedial: async (input) => (useDemo(env.OPENAI_API_KEY, 'remedial') ? demoRemedial(input) : generateRemedialPlan(input)),
 };

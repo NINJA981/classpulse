@@ -1,6 +1,8 @@
 import type { Difficulty, Language, LessonAnalytics, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
 
 export interface TranscribeInput {
+  /** Configured STT provider for the institution. */
+  provider: 'sarvam' | 'openai';
   /** Absolute local path of the normalized 16 kHz mono WAV. */
   audioPath: string;
   language: Language;

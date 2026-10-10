@@ -97,6 +97,7 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
     }
     const started = Date.now();
     const stt = await providers.transcribe({
+      provider: settings.sttProvider === 'openai' ? 'openai' : 'sarvam',
       audioPath: storage.localPath(lesson.audioObjectKey),
       language,
       durationSec: lesson.durationSec ?? 0,
