@@ -38,7 +38,7 @@ export function InstitutionForm({ institution }: { institution: Institution | nu
 
   const fe = fieldErrorsOf(save.error);
   return (
-    <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2" noValidate aria-label="School profile">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate aria-label="School profile">
       <Field label="School name" required error={fe.name} className="sm:col-span-2">
         {(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />}
       </Field>

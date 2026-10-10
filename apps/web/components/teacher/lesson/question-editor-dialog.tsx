@@ -181,7 +181,7 @@ function QuestionForm({
         )}
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Difficulty" error={fe.difficulty}>
           {(p) => (
             <Select {...p} value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
@@ -212,7 +212,7 @@ function QuestionForm({
                   <Textarea {...p} rows={2} maxLength={1000} value={stemLocal} onChange={(e) => setStemLocal(e.target.value)} />
                 )}
               </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {optionsLocal.map((opt, i) => (
                   <Field key={i} label={`Option ${optionLetter(i)} (${localLabel})`} error={fe[`optionsLocal.${i}`]}>
                     {(p) => (

@@ -56,7 +56,7 @@ export function DeviceList({
                   {d.status === 'recording' && d.activeRecordingId && (
                     <Link
                       href={`/teacher/record?recording=${d.activeRecordingId}`}
-                      className="mt-1 inline-block text-xs font-bold underline underline-offset-4"
+                      className="mt-1 inline-flex min-h-6 items-center text-xs font-bold underline underline-offset-4"
                     >
                       View the recording in progress
                     </Link>

@@ -55,7 +55,7 @@ export function ModelSettingsForm({ settings }: { settings: ModelSettings }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate aria-label="AI model settings">
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader eyebrow="Speech to text" title="Transcription" actions={<KeyStatus configured={sttConfigured} />} />
           <CardBody className="flex flex-col gap-4">

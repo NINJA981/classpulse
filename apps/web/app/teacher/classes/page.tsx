@@ -42,7 +42,7 @@ export default function ClassesPage() {
           />
         </Card>
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {q.data.map((s) => (
             <li key={s.id}>
               <SectionCard section={s} />
@@ -132,7 +132,7 @@ function SectionCard({ section: s }: { section: Section }) {
           <ButtonLink variant="ghost" size="sm" href={`/teacher/record?sectionId=${s.id}`}>
             Record a class
           </ButtonLink>
-          <Link href={`/teacher/lessons?sectionId=${s.id}&status=ready_for_review`} className="self-center text-xs font-bold underline underline-offset-4">
+          <Link href={`/teacher/lessons?sectionId=${s.id}&status=ready_for_review`} className="inline-flex min-h-6 items-center self-center text-xs font-bold underline underline-offset-4">
             Needs review
           </Link>
         </div>

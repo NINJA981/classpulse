@@ -70,7 +70,7 @@ export function UploadForm({ section }: { section: Section }) {
     <Card>
       <CardHeader eyebrow="Step 2" title="Upload a recording of your class" />
       <CardBody>
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
+        <form onSubmit={submit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
           <Field label="Lesson title" required error={fe.title} className="sm:col-span-2">
             {(p) => (
               <Input

@@ -75,7 +75,7 @@ function Workspace({ lesson }: { lesson: LessonDetail }) {
         )}
         {!lesson.hasAudio && (lesson.status === 'draft' || lesson.status === 'failed') && <LessonAudioUpload lesson={lesson} />}
 
-        <div className="grid gap-6 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           <div className="min-w-0 lg:col-span-3">
             {processing ? null : <QuestionList lesson={lesson} onSeek={lesson.hasAudio ? seek : null} />}
           </div>

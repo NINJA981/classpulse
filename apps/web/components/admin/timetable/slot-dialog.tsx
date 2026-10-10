@@ -85,7 +85,7 @@ export function SlotDialog({
         </>
       }
     >
-      <form id="slot-form" onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <form id="slot-form" onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         {serverErrors && serverErrors.length > 0 && (
           <ul role="alert" className="border border-danger/40 bg-danger-soft px-3 py-2 text-sm font-semibold text-danger rounded-control sm:col-span-2">
             {serverErrors.map((e) => (

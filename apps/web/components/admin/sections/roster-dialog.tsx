@@ -71,7 +71,7 @@ export function RosterDialog({ section, enrolled, onClose }: { section: Section;
         </>
       }
     >
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div className="flex flex-col gap-3">
           <Field label="Search students" hint="Name or roll number">
             {(p) => (

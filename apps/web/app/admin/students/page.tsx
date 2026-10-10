@@ -87,7 +87,7 @@ export default function StudentsPage() {
     <>
       <PageHeader eyebrow="People" title="Students" description="Student accounts sign in with their roll number." actions={actions} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_16rem]">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
         <Field label="Search students">
           {(p) => (
             <Input

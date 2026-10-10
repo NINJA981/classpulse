@@ -56,7 +56,7 @@ export function QuestionCard({
             <button
               type="button"
               onClick={() => onSeek(q.citationStartSec ?? 0)}
-              className="ml-auto inline-flex items-center gap-1 text-xs font-bold underline underline-offset-4"
+              className="ml-auto inline-flex min-h-6 items-center gap-1 text-xs font-bold underline underline-offset-4"
               aria-label={`Play the recording from ${formatDuration(q.citationStartSec)} for question ${number}`}
             >
               <Clock className="size-3.5" aria-hidden />
@@ -73,7 +73,7 @@ export function QuestionCard({
           {q.stemLocal && <p className="mt-1 text-sm text-ink-2">{q.stemLocal}</p>}
         </div>
 
-        <ol className="grid gap-2 sm:grid-cols-2">
+        <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {q.options.map((opt, i) => {
             const correct = i === q.correctIndex;
             return (

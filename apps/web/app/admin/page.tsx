@@ -37,7 +37,7 @@ const QUICK_LINKS = [
 function OverviewSkeleton() {
   return (
     <div className="flex flex-col gap-6" role="status" aria-label="Loading overview">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }, (_, i) => (
           <Skeleton key={i} className="h-28" />
         ))}
@@ -95,7 +95,7 @@ function OverviewBody({ data }: { data: AdminOverview }) {
         </Card>
       )}
 
-      <section aria-label="Key numbers" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Key numbers" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Teachers" value={c.teachers} icon={<GraduationCap className="size-4" aria-hidden />} />
         <StatCard label="Students" value={c.students} icon={<UserRound className="size-4" aria-hidden />} />
         <StatCard
@@ -124,7 +124,7 @@ function OverviewBody({ data }: { data: AdminOverview }) {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader eyebrow="Pipeline" title="Lessons by status" />
           <CardBody>

@@ -92,7 +92,7 @@ function AssignmentForm({ lesson, assignment }: { lesson: LessonDetail; assignme
         </legend>
         {rubric.length === 0 && <p className="text-sm text-muted">No rubric rows. Add criteria to explain how you will mark it.</p>}
         {rubric.map((r, i) => (
-          <div key={i} className="grid gap-3 border border-line p-3 rounded-control sm:grid-cols-[1fr_100px_auto]">
+          <div key={i} className="grid grid-cols-1 gap-3 border border-line p-3 rounded-control sm:grid-cols-[minmax(0,1fr)_100px_auto]">
             <Field label={`Criterion ${i + 1}`} error={fe[`rubric.${i}.criterion`]}>
               {(p) => <Input {...p} value={r.criterion} maxLength={200} onChange={(e) => update(i, { criterion: e.target.value })} />}
             </Field>
@@ -142,7 +142,7 @@ function AssignmentForm({ lesson, assignment }: { lesson: LessonDetail; assignme
         </Button>
       </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Estimated minutes" error={fe.estimatedMinutes}>
           {(p) => (
             <Input {...p} type="number" min={1} max={600} inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} />

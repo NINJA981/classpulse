@@ -78,9 +78,9 @@ export function Projector({ sessionId }: { sessionId: string }) {
           <Podium entries={state.finalBoard ?? state.leaderboard} size="xl" />
         </div>
       ) : state.status === 'lobby' ? (
-        <div className="grid flex-1 items-center gap-10 lg:grid-cols-2">
+        <div className="grid grid-cols-1 flex-1 items-center gap-10 lg:grid-cols-2">
           <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-3xl font-bold text-ink-2">Join the quiz with PIN</p>
+            <h1 className="text-3xl font-bold text-ink-2">Join the quiz with PIN</h1>
             <p className="font-display text-[clamp(4rem,12vw,10rem)] font-black leading-none tracking-[0.12em] tabular-nums">
               {snap.pin}
             </p>
@@ -122,7 +122,7 @@ export function Projector({ sessionId }: { sessionId: string }) {
           </p>
         </div>
       ) : (
-        <div className="grid flex-1 gap-10 lg:grid-cols-5">
+        <div className="grid grid-cols-1 flex-1 gap-10 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-3">
             {state.question && (
               <h1 className="font-display text-[clamp(1.75rem,3vw,3rem)] font-black leading-tight">{state.question.stem}</h1>

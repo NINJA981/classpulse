@@ -71,7 +71,7 @@ export function SectionDialog({ section, onClose }: { section: Section | null; o
         </>
       }
     >
-      <form id="section-form" onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <form id="section-form" onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <Field label="Section name" required error={fe.name} className="sm:col-span-2">
           {(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus />}
         </Field>
@@ -109,7 +109,7 @@ export function SectionDialog({ section, onClose }: { section: Section | null; o
           ) : teachers.data.length === 0 ? (
             <p className="text-sm text-muted">No teachers yet. Add teachers first, then assign them here.</p>
           ) : (
-            <div className="grid max-h-48 gap-2 overflow-y-auto border border-line p-3 sm:grid-cols-2 rounded-control">
+            <div className="grid grid-cols-1 max-h-48 gap-2 overflow-y-auto border border-line p-3 sm:grid-cols-2 rounded-control">
               {teachers.data.map((t) => (
                 <Checkbox
                   key={t.id}

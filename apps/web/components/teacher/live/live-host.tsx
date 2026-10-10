@@ -100,7 +100,7 @@ export function LiveHost({ session, lessonId }: { session: LiveSessionInfo; less
         <EndedView sessionId={session.id} lessonId={lessonId} board={state.finalBoard ?? state.leaderboard} />
       ) : state.status === 'lobby' ? (
         <Card>
-          <CardBody className="grid gap-8 lg:grid-cols-2">
+          <CardBody className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="flex flex-col items-center justify-center gap-3 text-center">
               <p className="eyebrow">Students join at Live quiz with PIN</p>
               <p className="font-display text-7xl font-black tracking-[0.15em] tabular-nums">{snap.pin}</p>
@@ -175,7 +175,7 @@ export function LiveHost({ session, lessonId }: { session: LiveSessionInfo; less
           </CardBody>
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3">
             <CardHeader eyebrow={index != null ? `Question ${index + 1} results` : 'Results'} title={state.question?.stem ?? 'Question closed'} />
             <CardBody className="space-y-5">

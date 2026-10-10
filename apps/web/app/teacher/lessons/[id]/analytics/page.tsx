@@ -109,7 +109,7 @@ export default function LessonAnalyticsPage() {
             <Card>
               <CardHeader eyebrow="Answers" title="Option distribution" />
               <CardBody>
-                <ol className="grid gap-6 md:grid-cols-2">
+                <ol className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {questions.map((qa, i) => {
                     const full = questionsById.get(qa.questionId);
                     return (

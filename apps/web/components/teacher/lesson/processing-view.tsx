@@ -30,7 +30,7 @@ export function ProcessingView({ lesson }: { lesson: LessonDetail }) {
           </div>
         </div>
         <ProgressBar value={pct} label="Generation progress" />
-        <ol className="grid gap-2 sm:grid-cols-3">
+        <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {STEPS.map((s, i) => (
             <li
               key={s.status}

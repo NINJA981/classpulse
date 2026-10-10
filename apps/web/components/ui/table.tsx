@@ -3,7 +3,8 @@ import clsx from 'clsx';
 
 export function Table({ className, ...rest }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto">
+    // tabIndex: keyboard users can scroll a table that is wider than the screen.
+    <div tabIndex={0} className="relative w-full overflow-x-auto">
       <table className={clsx('w-full border-collapse text-sm', className)} {...rest} />
     </div>
   );

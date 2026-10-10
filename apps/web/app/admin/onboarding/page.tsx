@@ -56,7 +56,7 @@ export default function OnboardingPage() {
         title="Onboarding"
         description="Set up your school in seven steps. Each step links to the page where you do the work; come back here to track progress."
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader

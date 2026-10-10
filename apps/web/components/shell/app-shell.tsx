@@ -72,12 +72,12 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
       <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
         <aside className="hidden border-r border-line bg-surface lg:sticky lg:top-0 lg:block lg:h-dvh">{sidebar}</aside>
 
-        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
           <span className="font-display text-lg font-black">ClassPulse</span>
           <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="p-1.5">
             <Menu className="size-5" />
           </button>
-        </div>
+        </header>
         {open && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />

@@ -89,13 +89,13 @@ export default function TeacherDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader
             eyebrow="Today"
             title="Today’s classes"
             actions={
-              <Link href="/teacher/timetable" className="text-xs font-bold underline underline-offset-4">
+              <Link href="/teacher/timetable" className="inline-flex min-h-6 items-center text-xs font-bold underline underline-offset-4">
                 Full timetable
               </Link>
             }
@@ -162,7 +162,7 @@ export default function TeacherDashboardPage() {
             eyebrow="Recent"
             title="Recent lessons"
             actions={
-              <Link href="/teacher/lessons" className="text-xs font-bold underline underline-offset-4">
+              <Link href="/teacher/lessons" className="inline-flex min-h-6 items-center text-xs font-bold underline underline-offset-4">
                 All lessons
               </Link>
             }
@@ -200,7 +200,7 @@ export default function TeacherDashboardPage() {
             eyebrow="Classes"
             title="My sections"
             actions={
-              <Link href="/teacher/classes" className="text-xs font-bold underline underline-offset-4">
+              <Link href="/teacher/classes" className="inline-flex min-h-6 items-center text-xs font-bold underline underline-offset-4">
                 Details
               </Link>
             }
