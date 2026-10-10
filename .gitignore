@@ -1,13 +1,3 @@
-# --- Original standalone repos (history imported under legacy/; kept on disk untouched) ---
-/SIH-backend/
-/SIH-admin/
-/SIH-teacher/
-/SIH-student/
-/classroom-agent/
-/scripts/
-/nginx/
-/youtube-audio.mp3
-
 # --- Dependencies & build output ---
 node_modules/
 dist/
