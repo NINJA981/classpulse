@@ -1,0 +1,46 @@
+{
+  "name": "classpulse",
+  "private": true,
+  "description": "ClassPulse — AI classroom platform (API, unified web app, Raspberry Pi classroom agent)",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n shared,api,worker,web -c gray,blue,magenta,green \"npm run dev -w @classpulse/shared\" \"npm run dev -w @classpulse/api\" \"npm run dev:worker -w @classpulse/api\" \"npm run dev -w @classpulse/web\"",
+    "dev:infra": "docker compose -f infra/docker-compose.dev.yml up -d",
+    "build": "npm run build -w @classpulse/shared && npm run build -w @classpulse/api && npm run build -w @classpulse/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present",
+    "test:agent": "python -m pytest apps/classroom-agent/tests -q",
+    "test:e2e": "npm run test:e2e -w @classpulse/web",
+    "db:generate": "npm run db:generate -w @classpulse/api",
+    "db:migrate": "npm run db:migrate -w @classpulse/api",
+    "db:seed": "npm run db:seed -w @classpulse/api",
+    "create-admin": "npm run create-admin -w @classpulse/api --"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.12.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "ffmpeg-static@5.3.0": true,
+    "msgpackr-extract@3.0.4": true
+  }
+}

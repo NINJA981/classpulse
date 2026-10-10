@@ -1,0 +1,13 @@
+legacy/
+SIH-*/
+classroom-agent/
+scripts/
+nginx/
+.agents/
+node_modules/
+dist/
+.next/
+coverage/
+package-lock.json
+apps/api/src/db/migrations/
+*.md
