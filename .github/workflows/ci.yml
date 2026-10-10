@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: classpulse
+          POSTGRES_PASSWORD: classpulse
+          POSTGRES_DB: classpulse_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U classpulse" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://classpulse:classpulse@localhost:5432/classpulse_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @classpulse/shared
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -w @classpulse/api
+      - run: npm run build -w @classpulse/web
+
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pytest
+      - run: python -m pytest apps/classroom-agent/tests -q
+
+  images:
+    runs-on: ubuntu-latest
+    needs: [checks, agent]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build -f apps/api/Dockerfile -t classpulse-api:ci .
+      - run: docker build -f apps/web/Dockerfile -t classpulse-web:ci .

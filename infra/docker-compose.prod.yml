@@ -1,0 +1,149 @@
+# ClassPulse production stack for a single VPS.
+#   cp infra/.env.example infra/.env   # fill in every value
+#   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build
+# Only Caddy publishes ports (80/443). Everything else is on the private network.
+name: classpulse
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '20m'
+    max-file: '5'
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgres://classpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/classpulse
+  REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (>=32 random chars)}
+  PUBLIC_ORIGIN: https://${DOMAIN:?set DOMAIN}
+  STORAGE_DIR: /data/storage
+  AUDIO_RETENTION_DAYS: ${AUDIO_RETENTION_DAYS:-30}
+  SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GENERATION_CONCURRENCY: ${GENERATION_CONCURRENCY:-2}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: classpulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: classpulse
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U classpulse -d classpulse']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server --requirepass ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+      --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    logging: *logging
+
+  migrate:
+    image: classpulse-api:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    command: ['node', 'dist/db/migrate.js']
+    environment: *api-env
+    networks: [internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+    logging: *logging
+
+  api:
+    image: classpulse-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment: *api-env
+    volumes:
+      - storage_data:/data/storage
+    networks: [internal]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    logging: *logging
+
+  worker:
+    image: classpulse-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ['node', 'dist/worker.js']
+    environment: *api-env
+    volumes:
+      - storage_data:/data/storage
+    networks: [internal]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    logging: *logging
+
+  web:
+    image: classpulse-web:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:5000
+    networks: [internal]
+    depends_on:
+      - api
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+    depends_on:
+      - web
+      - api
+    logging: *logging
+
+volumes:
+  pg_data:
+  redis_data:
+  storage_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge

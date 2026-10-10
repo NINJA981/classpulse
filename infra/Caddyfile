@@ -1,0 +1,45 @@
+# ClassPulse edge proxy. One origin serves the web app, the API and Socket.IO.
+# DOMAIN=app.example.org → automatic Let's Encrypt certificates.
+# DOMAIN=localhost       → Caddy's internal CA (local production smoke tests).
+{
+	email {$ACME_EMAIL:admin@localhost}
+}
+
+{$DOMAIN:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=(self)"
+		-Server
+	}
+
+	# Lecture uploads can be large; device chunks are ~2 MB.
+	request_body /api/lessons/* {
+		max_size 400MB
+	}
+	request_body {
+		max_size 25MB
+	}
+
+	@backend path /api/* /socket.io/*
+	handle @backend {
+		reverse_proxy api:5000 {
+			# Device command long-polls hold for up to 25 s.
+			transport http {
+				read_timeout 120s
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
