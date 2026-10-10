@@ -1,0 +1,29 @@
+import type { Metadata, Viewport } from 'next';
+import { Inter, JetBrains_Mono, Outfit, Plus_Jakarta_Sans } from 'next/font/google';
+import { Providers } from './providers';
+import './globals.css';
+
+const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' });
+const jakarta = Plus_Jakarta_Sans({ variable: '--font-jakarta', subsets: ['latin'], display: 'swap' });
+const outfit = Outfit({ variable: '--font-outfit', subsets: ['latin'], display: 'swap' });
+const mono = JetBrains_Mono({ variable: '--font-mono-jb', subsets: ['latin'], display: 'swap' });
+
+export const metadata: Metadata = {
+  title: { default: 'ClassPulse', template: '%s · ClassPulse' },
+  description: 'AI-assisted lectures, quizzes and live classroom engagement.',
+};
+
+export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${outfit.variable} ${mono.variable} antialiased`}>
+      <body className="min-h-dvh">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-surface focus:p-2">
+          Skip to content
+        </a>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}

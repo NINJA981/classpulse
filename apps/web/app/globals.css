@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   ClassPulse design system
+   --------------------------------------------------------------------------
+   One set of semantic tokens (`--cp-*`) consumed by Tailwind utilities
+   (bg-canvas, text-ink, border-line, rounded-card, shadow-card, font-display…).
+
+   Staff areas (/admin, /teacher): Swiss editorial monochrome — Inter, ink on
+   paper, hairline rules, zero radius, hard offset shadows.
+   Student area (/student, [data-theme="student"]): the same components with a
+   friendlier "zine" palette — warm canvas, pastel fills, rounded corners,
+   Plus Jakarta Sans / Outfit display type.
+
+   Rule: components use ONLY these tokens — never raw hex values.
+   ========================================================================== */
+
+@theme inline {
+  --color-canvas: var(--cp-canvas);
+  --color-surface: var(--cp-surface);
+  --color-surface-2: var(--cp-surface-2);
+  --color-ink: var(--cp-ink);
+  --color-ink-2: var(--cp-ink-2);
+  --color-muted: var(--cp-muted);
+  --color-line: var(--cp-line);
+  --color-line-strong: var(--cp-line-strong);
+  --color-accent: var(--cp-accent);
+  --color-accent-ink: var(--cp-accent-ink);
+  --color-accent-soft: var(--cp-accent-soft);
+  --color-success: var(--cp-success);
+  --color-success-soft: var(--cp-success-soft);
+  --color-warning: var(--cp-warning);
+  --color-warning-soft: var(--cp-warning-soft);
+  --color-danger: var(--cp-danger);
+  --color-danger-soft: var(--cp-danger-soft);
+  --color-info-soft: var(--cp-info-soft);
+
+  --radius-card: var(--cp-radius);
+  --radius-control: var(--cp-radius-control);
+  --shadow-card: var(--cp-shadow-card);
+  --shadow-hard: var(--cp-shadow-hard);
+  --shadow-pop: var(--cp-shadow-pop);
+
+  --font-sans: var(--cp-font-sans);
+  --font-display: var(--cp-font-display);
+  --font-mono: var(--cp-font-mono);
+}
+
+:root {
+  --cp-canvas: #f6f6f3;
+  --cp-surface: #ffffff;
+  --cp-surface-2: #f1f1ee;
+  --cp-ink: #111111;
+  --cp-ink-2: #444444;
+  --cp-muted: #6b6b6b;
+  --cp-line: #d7d7d2;
+  --cp-line-strong: #111111;
+  --cp-accent: #111111;
+  --cp-accent-ink: #ffffff;
+  --cp-accent-soft: #ecece8;
+  /* State colours are muted so the staff UI stays essentially monochrome. */
+  --cp-success: #1f6f43;
+  --cp-success-soft: #e9f2ec;
+  --cp-warning: #8a5a00;
+  --cp-warning-soft: #f6efdf;
+  --cp-danger: #a3231a;
+  --cp-danger-soft: #f7e8e6;
+  --cp-info-soft: #ecece8;
+
+  --cp-radius: 0px;
+  --cp-radius-control: 0px;
+  --cp-shadow-card: none;
+  --cp-shadow-hard: 6px 6px 0 #111111;
+  --cp-shadow-pop: 0 20px 60px rgba(0, 0, 0, 0.15);
+
+  --cp-font-sans: var(--font-inter), 'Inter', Arial, Helvetica, sans-serif;
+  --cp-font-display: var(--font-inter), 'Inter', Arial, Helvetica, sans-serif;
+  --cp-font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+[data-theme='student'] {
+  --cp-canvas: #faf7f2;
+  --cp-surface: #ffffff;
+  --cp-surface-2: #fffbeb;
+  --cp-ink: #0f172a;
+  --cp-ink-2: #334155;
+  --cp-muted: #475569;
+  --cp-line: #e2d9cd;
+  --cp-line-strong: #0f172a;
+  --cp-accent: #fde047;
+  --cp-accent-ink: #0f172a;
+  --cp-accent-soft: #fef9c3;
+  --cp-success: #047857;
+  --cp-success-soft: #dcfce7;
+  --cp-warning: #92400e;
+  --cp-warning-soft: #fef3c7;
+  --cp-danger: #be123c;
+  --cp-danger-soft: #fce7f3;
+  --cp-info-soft: #e0f2fe;
+
+  --cp-radius: 14px;
+  --cp-radius-control: 10px;
+  --cp-shadow-card: 4px 4px 0 #0f172a;
+  --cp-shadow-hard: 4px 4px 0 #0f172a;
+
+  --cp-font-sans: var(--font-jakarta), -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --cp-font-display: var(--font-outfit), var(--font-jakarta), sans-serif;
+}
+
+html,
+body {
+  background: var(--cp-canvas);
+  color: var(--cp-ink);
+  font-family: var(--cp-font-sans);
+}
+
+[data-theme='student'] {
+  background-color: var(--cp-canvas);
+  background-image: radial-gradient(#e2d9cd 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cp-ink);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* 9px uppercase tracked label used above titles and metrics. */
+  .eyebrow {
+    @apply text-[10px] font-extrabold tracking-[0.16em] uppercase text-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
