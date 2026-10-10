@@ -37,9 +37,14 @@ echo "[$(date -u +%FT%TZ)] Wrote $ARCHIVE ($(du -h "$ARCHIVE" | cut -f1))"
 # Weekly copy on Sundays.
 if [ "$(date -u +%u)" = "7" ]; then cp "$ARCHIVE" "$BACKUP_DIR/weekly/"; fi
 
-# Rotation.
-ls -1t "$BACKUP_DIR"/daily/*.tar.age 2>/dev/null | tail -n +8 | xargs -r rm -f
-ls -1t "$BACKUP_DIR"/weekly/*.tar.age 2>/dev/null | tail -n +5 | xargs -r rm -f
+# Rotation: keep the newest N archives in a folder. find (unlike an unmatched ls glob) succeeds on an
+# empty folder, which matters under `set -o pipefail`.
+rotate() {
+  find "$1" -maxdepth 1 -name '*.tar.age' -printf '%T@ %p
+' | sort -rn | tail -n +"$(($2 + 1))" | cut -d' ' -f2- | xargs -r rm -f
+}
+rotate "$BACKUP_DIR/daily" 7
+rotate "$BACKUP_DIR/weekly" 4
 
 if [ -n "${BACKUP_S3_URI:-}" ]; then
   echo "[$(date -u +%FT%TZ)] Copying off-site to $BACKUP_S3_URI…"
