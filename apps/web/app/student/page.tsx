@@ -149,7 +149,7 @@ function DashboardBody({ data }: { data: StudentDashboard }) {
             title="Upcoming assignments"
             actions={
               <Link href="/student/assignments" className="inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4">
-                All
+                All assignments
               </Link>
             }
           />

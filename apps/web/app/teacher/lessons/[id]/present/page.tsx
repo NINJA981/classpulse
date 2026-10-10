@@ -20,6 +20,7 @@ function PresentContent() {
   if (!sessionId)
     return (
       <Card>
+        <h1 className="sr-only">Projector view</h1>
         <EmptyState
           icon={<MonitorUp className="size-8" aria-hidden />}
           title="No live session selected"
