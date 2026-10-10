@@ -62,6 +62,7 @@ sudo ./install.sh
    | `data_dir` | `/var/lib/classpulse` | Credentials and the upload buffer |
    | `min_free_disk_mb` | `500` | Below this, new recordings are refused and the device reports an error |
    | `allow_insecure_http` | `false` | Allows `http://` URLs. Use it for local development only. |
+   | `ca_file` | `null` | Path to an extra PEM CA bundle to trust (for example a school's private CA). System CAs are always trusted and TLS verification is never disabled. |
    | `audio_source` | `{"type":"arecord"}` | Or `{"type":"file","path":"/path/x.wav","realtime":true}` to feed a 16 kHz mono 16-bit WAV instead of the microphone (CI and demos) |
 
 4. Start the agent with `sudo systemctl restart classpulse-agent`. On first start it registers with

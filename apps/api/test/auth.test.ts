@@ -84,7 +84,16 @@ describe('auth', () => {
       expect(res.body.user).toMatchObject({ id: world.student.id, role: 'student', rollNumber: world.student.rollNumber });
     });
 
-    it('requires a school code when several institutions exist', async () => {
+    it('finds the school from the roll number when it is unique across schools', async () => {
+      await createInstitution({ code: 'OTHER2' });
+      const res = await anon()
+        .post('/api/auth/student/login')
+        .send({ rollNumber: world.student.rollNumber, password: TEST_PASSWORD });
+      expect(res.status).toBe(200);
+      expect(res.body.user.id).toBe(world.student.id);
+    });
+
+    it('requires a school code when several schools share the roll number', async () => {
       const other = await createInstitution({ code: 'OTHER1' });
       await createUser(other.id, 'student', { rollNumber: world.student.rollNumber });
       const missing = await anon()
@@ -92,6 +101,7 @@ describe('auth', () => {
         .send({ rollNumber: world.student.rollNumber, password: TEST_PASSWORD });
       expect(missing.status).toBe(400);
       expect(missing.body.error.message).toMatch(/school code/i);
+      expect(missing.body.error.details).toEqual({ field: 'institutionCode' });
 
       const ok = await anon()
         .post('/api/auth/student/login')

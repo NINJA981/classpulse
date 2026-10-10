@@ -9,7 +9,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --ignore-scripts --no-audit --no-fund -w @classpulse/shared -w @classpulse/web
+RUN npm ci --ignore-scripts --no-audit --no-fund --include-workspace-root -w @classpulse/shared -w @classpulse/web
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build -w @classpulse/shared && npm run build -w @classpulse/web

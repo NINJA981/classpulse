@@ -31,7 +31,9 @@ All endpoints live under `/api`. Request and response types are defined in `pack
 | GET | `/me` | — | `SessionResponse` |
 | POST | `/change-password` | `ChangePasswordInput` | `SessionResponse` + new cookie; old sessions are revoked |
 
-Logins are rate-limited (`429 RATE_LIMITED`).
+Logins are rate-limited (`429 RATE_LIMITED`; `LOGIN_RATE_LIMIT` attempts per IP and account per 15 minutes).
+
+Student login finds the school from the roll number. Only when several schools use the same roll number does it return `400` with `details: { field: 'institutionCode' }`, and the login page then asks for the school code.
 
 ## Admin console (admin role)
 

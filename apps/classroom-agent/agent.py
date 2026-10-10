@@ -121,6 +121,8 @@ class Config:
     data_dir: str = "/var/lib/classpulse"
     min_free_disk_mb: int = 500
     allow_insecure_http: bool = False
+    # Extra CA bundle (PEM) to trust, e.g. a school's private CA. System CAs are always trusted.
+    ca_file: str | None = None
     audio_source: dict[str, Any] = field(default_factory=lambda: {"type": "arecord"})
     log_level: str = "INFO"
 
@@ -246,13 +248,22 @@ class ApiError(Exception):
 
 
 class Api:
-    def __init__(self, base_url: str, device_id: str, device_key: str | None = None, timeout: float = 30.0):
+    def __init__(
+        self,
+        base_url: str,
+        device_id: str,
+        device_key: str | None = None,
+        timeout: float = 30.0,
+        ca_file: str | None = None,
+    ):
         self.base_url = base_url.rstrip("/")
         self.device_id = device_id
         self.device_key = device_key
         self.timeout = timeout
-        # TLS verification with the system CA store (never disabled).
+        # TLS verification with the system CA store (never disabled), plus an optional private CA.
         self._ssl = ssl.create_default_context()
+        if ca_file:
+            self._ssl.load_verify_locations(cafile=ca_file)
 
     def _request(
         self,
@@ -931,7 +942,7 @@ class Agent:
                  disk_free_mb: Callable[[], float | None] | None = None):
         self.cfg = cfg
         Path(cfg.data_dir).mkdir(parents=True, exist_ok=True)
-        self.api = api or Api(cfg.server_url, cfg.device_id)
+        self.api = api or Api(cfg.server_url, cfg.device_id, ca_file=cfg.ca_file)
         self.buffer = Buffer(cfg.data_dir)
         self.recorder = Recorder(cfg, self.buffer, source_factory)
         self.uploader = Uploader(self.buffer, self.api, self.recorder)

@@ -18,7 +18,7 @@ flowchart LR
     Redis[("Redis 7")]
     Store[("storage volume<br/>lecture audio")]
   end
-  Sarvam["Sarvam AI STT"]
+  Sarvam["Sarvam AI STT<br/>(or OpenAI Whisper)"]
   OpenAI["OpenAI LLM"]
 
   Pi -- "HTTPS outbound only<br/>register · heartbeat · long-poll commands · PCM chunks" --> Caddy
@@ -55,7 +55,7 @@ flowchart LR
 2. The Pi in the section's room picks up the command through its long-poll (`GET /api/devices/me/commands`) and acknowledges it. It then records 16 kHz mono PCM in 60-second chunks to its local disk.
 3. The uploader on the Pi sends each chunk with `PUT …/chunks/:idx` and an `X-Chunk-SHA256` header. If the Wi-Fi drops, chunks wait on disk and the upload resumes from the server's `received` list.
 4. The teacher presses **Stop**. The Pi drains its backlog and calls `finalize`. The API checks that every chunk is present, assembles a WAV file with ffmpeg, attaches it to the lesson and queues generation.
-5. The worker transcribes with Sarvam (real timestamps), generates the summary, questions and assignment with OpenAI (validated with zod), and sets the lesson to `ready_for_review`. If generation fails, the lesson becomes `failed` with a plain-language reason; the system never substitutes demo content.
+5. The worker transcribes with the institution's chosen speech-to-text provider (Sarvam or OpenAI Whisper, set in **Admin → AI settings**; both return real timestamps), generates the summary, questions and assignment with OpenAI (validated with zod), and sets the lesson to `ready_for_review`. If generation fails, the lesson becomes `failed` with a plain-language reason; the system never substitutes demo content.
 6. The teacher reviews, edits and approves the questions, then publishes. Students in the section can then see the quiz.
 
 A teacher can also upload an audio file instead (`POST /api/lessons/:id/audio`). The pipeline is the same.

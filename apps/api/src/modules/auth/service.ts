@@ -37,7 +37,11 @@ export async function staffLogin(input: StaffLoginInput): Promise<UserRow> {
   return markLoggedIn(user.id);
 }
 
-async function resolveStudentInstitution(code: string | undefined): Promise<string | null> {
+/**
+ * Without a school code, find the institution by roll number: it is only
+ * ambiguous (and the code required) when several schools use the same roll number.
+ */
+async function resolveStudentInstitution(code: string | undefined, rollNumber: string): Promise<string | null> {
   if (code) {
     const inst = await db.query.institutions.findFirst({
       where: eq(institutions.code, code.toUpperCase()),
@@ -45,13 +49,19 @@ async function resolveStudentInstitution(code: string | undefined): Promise<stri
     });
     return inst?.id ?? null;
   }
-  const rows = await db.select({ id: institutions.id }).from(institutions).limit(2);
-  if (rows.length > 1) throw badRequest('Please enter your school code to sign in');
+  const rows = await db
+    .selectDistinct({ id: users.institutionId })
+    .from(users)
+    .where(and(eq(users.rollNumber, rollNumber), eq(users.role, 'student')))
+    .limit(2);
+  if (rows.length > 1) {
+    throw badRequest('Several schools use this roll number. Enter your school code to sign in.', { field: 'institutionCode' });
+  }
   return rows[0]?.id ?? null;
 }
 
 export async function studentLogin(input: StudentLoginInput): Promise<UserRow> {
-  const institutionId = await resolveStudentInstitution(input.institutionCode);
+  const institutionId = await resolveStudentInstitution(input.institutionCode, input.rollNumber);
   const row = institutionId
     ? await db.query.users.findFirst({
         where: and(

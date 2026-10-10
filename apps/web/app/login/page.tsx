@@ -3,7 +3,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_HOME, type SessionResponse } from '@classpulse/shared';
 import { Button, Field, InlineError, Input, Tabs } from '@/components/ui';
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 
 type Mode = 'staff' | 'student';
 
@@ -19,6 +19,8 @@ function LoginForm() {
   const [mode, setMode] = useState<Mode>('staff');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [schoolCode, setSchoolCode] = useState('');
+  const [needSchoolCode, setNeedSchoolCode] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -30,10 +32,17 @@ function LoginForm() {
       const { user } =
         mode === 'staff'
           ? await api.post<SessionResponse>('/auth/login', { email: identifier, password })
-          : await api.post<SessionResponse>('/auth/student/login', { rollNumber: identifier, password });
+          : await api.post<SessionResponse>('/auth/student/login', {
+              rollNumber: identifier,
+              password,
+              ...(schoolCode.trim() ? { institutionCode: schoolCode.trim() } : {}),
+            });
       router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next'), user.role));
       router.refresh();
     } catch (err) {
+      if (err instanceof ApiError && (err.details as { field?: string } | undefined)?.field === 'institutionCode') {
+        setNeedSchoolCode(true);
+      }
       setError(err);
       setPending(false);
     }
@@ -72,6 +81,13 @@ function LoginForm() {
           <Field label="Roll number" required hint="As given by your school, e.g. 10B-01">
             {(p) => (
               <Input {...p} autoComplete="username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
+            )}
+          </Field>
+        )}
+        {mode === 'student' && needSchoolCode && (
+          <Field label="School code" required hint="Ask your teacher if you don’t know it">
+            {(p) => (
+              <Input {...p} autoComplete="organization" value={schoolCode} onChange={(e) => setSchoolCode(e.target.value.toUpperCase())} />
             )}
           </Field>
         )}

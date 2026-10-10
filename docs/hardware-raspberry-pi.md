@@ -51,6 +51,7 @@ This is the single source of truth for the classroom device. It replaces older n
      "alsa_device": "plughw:2,0"
    }
    ```
+   If the campus network inspects TLS with its own certificate authority, also set `"ca_file": "/etc/classpulse/campus-ca.pem"`. TLS verification is never disabled.
 5. `sudo systemctl enable --now classpulse-agent && journalctl -u classpulse-agent -f`. The device registers and then shows as **online** in the admin console. The enrollment token is consumed, and the device key is stored in `/var/lib/classpulse/credentials.json` (mode 0600).
 
 To **replace or re-provision** a Pi: revoke the old device in the admin console, then issue a new token for the room.

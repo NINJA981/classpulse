@@ -15,7 +15,8 @@ sudo mkdir -p /opt/classpulse && sudo chown $USER /opt/classpulse
 git clone <repo> /opt/classpulse && cd /opt/classpulse
 cp infra/.env.example infra/.env
 # Fill in DOMAIN, ACME_EMAIL, POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET (openssl rand -base64 48),
-# SARVAM_API_KEY, OPENAI_API_KEY, BACKUP_AGE_RECIPIENT
+# SARVAM_API_KEY and/or OPENAI_API_KEY, BACKUP_AGE_RECIPIENT
+# (Speech-to-text provider is chosen per school in Admin → AI settings: Sarvam or OpenAI Whisper.)
 chmod 600 infra/.env
 
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build

@@ -26,7 +26,7 @@ echo "[$(date -u +%FT%TZ)] Dumping PostgreSQL…"
 "${COMPOSE[@]}" exec -T postgres pg_dump -U classpulse -d classpulse -Fc --no-owner > "$WORK/db.dump"
 
 echo "[$(date -u +%FT%TZ)] Archiving stored audio…"
-"${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh api -c 'tar -C /data -czf - storage --exclude=storage/tmp' > "$WORK/storage.tar.gz"
+"${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh api -c 'tar -C /data -czf - --exclude=storage/tmp storage' > "$WORK/storage.tar.gz"
 
 ARCHIVE="$BACKUP_DIR/daily/classpulse-$STAMP.tar.age"
 tar -C "$WORK" -cf - db.dump storage.tar.gz | age -r "$BACKUP_AGE_RECIPIENT" -o "$ARCHIVE"

@@ -89,6 +89,15 @@ test.describe.serial('ClassPulse pilot flow', () => {
 
     const dialog = page.getByRole('dialog');
 
+    // AI provider selection (e.g. E2E_STT_PROVIDER=openai when no Sarvam key is available).
+    if (process.env.E2E_STT_PROVIDER) {
+      await page.goto('/admin/settings');
+      await page.getByLabel('STT provider').selectOption(process.env.E2E_STT_PROVIDER);
+      await page.getByLabel(/^STT model/).fill(process.env.E2E_STT_MODEL ?? 'whisper-1');
+      await page.getByRole('button', { name: /save/i }).click();
+      await expect(page.getByText(/saved/i).first()).toBeVisible();
+    }
+
     // Room
     await page.goto('/admin/rooms');
     await page.getByRole('button', { name: /add room/i }).first().click();
@@ -277,7 +286,8 @@ test.describe.serial('ClassPulse pilot flow', () => {
       configPath,
       JSON.stringify({
         server_url: process.env.E2E_API_URL ?? 'http://localhost:5000',
-        allow_insecure_http: true,
+        allow_insecure_http: !(process.env.E2E_API_URL ?? '').startsWith('https://'),
+        ca_file: process.env.E2E_AGENT_CA_FILE ?? null,
         device_id: `e2e-pi-${RUN.toLowerCase()}`,
         enrollment_token: token,
         data_dir: dataDir,

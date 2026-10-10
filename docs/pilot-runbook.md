@@ -40,10 +40,14 @@
 
 ```bash
 # from a machine near the VPS (not the VPS itself)
-API=https://app.school.org node apps/api/scripts/loadtest-live.mjs --students 100
+node apps/api/scripts/loadtest-live.mjs --base https://app.school.org \
+  --admin 'admin@school.org:<password>' --teacher 'teacher@school.org:<password>' \
+  --lesson <publishedLessonId> --students 100
 ```
 
-The script logs in seeded load-test students, joins a live session and answers every question. It reports p95 acknowledgement latency and dropped answers.
+The script imports N load-test students into the lesson's section, signs them in, joins a live session and answers every question. It reports p95 acknowledgement latency and dropped answers. Disable or delete the `Load Test NNN` accounts afterwards.
+
+Local reference run (2026-10-10, dev stack on one machine): 100/100 joined, 500/500 answers acknowledged, 0 dropped, ack latency p50 3 ms / p95 5 ms.
 
 **Targets:** p95 under 300 ms, 0 dropped answers, API memory stable.
 
