@@ -16,11 +16,14 @@
 		-Server
 	}
 
-	# Lecture uploads can be large; device chunks are ~2 MB.
-	request_body /api/lessons/* {
+	# Lecture uploads can be large; device chunks are ~2 MB. The matchers must not overlap: Caddy applies
+	# every matching request_body in turn, so a catch-all limit would also cap lecture uploads.
+	@lectureUpload path /api/lessons/*/audio
+	request_body @lectureUpload {
 		max_size 400MB
 	}
-	request_body {
+	@otherBodies not path /api/lessons/*/audio
+	request_body @otherBodies {
 		max_size 25MB
 	}
 
