@@ -11,7 +11,6 @@ import { storage, storageKeys } from '../src/lib/storage.js';
 import { sweepDevices } from '../src/modules/devices/sweep.js';
 import { anon, as, createInstitution, createRoom, createWorld } from './helpers.js';
 import {
-  ack,
   heartbeat,
   issueToken,
   pcm,

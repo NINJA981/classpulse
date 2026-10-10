@@ -1,6 +1,6 @@
 /** Fixtures shared by the devices and recordings tests. */
 import { createHash } from 'node:crypto';
-import { anon, as, createWorld } from './helpers.js';
+import { anon, as, type createWorld } from './helpers.js';
 
 export type World = Awaited<ReturnType<typeof createWorld>>;
 

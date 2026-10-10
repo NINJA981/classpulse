@@ -1,7 +1,7 @@
 import { ipKeyGenerator, rateLimit, type Options } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { ApiErrorBody } from '@classpulse/shared';
-import { isTest } from '../config/env.js';
+import { env, isTest } from '../config/env.js';
 import { getRedis } from '../lib/redis.js';
 
 function store(prefix: string): Options['store'] | undefined {
@@ -36,8 +36,8 @@ const identifier = (b: unknown) => {
   return typeof o?.email === 'string' ? o.email : typeof o?.rollNumber === 'string' ? o.rollNumber : undefined;
 };
 
-/** Login: 10 attempts / 15 min per IP+identifier. */
-export const loginLimiter = limiter('login', 15 * 60_000, 10, identifier);
+/** Login: LOGIN_RATE_LIMIT (default 10) attempts / 15 min per IP+identifier. */
+export const loginLimiter = limiter('login', 15 * 60_000, env.LOGIN_RATE_LIMIT, identifier);
 /** Live-quiz PIN lookups/joins: 30 / min per IP. */
 export const pinLimiter = limiter('pin', 60_000, 30);
 /** Paid AI calls (generation, remedial): 20 / hour per IP. */

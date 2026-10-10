@@ -33,7 +33,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.test.ts', '**/test/**/*.ts', 'apps/web/e2e/**/*.ts'],
+    files: [
+      '**/*.test.ts',
+      '**/test/**/*.ts',
+      'apps/web/e2e/**/*.ts',
+      'apps/api/src/scripts/**',
+      'apps/api/src/db/seed.dev.ts',
+      'apps/api/scripts/**',
+    ],
     rules: { 'no-console': 'off' },
   },
 );

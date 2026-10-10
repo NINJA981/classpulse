@@ -8,6 +8,9 @@
  * lecture recording at .e2e-fixtures/lecture-150s.mp3 (see docs/pilot-runbook.md).
  */
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 const RUN = Date.now().toString(36).slice(-5).toUpperCase();
@@ -62,6 +65,14 @@ async function readOneTimePassword(page: Page): Promise<string> {
   expect(value).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{2}$/);
   await page.getByRole('button', { name: 'I have saved it' }).click();
   return value;
+}
+
+function startAgent(configPath: string): ChildProcess {
+  const agentPy = path.resolve(import.meta.dirname, '../../classroom-agent/agent.py');
+  const child = spawn(process.env.PYTHON ?? 'python', [agentPy, '--config', configPath], { stdio: ['ignore', 'pipe', 'pipe'] });
+  child.stdout?.on('data', (d: Buffer) => process.env.E2E_AGENT_LOGS && process.stdout.write(`[agent] ${d}`));
+  child.stderr?.on('data', (d: Buffer) => process.env.E2E_AGENT_LOGS && process.stdout.write(`[agent] ${d}`));
+  return child;
 }
 
 async function newPage(browser: Browser): Promise<Page> {
@@ -196,7 +207,133 @@ test.describe.serial('ClassPulse pilot flow', () => {
     }
   });
 
-  test('5. teacher sees analytics for the attempts', async ({ browser }) => {
+  test('5. live quiz: teacher hosts, two students play to the end', async ({ browser }) => {
+    test.setTimeout(5 * 60_000);
+    const teacher = await newPage(browser);
+    await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD);
+    await teacher.goto(`${state.lessonUrl}/live`);
+    await teacher.getByLabel('Time per question').selectOption('20');
+    await teacher.getByRole('button', { name: 'Create live session' }).click();
+    await teacher.waitForURL(/session=/);
+    const sessionId = new URL(teacher.url()).searchParams.get('session')!;
+    const info = (await (await teacher.request.get(`/api/live-sessions/${sessionId}`)).json()) as { pin: string };
+    expect(info.pin).toMatch(/^\d{6}$/);
+
+    const players: Page[] = [];
+    for (const s of state.students) {
+      const p = await newPage(browser);
+      await studentLogin(p, s.roll, NEW_PASSWORD);
+      await p.goto(`/student/live?pin=${info.pin}`);
+      await p.getByRole('button', { name: 'Join game' }).click();
+      await expect(p.getByText(/waiting for your teacher/i)).toBeVisible();
+      players.push(p);
+    }
+    await expect(teacher.getByText(state.students[0]!.name).first()).toBeVisible();
+
+    await teacher.getByRole('button', { name: 'Start', exact: true }).click();
+    for (let q = 0; q < 5; q++) {
+      for (const [i, p] of players.entries()) {
+        const options = p.getByRole('radio');
+        await expect(options.first()).toBeEnabled();
+        await options.nth(i).click();
+        if (i === 1) await options.nth(2).click(); // revise the answer before the deadline
+        await expect(p.getByText(/answer saved/i)).toBeVisible();
+      }
+      await expect(teacher.getByText(`${players.length} / ${players.length} answered`)).toBeVisible();
+      await teacher.getByRole('button', { name: 'Close question' }).click();
+      for (const p of players) await expect(p.getByText(/correct|time's up|not quite|incorrect/i).first()).toBeVisible();
+      if (q < 4) await teacher.getByRole('button', { name: 'Next question' }).click();
+      else await teacher.getByRole('button', { name: 'Finish quiz' }).click();
+    }
+    await expect(teacher.getByText(state.students[1]!.name).first()).toBeVisible();
+    for (const p of players) await expect(p.getByRole('link', { name: /back to home/i })).toBeVisible();
+
+    const results = (await (await teacher.request.get(`/api/live-sessions/${sessionId}/results`)).json()) as {
+      leaderboard: { name: string; score: number }[];
+    };
+    expect(results.leaderboard).toHaveLength(2);
+    for (const p of [teacher, ...players]) await p.context().close();
+  });
+
+  test('6. classroom Raspberry Pi records a class end-to-end', async ({ browser }) => {
+    test.setTimeout(10 * 60_000);
+    // Admin provisions a device for the section's room.
+    const admin = await newPage(browser);
+    await staffLogin(admin, 'admin@demo.school', 'Admin@12345');
+    await admin.goto('/admin/devices');
+    await admin.getByRole('button', { name: 'Add classroom device' }).first().click();
+    const dlg = admin.getByRole('dialog');
+    await dlg.getByLabel('Room').selectOption({ label: `E2E Room ${RUN}` });
+    await dlg.getByLabel('Device name').fill(`E2E Pi ${RUN}`);
+    await dlg.getByRole('button', { name: /create|generate|add/i }).last().click();
+    const token = ((await dlg.getByLabel('Enrollment token', { exact: true }).textContent()) ?? '').trim();
+    expect(token.length).toBeGreaterThan(16);
+    await dlg.getByRole('button', { name: 'Done' }).click();
+
+    // Start the real agent with a WAV file as its "microphone".
+    const dataDir = await mkdtemp(path.join(os.tmpdir(), 'cp-agent-'));
+    const configPath = path.join(dataDir, 'agent.json');
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        server_url: process.env.E2E_API_URL ?? 'http://localhost:5000',
+        allow_insecure_http: true,
+        device_id: `e2e-pi-${RUN.toLowerCase()}`,
+        enrollment_token: token,
+        data_dir: dataDir,
+        chunk_seconds: 15,
+        heartbeat_interval_sec: 5,
+        min_free_disk_mb: 1,
+        audio_source: { type: 'file', path: path.resolve(import.meta.dirname, '../../../.e2e-fixtures/lecture-90s-16k.wav'), realtime: true },
+      }),
+    );
+    let agent = startAgent(configPath);
+    try {
+      await expect
+        .poll(async () => {
+          const devices = (await (await admin.request.get('/api/admin/devices')).json()) as { name: string; status: string }[];
+          return devices.find((d) => d.name === `E2E Pi ${RUN}`)?.status;
+        }, { timeout: 60_000 })
+        .toBe('online');
+      await admin.reload();
+      await expect(admin.getByText(`e2e-pi-${RUN.toLowerCase()}`, { exact: true })).toBeVisible();
+      await admin.context().close();
+
+      // Teacher starts the class recording from the web app.
+      const teacher = await newPage(browser);
+      await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD);
+      await teacher.goto('/teacher/record');
+      await teacher.getByLabel('Section').selectOption({ label: `${state.sectionName} — Mathematics` });
+      await teacher.getByLabel('Lesson title').fill(`Pi recorded class ${RUN}`);
+      await teacher.getByLabel('Subject').fill('Mathematics');
+      await teacher.getByRole('button', { name: 'Start recording' }).click();
+      await expect(teacher.getByLabel('Elapsed time')).toBeVisible({ timeout: 60_000 });
+      const recordingId = new URL(teacher.url()).searchParams.get('recording')!;
+
+      // Simulate a Pi crash/reboot mid-class: chunks on disk must still be uploaded.
+      await expect
+        .poll(async () => ((await (await teacher.request.get(`/api/recordings/${recordingId}`)).json()) as { chunksReceived: number }).chunksReceived, {
+          timeout: 90_000,
+        })
+        .toBeGreaterThanOrEqual(2);
+      agent.kill();
+      await new Promise((r) => setTimeout(r, 3_000));
+      agent = startAgent(configPath);
+
+      await new Promise((r) => setTimeout(r, 20_000));
+      await teacher.getByRole('button', { name: 'Stop recording' }).click();
+      await teacher.getByRole('button', { name: 'Stop and upload' }).click();
+      // Once the device finalizes, the recording panel moves the teacher to the lesson.
+      await teacher.waitForURL(/\/teacher\/lessons\/[0-9a-f-]{36}/, { timeout: 3 * 60_000 });
+      // Real AI generation on the Pi-recorded audio.
+      await expect(teacher.getByRole('button', { name: 'Approve all' })).toBeVisible({ timeout: 6 * 60_000 });
+      await teacher.context().close();
+    } finally {
+      agent.kill();
+    }
+  });
+
+  test('7. teacher sees analytics for the attempts', async ({ browser }) => {
     const page = await newPage(browser);
     await staffLogin(page, state.teacherEmail, NEW_PASSWORD);
     await page.goto(`${state.lessonUrl}/analytics`);

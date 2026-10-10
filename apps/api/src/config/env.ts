@@ -55,6 +55,8 @@ const EnvSchema = z
     GENERATION_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(2),
 
     FEATURE_SMS_OTP: bool,
+    /** Login attempts allowed per IP+identifier per 15 minutes. */
+    LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
     DEVICE_OFFLINE_AFTER_SEC: z.coerce.number().int().min(30).default(90),
   })
   .superRefine((e, ctx) => {
