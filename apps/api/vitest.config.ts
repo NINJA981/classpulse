@@ -23,6 +23,8 @@ export default defineConfig({
       SARVAM_API_KEY: '',
       OPENAI_API_KEY: '',
       LOG_LEVEL: 'silent',
+      // Never inherit a developer's local .env e2e switches.
+      E2E_MAIL_CAPTURE: 'false',
     },
   },
 });

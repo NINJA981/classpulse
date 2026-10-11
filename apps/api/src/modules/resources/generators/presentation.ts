@@ -26,6 +26,7 @@ import {
   resourceUsage,
   str,
 } from './common.js';
+import { maxOutputTokens } from '../../../pipeline/llm.js';
 import type { GenerationContext, GenerationResult, ResourceGenerator } from './types.js';
 
 export const MAX_BULLETS = 6;
@@ -266,7 +267,7 @@ export const generate: ResourceGenerator = async (ctx): Promise<GenerationResult
       schemaName: 'presentation',
       jsonSchema: presentationJsonSchema,
       zod: DeckOut,
-      maxTokens: Math.min(16_000, 1_500 + slideCount * (includeSpeakerNotes ? 450 : 220)),
+      maxTokens: Math.min(maxOutputTokens(ctx.model), 1_500 + slideCount * (includeSpeakerNotes ? 450 : 220)),
       check: (deck) => {
         const { hard, soft } = checkDeck(deck.slides, opts);
         return [...hard, ...soft];

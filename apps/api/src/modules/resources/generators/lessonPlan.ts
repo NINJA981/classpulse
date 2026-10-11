@@ -20,6 +20,7 @@ import {
   resourceUsage,
   str,
 } from './common.js';
+import { maxOutputTokens } from '../../../pipeline/llm.js';
 import type { GenerationContext, GenerationResult, ResourceGenerator } from './types.js';
 
 const INVALID = 'The AI returned an invalid lesson plan twice. Please try generating again.';
@@ -132,7 +133,7 @@ export const generate: ResourceGenerator = async (ctx): Promise<GenerationResult
       schemaName: 'lesson_plan',
       jsonSchema: lessonPlanJsonSchema,
       zod: LessonPlanOut,
-      maxTokens: Math.min(16_000, 5_000 + s.periods * 1_500),
+      maxTokens: Math.min(maxOutputTokens(ctx.model), 5_000 + s.periods * 1_500),
       check,
       invalidMessage: INVALID,
       usage: resourceUsage(ctx),

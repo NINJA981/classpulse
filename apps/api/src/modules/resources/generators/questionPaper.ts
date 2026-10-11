@@ -34,6 +34,7 @@ import {
   resourceUsage,
   str,
 } from './common.js';
+import { maxOutputTokens } from '../../../pipeline/llm.js';
 import type { GenerationContext, GenerationResult, ResourceGenerator } from './types.js';
 
 export type PaperOptions = z.infer<typeof QuestionPaperOptions>;
@@ -364,10 +365,10 @@ export const paperTotal = (content: QuestionPaperContent) =>
  * Prompt
  * ------------------------------------------------------------------------- */
 
-function maxTokensFor(specs: SectionSpec[]): number {
+function maxTokensFor(specs: SectionSpec[], model: string): number {
   const per: Record<PaperQuestionType, number> = { mcq: 220, assertion_reason: 260, very_short: 260, short: 380, long: 650, case_based: 750 };
   const est = specs.reduce((s, x) => s + x.count * per[x.type] * (x.internalChoice ? 1.8 : 1), 0);
-  return Math.min(16_000, Math.round(1_500 + est));
+  return Math.min(maxOutputTokens(model), Math.round(1_500 + est));
 }
 
 function systemPrompt(ctx: GenerationContext, college: boolean): string {
@@ -492,7 +493,7 @@ export const generate: ResourceGenerator = async (ctx): Promise<GenerationResult
       schemaName: 'question_paper',
       jsonSchema: paperJsonSchema,
       zod: RawPaper,
-      maxTokens: maxTokensFor(specs),
+      maxTokens: maxTokensFor(specs, ctx.model),
       check: (value) => analyzePaper(value, specs).issues,
       invalidMessage: INVALID_MESSAGE,
       usage: resourceUsage(ctx),

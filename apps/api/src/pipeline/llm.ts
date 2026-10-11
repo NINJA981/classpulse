@@ -320,6 +320,16 @@ export function requireKey(): string {
  * One Chat Completions call. With a `usage` context the call is recorded in ai_usage (tokens on success,
  * an error code on failure); without one, callers may record it themselves with `recordAiUsage`.
  */
+/**
+ * Output-token ceiling for a model: GPT-4o-family models stop at 16,384 output tokens, GPT-4.1 at 32,768 and
+ * GPT-5 higher. Unknown models (e.g. a self-hosted one behind OPENAI_BASE_URL) get the conservative 16k.
+ */
+export function maxOutputTokens(model: string): number {
+  if (/^gpt-4\.1/.test(model)) return 32_000;
+  if (/^gpt-5/.test(model)) return 64_000;
+  return 16_000;
+}
+
 export async function chat(
   model: string,
   messages: ChatMessage[],
@@ -473,7 +483,7 @@ export async function generateWithOpenAI(input: GenerateInput): Promise<Generate
   }
   const local = wantsLocal(input.language, input.bilingual);
   const schema = generationJsonSchema(local);
-  const maxTokens = Math.min(16_000, 2_500 + input.questionsPerLesson * (local ? 900 : 500));
+  const maxTokens = Math.min(maxOutputTokens(input.model), 2_500 + input.questionsPerLesson * (local ? 900 : 500));
   const messages = generationMessages(input, blocks, local);
   const ctx = { questionCount: input.questionsPerLesson, blocks, local, difficulty: input.difficulty };
 
@@ -548,7 +558,7 @@ async function topUpQuestions(
         (existing.length ? ', each on a point of the lecture that the existing questions do not test. ' : '. ') +
         'Return JSON with only a "questions" array.',
     });
-    const maxTokens = Math.min(16_000, 1_000 + want * (local ? 900 : 500));
+    const maxTokens = Math.min(maxOutputTokens(input.model), 1_000 + want * (local ? 900 : 500));
     const json = parseJsonContent(await chat(input.model, messages, 'lesson_quiz_more', schema, maxTokens, input.usage));
     const raw = json.ok && json.value && typeof json.value === 'object' ? (json.value as { questions?: unknown }).questions : null;
     if (!Array.isArray(raw)) {

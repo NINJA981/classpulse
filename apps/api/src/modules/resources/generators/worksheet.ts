@@ -24,6 +24,7 @@ import {
   resourceUsage,
   str,
 } from './common.js';
+import { maxOutputTokens } from '../../../pipeline/llm.js';
 import type { GenerationContext, GenerationResult, ResourceGenerator } from './types.js';
 
 const INVALID = 'The AI returned an invalid worksheet twice. Please try generating again.';
@@ -190,7 +191,7 @@ export const generate: ResourceGenerator = async (ctx): Promise<GenerationResult
       schemaName: 'worksheet',
       jsonSchema: worksheetJsonSchema,
       zod: WorksheetOut,
-      maxTokens: Math.min(16_000, 2_000 + s.itemCount * 350),
+      maxTokens: Math.min(maxOutputTokens(ctx.model), 2_000 + s.itemCount * 350),
       check,
       invalidMessage: INVALID,
       usage: resourceUsage(ctx),
