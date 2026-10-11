@@ -66,7 +66,14 @@ function BuildLog({ id }: { id: string }) {
   if (logs.isPending) return <Skeleton className="h-24 w-full" />;
   if (logs.error) return <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />;
   if (!logs.data.configured) return null;
-  if (logs.data.lines.length === 0) return <p className="text-sm text-muted">No build output recorded.</p>;
+  if (logs.data.lines.length === 0) {
+    return (
+      <p className="text-sm text-muted">
+        No build output available. Coolify only shares build logs with API tokens that have the “read:sensitive”
+        permission — open this deployment in Coolify to read its log.
+      </p>
+    );
+  }
   return (
     <pre
       tabIndex={0}
