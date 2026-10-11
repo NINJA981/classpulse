@@ -29,11 +29,12 @@ type Step =
 /** Into the console (full navigation: the console layout must run again). */
 const enterConsole = () => window.location.assign('/platform');
 
-function Panel({ eyebrow = 'ClassPulse platform', title, description, children }: { eyebrow?: string; title: string; description?: ReactNode; children: ReactNode }) {
+/** Same card as the school sign-in pages (components/auth/role-login.tsx), so every sign-in looks alike. */
+function Panel({ eyebrow = 'ClassPulse', title, description, children }: { eyebrow?: string; title: string; description?: ReactNode; children: ReactNode }) {
   return (
-    <div className="w-full max-w-md border border-line bg-surface p-6 rounded-card shadow-pop sm:p-8">
+    <div className="w-full max-w-md border border-line-strong bg-surface p-6 shadow-hard rounded-card sm:p-8">
       <p className="eyebrow">{eyebrow}</p>
-      <h1 className="font-display text-2xl font-black">{title}</h1>
+      <h1 className="font-display text-3xl font-black">{title}</h1>
       {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       <div className="mt-6">{children}</div>
     </div>
@@ -69,7 +70,7 @@ function QrImage({ uri }: { uri: string }) {
     };
   }, [uri]);
   if (!src) return <Skeleton className="size-[200px]" />;
-  // White quiet zone so phone cameras read it on the dark theme.
+  // White quiet zone so phone cameras can always read it.
   return <img src={src} alt="QR code for your authenticator app" width={200} height={200} className="size-[200px] rounded-control bg-white" />;
 }
 
@@ -84,7 +85,7 @@ function PasswordStep({ onNext }: { onNext: (res: PlatformLoginResponse) => void
     void run(async () => onNext(await api.post<PlatformLoginResponse>('/platform/auth/login', { email, password })));
   };
   return (
-    <Panel title="Platform sign in" description="For ClassPulse operators only. School staff and students sign in on their school’s address.">
+    <Panel title="Super admin sign in" description="For ClassPulse operators only. School staff and students sign in on their school’s address.">
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Email" required>
           {(p) => <Input {...p} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />}
@@ -97,6 +98,9 @@ function PasswordStep({ onNext }: { onNext: (res: PlatformLoginResponse) => void
           Continue
         </Button>
       </form>
+      <p className="mt-6 border-t border-line pt-4 text-xs text-muted">
+        Next you’ll enter the 6-digit code from your authenticator app. Lost your phone? Use one of your recovery codes.
+      </p>
     </Panel>
   );
 }

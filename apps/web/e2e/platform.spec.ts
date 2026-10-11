@@ -60,7 +60,7 @@ test.describe.serial('platform console', () => {
     await page.goto('/platform');
     await expect(page).toHaveURL(/\/platform\/login/);
 
-    await expect(page.getByRole('heading', { name: 'Platform sign in' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Super admin sign in' })).toBeVisible();
     await page.getByLabel('Email').fill(PLATFORM_EMAIL);
     await page.getByLabel('Password').fill(PLATFORM_PASSWORD);
     await page.getByRole('button', { name: 'Continue' }).click();

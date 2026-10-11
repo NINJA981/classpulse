@@ -17,13 +17,8 @@ export const metadata: Metadata = {
  */
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
   const path = (await headers()).get('x-cp-path') ?? '';
-  if (path === '/platform/login') {
-    return (
-      <div data-theme="platform" className="min-h-dvh">
-        {children}
-      </div>
-    );
-  }
+  // The sign-in page uses the same light design as the school sign-in pages; the console itself is dark.
+  if (path === '/platform/login') return <div className="min-h-dvh">{children}</div>;
   const admin = await getPlatformAdmin();
   if (!admin || admin.mustChangePassword) redirect('/platform/login');
   return (
