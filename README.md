@@ -2,6 +2,8 @@
 
 ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones.
 
+**New here? Read [docs/HANDBOOK.md](docs/HANDBOOK.md)**: the complete guide to every feature, the architecture, the AI pipeline, the hardware, the deployment and operations, with an FAQ and a glossary.
+
 | | |
 |---|---|
 | `apps/api` | Express 5 + Socket.IO + PostgreSQL (Drizzle) + BullMQ worker |

@@ -8,8 +8,7 @@ apps/web              One Next.js 16 App Router app serving /admin, /teacher and
 apps/classroom-agent  Raspberry Pi agent (Python 3, standard library only)
 packages/shared       zod schemas and TypeScript types shared by the API and the web app
 infra/                Docker Compose files, Caddy config, backup and restore scripts
-docs/                 Architecture, API, database, deployment, hardware and runbook docs
-legacy/               Read-only source of the old apps, kept for reference during the port. Never import from it.
+docs/                 Handbook, architecture, API, database, deployment, hardware and runbook docs
 ```
 
 ## API (`apps/api`)
