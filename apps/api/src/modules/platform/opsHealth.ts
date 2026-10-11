@@ -184,7 +184,7 @@ export async function checkWorker(): Promise<OpsWorkerHealth> {
     const stale = age === null || age > WORKER_STALE_SEC;
     return {
       status: stale ? 'down' : 'ok',
-      detail: stale ? 'Worker heartbeat is stale' : `Heartbeat ${age}s ago · ${hb.version ?? 'dev'}`,
+      detail: stale ? 'Worker heartbeat is stale' : `Heartbeat ${age}s ago · ${(hb.version ?? 'dev').slice(0, 7)}`,
       heartbeatAgeSec: age,
       pid: typeof hb.pid === 'number' ? hb.pid : null,
       startedAt: iso(hb.startedAt),

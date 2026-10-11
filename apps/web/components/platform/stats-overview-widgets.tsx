@@ -35,7 +35,6 @@ export function OverviewKpis() {
   const o = q.data;
   return (
     <section aria-label="Key figures" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard label="Schools" value={formatInt(o.schools)} hint={`${o.activeSchools} active · ${o.suspendedSchools} suspended`} />
       <StatCard label="Active users today" value={formatInt(o.activeUsersToday)} hint="Signed in since midnight (India time)" />
       <StatCard label="Lessons this week" value={formatInt(o.lessonsThisWeek)} hint="Created since Monday" />
       <StatCard label="AI cost this month" value={formatUsd(o.aiCostThisMonthUsd)} hint="Estimate — check your provider invoices" />

@@ -23,6 +23,9 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
+# Listable (not readable) for the API container, which checks backup age through a read-only mount.
+# The archives themselves stay 0600 and are age-encrypted.
+chmod 755 "$BACKUP_DIR" "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
 
 echo "[$(date -u +%FT%TZ)] Dumping PostgreSQL…"
 pg_exec pg_dump -U classpulse -d classpulse -Fc --no-owner > "$WORK/db.dump"

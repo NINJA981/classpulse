@@ -227,7 +227,9 @@ export function OpsHealthView() {
           </ComponentCard>
           <ComponentCard title="Worker" c={h.worker}>
             <Detail label="Heartbeat">{h.worker.heartbeatAgeSec === null ? '—' : `${formatAge(h.worker.heartbeatAgeSec)} ago`}</Detail>
-            <Detail label="Version">{h.worker.version ?? '—'}</Detail>
+            <Detail label="Version">
+              <span title={h.worker.version ?? undefined}>{h.worker.version ? h.worker.version.slice(0, 7) : '—'}</span>
+            </Detail>
             <Detail label="Started">{formatRelative(h.worker.startedAt)}</Detail>
           </ComponentCard>
           <ComponentCard title="API process" c={h.api}>
@@ -235,7 +237,7 @@ export function OpsHealthView() {
             <Detail label="Memory (RSS)">{formatBytes(h.api.rssBytes)}</Detail>
             <Detail label="Heap used">{formatBytes(h.api.heapUsedBytes)}</Detail>
             <Detail label="Node / version">
-              {h.api.nodeVersion} · {h.api.version}
+              {h.api.nodeVersion} · <span title={h.api.version}>{h.api.version.slice(0, 7)}</span>
             </Detail>
           </ComponentCard>
           <ComponentCard title="Storage" c={h.storage}>
