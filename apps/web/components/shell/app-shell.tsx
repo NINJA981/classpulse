@@ -52,6 +52,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
                 href={item.href}
                 onClick={() => setOpen(false)}
                 aria-current={active ? 'page' : undefined}
+                data-tour={`nav${item.href.replace(/\//g, '-')}`}
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-control',
                   active ? 'bg-accent text-accent-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink',
@@ -85,7 +86,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
           <span className="font-display text-lg font-black">ClassPulse</span>
-          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="p-1.5">
+          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" data-tour="nav-menu" className="p-1.5">
             <Menu className="size-5" />
           </button>
         </header>
@@ -101,7 +102,8 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           </div>
         )}
 
-        <main id="main" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
+        {/* tabIndex -1: focus can land here programmatically (e.g. when a guided tour closes). */}
+        <main id="main" tabIndex={-1} className="min-w-0 px-4 py-6 outline-none sm:px-8 sm:py-8">
           <div className="mx-auto max-w-6xl">
             <NoticeBanners notice={me?.notice} className="mb-6" />
             {children}

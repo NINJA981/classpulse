@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound } from 'lucide-react';
+import { Compass, KeyRound } from 'lucide-react';
 import type { SessionResponse, StudentSection, UpdateStudentProfileInput } from '@classpulse/shared';
 import {
   Button,
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import { SectionsList } from '@/components/student/common';
 import { GuardiansCard } from '@/components/student/profile/guardians-card';
+import { useTourControls } from '@/components/tour';
 import { ApiError, api } from '@/lib/api';
 import { useSessionUser } from '@/lib/session-context';
 
@@ -137,11 +138,28 @@ function ClassesCard() {
   );
 }
 
+function TourCard() {
+  const tour = useTourControls();
+  if (!tour) return null;
+  return (
+    <Card>
+      <CardHeader eyebrow="Help" title="Guided tour" />
+      <CardBody className="flex flex-col items-start gap-3">
+        <p className="text-sm text-ink-2">New here, or forgot where something is? Walk through the student pages again, step by step.</p>
+        <Button variant="secondary" size="lg" onClick={tour.start} icon={<Compass className="size-5" aria-hidden />}>
+          Take the tour again
+        </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function ProfilePage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <PageHeader eyebrow="Account" title="My profile" />
       <ProfileCard />
+      <TourCard />
       <ClassesCard />
       <GuardiansCard />
     </div>

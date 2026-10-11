@@ -84,7 +84,7 @@ function DashboardBody({ data }: { data: StudentDashboard }) {
         </Link>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div data-tour="home-stats" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Average score" value={formatPct(data.averageScorePct)} icon={<Trophy className="size-4" aria-hidden />} />
         <StatCard label="Quizzes to do" value={data.pendingQuizzes.length} icon={<ListChecks className="size-4" aria-hidden />} />
         <div className="col-span-2 sm:col-span-1">
