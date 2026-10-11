@@ -136,8 +136,12 @@ test.describe('on a phone', () => {
 
       if (await page.getByRole('dialog', { name: 'Quizzes', exact: true }).isVisible()) {
         // The sidebar is collapsed, so the spotlight sits on the ☰ button.
-        const spot = (await page.getByTestId('tour-spotlight').boundingBox())!;
         const button = (await menu.boundingBox())!;
+        // The spotlight glides between targets (300 ms); wait until it has settled on the button.
+        await expect
+          .poll(async () => (await page.getByTestId('tour-spotlight').boundingBox())?.y ?? Infinity)
+          .toBeLessThanOrEqual(button.y);
+        const spot = (await page.getByTestId('tour-spotlight').boundingBox())!;
         expect(spot.x).toBeLessThanOrEqual(button.x);
         expect(spot.y).toBeLessThanOrEqual(button.y);
         expect(spot.x + spot.width).toBeGreaterThanOrEqual(button.x + button.width);
