@@ -7,7 +7,8 @@
  * Requires the dev stack with a fresh platform admin created by
  *   npm run create-superadmin -w @classpulse/api -- --email <E2E_PLATFORM_EMAIL> --name "E2E Platform"
  * and E2E_PLATFORM_EMAIL / E2E_PLATFORM_PASSWORD (the printed initial password) in the environment.
- * The API needs PLATFORM_ENCRYPTION_KEY set.
+ * The API needs PLATFORM_ENCRYPTION_KEY set. When the console has its own host (production), run with
+ * E2E_BASE_URL=<console origin> and E2E_SCHOOL_URL=<school origin>.
  */
 import { createHmac } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
@@ -19,6 +20,8 @@ const PLATFORM_NEW_PASSWORD = `Platform@${RUN}2026!`;
 const SCHOOL = { name: `E2E Platform School ${RUN}`, code: `P${RUN}` };
 const ADMIN = { name: `Platform Admin ${RUN}`, email: `platform.admin.${RUN.toLowerCase()}@demo.school` };
 const ADMIN_NEW_PASSWORD = `SchoolAdmin@${RUN}1!`;
+/** School-side origin; empty when the console and the school site share one origin (dev). */
+const SCHOOL_URL = (process.env.E2E_SCHOOL_URL ?? '').replace(/\/+$/, '');
 const BANNER = `Scheduled maintenance tonight ${RUN}`;
 
 /** RFC 6238 TOTP (SHA-1, 30 s, 6 digits) from a base32 secret. */
@@ -35,7 +38,7 @@ function totp(base32: string, at = Date.now()): string {
 }
 
 async function schoolAdminLogin(page: Page, password: string) {
-  await page.goto('/admin/login');
+  await page.goto(`${SCHOOL_URL}/admin/login`);
   await page.getByLabel('Email').fill(ADMIN.email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
@@ -121,9 +124,10 @@ test.describe.serial('platform console', () => {
     await page.getByLabel('Confirm new password').fill(ADMIN_NEW_PASSWORD);
     await page.getByRole('button', { name: 'Save and continue' }).click();
     await page.waitForURL(/\/admin(\/|$)/);
-    // The console is a different identity: a school session doesn't open it.
-    await page.goto('/platform');
-    await expect(page).toHaveURL(/\/platform\/login/);
+    // The console is a different identity: a school session doesn't open it (and on its own host it doesn't exist).
+    const res = await page.goto(`${SCHOOL_URL}/platform`);
+    if (SCHOOL_URL) expect(res?.status()).toBe(404);
+    else await expect(page).toHaveURL(/\/platform\/login/);
     await ctx.close();
   });
 

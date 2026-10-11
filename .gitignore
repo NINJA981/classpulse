@@ -20,7 +20,7 @@ uploads/
 storage/
 .pg-data/
 *.log
-logs/
+/logs/
 playwright-report/
 test-results/
 
