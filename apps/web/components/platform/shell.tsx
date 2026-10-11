@@ -112,7 +112,7 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
         </header>
         {open && (
           <div className="fixed inset-0 z-40 lg:hidden">
-            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
+            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
             <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] bg-surface shadow-pop">
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 p-1">
                 <X className="size-5" />
