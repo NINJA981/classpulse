@@ -22,6 +22,7 @@ import { hashPassword, randomToken, sha256Hex } from '../../lib/crypto.js';
 import { appUrl, renderEmail } from '../../lib/emailTemplates.js';
 import { badRequest, notFound } from '../../lib/errors.js';
 import { emailEnabled, type MailMessage } from '../../lib/mailer.js';
+import { institutionState } from '../../lib/platformState.js';
 import { bumpTokenVersion, revokeOpenTokens } from './accounts.js';
 
 type UserRow = typeof users.$inferSelect;
@@ -122,6 +123,10 @@ export async function issueTokenFor(
   const email = target.email;
   if (!email) return 'no_email';
   if (!emailEnabled()) return 'email_disabled';
+  // The platform can switch emailed links off per school (feature "emailInvites"): admins fall back to passwords.
+  const [owner] = await db.select({ institutionId: users.institutionId }).from(users).where(eq(users.id, target.id));
+  const school = owner?.institutionId ? await institutionState(owner.institutionId) : null;
+  if (school && !school.features.emailInvites) return 'email_disabled';
 
   const raw = randomToken(32);
   const tokenId = await db.transaction(async (tx) => {

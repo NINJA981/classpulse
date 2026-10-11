@@ -2,9 +2,10 @@ import express from 'express';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SESSION_COOKIE } from '@classpulse/shared';
+import { DEFAULT_INSTITUTION_FEATURES, SESSION_COOKIE } from '@classpulse/shared';
 import { db } from '../src/db/client.js';
-import { passwordTokens, users } from '../src/db/schema/index.js';
+import { institutions, passwordTokens, users } from '../src/db/schema/index.js';
+import { invalidateInstitutionState } from '../src/lib/platformState.js';
 import { setMailerForTests, type MailMessage } from '../src/lib/mailer.js';
 import { mailCaptureRouter } from '../src/modules/testing/routes.js';
 import { anon, as, createUser, createWorld, TEST_PASSWORD } from './helpers.js';
@@ -111,6 +112,20 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(res.status).toBe(201);
       expect(res.body.invite).toBe('email_disabled');
       expect(res.body.initialPassword).toBeTruthy();
+      expect(await db.select().from(passwordTokens)).toHaveLength(0);
+    });
+
+    it('sends no link when the platform switched email invitations off for the school', async () => {
+      await db
+        .update(institutions)
+        .set({ features: { ...DEFAULT_INSTITUTION_FEATURES, emailInvites: false } })
+        .where(eq(institutions.id, world.institution.id));
+      invalidateInstitutionState(world.institution.id);
+      const res = await as(world.admin).post('/api/admin/teachers').send({ name: 'Off Switch', email: 'off@school.in' });
+      expect(res.status).toBe(201);
+      expect(res.body.invite).toBe('email_disabled');
+      expect(res.body.initialPassword).toBeTruthy();
+      expect(outbox).toHaveLength(0);
       expect(await db.select().from(passwordTokens)).toHaveLength(0);
     });
 

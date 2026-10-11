@@ -5,10 +5,11 @@
 > **How to use it:**
 > - **Specific question:** jump to the [FAQ](#20-faq--questions-you-may-be-asked) first, then to the section it points to.
 > - **Full picture:** read sections 1–3 in order.
+> - **Running the service as its owner** (adding schools, switching features off, watching costs, logs and health): go to [section 15.5, the platform console guide](#155-the-platform-console-owners-guide).
 >
 > **Secrets are deliberately not in this file.** That covers passwords, API keys and private keys, because this repository is stored on GitHub. Section 14.8 says where each secret lives.
 >
-> **Last updated:** 11 October 2026 (commit `678b239` and later).
+> **Last updated:** 11 October 2026 (commit `ceb780c`: platform console, separate sign-in pages, teacher AI tools, secure exams, better assignments, email invitations, installable app).
 
 ---
 
@@ -53,23 +54,26 @@ After a lecture, teachers rarely have time to write good questions that check wh
 - gives **students** a quiz with explanations, plus a **live quiz** mode for in-class engagement,
 - gives teachers **analytics** (which questions the class got wrong) and an **AI remedial plan** (what to re-teach).
 
-### 1.3 Who uses it (the three roles)
+### 1.3 Who uses it (the three school roles, plus the owner)
 | Role | Who | Where they work | What they do |
 |---|---|---|---|
-| **Admin** | School office / principal / IT person | `/admin` ("Admin console") | Sets up the school: rooms, classes ("sections"), teachers, students, timetable, classroom devices, AI settings |
-| **Teacher** | Subject teachers | `/teacher` ("Teacher studio") | Records or uploads lectures, generates and reviews quizzes, publishes them, runs live quizzes, views analytics |
-| **Student** | Students (mostly on phones) | `/student` ("Student portal") | Joins classes with a code, takes quizzes, plays live quizzes, submits assignments, manages guardian contacts |
+| **Admin** | School office / principal / IT person | `/admin` ("Admin console"); signs in at `/admin/login` | Sets up the school: rooms, classes ("sections"), teachers, students, timetable, classroom devices, AI settings |
+| **Teacher** | Subject teachers | `/teacher` ("Teacher studio"); signs in at `/teacher/login` | Records or uploads lectures, generates and reviews quizzes, runs live quizzes, sets secure exams and assignments, uses the AI teaching tools (lesson plans, worksheets, question papers, presentations), views analytics |
+| **Student** | Students (mostly on phones) | `/student` ("Student portal"); signs in at `/student/login` | Joins classes with a code, takes quizzes and exams, plays live quizzes, hands in assignments (text, photos, files), manages guardian contacts |
+| **Super admin** (platform operator) | The owner of ClassPulse (you), not a school | `/platform` ("Platform console"), on its own address | Adds schools and their admins, suspends schools, switches features off per school, sets limits, watches health, logs, costs and deployments (section 15.5) |
 
-One installation can serve **many schools** ("multi-tenant"). Each school's data is completely separate.
+One installation can serve **many schools** ("multi-tenant"). Each school's data is completely separate. Super admins sit above all schools and are not part of any school.
 
 ### 1.4 Current status (October 2026)
 - **Stage:** ready for a **pilot**, meaning a first real-world trial with about 100 users at one school.
 - **Live at:** `https://classpulse.129.159.227.74.sslip.io`. This is a temporary address. It moves to `https://classpulse.benxsolutions.in` once the DNS record is added (see 14.3).
+- **Platform console:** `https://ops.129.159.227.74.sslip.io/platform` (temporary), moving to `https://ops.benxsolutions.in` with the same DNS change.
 - **Servers:** a single cloud server (Oracle Cloud), managed with **Coolify**.
 - **Accounts:**
   - `admin@benxsolutions.in` for "BenX Pilot School" (code `BENX`)
   - `admin2@benxsolutions.in` for "BenX School 2" (code `BENX2`)
   - a test school, "E2E Test School" (code `E2ETEST`), used by automated tests
+  - super admin accounts for the console, created on the server with `create-superadmin` (section 15.5.1)
 
 ---
 
@@ -93,11 +97,12 @@ One installation can serve **many schools** ("multi-tenant"). Each school's data
 |---|---|---|
 | **Web app** | What people see in their browser: the pages, buttons and forms | `apps/web` |
 | **API** | The "brain" on the server. Every action (log in, save a question, start a quiz) is a request to the API, which checks permissions and reads/writes the database | `apps/api` |
-| **Worker** | A background helper that does slow jobs (transcription and quiz writing) so the website stays fast | `apps/api/src/worker.ts` (same code as the API, different program) |
+| **Worker** | A background helper that does slow jobs so the website stays fast. It works through three queues: `lesson-generation` (transcription and quiz writing), `email` (invitations, password resets, reminders) and `resources` (lesson plans, worksheets, question papers, presentations). It also runs timed housekeeping such as closing finished exams and deleting old logs | `apps/api/src/worker.ts` (same code as the API, different program) |
 | **PostgreSQL** | The database: where all users, classes, lessons, questions and results are stored permanently | Docker container `postgres` |
 | **Redis** | A fast in-memory store used as the **job queue** (the list of jobs waiting for the worker), for login rate limiting, and for passing messages from the worker to the API | Docker container `redis` |
 | **Storage** | A folder on the server's disk holding the lecture audio files | Docker volume `storage-data` |
-| **Router (Caddy)** | Sends `/api/...` and `/socket.io/...` requests to the API and everything else to the web app | `infra/Caddyfile.coolify` |
+| **Router (Caddy)** | Sends `/api/...` and `/socket.io/...` requests to the API and everything else to the web app. It also keeps the platform console on its own address: on a school address `/platform` answers "Not found", and the console address serves nothing but the console | `infra/Caddyfile.coolify` |
+| **Email** (optional) | Sends invitation and password-reset links and assignment reminders, through a normal mailbox (Gmail or GoDaddy) | `apps/api/src/lib/mailer.ts` |
 | **Traefik** | Coolify's front door: handles HTTPS certificates and forwards traffic to the router | Managed by Coolify |
 | **Classroom agent** | A small Python program on the Raspberry Pi that records audio and uploads it | `apps/classroom-agent` |
 | **Shared contracts** | One shared definition of every data shape (what a "lesson" looks like, etc.) used by both the web app and the API so they never disagree | `packages/shared` |
@@ -145,6 +150,11 @@ Example: a teacher clicks **Approve** on a question.
 | Passwords | **bcryptjs** | 3 | Industry-standard password hashing. |
 | Sessions | **jsonwebtoken** (JWT) | 9 | A signed login token stored in a secure cookie. |
 | Audio processing | **ffmpeg** | system package | Converts any uploaded audio to a standard format (16 kHz mono WAV) and measures its length. |
+| Email | **nodemailer** | 7 | Sends email through an ordinary mailbox over SMTP (Gmail or GoDaddy). |
+| Word / PowerPoint export | **docx**, **pptxgenjs** | 9 / 4 | Build the `.docx` and `.pptx` files teachers download from the AI teaching tools. |
+| Reading uploads | **unpdf**, **mammoth** | 1 / 1 | Pull the text out of teachers' PDF and Word materials so the AI can use them. |
+| Two-factor sign-in | Built-in TOTP (the standard behind authenticator apps) | — | Super admins confirm each sign-in with a 6-digit code from an authenticator app. No extra service is needed. |
+| Installable app | Web app manifest + a small service worker | — | Lets phones and computers install ClassPulse like an app, with an offline page. |
 | Speech-to-text | **Sarvam AI** (`saaras:v3`, `saarika:v2.5`) or **OpenAI Whisper** | API | Sarvam is built for Indian languages and handles code-mixed speech; Whisper is the alternative. |
 | Quiz writing (LLM) | **OpenAI** (`gpt-4.1-mini` default; `gpt-4o-mini`, `gpt-4.1`, `gpt-4o`, `gpt-5-mini`) | API | Strong at following a strict output format ("structured outputs"). |
 | Device software | **Python 3** (standard library only) | 3.11+ | Runs on the Raspberry Pi with nothing extra to install. |
@@ -173,6 +183,8 @@ The original backend used MongoDB. It was replaced with PostgreSQL because:
 ### 3.4 Why a separate worker
 Transcribing a 25-minute lecture takes about 30–60 seconds, and writing a quiz about 10–40 seconds. If the API did this itself, it would be tied up while waiting. Instead the API puts a **job** in the Redis queue and replies immediately ("queued"). The worker picks the job up, does the slow work, and reports progress back. If the worker crashes or restarts, the job is **retried automatically**, up to 3 attempts.
 
+The same applies to email (5 attempts per message) and to the teacher AI tools (2 attempts per generation). Failed jobs from any of the three queues can be retried from the platform console's Health page.
+
 ---
 
 ## 4. A tour of the code repository
@@ -188,26 +200,30 @@ BenX/                                   ← repository root (GitHub: NINJA981/cl
 │   │   │   ├── config/env.ts           ← reads + validates environment variables (settings)
 │   │   │   ├── db/
 │   │   │   │   ├── schema/*.ts         ← database table definitions
-│   │   │   │   ├── migrations/*.sql    ← database change history (0000_init, 0001_teacher_quiz_generation)
+│   │   │   │   ├── migrations/*.sql    ← database change history (0000_init … 0004_teacher_tools)
 │   │   │   │   ├── migrate.ts          ← applies migrations
 │   │   │   │   └── seed.dev.ts         ← demo data for local development only
 │   │   │   ├── modules/<feature>/      ← one folder per feature: routes.ts (URLs) + service.ts (rules)
+│   │   │   │                             (incl. platform/, exams/, assignments/, curriculum/, resources/)
 │   │   │   ├── middleware/             ← login check, role check, validation, rate limits, errors
 │   │   │   ├── pipeline/               ← AI: sarvam.ts, openaiStt.ts, llm.ts, providers.ts
 │   │   │   ├── jobs/                   ← queue, worker logic, audio retention, periodic tasks
 │   │   │   ├── sockets/                ← live quiz real-time engine
 │   │   │   ├── realtime/notify.ts      ← pushes progress from worker → teacher's browser
-│   │   │   ├── lib/                    ← helpers: crypto, storage, ffmpeg, logger, errors
-│   │   │   └── scripts/createAdmin.ts  ← command to create a school admin
+│   │   │   ├── lib/                    ← helpers: crypto, storage, ffmpeg, logger, errors, mailer, totp, aiUsage
+│   │   │   └── scripts/                ← createAdmin.ts (school admin), createSuperAdmin.ts (console account)
 │   │   ├── scripts/loadtest-live.mjs   ← 100-student live quiz load test
-│   │   ├── test/*.test.ts              ← 19 automated test files (211 tests)
+│   │   ├── test/*.test.ts              ← 32 automated test files (409 tests)
 │   │   └── Dockerfile                  ← how the API/worker container image is built
 │   ├── web/                            ← the website (Next.js)
-│   │   ├── app/                        ← pages: /login, /admin/*, /teacher/*, /student/*
-│   │   ├── components/                 ← building blocks: ui/ (buttons, tables…), admin/, teacher/, student/
+│   │   ├── app/                        ← pages: /login, /admin/*, /teacher/*, /student/*, /platform/*
+│   │   ├── components/                 ← building blocks: ui/ (buttons, tables…), admin/, teacher/, student/,
+│   │   │                                 platform/ (the super admin console), auth/ (sign-in pages)
 │   │   ├── lib/                        ← api.ts (talks to API), socket.ts (live), server-session.ts
-│   │   ├── proxy.ts                    ← redirects signed-out visitors to /login
-│   │   ├── e2e/full-flow.spec.ts       ← end-to-end browser test (7 steps)
+│   │   ├── public/sw.js, app/manifest.ts ← installable app (PWA) and offline page
+│   │   ├── proxy.ts                    ← sends signed-out visitors to the right sign-in page
+│   │   ├── e2e/*.spec.ts               ← end-to-end browser tests (full-flow, accounts, exams,
+│   │   │                                 assignments, platform, teacher-tools)
 │   │   └── Dockerfile
 │   └── classroom-agent/                ← Raspberry Pi software (Python)
 │       ├── agent.py                    ← the recorder/uploader program
@@ -215,7 +231,8 @@ BenX/                                   ← repository root (GitHub: NINJA981/cl
 │       ├── classpulse-agent.service    ← makes it run automatically (systemd)
 │       ├── agent.example.json          ← example settings file
 │       └── tests/test_agent.py         ← 11 automated tests
-├── packages/shared/src/                ← shared data definitions (lessons, live quiz, devices, settings…)
+├── packages/shared/src/                ← shared data definitions (lessons, live quiz, devices, settings, exams,
+│                                          assignments, teacher tools, platform…)
 ├── infra/                              ← deployment files
 │   ├── docker-compose.coolify.yml      ← production setup used on Coolify
 │   ├── docker-compose.prod.yml         ← alternative: plain single-server setup with its own HTTPS
@@ -239,28 +256,48 @@ BenX/                                   ← repository root (GitHub: NINJA981/cl
 ### 5.1 Schools (institutions)
 - Each school has a **name**, a short unique **code** (for example `BENX`), a **time zone** (default Asia/Kolkata) and an **academic year**.
 - Every user, room, section and lesson belongs to exactly one school. All data access is limited to the user's own school.
-- A school is created with the `createAdmin` command (section 15.3), which also creates its first admin.
+- A school is created in the **platform console** (Schools → New school), which also creates its first admin (section 15.5.2). The older `createAdmin` command on the server still works (section 15.3).
+- Each school also has a **status** (`active` or `suspended`), seven **feature switches** and optional **limits**, all set from the console (section 15.5.3).
 
 ### 5.2 Users
-All users live in one table, with a **role**: `admin`, `teacher` or `student`.
+All school users live in one table, with a **role**: `admin`, `teacher` or `student`.
 - **Staff** (admin, teacher) sign in with **email + password**. Emails are unique across the whole system.
 - **Students** sign in with **roll number + password**. Roll numbers are unique within a school; two schools can both have "10A-01".
 - Each user has a **status**: `active` or `disabled`. Disabled users cannot sign in, and their existing sessions stop working immediately.
+- Each teacher and student also shows an **invitation status**: none, queued, sent, failed or accepted (when email is set up).
+
+**Super admins** (the people who run the console) are kept in a separate table, `platform_admins`, and are not users of any school. A school login never opens the console, and a console login never opens a school.
 
 ### 5.3 How accounts are created
 | Who | Created by | How |
 |---|---|---|
-| First admin of a school | Server operator | `createAdmin` command on the server, which prints a one-time password |
-| Teachers | Admin | Admin → Teachers → Add, which shows a one-time password once |
-| Students | Admin | Admin → Students → Add (one at a time), or **Import CSV** (up to 2,000 at once, with a credentials CSV download) |
+| Super admin (console) | Server operator | `create-superadmin` command on the server, which prints a one-time password (section 15.5.1) |
+| First admin of a school | Super admin | Console → Schools → New school. Shows a one-time password once and, if email is set up, emails a set-password link |
+| More admins for a school | Super admin | Console → the school → Admins → Add admin |
+| Teachers | Admin | Admin → Teachers → Add, or **Import CSV** (up to 500 at once; columns `name, email, department`) |
+| Students | Admin | Admin → Students → Add (one at a time), or **Import CSV** (up to 2,000 at once; columns `name, rollNumber, email`), with a credentials CSV download |
+
+Both import dialogs offer **Download template**, a ready-made CSV with the right column headings and example rows.
 
 **One-time passwords** look like `XXXX-XXXX-XX`. They use an alphabet without the confusable characters 0/O and 1/I. Every admin-created account **must change its password at first sign-in**. Until it does, every other action is blocked (`PASSWORD_CHANGE_REQUIRED`).
 
+**Emailed invitations** (when email is set up, section 14.5): a new account with an email address is also sent a **set-password link**. The person clicks it, chooses their own password on the `/set-password` page, and is signed in. Links work **once** and expire after **72 hours**. The admin can **Resend invite** from the Teachers or Students page. The one-time password is still shown as a fallback, for example for students without email.
+
 ### 5.4 Signing in
-- The **login page** has two tabs: **Teacher / Admin** (email) and **Student** (roll number).
-- **School code:** if a roll number exists in more than one school, the login asks for the school code (for example `BENX`). Otherwise students never need it.
+- **Each role has its own sign-in page:**
+  - school admins: `/admin/login`
+  - teachers: `/teacher/login`
+  - students: `/student/login` (roll number)
+  - `/login` is a **chooser** with three cards (School admin, Teacher, Student) that lead to those pages.
+- Each page accepts only its own role. A teacher who types their details into the admin page gets "invalid email or password". Each page has links to the other two.
+- Opening a page in an area while signed out sends you to that area's sign-in page, then back to where you were going.
+- **School code:** if a roll number exists in more than one school, the student login asks for the school code (for example `BENX`). Otherwise students never need it.
 - After signing in, users land on their area: `/admin`, `/teacher` or `/student`.
-- **Forgotten password:** there is no self-service reset. The admin clicks **Reset password**, which issues a new one-time password. The page footer says "Ask your school administrator".
+- **Forgotten password:**
+  - The **Forgot password?** link (`/forgot-password`) emails a reset link to staff (by email) or to students (by roll number + school code), if the account has an email address and email is set up. The page always gives the same answer, so it never reveals whether an account exists.
+  - Otherwise the admin clicks **Reset password** and chooses **Email a reset link** (when the person has an email address) or **Show a one-time password**.
+- **Super admins** sign in somewhere else entirely: `/platform/login` on the console's own address, with a password **and** an authenticator code (section 15.5.1).
+- **Notices:** when the console turns on a banner or maintenance mode, the message appears on every sign-in page and inside the app. With "block school sign-ins" ticked, sign-ins are refused until maintenance ends.
 
 ### 5.5 Sessions (staying signed in)
 - After a successful login, the server sets a **cookie** named `cp_session` containing a **JWT**: a digitally signed token saying "user X, role Y, version Z".
@@ -268,13 +305,17 @@ All users live in one table, with a **role**: `admin`, `teacher` or `student`.
   - It is **Secure** in production (sent only over HTTPS) and **SameSite=Lax** (protects against cross-site request forgery).
   - It lasts **12 hours** (`SESSION_TTL_HOURS`).
 - On every request the server reloads the user and checks the token's **version** against `token_version` in the database. The version increases when the user changes their password, an admin resets it, or the user is disabled. That **instantly signs out** every other device.
+- The server also checks the **school**: if the console has suspended it, every request is refused ("Your school's access is paused. Contact support.") until it is reactivated.
+- **Console sessions** are separate: a cookie named `cp_platform`, valid for **2 hours**, sent only to the console (SameSite=Strict). Signing out of the console ends every console session of that super admin.
 
 ### 5.6 Brute-force protection (rate limits)
 | What | Limit |
 |---|---|
 | Login attempts | 10 per 15 minutes per IP address + account (`LOGIN_RATE_LIMIT`) |
-| Live quiz PIN lookups, class join codes | 30 per minute per IP |
-| AI actions (generate quiz, transcribe, remedial plan) | 20 per hour per IP |
+| Console sign-in steps (password, authenticator code, recovery code) | 5 per 15 minutes per IP address + account |
+| Set-password links and "Forgot password?" | 20 per 15 minutes per IP |
+| Live quiz PIN lookups, class join codes, exam access codes | 30 per minute per IP |
+| AI actions (generate quiz, transcribe, remedial plan, AI teaching tools, voice prompts, AI grading suggestions) | 20 per hour per IP |
 | Device registration | 10 per hour per IP |
 
 Login also always takes the same time whether or not the account exists, so attackers can't discover valid emails by timing the response.
@@ -287,11 +328,15 @@ Login also always takes the same time whether or not the account exists, so atta
 | Page | What it does |
 |---|---|
 | `/` | Sends you to your area if signed in, otherwise to `/login`. |
-| `/login` | Two tabs (Teacher/Admin, Student). The school code field appears only when needed. |
+| `/login` | A chooser with three cards: School admin, Teacher, Student. Each leads to its own sign-in page. |
+| `/admin/login`, `/teacher/login`, `/student/login` | The sign-in page for each role. The student page asks for roll number and password; the school code field appears only when needed. |
+| `/forgot-password` | Asks for an email (staff) or roll number + school code (students) and emails a reset link if possible. |
+| `/set-password` | Where an emailed invitation or reset link lands: choose a password, then you are signed in. |
 | `/change-password` | Current password, new password (at least 8 characters), confirm. Required at first login. |
+| `/offline` | Shown by the installed app when there is no internet connection, with a **Try again** button. |
 | Error pages | "Page not found" and "Something went wrong" with a "Try again" button. |
 
-All signed-in pages share a **sidebar** (a hamburger menu on phones) with the user's name and **Sign out**.
+All signed-in pages share a **sidebar** (a hamburger menu on phones) with the user's name and **Sign out**. Menu items for a feature the console has switched off for the school are hidden.
 
 ### 6.2 Admin console (`/admin`)
 | Page | Features |
@@ -301,8 +346,8 @@ All signed-in pages share a **sidebar** (a hamburger menu on phones) with the us
 | **Rooms** | Physical classrooms: name, building, capacity, device count. Add, edit and delete. A room with devices can't be deleted. |
 | **Sections** | Classes (for example "Grade 10 – A"): grade, subject, room, teachers, student count, **6-character join code** (with a copy button). Actions: edit, **rotate join code** (makes the old one stop working), delete (refused if the section has lessons). |
 | **Section detail** `/admin/sections/[id]` | Info, the join code with its Active/Expired status (codes expire after **30 days**), the student roster, and **Edit roster** (search and tick students). |
-| **Teachers** | Name, email, department, sections, status. Add (shows a one-time password), edit, **disable** (they can't sign in; their lessons are kept), **reset password**, delete (refused if the teacher owns lessons). |
-| **Students** | Search, a section filter and paging. Add, edit, disable, reset password, delete. **CSV import:** columns `name, rollNumber, email`; preview in the browser; optional "enrol into section"; afterwards **download a credentials CSV**, since the initial passwords are shown only once. |
+| **Teachers** | Name, email, department, sections, status, invitation status. Add (shows a one-time password and, with email set up, sends an invitation), edit, **disable** (they can't sign in; their lessons are kept), **reset password** (email a reset link or show a one-time password), **resend invite**, delete (refused if the teacher owns lessons). **CSV import:** download the template, fill in `name, email, department`, preview, import up to 500. |
+| **Students** | Search, a section filter and paging. Add, edit, disable, reset password, resend invite, delete. **CSV import:** download the template, fill in `name, rollNumber, email`; preview in the browser; optional "enrol into section"; afterwards **download a credentials CSV**, since the initial passwords are shown only once. |
 | **Timetable** | A weekly grid (Mon–Sat × periods) per section. Click a cell to set subject, start/end time, teacher and room. Save or discard. It powers the teacher's "Today's classes". |
 | **Classroom devices** | Raspberry Pi recorders. Columns: device, room, status (Online/Recording/Offline/Error), last heartbeat, CPU temperature, free disk, microphone, **upload backlog**, agent version. Refreshes every 15 s. **Add classroom device** issues a one-time **enrollment token** (with a QR code, install commands and the settings file). **Revoke** a device. |
 | **AI settings** | Dropdowns. Speech-to-text: provider (Sarvam AI / OpenAI) and model (Saaras v3 recommended, Saarika v2.5, Whisper). Quiz model: GPT-4.1 mini (recommended), GPT-4o mini, GPT-4.1, GPT-4o, GPT-5 mini. Also **Default number of questions** (1–30) and **Bilingual questions** (on/off). Shows whether each provider's API key is configured; the key itself is never shown. |
@@ -317,6 +362,12 @@ All signed-in pages share a **sidebar** (a hamburger menu on phones) with the us
 | **Analytics** `/teacher/lessons/[id]/analytics` | Enrolled, attempted and average score. Per-question accuracy chart coloured **Critical (<50%) / Moderate (50–74%) / Mastered (75%+)**. Answer distribution per question. **Generate remedial plan** (AI suggestions on what to re-teach). Per-student scores table. |
 | **Live quiz host** `/teacher/lessons/[id]/live` | Choose the time per question (10/20/30/45/60 s), then **Create live session**, which gives a 6-digit PIN. Lobby with the participant list, **Start**, open question with countdown and "n / m answered", **Close question**, results and leaderboard, **Next question** / **Finish quiz**. The end screen has a question breakdown. **Open projector view.** |
 | **Projector** `/teacher/lessons/[id]/present?session=` | Full-screen display for the classroom projector: big PIN and **QR code** to join, the question with countdown, results, leaderboard and a final podium. |
+| **Assignments** `/teacher/assignments` | Homework, either standalone or attached to a lesson (a lesson can have several). See 6.3.2. |
+| **Exams** `/teacher/exams` | Secure, timed exams with a live monitor. See 6.3.3. |
+| **AI teaching tools** `/teacher/resources` | Lesson plans, worksheets, question papers and presentations written by AI from the teacher's own material. See 6.3.4. |
+| **Courses & materials** `/teacher/courses` | The syllabus (courses and their units) and the teacher's uploaded documents. See 6.3.4. |
+| **Simulations** `/teacher/simulations` | Interactive science and maths simulations to show in class. See 6.3.4. |
+| **Class insights** `/teacher/insights` | Which skills and topics a class has mastered. See 6.3.4. |
 | **My classes** | Each section with its student count, room, co-teachers, join code (copyable, with expiry), and links. |
 | **Timetable** | A read-only weekly view, with today highlighted. |
 
@@ -331,12 +382,57 @@ All signed-in pages share a **sidebar** (a hamburger menu on phones) with the us
     - **Replace unapproved questions:** keeps the questions you approved or edited, and replaces the rest.
     - **Replace all questions:** starts over, including the summary and assignment.
   - The replace actions (and any change to a published lesson) ask for confirmation first.
-- **Questions list:** counts (approved / pending / rejected), **Add question** (written by hand), **Approve all**. Each question card shows its status, difficulty and topic tag, plus an "Edited by you" badge. It shows the question and 4 options with the correct one highlighted, the explanation, the **local-language translation** (for non-English lessons), and a **citation timestamp button** that plays the exact part of the lecture the question came from. Actions: Approve, Reject, Edit, Delete.
+- **Questions list:** counts (approved / pending / rejected), **Add question** (written by hand), **Approve all**. Each question card shows its status, difficulty and topic tag, its **Bloom level** (remember, understand, apply, analyse, evaluate, create: the kind of thinking it tests) and a short **competency** (the skill it checks), plus an "Edited by you" badge. The AI suggests both tags; the teacher can change them. It shows the question and 4 options with the correct one highlighted, the explanation, the **local-language translation** (for non-English lessons), and a **citation timestamp button** that plays the exact part of the lecture the question came from. Actions: Approve, Reject, Edit, Delete.
 - **Edit dialog:** question, 4 options with a "correct" radio, explanation, difficulty, topic, and optional translation fields.
 - **Class recording + transcript:** an audio player, with a note on the date the audio will be deleted. A timestamped transcript highlights the current sentence; click a sentence to jump there.
 - **Summary & key takeaways:** editable, up to 10 takeaways.
-- **Assignment (homework):** title, instructions, rubric (criteria with marks), estimated minutes, optional due date. Published together with the lesson.
+- **Assignment (homework):** title, instructions, rubric (criteria with marks), estimated minutes, optional due date. Published together with the lesson. More assignments can be added to the same lesson from the Assignments page.
 - **Processing view:** while transcribing or generating, shows a progress bar and steps. If something fails, the reason is shown in plain language with **Try again**.
+
+#### 6.3.2 Assignments
+- **Create:** title, instructions, rubric (up to 20 criteria, each with marks and a short description), estimated minutes, due date, and:
+  - **Late policy:** "allow late" (accepted after the due date and marked **late**) or "closed" (refused after the due date);
+  - **File uploads:** on or off, and how many files (up to 10). Students can attach photos of handwritten work (JPEG, PNG, HEIC), PDFs or Word documents, up to 10 MB each;
+  - **Reminders:** emails students who haven't handed in, once, in the 24 hours before the due date (needs email set up).
+- **Publish** and **Close** control when students can submit.
+- **Submissions tracker:** every student in the class, marked missing, submitted, late or returned.
+- **Grading:** open a submission, see the text and files, enter marks per rubric criterion and feedback. **Suggest with AI** proposes marks and feedback from the typed answer and any JPEG/PNG photos; the teacher reviews and changes them before saving. The AI note says what it could not read (for example a PDF).
+- **Return** one submission, or **Return all graded**: the student then sees marks and feedback.
+
+#### 6.3.3 Secure exams
+A timed exam built from **approved questions** in the teacher's own lessons.
+1. **Details & window:** title, class, instructions, when it **opens** and **closes**, and the **duration**. Each student's timer starts when they begin and never runs past the closing time.
+2. **Questions:** pick questions from the class's lessons (filter by lesson, difficulty, topic), and choose **how many each student gets**. Each student gets their own random selection from the pool.
+3. **Security & publish:**
+   - shuffle question order, and shuffle answer options, per student;
+   - **require fullscreen** (phones that can't go fullscreen still get warnings);
+   - **access code:** a 6-character code the teacher reads out in the room; it can be changed any time;
+   - **one device at a time:** opening the exam on a second device is blocked until the teacher unlocks it;
+   - **auto-submit after N warnings:** leaving fullscreen, switching tabs, copying, pasting or printing each count as a warning;
+   - when students see results: after the exam closes (default), immediately, or never.
+
+When published, the question pool is **frozen**: later edits to the lessons don't change a running exam.
+
+**Live monitor** (`/teacher/exams/<id>/monitor`): each student's status (not started, in progress, submitted), time left and warnings. The teacher can **unlock** a student's device, give **extra time**, or **force-submit**. Answers save automatically; attempts left open past the deadline are submitted automatically.
+
+**Results:** scores per student, each attempt's **integrity timeline** (every warning, with its time), and a CSV download.
+
+#### 6.3.4 AI teaching tools, courses, simulations and insights
+These are controlled by the school's "Teacher tools" switch in the console.
+
+- **Courses & materials** (`/teacher/courses`):
+  - **Import from the catalog:** ready-made chapter lists for NCERT/CBSE Classes 6–12 (current NCERT textbooks) and starter outlines for undergraduate subjects. Importing creates a course with its units (chapters), which the teacher can then edit, reorder or extend.
+  - Or **create a course** for any level or board by hand. The AI can draft a unit's summary and objectives.
+  - **Materials:** upload PDF, Word (DOCX) or text files (up to 20 MB each) and attach them to a course or unit. Their text is used to ground the AI tools, so the output follows the teacher's own notes.
+- **AI teaching tools** (`/teacher/resources`). The teacher picks a type, the course and units, optionally their own recorded lessons and materials, a language, and describes what they want, by typing or by **voice** (speak for up to 60 seconds in any supported language; the recording is transcribed and not kept). Types:
+  - **Lesson plan:** duration, periods, objectives, activities with timings, teacher notes, assessment, homework, support and extension ideas.
+  - **Worksheet:** number of items, difficulty, item types (multiple choice, short, long, fill in the blank, true/false, match), with an optional answer key.
+  - **Question paper:** exam name, maximum marks, duration, and a **blueprint** (sections, question types, counts, marks each, **internal choice** "OR" questions), a target mix of **Bloom levels** and of difficulty. Every question gets its marks, Bloom level, competency, an answer and a marking scheme, so the paper comes with an **answer key**. **Publish MCQs as exam** turns its multiple-choice questions into a draft secure exam for the teacher to check and publish.
+  - **Presentation:** number of slides, speaker notes, and a theme.
+  - Everything generated can be **edited** on screen, **regenerated**, downloaded as **Word** (plans, worksheets, papers) or **PowerPoint** (presentations), or **printed**.
+  - **Share with school:** adds the item to the school library, where other teachers can view it and make their own copy.
+- **Simulations** (`/teacher/simulations`): about 90 free **PhET** simulations (physics, chemistry, biology, maths, earth science) built in, searchable by topic. Teachers can also add links from a short list of trusted sites (PhET, GeoGebra, Desmos, oPhysics, OLabs). **Classroom mode** shows a simulation full screen for the projector.
+- **Class insights** (`/teacher/insights`): for a class, how well students do at each Bloom level and on each topic or competency, as a chart and a heat map, with a drill-down per student. It uses each student's latest quiz attempt per lesson (with the question tags) and their submitted exams (exams count towards topics and the overall figure, not Bloom levels).
 
 ### 6.4 Student portal (`/student`, playful yellow theme)
 | Page | Features |
@@ -346,8 +442,32 @@ All signed-in pages share a **sidebar** (a hamburger menu on phones) with the us
 | **Quizzes** | Cards with a score badge or "New". |
 | **Take a quiz** | Intro (summary, takeaways), then one question at a time with Next/Back, an **English ↔ local language toggle** (when translated), and a review screen ("unanswered questions count as wrong"), then **Submit**. **Results:** score %, each answer with the correct answer, explanation and "From the lecture at 0:17". **Retake** is unlimited. |
 | **Live quiz** `/student/live` | Enter the PIN (or scan the projector's QR code). Lobby, then tap an answer (it can be changed until time runs out), see whether you were right, your points and your rank, then the final leaderboard. |
-| **Assignments** | Due badge, task and rubric, a text answer (up to 20,000 characters), submit and resubmit until the due date. |
+| **Exams** `/student/exams` | Upcoming, open and finished exams. **Start** (with the access code if the teacher set one), then one question at a time with a countdown kept by the server. Answers save automatically. Warnings appear when the student leaves fullscreen or switches tabs. After submitting, the result shows when the teacher allows it. |
+| **Assignments** | Due badge, task and rubric, a text answer (up to 20,000 characters) and, if the teacher allows, **files** (photos of handwritten work, PDFs, Word documents). Submit and resubmit until the due date; after it, only if the teacher allows late work (marked late). Returned work shows marks per criterion and feedback. |
 | **Profile** | Name and roll number, optional email, change password, my classes, **guardians** (parent contacts: name, relation, phone, email, "send progress updates"). |
+
+### 6.5 Platform console (`/platform`, super admins only)
+The owner's control room for the whole installation. It lives on its **own address** (planned `ops.benxsolutions.in`), separate from the schools' address, and asks for an authenticator code at every sign-in. Step-by-step instructions are in section 15.5.
+
+| Page | Features |
+|---|---|
+| **Overview** | Number of schools, teachers and students; active **alerts**; most recently active schools. |
+| **Schools** | Every school with its people, content and status. **New school** creates a school and its first admin. Opening a school shows tabs: Overview, **Admins** (add, reset password, resend invite, disable/enable), People, Content, Devices (read-only lists), **Features & limits**, and Activity (the school's audit trail). **Suspend** / **Reactivate** sit at the top. |
+| **Users** | Search for any person in any school by name, email or roll number (at least 2 characters), with a role filter. |
+| **Health** | Live status of the database, Redis, worker, API, disk, email, AI providers (with a **Test** button), classroom devices and backups. Alerts, the three job queues with **retry** for failed jobs, and a history chart. Refreshes every 15 seconds. |
+| **Logs** | A live tail of the application's log lines (warnings, errors, slow or failed requests, and other notable events), filterable by level, service, school and text. CSV download. Kept **14 days**. |
+| **Audit log** | Who did what and when: sign-ins, school changes, feature switches, password resets, deployments. Filters and CSV download. Kept **365 days**. |
+| **Usage & costs** | Activity per day, week or month (active users, quiz attempts, exams and homework, emails) and **AI usage**: calls, failures, tokens, audio minutes and **estimated AI cost** in US dollars, per school and per model. CSV download. |
+| **Deployments** | The running version and recent deployments from Coolify, deployment logs, and **Redeploy** / **Restart** buttons (each needs typed confirmation). Needs the Coolify settings in section 14.5; until then the page shows how to set them up. |
+| **Settings** | **Maintenance mode** and a **banner** for every school; **default AI models** for new schools; **AI price rates** used for the cost estimates; **My account** (change password, generate new recovery codes). |
+
+### 6.6 Installing ClassPulse as an app (PWA)
+ClassPulse is a **Progressive Web App**: a website that can be installed like an app, with its own icon and window.
+- **Android (Chrome):** open the site, then menu (⋮) → **Add to Home screen** or **Install app**.
+- **Computer (Chrome or Edge):** the **Install app** icon at the right of the address bar, or the install option in the browser menu.
+- **iPhone/iPad (Safari):** Share → **Add to Home Screen**.
+
+The installed app is the same website, so updates arrive automatically. Without internet it shows an **offline page** with a **Try again** button. Only the app's own files (layout, icons, fonts) are kept on the device. School data, sign-ins and quiz answers always come from the server and are never stored offline.
 
 ---
 
@@ -485,9 +605,23 @@ On the analytics page the teacher clicks **Generate remedial plan**. The AI rece
 - **Concurrency:** the worker processes **1 lesson at a time** in production (`GENERATION_CONCURRENCY=1`, chosen for the 2-CPU server). Others wait in the queue.
 
 ### 8.7 What the AI providers receive (privacy)
-- **Sarvam:** the lecture audio.
-- **OpenAI:** the transcript text, lesson title and subject, and (for remedial plans) aggregated accuracy statistics.
-- **No student names or personal data are sent to either provider.**
+- **Sarvam:** the lecture audio, and teachers' voice prompts (up to 60 seconds; not stored by ClassPulse).
+- **OpenAI:**
+  - the transcript text, lesson title and subject, and (for remedial plans) aggregated accuracy statistics;
+  - for the AI teaching tools: the teacher's request, the course and unit details, and text from the lessons and materials the teacher chose;
+  - for **AI grading suggestions**, only when the teacher clicks the button: the assignment, its rubric, and the student's typed answer and attached JPEG/PNG photos (the photos' file names go with them). The student's name is not sent.
+- **No student names are sent to either provider.** Note that a student's own work, sent for a grading suggestion, may contain whatever the student wrote on it.
+
+### 8.8 AI usage records and the monthly audio limit
+- **Every AI call is recorded** in the `ai_usage` table, successful or not: which school, what for (transcription, quiz, more questions, remedial plan, grading, teaching tool, voice prompt), which model, and the tokens or seconds of audio used.
+- The console's **Usage & costs** page turns these into **estimated costs** using the price rates in console **Settings → AI price rates** (US dollars per million tokens for each quiz model, per hour of audio for each speech model). The rates are editable because providers change prices. The figures are estimates: the providers' invoices are the real bill.
+- **Monthly AI audio minutes per school:** an optional limit set in the console (Features & limits). It counts minutes successfully transcribed since the 1st of the month in the school's time zone. When an upload would go over it, the teacher sees "This school's monthly AI transcription minutes are used up. Contact your administrator." Nothing else stops working.
+
+### 8.9 The AI teaching tools pipeline
+1. The teacher asks for a lesson plan, worksheet, question paper or presentation (section 6.3.4).
+2. ClassPulse gathers the **grounding**: the units' summaries and objectives, the transcripts of the chosen lessons, and the text of the chosen materials. They are fitted into about 60,000 characters, with each source given a fair share.
+3. A job goes on the `resources` queue. The worker asks the school's quiz model for the result in a strict format (the same "structured outputs" as for quizzes), checks it, and saves it. The item shows **Ready**, or **Failed** with a reason and a retry.
+4. Downloads are built on the server: Word files for plans, worksheets and papers, PowerPoint for presentations.
 
 ---
 
@@ -598,9 +732,12 @@ To **replace** a Pi, revoke the old one and issue a new token.
 - The structure is defined in code (`apps/api/src/db/schema/`). Changes are made through **migrations**: numbered SQL files applied in order and only forward.
   - `0000_init.sql` creates 23 tables and 14 "enum" types (fixed lists of allowed values).
   - `0001_teacher_quiz_generation.sql` added the `transcribed` status and the `quiz_request` column.
+  - `0002_invites_exams_assignments.sql` added 8 tables: emailed set-password links, assignment files and reminders, and secure exams.
+  - `0003_platform.sql` added 7 tables for the platform console (super admins, settings, logs, audit, health, AI usage, email log), plus each school's status, feature switches and limits.
+  - `0004_teacher_tools.sql` added 5 tables for courses, units, teacher materials, teaching resources and simulation links, plus the Bloom and competency tags on questions.
 - In production, migrations run **automatically** each time the API starts.
 
-### 11.2 Tables (23)
+### 11.2 Tables (43)
 | Group | Table | What it stores |
 |---|---|---|
 | School | `institutions` | Schools (name, unique code, time zone, academic year) |
@@ -613,8 +750,10 @@ To **replace** a Pi, revoke the old one and issue a new token.
 | | `model_settings` | Each school's AI choices (STT provider/model, quiz model, default question count, bilingual) |
 | Lessons | `lessons` | Each lecture: title, subject, language, status, audio file key and expiry, duration, **transcript and timestamped segments**, summary, takeaways, progress, failure reason, AI metadata, **quiz_request**, cached remedial plan, published date |
 | | `questions` | Multiple-choice questions: position, question text, 4 options, correct option (0–3, enforced), explanation, translations, difficulty, topic, citation start/end seconds, status (draft/approved/rejected), edited-by-teacher |
-| | `assignments` | One homework per lesson (title, instructions, rubric, minutes, due date, status) |
-| | `assignment_submissions` | Students' homework answers (one per student, editable until due) |
+| | `assignments` | Homework: standalone or attached to a lesson (one "main" assignment per lesson plus any number of extra ones). Title, instructions, rubric, minutes, due date, late policy, file settings, reminders, status |
+| | `assignment_submissions` | Students' homework answers (one per student per assignment): text, late flag, rubric marks, total, feedback, graded/returned dates, stored AI suggestion |
+| | `submission_files` | Files attached to a submission (name, type, size, storage key) |
+| | `assignment_reminders` | Which reminder emails were sent, so none goes twice |
 | | `quiz_attempts` | Each self-paced attempt (score, correct/total, when), with a duplicate-submission guard |
 | | `quiz_attempt_answers` | Each answer, with a **snapshot** of the question as it was, so old results stay correct even if the quiz is regenerated |
 | | `guardians` | Students' parent/guardian contacts |
@@ -626,6 +765,25 @@ To **replace** a Pi, revoke the old one and issue a new token.
 | | `device_commands` | Commands waiting for a Pi (start/stop), with expiry |
 | | `recording_sessions` | Each classroom recording (device, lesson, status, expected chunks, times); **only one active recording per device** |
 | | `recording_chunks` | Each uploaded 60-second chunk (number, fingerprint, size) |
+| Accounts | `password_tokens` | Emailed set-password links (invite or reset); only a fingerprint (hash) of each link is stored, with its expiry and use |
+| Exams | `exams` | Each secure exam: class, window, duration, questions per student, security settings, access code, status |
+| | `exam_questions` | The frozen question pool of a published exam |
+| | `exam_attempts` | One attempt per student per exam: their question set and order, deadline, extra minutes, a fingerprint of the device token, warning count, score |
+| | `exam_answers` | Each saved answer |
+| | `exam_events` | The integrity timeline: fullscreen exits, tab switches, copy/paste, second device… |
+| Teacher tools | `courses`, `units` | Syllabus courses (imported from the catalog or made by hand) and their chapters |
+| | `teacher_materials` | Teachers' uploaded PDFs, Word and text files, with their extracted text |
+| | `teaching_resources` | Generated lesson plans, worksheets, question papers and presentations (content, status, shared flag) |
+| | `simulation_links` | Simulation links a school's teachers added |
+| Platform | `platform_admins` | Super admins: email, name, password hash, encrypted authenticator secret, recovery-code hashes, status |
+| | `platform_settings` | Maintenance mode, banner, default AI models, AI price rates |
+| | `audit_logs` | Who did what and when (kept 365 days) |
+| | `app_logs` | A filtered copy of the application logs for the console (kept 14 days) |
+| | `health_snapshots` | A health check every 5 minutes, for the history chart (kept 30 days) |
+| | `ai_usage` | One row per AI call: school, purpose, model, tokens or audio seconds, success |
+| | `email_log` | Outgoing emails: kind, school, delivery status and error. The recipient is stored only as a fingerprint (hash) |
+
+The `institutions` table also gained each school's **status** (active or suspended, with the reason), **feature switches**, **limits**, contact details and private notes. The `questions` table gained the **Bloom level** and **competency** tags.
 
 ### 11.3 Important rules enforced by the database
 - **Uniqueness:**
@@ -633,7 +791,8 @@ To **replace** a Pi, revoke the old one and issue a new token.
   - one roll number per school;
   - one join code globally;
   - one active live PIN at a time;
-  - one assignment per lesson;
+  - one main assignment per lesson (extra assignments are allowed);
+  - one exam attempt per student per exam;
   - one active recording per device.
 - **Safety:** you **cannot delete**:
   - a teacher who owns lessons (disable them instead),
@@ -664,6 +823,8 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | `BAD_REQUEST`, `VALIDATION_FAILED` | 400 | Bad input; `details` lists the fields |
 | `UNAUTHENTICATED` | 401 | Not signed in / session expired |
 | `FORBIDDEN`, `PASSWORD_CHANGE_REQUIRED` | 403 | Not allowed / must change password first |
+| `FEATURE_DISABLED`, `SCHOOL_SUSPENDED` | 403 | The console switched this feature off for the school / suspended the school |
+| `MAINTENANCE` | 503 | Maintenance mode with school sign-ins blocked |
 | `NOT_FOUND` | 404 | Doesn't exist, or you aren't allowed to see it |
 | `CONFLICT`, `INVALID_STATE` | 409 | Duplicate, or the action isn't possible right now (e.g. "confirm to continue") |
 | `PAYLOAD_TOO_LARGE` | 413 | Upload too big |
@@ -676,7 +837,8 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | Area | Prefix | Who | Main actions |
 |---|---|---|---|
 | Health | `/api/health/live`, `/api/health/ready` | Anyone | Is the server up? Are the database, Redis and storage OK? |
-| Auth | `/api/auth` | Anyone / signed in | `login`, `student/login`, `logout`, `me`, `change-password` |
+| Status | `/api/status` | Anyone | The platform banner and maintenance message, for the sign-in pages |
+| Auth | `/api/auth` | Anyone / signed in | `admin/login`, `teacher/login`, `student/login` (and the older `login`), `logout`, `me`, `change-password`, `forgot-password`, `set-password` |
 | School | `/api/admin/institution` | Admin | View or update the school profile |
 | Rooms, teachers, students, sections, timetable | `/api/admin/...` | Admin | Create, edit, delete; reset passwords; CSV import; rotate join codes; set rosters |
 | AI settings | `/api/admin/settings/models` | Admin | Read or change models (validated against the dropdown lists) |
@@ -687,8 +849,13 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | Questions | `/api/questions` | Teacher | Edit, approve, reject, delete |
 | Recordings | `/api/recordings` | Teacher | List devices for a section, start, status, stop, cancel |
 | Live sessions | `/api/live-sessions` | Teacher / student | Create, view, results; students look up a PIN |
-| Student | `/api/student` | Student | Dashboard, profile, sections, join by code, quizzes, submit attempt, latest result, assignments, guardians |
+| Assignments | `/api/assignments`, `/api/assignment-files` | Teacher (files: also the student who uploaded them) | Create, publish, close, submissions tracker, grade, AI suggestion, return |
+| Exams | `/api/exams` | Teacher | Create, choose questions, publish, close, access code, live monitor, unlock, extra time, force-submit, results and CSV |
+| Teacher tools | `/api/curriculum`, `/api/resources`, `/api/simulations`, `/api/insights` | Teacher | Catalog, courses, units, materials; generate, edit, share, export resources; voice prompts; simulations; class insights |
+| Student | `/api/student` | Student | Dashboard, profile, sections, join by code, quizzes, submit attempt, latest result, assignments (with files), guardians |
+| Student exams | `/api/student/exams` | Student | List, start (access code), save answers, report warnings, submit, result |
 | Devices (Pi) | `/api/devices` | Pi (device key) | Register, heartbeat, commands, chunk upload, finalize |
+| Platform console | `/api/platform/...` | Super admin (console session) | Sign-in with authenticator, schools and admins, features and limits, users, settings, usage and cost, health, queues, logs, audit, deployments |
 
 ---
 
@@ -706,9 +873,13 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | Files | Audio is addressed by internal keys, never by paths from the request, so a crafted request can't reach other files. Audio is streamed only to authorised users; nothing is publicly downloadable. |
 | Devices | Single-use 24 h enrollment tokens; only key hashes are stored; constant-time comparison; revocation; outbound-only connections |
 | Live quiz | Answer key hidden until close; identity from the cookie; server-side clock; cross-site connections refused |
+| Exams | Answer key never sent to students; server-side clock; one attempt per student; optional access code and one-device lock; warnings logged with times |
+| Platform console | Separate address (hidden on school addresses); password **plus authenticator code** for every sign-in; 10 single-use recovery codes; each code works once; 2-hour sessions; 5 sign-in attempts per 15 minutes; authenticator secrets encrypted with `PLATFORM_ENCRYPTION_KEY`; sign-ins and every change made in the console written to the audit log |
+| Emailed links | Single-use, 72-hour expiry; only a hash is stored; a new link cancels older ones; "Forgot password?" answers the same whether or not the account exists |
+| Uploads | Assignment files and teacher materials are checked by type and size and stored privately. A submission file can be opened only by the student who uploaded it or a teacher of that class |
 | Headers | helmet security headers; nosniff; strict referrer policy; camera/geolocation disabled; microphone only for the site itself |
 | Logs | Passwords, cookies, authorization headers, API keys and the database URL are automatically redacted; no student names in live-quiz logs |
-| Secrets | Production settings validation requires a JWT secret of at least 32 characters, Redis, HTTPS, and no demo mode |
+| Secrets | Production settings validation requires a JWT secret of at least 32 characters, Redis, HTTPS, a valid `PLATFORM_ENCRYPTION_KEY`, no demo mode and no test email capture |
 | Containers | Run as a non-root user; only the router is reachable from outside; database and Redis are private |
 | Backups | Encrypted with `age`; the decryption key is kept **off** the server |
 
@@ -716,11 +887,14 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 - **Lecture audio:** deleted automatically after **30 days**. Transcripts, questions and results are kept.
 - **What AI providers see:** audio (Sarvam/Whisper); transcript text and lesson metadata (OpenAI). No student personal data.
 - **Deleting a student** also deletes their attempts, answers, enrollments, live participation and guardians (cascade).
+- **Logs** shown in the console are kept **14 days**; the **audit log** **365 days**; health snapshots 30 days. Passwords, codes, cookies and keys are never written to either.
+- **Voice prompts** are transcribed and thrown away; the audio is never stored.
 
 ### 13.3 Known security limitations (be honest about these)
-- **Sign out** clears the cookie in the browser but does not revoke the token server-side. A stolen copy of a cookie would work until it expires (at most 12 hours) or until the password is changed.
-- There is **no two-factor authentication** for admins yet.
-- There is **no self-service password reset** (by design for the pilot: the admin resets passwords).
+- **Sign out** (school users) clears the cookie in the browser but does not revoke the token server-side. A stolen copy of a cookie would work until it expires (at most 12 hours) or until the password is changed. Console sign-out does revoke every console session.
+- There is **no two-factor authentication** for school admins, teachers or students yet. Only super admins use an authenticator.
+- **Password reset by email** needs email to be set up and the account to have an email address. Otherwise the admin resets passwords.
+- The **"Email invitations" feature switch** is stored, but nothing checks it yet: with email set up, invitations are sent even when it is off.
 - The Coolify dashboard is still reachable on `http://129.159.227.74:8000` (no HTTPS) until it gets its own domain and the port is closed (see 14.9).
 
 ---
@@ -751,10 +925,20 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 
 ### 14.3 Domains and HTTPS
 - **Current address:** `https://classpulse.129.159.227.74.sslip.io`. **sslip.io** is a free service that turns an IP address into a hostname, so HTTPS works without owning a DNS record.
-- **Planned address:** `https://classpulse.benxsolutions.in`. To switch:
-  1. at the DNS provider for benxsolutions.in, add an **A record** `classpulse → 129.159.227.74` (and `coolify → 129.159.227.74` for the dashboard);
-  2. in Coolify, set the router's domain and the `PUBLIC_ORIGIN` variable to the new address;
+- **Current console address:** `https://ops.129.159.227.74.sslip.io` (it opens `/platform`).
+- **Planned addresses:**
+
+  | Address | What it is |
+  |---|---|
+  | `classpulse.benxsolutions.in` | The school app (admins, teachers, students) |
+  | `ops.benxsolutions.in` | The platform console (super admins only) |
+  | `coolify.benxsolutions.in` | The Coolify dashboard |
+
+  To switch:
+  1. at **GoDaddy** (the DNS provider for benxsolutions.in), add three **A records**, `classpulse`, `ops` and `coolify`, each pointing to `129.159.227.74`;
+  2. in Coolify, give the **router** service both app domains (`https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`), and set `PUBLIC_ORIGIN`, `PLATFORM_HOST` (`ops.benxsolutions.in`) and `PLATFORM_ORIGIN` (`https://ops.benxsolutions.in`);
   3. redeploy.
+- **Why the console has its own address:** on the school address, `/platform` simply answers "Not found", so nobody browsing a school can even find the console. On the console address, nothing except the console is served.
 - **Certificates:** Let's Encrypt, issued and renewed automatically by Traefik. It needs port 80 open; that's why opening port 80 in the OCI Security List was required.
 
 ### 14.4 The production containers
@@ -762,10 +946,10 @@ Seven services, all built from this repository (`infra/docker-compose.coolify.ym
 
 | Service | Image | Role | Notes |
 |---|---|---|---|
-| `router` | Caddy 2 (with our Caddyfile baked in) | Sends `/api` and `/socket.io` to `api`, everything else to `web` | The only service with a public domain. Upload limit 400 MB on the audio upload URL, 25 MB elsewhere. 120 s read timeout (Pi long-polls) |
+| `router` | Caddy 2 (with our Caddyfile baked in) | Sends `/api` and `/socket.io` to `api`, everything else to `web`; serves the console only on `PLATFORM_HOST` | The only service with public domains (the school address and the console address). Upload limit 400 MB on the audio upload URL, 25 MB elsewhere. 120 s read timeout (Pi long-polls) |
 | `web` | Node 22 (Next.js standalone build) | Serves the pages | Keep-alive 75 s |
-| `api` | Node 22 + ffmpeg | The API + Socket.IO | **Runs database migrations on every start**, then the server. Health check `/api/health/live` |
-| `worker` | Same image as api | Background jobs (AI, retention, device sweep) | Starts after the API is healthy |
+| `api` | Node 22 + ffmpeg | The API + Socket.IO | **Runs database migrations on every start**, then the server. Health check `/api/health/live`. Reads the server's backup folder (`/var/backups/classpulse`, mounted read-only at `/backups`) so the console can check backup age |
+| `worker` | Same image as api | Background jobs: the `lesson-generation`, `email` and `resources` queues, plus timed tasks (audio retention, device sweep, exam sweep, assignment reminders, log and audit clean-up, health snapshots) | Starts after the API is healthy |
 | `postgres` | postgres:16-alpine | Database | Data in volume `pg-data` |
 | `redis` | redis:7-alpine | Queue, rate limits, messages | Password-protected; append-only persistence; volume `redis-data` |
 | (volume) `storage-data` | — | Lecture audio files | Shared by api and worker |
@@ -781,13 +965,19 @@ Seven services, all built from this repository (`infra/docker-compose.coolify.ym
 | `AUDIO_RETENTION_DAYS` | 30 |
 | `GENERATION_CONCURRENCY` | 1 (one AI job at a time on this 2-CPU server) |
 | `LOG_LEVEL` | info |
-| Set in the compose file | `NODE_ENV=production`, `TRUST_PROXY_HOPS=2` (Traefik + Caddy), `STORAGE_DIR=/data/storage`, and database/Redis URLs built from the passwords |
+| `PLATFORM_ENCRYPTION_KEY` | **Required.** A random key (32 bytes, base64; made with `openssl rand -base64 32`) that locks the super admins' authenticator secrets. The deploy fails without it. **Keep a copy in the password manager:** if it is lost or changed, every super admin must set up their authenticator again (section 15.5.1) |
+| `PLATFORM_HOST` | The console's host name, e.g. `ops.benxsolutions.in` (no `https://`). Used by the router. The same domain must also be added to the `router` service's domains in Coolify. Until it is set, the console is hidden everywhere |
+| `PLATFORM_ORIGIN` | The console's full address, e.g. `https://ops.benxsolutions.in`. Used by the API's security checks |
+| `COOLIFY_API_URL`, `COOLIFY_API_TOKEN`, `COOLIFY_APP_UUID` | Optional, for the console's **Deployments** page: the Coolify API address (`http://<server>:8000/api/v1`), an API token, and the app's ID. Give the token the least it needs: **read** and **deploy** permissions only. Without them the page shows setup instructions |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Optional email for invitations, password resets and reminders. Two working choices:<br>• **Gmail:** `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>• **GoDaddy mailbox:** `smtpout.secureserver.net`, port `465`, the mailbox address and its password; send as that `@benxsolutions.in` address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
+| `BACKUP_DIR` | Where the API looks for backups inside its container (default `/backups`; leave as is) |
+| Set in the compose file | `NODE_ENV=production`, `TRUST_PROXY_HOPS=2` (Traefik + Caddy), `STORAGE_DIR=/data/storage`, database/Redis URLs built from the passwords, and the read-only backup mount `/var/backups/classpulse:/backups:ro` on the api service |
 
 The full list of variables the API understands (with defaults) is in `apps/api/src/config/env.ts`. Important ones: `PORT` 5000, `SESSION_TTL_HOURS` 12, `MAX_AUDIO_UPLOAD_MB` 300, `LOGIN_RATE_LIMIT` 10, `DEVICE_OFFLINE_AFTER_SEC` 90, `PIPELINE_DEMO_FALLBACK` (forbidden in production).
 
 ### 14.6 How a new version is deployed
 1. A developer commits code and pushes to `main` on GitHub. From this computer that uses the **write deploy key**, because the GitHub CLI login lacks the "workflow" permission.
-2. A deploy is triggered by **Coolify → classpulse → Deploy/Redeploy**, or the Coolify API (`POST /api/v1/deploy`). **Pushing does not deploy automatically yet** (no webhook).
+2. A deploy is triggered by **Coolify → classpulse → Deploy/Redeploy**, the console's **Deployments → Redeploy** (once the Coolify settings are in place), or the Coolify API (`POST /api/v1/deploy`). **Pushing does not deploy automatically yet** (no webhook).
 3. Coolify clones the repo, builds the images (about 1.5–3 minutes once cached; the first build took about 3 minutes), and starts the new containers. The API applies any new migrations on start.
 4. Check: `https://<site>/api/health/ready` should return `{"status":"ok"}`.
 
@@ -806,12 +996,16 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | Local development keys | `apps/api/.env` on the developer's PC (gitignored) |
 | Server SSH key | `ssh-key-2026-07-19.key` in the project folder on the owner's PC (gitignored); keep a safe copy |
 | GitHub deploy keys | Private halves in the session scratch folder on the owner's PC; public halves in GitHub → repo → Settings → Deploy keys ("local push", "Coolify (read-only)") |
-| Coolify API token | Created in Coolify → Keys & Tokens. **Revoke it when not needed.** |
+| Coolify API token | Created in Coolify → Keys & Tokens. **Revoke it when not needed.** A separate read + deploy token for the console lives only in Coolify's environment variables (`COOLIFY_API_TOKEN`) |
+| `PLATFORM_ENCRYPTION_KEY` | Coolify → classpulse → Environment variables, **plus a copy in the owner's password manager** |
+| Email password (`SMTP_PASS`: Gmail App password or GoDaddy mailbox password) | Coolify → classpulse → Environment variables |
+| Super admin passwords, authenticator apps and recovery codes | Each super admin: password manager for the password, the authenticator app on their phone, and the 10 recovery codes saved somewhere safe (password manager or a printed copy) |
 | Backup decryption key (`classpulse-backup.key`) | **Owner only**, off the server (password manager). Without it, backups cannot be restored. |
 | Coolify admin login, Oracle Cloud login | The owner. **Change them**: they were shared in a chat. |
 
 ### 14.9 Hardening still recommended
-- **Domains:** add the DNS records and move the site and the Coolify dashboard to `benxsolutions.in` subdomains with HTTPS.
+- **Domains:** add the DNS records and move the site, the console (`ops`) and the Coolify dashboard to `benxsolutions.in` subdomains with HTTPS.
+- **Console key:** confirm `PLATFORM_ENCRYPTION_KEY` is saved in the password manager.
 - **Ports:** close public ports 8000, 6001–6002 and 8080 in the OCI Security List afterwards.
 - **Accounts:** enable 2FA on the Coolify admin account.
 - **Credentials:** rotate the Coolify password, the Oracle password and the Sarvam key, and revoke the Coolify API token.
@@ -825,7 +1019,8 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 - `GET /api/health/live` reports whether the server is running.
 - `GET /api/health/ready` checks the database, Redis and storage. It returns **503** if any of them fails.
 - **Recommendation:** point a free uptime monitor (for example UptimeRobot) at `/api/health/ready`.
-- **Logs:** in Coolify → classpulse → Logs, or `sudo docker logs <container>` over SSH. They are JSON, with secrets hidden.
+- **The console is the easiest place to look** (section 15.5.5): Health (every component, alerts, history), Logs (live, last 14 days), Audit log, and Usage & costs.
+- **Raw logs:** in Coolify → classpulse → Logs, or `sudo docker logs <container>` over SSH. They are JSON, with secrets hidden.
 
 ### 15.2 Backups
 - **What:** a full database dump (`pg_dump`) plus all lecture audio, packed and **encrypted with `age`** using a public key. Only the owner's private key can decrypt it.
@@ -839,8 +1034,12 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 ### 15.3 Common admin tasks
 | Task | How |
 |---|---|
-| Create a new school + its admin | SSH to the server, then run:<br>`API=$(sudo docker ps -q --filter label=com.docker.compose.project=bmbcqf7x63jjpirzhi8tzsby --filter label=com.docker.compose.service=api)`<br>`sudo docker exec $API node dist/scripts/createAdmin.js --email x@y --name "Name" --institution-name "School" --institution-code CODE`<br>It prints a one-time password. |
-| Add another admin to an existing school | The same command with the existing `--institution-code` |
+| Create a new school + its admin | **Console → Schools → New school** (section 15.5.2). The command-line way still works: SSH to the server, then run:<br>`API=$(sudo docker ps -q --filter label=com.docker.compose.project=bmbcqf7x63jjpirzhi8tzsby --filter label=com.docker.compose.service=api)`<br>`sudo docker exec $API node dist/scripts/createAdmin.js --email x@y --name "Name" --institution-name "School" --institution-code CODE`<br>It prints a one-time password. |
+| Add another admin to an existing school | Console → the school → Admins → **Add admin** (or the same command with the existing `--institution-code`) |
+| Create a super admin (console account) | On the server: `sudo docker exec -it $API node dist/scripts/createSuperAdmin.js --email you@benxsolutions.in --name "Your Name"` (section 15.5.1) |
+| Switch a feature off for a school | Console → the school → **Features & limits** (section 15.5.3) |
+| Pause a school (for example unpaid) | Console → the school → **Suspend** (section 15.5.4) |
+| Announce maintenance | Console → Settings → Maintenance and banner (section 15.5.4) |
 | Reset a teacher/student password | Admin console → Teachers/Students → Reset password |
 | Disable a user | Admin console → edit → Account status: Disabled (signs them out everywhere) |
 | Change AI models | Admin → AI settings |
@@ -858,6 +1057,118 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | Student forgot password | Admin → Students → Reset password |
 | Suspected account compromise | Disable the user (immediate sign-out everywhere), then reset the password |
 | HTTPS certificate missing after a firewall change | Restart Coolify's proxy (Servers → Proxy → Restart) so Let's Encrypt retries |
+| A super admin lost their phone (authenticator) | Sign in with one of the recovery codes (each works once). To move to a new phone, the account has to be created again (section 15.5.1, "Lost phone or lost key") |
+| Console sign-in says two-factor is "not configured" | `PLATFORM_ENCRYPTION_KEY` is missing on the API. Set it in Coolify and redeploy |
+| `/platform` shows "Not found" | You are on the school address. Use the console address (`PLATFORM_HOST`). If that also fails, check `PLATFORM_HOST` is set and the domain is on the `router` service |
+| Invitation or reset emails don't arrive | Console → Health → **Email** and the `email` queue's failed jobs. Check the `SMTP_*` settings, and the SPF advice in section 14.5. Retry failed emails from the queue |
+| A teacher sees "…switched off for your school" | The console has that feature off for the school: Console → the school → Features & limits |
+| "This school's monthly AI transcription minutes are used up" | The school reached its limit. Raise or clear it in Console → the school → Features & limits |
+| A school's users see "Your school's access is paused" | The school is suspended. Console → the school → **Reactivate** |
+| A teaching resource or email job failed | Console → Health → the queue's failed jobs → **Retry** |
+
+### 15.5 The platform console: owner's guide
+The platform console is where you, as the owner, run the whole service: add schools, switch features off, pause a school, and watch health, logs and costs. Section 6.5 lists every page; this section walks through the common jobs.
+
+- **Address:** `https://ops.benxsolutions.in` once the DNS records exist (section 14.3); until then `https://ops.129.159.227.74.sslip.io`. It opens the sign-in page at `/platform/login`.
+- **It is not on the school address.** `classpulse…/platform` answers "Not found" on purpose.
+- **Who can use it:** only super admin accounts. School admins, teachers and students cannot sign in here.
+
+#### 15.5.1 Signing in for the first time (authenticator and recovery codes)
+**Before you start:** install an **authenticator app** on your phone, for example Google Authenticator, Microsoft Authenticator or 1Password. It shows a new 6-digit code every 30 seconds for each account you add to it.
+
+**Step 1: create your account (once, on the server).** Super admin accounts can only be created from the server's command line, never from a web page.
+1. SSH to the server (section 22).
+2. Run:
+   ```bash
+   API=$(sudo docker ps -q --filter label=com.docker.compose.project=bmbcqf7x63jjpirzhi8tzsby --filter label=com.docker.compose.service=api)
+   sudo docker exec -it $API node dist/scripts/createSuperAdmin.js --email you@benxsolutions.in --name "Your Name"
+   ```
+3. It prints a **one-time password**, shown only once. Keep it for step 2. If it warns that `PLATFORM_ENCRYPTION_KEY` is not set, set that variable in Coolify and redeploy first (section 14.5).
+
+On your own computer (development) the command is `npm run create-superadmin -- --email … --name …`.
+
+**Step 2: first sign-in.**
+1. Open the console address. Enter your email and the one-time password.
+2. **Set up two-factor sign-in:** scan the QR code with the authenticator app. If you can't scan, type the **setup key** shown under it. Enter the 6-digit code the app now shows.
+3. **Save your recovery codes:** you see **10 recovery codes** (they look like `abcd-2345`). Each one signs you in **once** if you lose your phone. They are shown **only now**. Click **Copy codes**, store them in your password manager or print them, then click **I've saved these codes**.
+4. **Choose a new password** (at least 8 characters) to replace the one-time password.
+5. You are in the console.
+
+**Every sign-in after that:** email and password, then the 6-digit code from the app. To use a recovery code instead, click **Use a recovery code instead**.
+- A console session lasts **2 hours**. **Sign out** ends every console session of your account.
+- After 5 wrong attempts in 15 minutes, sign-in pauses for a while.
+
+**New recovery codes:** Settings → My account → enter a current authenticator code → new codes. The old codes stop working.
+
+**Lost phone or lost key:**
+- **Phone lost, recovery codes safe:** sign in with a recovery code. To move to a new phone, re-create your account (below), because an account's authenticator can't be replaced from the console.
+- **Phone and recovery codes both lost**, or **`PLATFORM_ENCRYPTION_KEY` lost or changed** (the key that locks every authenticator secret): re-create the account.
+  1. Open the database shell on the server:<br>`sudo docker exec -it $(sudo docker ps -q --filter label=com.docker.compose.project=bmbcqf7x63jjpirzhi8tzsby --filter label=com.docker.compose.service=postgres) psql -U classpulse classpulse`
+  2. Run `DELETE FROM platform_admins WHERE email = 'you@benxsolutions.in';`
+  3. Repeat Step 1 and Step 2.
+
+  Schools, users and the audit history are not affected. A lost key affects every super admin, which is why section 14.8 asks you to keep a copy of it.
+
+**Tip:** an authenticator app with an encrypted cloud backup (several of the apps above offer one) avoids most lost-phone problems.
+
+#### 15.5.2 Adding a school and its admin
+1. Console → **Schools** → **New school**.
+2. Fill in:
+   - **School name**;
+   - **School code**: 2–20 letters, digits or dashes, for example `BENX`. Students may need it to sign in;
+   - time zone (default Asia/Kolkata) and academic year (for example `2026-27`);
+   - the **admin's name and email**;
+   - optionally a contact name, email and phone, and private notes.
+3. Click **Create school**. The school is created with the default AI models from Settings and its first admin account.
+4. A box shows the admin's **one-time password, once**. Copy it and send it to the admin securely. If email is set up, the admin also receives a **set-password link** by email (valid 72 hours), so they can choose their own password without the one-time one.
+5. Tell the admin to sign in at `https://classpulse.benxsolutions.in/admin/login` (for now, the sslip.io address with `/admin/login`). From there they add teachers, students and classes themselves (section 6.2).
+
+**More admins later:** open the school → **Admins** → **Add admin**. The same tab lets you **reset** an admin's password, **resend** their invitation, or **disable** and re-enable them.
+
+#### 15.5.3 Switching features off for a school (and setting limits)
+Open the school → **Features & limits**.
+
+**Feature switches** (all on by default). Untick, then **Save features**:
+
+| Switch | What turns off |
+|---|---|
+| Exams | Secure exams for teachers and students |
+| Assignments | Assignments and their file uploads |
+| Live quiz | Live, game-style quizzes |
+| Classroom devices (recording) | Raspberry Pi recorders and recording from the classroom (uploading a recording still works) |
+| Email invitations | Not enforced yet: invitations are still sent while email is set up (section 13.3) |
+| AI grading | The "Suggest with AI" button on assignment grading |
+| Teacher tools (materials, papers, presentations) | Courses & materials, AI teaching tools, simulations and class insights |
+
+A switched-off feature **disappears from the school's menus** straight away, and its pages answer "… is switched off for your school." Nothing is deleted. Switch it back on and everything is still there.
+
+**Limits** (leave a box empty for "no limit"). Click **Save limits**:
+
+| Limit | What it does |
+|---|---|
+| Maximum students / Maximum teachers | New accounts and CSV imports are refused beyond this number (disabled accounts count too) |
+| AI audio minutes per month | Transcription is refused once the school has used this many minutes this month (section 8.8) |
+| Storage (GB) | A warning only; nothing is blocked |
+
+#### 15.5.4 Suspending a school, maintenance and banners
+- **Suspend:** open the school → **Suspend**, give a reason (it goes in the audit log), and type the school code to confirm. Every user of that school is signed out and sees "Your school's access is paused. Contact support." **No data is deleted.** **Reactivate** lets them back in straight away.
+- **Maintenance mode** (Settings → Maintenance and banner): shows your message on every sign-in page and inside the app, for every school. Tick **Block school sign-ins and requests while in maintenance** to stop everyone using the app until you switch it off, for example during a risky upgrade.
+- **Banner:** a one-line notice (info, warning or critical) shown to every school user, for example "New feature: secure exams".
+
+#### 15.5.5 Where to see costs, logs and health
+| You want to know… | Go to | What you see |
+|---|---|---|
+| Is everything working right now? | **Overview** (alerts) and **Health** | Each part (database, Redis, worker, API, disk, email, OpenAI, Sarvam, classroom devices, backups) as OK, degraded or down; the three job queues; a 24-hour to 30-day history chart. **Test OpenAI** / **Test Sarvam** check an AI provider key. Refreshes every 15 seconds |
+| What needs attention? | **Overview → Alerts**, also on Health | Something down, failed jobs in a queue, a backup older than 26 hours, disk over 85% full, AI provider failures in the last hour, offline classroom devices |
+| A job failed (email, teaching resource, lesson) | **Health → queues** | The failed jobs with their errors; **Retry** one or all, or remove one |
+| What happened, technically? | **Logs** | A live tail of warnings, errors and notable requests, filterable by level, school and text; pause and resume; CSV download. Kept 14 days |
+| Who did what? | **Audit log** | Sign-ins, school changes, feature switches, password resets, deployments, by whom and when; filters and CSV. Kept 365 days. Each school's own trail is also on its **Activity** tab |
+| How much is it used, and what does AI cost? | **Usage & costs** | Choose dates, a school and day/week/month. Active users, quiz attempts, exams and homework, emails, AI calls and failures, tokens, audio minutes and **estimated AI cost (USD)**, with top schools and a per-model table. **Download CSV** (activity, schools or AI) |
+| Are the cost figures right? | **Settings → AI price rates** | The prices used for the estimate, per model. Update them when OpenAI or Sarvam change prices. The providers' invoices are always the real bill |
+| Which version is running? | **Deployments** | The deployed commit, recent deployments with logs, **Redeploy** and **Restart** (type the word to confirm). Needs the Coolify settings (section 14.5) |
+
+#### 15.5.6 Finding a person
+Console → **Users**: type at least 2 characters of a name, email or roll number, optionally pick a role. Results show the school, role, status and last sign-in. Password resets for teachers and students are still done by the school's admin; you can reset a school **admin's** password from the school's Admins tab.
 
 ---
 
@@ -887,6 +1198,7 @@ Open http://localhost:3000.
 | `npm run test:e2e` | Full browser test (needs `npm run dev` running) |
 | `npm run db:generate` | Create a new migration after changing the schema |
 | `npm run create-admin -- --email … --name … --institution-code …` | Create an admin locally |
+| `npm run create-superadmin -- --email … --name …` | Create a console (super admin) account locally. The console is at http://localhost:3000/platform; set `PLATFORM_ENCRYPTION_KEY` in `apps/api/.env` first (`openssl rand -base64 32`), or sign-in is refused |
 
 ---
 
@@ -895,9 +1207,20 @@ Open http://localhost:3000.
 ### 17.1 Automated tests
 | Suite | Count | What it covers |
 |---|---|---|
-| **API tests** (Vitest + supertest, real PostgreSQL) | **19 files, 211 tests**, all passing | Login and sessions; the permission matrix for every role (rbac); admin CRUD; sections and join codes; lessons, uploads, size and type limits; generation modes and difficulty; publishing; questions; analytics and remedial; student quizzes (server-side grading, duplicate-submit protection); live-quiz sockets (30 simulated players, no answer leak, auto-close, reconnect, rebuild after restart); devices and recordings (including running the real Pi agent); health |
+| **API tests** (Vitest + supertest, real PostgreSQL) | **32 files, 409 tests**, all passing | Login and sessions (including the separate role sign-ins); the permission matrix for every role (rbac); admin CRUD; sections and join codes; lessons, uploads, size and type limits; generation modes and difficulty; publishing; questions; analytics and remedial; student quizzes (server-side grading, duplicate-submit protection); live-quiz sockets (30 simulated players, no answer leak, auto-close, reconnect, rebuild after restart); devices and recordings (including running the real Pi agent); health. **New:** emailed invitations and resets; assignments (files, rubrics, grading, AI suggestions, reminders, late policy); secure exams; curriculum and materials; teaching resources, question papers and presentations; simulations; class insights; the platform console (authenticator sign-in, schools, features and limits, suspension, maintenance, stats, health, logs, audit, deployments) |
 | **Pi agent tests** (pytest) | **11 tests** | HTTPS required, registration, chunking, resume, retries, finalize, cancel, disk guard, end-to-end against a stub server |
-| **Browser end-to-end** (Playwright) | **7 steps** | (1) admin onboarding; (2) teacher uploads, then real transcription, then generates 5 Mixed questions; (3) edit, approve, publish; (4) students sign in, join by code, take the quiz; (5) live quiz with 2 students; (6) the **real Pi agent** records, is killed mid-class, restarts, uploads, then transcription and generation; (7) analytics. **7/7 passing on the live server and locally, with real AI.** |
+| **Browser end-to-end** (Playwright) | **6 specs** | See the table below. |
+
+**The Playwright specs** (`apps/web/e2e/`). Each runs against a running stack (`npm run dev` with the demo data, or the production stack via `E2E_BASE_URL`). The comment at the top of each file lists what it needs.
+
+| Spec | What it checks | Needs |
+|---|---|---|
+| `full-flow` | (1) admin onboarding; (2) teacher uploads, then real transcription, then generates 5 Mixed questions; (3) edit, approve, publish; (4) students sign in, join by code, take the quiz; (5) live quiz with 2 students; (6) the **real Pi agent** records, is killed mid-class, restarts, uploads, then transcription and generation; (7) analytics. 7/7 passed on the live server and locally, with real AI | Real AI keys; a lecture recording at `.e2e-fixtures/lecture-150s.mp3` |
+| `accounts` | Admin downloads the teacher CSV template, imports two teachers, each gets an invitation email, one sets a password from the link; then "Forgot password?" | The API started with `E2E_MAIL_CAPTURE=true`, which captures email instead of sending it (refused in production) |
+| `exams` | A 5-question pool with 3 per student, access code and fullscreen; two students start; one leaves fullscreen and submits, the other is force-submitted from the monitor; the integrity timeline | Demo data only (no AI needed) |
+| `assignments` | A standalone assignment with files and "allow late"; a student hands in text and a photo (flagged late); the teacher asks the AI for a suggestion, adjusts a mark and returns it; the student sees marks and feedback | Real AI; `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` |
+| `platform` | Console first sign-in (one-time password, authenticator set-up, recovery codes, password change); create a school and its admin; the admin signs in; suspend (admin refused) and reactivate; a banner; the ops pages | A **freshly created** super admin: `E2E_PLATFORM_EMAIL` and `E2E_PLATFORM_PASSWORD` (the printed one-time password), and `PLATFORM_ENCRYPTION_KEY` on the API |
+| `teacher-tools` | Import an NCERT course, generate a lesson plan and a presentation from one chapter, download them, share the plan, open a simulation in classroom mode | An OpenAI key, or `PIPELINE_DEMO_FALLBACK=true` in development (labelled demo content) |
 | **Load test** | 100 students | Live server, over the internet: 100/100 joined, 500/500 answers, 0 dropped, p95 42 ms |
 | **UI audit** | 58 page views | Every page × 3 roles × desktop and phone: no overflow, no console errors, no failed requests, and accessibility checks (axe-core) clean (the last two minor items were fixed and deployed) |
 | **Backup/restore drill** | — | Encrypted backup restored; all table counts matched |
@@ -938,6 +1261,7 @@ The browser test is run manually, since it needs real AI keys.
 | 10 Oct 2026 | Live UI audit and fixes (mobile overflow, accessibility). |
 | 10 Oct 2026 | **Teacher-controlled quiz generation:** recordings transcribe automatically; the teacher chooses the number of questions and the difficulty; add/replace modes; model dropdowns in AI settings. |
 | 11 Oct 2026 | Second school and admin (`admin2@benxsolutions.in`, BenX School 2) created. This handbook written. |
+| 11 Oct 2026 | **Platform and teaching release** (commit `ceb780c`): the super admin **platform console** on its own address (authenticator sign-in, schools and admins, suspension, feature switches and limits, maintenance and banner, health, logs, audit, usage and AI cost, deployments); **separate sign-in pages** for admins, teachers and students; **teacher AI tools** (courses and materials, lesson plans, worksheets, question papers, presentations, voice prompts, Word/PowerPoint export, sharing, simulations, class insights, Bloom and competency tags); **secure exams**; **better assignments** (files, rubrics, AI-suggested grading, reminders, late policy); **emailed invitations and password resets**; CSV templates and teacher import; AI usage recording and a monthly AI audio limit per school; the **installable app**. |
 
 **Key decisions and why:**
 - **Drizzle (not Prisma):** lighter and closer to SQL.
@@ -958,7 +1282,10 @@ The browser test is run manually, since it needs real AI keys.
   - A 2-CPU server processes one AI job at a time.
 - **No automatic deploy on push:** a GitHub webhook can be added in Coolify.
 - **Domain:** still on sslip.io until the DNS records are added.
-- **Security gaps:** no admin 2FA, no self-service password reset, and logout doesn't revoke tokens server-side (section 13.3).
+- **Security gaps:** no two-factor sign-in for school users (only super admins have it), password reset by email only when email is set up, and school logout doesn't revoke tokens server-side (section 13.3).
+- **"Email invitations" switch:** shown in the console but not enforced yet (section 13.3).
+- **Console alerts** appear on the console's Overview and Health pages only; nothing emails or messages you yet. An external uptime monitor is still recommended (section 15.1).
+- **Cost figures** are estimates from editable price rates, not the providers' bills.
 - **Unused feature flag:** SMS OTP login (`FEATURE_SMS_OTP`) is declared but not implemented.
 - **Storage:** audio lives on the server's disk. The code has a placeholder for S3/Cloudflare R2 object storage.
 - **Off-site backups:** not configured yet (`BACKUP_S3_URI`).
@@ -1005,7 +1332,24 @@ Yes, self-paced quizzes can be retaken any number of times. Analytics use each s
 Per-question accuracy (Critical / Moderate / Mastered), answer distributions, each student's score, and an optional AI remedial plan.
 
 **Q: Is there homework?**
-Each lesson gets an AI-drafted assignment with a rubric, which the teacher can edit. It is published with the lesson. Students submit text answers until the due date.
+Yes. Each lesson gets an AI-drafted assignment with a rubric, which the teacher can edit, and teachers can create more assignments, attached to a lesson or standalone. Students hand in text and, if allowed, photos or files. Late work is accepted and marked late, or refused, as the teacher chooses. The teacher can ask the AI to suggest marks and feedback, but always reviews them before returning the work (section 6.3.2).
+
+**Q: Can teachers run proper exams?**
+Yes, secure timed exams: each student gets their own shuffled set of questions, an optional access code read out in the room, fullscreen and one-device rules, warnings for tab switching, a live monitor, and results with an integrity timeline (section 6.3.3).
+
+**Q: What else can the AI do for teachers?**
+Lesson plans, worksheets, question papers (with a blueprint, Bloom levels, internal choice and an answer key) and slide presentations, based on the syllabus and the teacher's own notes and recorded lessons. They download as Word or PowerPoint, and can be shared with other teachers in the school (section 6.3.4).
+
+**Q: Why are there separate sign-in addresses for admins, teachers and students?**
+Each role has its own page: `/admin/login`, `/teacher/login` and `/student/login`. `/login` is just a chooser that links to the three. Separate pages:
+- keep each page simple: students see only "roll number and password", staff only "email and password";
+- let a school print or bookmark the right link for each group (for example the student link on a classroom poster);
+- accept only their own role, so a teacher can't land in the admin area by using the wrong page. A wrong page simply says "invalid email or password" and links to the other two.
+
+Super admins use a fourth, completely separate address (the platform console), which schools never see (section 15.5).
+
+**Q: Can people reset their own password?**
+Yes, if email is set up and the account has an email address: **Forgot password?** on the sign-in page sends a link that works once, within 72 hours. Otherwise the school admin resets it (section 5.4).
 
 **Q: Can parents be contacted?**
 Students can store guardian contacts with a "send progress updates" flag. Sending messages (SMS/email) is not built yet.
@@ -1063,6 +1407,9 @@ No. It is deleted automatically after 30 days. Transcripts and quiz results are 
 **Q: Is student data sent to OpenAI?**
 No student personal data. OpenAI receives the lecture transcript and lesson details; Sarvam receives the audio.
 
+**Q: Is there two-factor sign-in?**
+For super admins, yes: every console sign-in needs a 6-digit code from an authenticator app, with 10 single-use recovery codes as a backup. School admins, teachers and students sign in with a password only (section 13.3).
+
 **Q: Is the site encrypted?**
 Yes. HTTPS with a Let's Encrypt certificate, plus HSTS. The Coolify dashboard itself still needs its own HTTPS domain (section 14.9).
 
@@ -1077,13 +1424,19 @@ On an Oracle Cloud ARM server (2 CPUs, 12 GB RAM) in the benxsolutions tenancy, 
 Push the code to GitHub, then click Redeploy in Coolify. It builds and restarts in a few minutes, and database changes apply automatically.
 
 **Q: What does it cost to run?**
-The server is an Oracle Cloud instance. Ongoing variable costs are the **AI API usage**: Sarvam per minute of audio, and OpenAI per quiz generated. Check current prices on the providers' websites, and usage in their dashboards. No figures are recorded in this project.
+The server is an Oracle Cloud instance. Ongoing variable costs are the **AI API usage**: Sarvam per minute of audio, and OpenAI per quiz, teaching resource or grading suggestion. ClassPulse now records every AI call, and the console's **Usage & costs** page shows an **estimate** per school and per model, in US dollars, from the price rates in console Settings (section 15.5.5). The providers' invoices are the real bill; keep the rates in Settings up to date.
+
+**Q: Can one school's AI use be capped?**
+Yes. Console → the school → Features & limits → **AI audio minutes per month**. Once used up, new transcriptions are refused until the next month (section 8.8).
 
 **Q: Can it handle more schools?**
-Yes, it is multi-tenant: create a school with `createAdmin`. A single server is sized for a pilot. Larger scale needs more worker capacity and the scaling steps in section 19.
+Yes, it is multi-tenant: create a school in the console (Schools → New school, section 15.5.2). A single server is sized for a pilot. Larger scale needs more worker capacity and the scaling steps in section 19.
+
+**Q: Can we switch a feature off for one school, for example on a cheaper plan?**
+Yes. Console → the school → Features & limits: exams, assignments, live quiz, classroom devices, AI grading and teacher tools can each be switched off per school, and students and teachers can be capped (section 15.5.3).
 
 **Q: Who can log in to the server?**
-Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
+Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The platform console is separate: only super admin accounts, each with its own authenticator.
 
 ---
 
@@ -1091,8 +1444,11 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
 | Term | Meaning |
 |---|---|
 | **API** | The server's set of URLs that the website (and the Pi) call to do things |
+| **Audit log** | A permanent-style record of who did what and when (kept 365 days here) |
+| **Authenticator app** | A phone app (Google Authenticator, Microsoft Authenticator, 1Password…) that shows a new 6-digit sign-in code every 30 seconds |
 | **Backend / frontend** | Server-side code / what runs in the browser |
 | **bcrypt** | A deliberately slow password-hashing method that makes stolen password databases hard to crack |
+| **Bloom's taxonomy** | Six levels of thinking a question can test: remember, understand, apply, analyse, evaluate, create |
 | **BullMQ** | A job queue library built on Redis |
 | **Caddy** | A web server/router; ours forwards requests to the API or the web app |
 | **CI** | Continuous Integration: automatic checks run on every code push |
@@ -1107,6 +1463,8 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
 | **E2E test** | End-to-end test: a robot browser clicks through the real app like a user |
 | **Enrollment token** | A one-time code used to register a Raspberry Pi |
 | **Environment variables** | Settings given to a program at start-up (passwords, keys, options) |
+| **Feature switch** | A per-school on/off setting in the console that hides and blocks one feature |
+| **Grounding** | Giving the AI the teacher's own material (syllabus, notes, lecture transcripts) so its output is based on it |
 | **ffmpeg** | A tool for converting and measuring audio/video files |
 | **Health check** | A URL that reports whether the service is working |
 | **HSTS** | A header telling browsers to always use HTTPS for this site |
@@ -1123,18 +1481,26 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
 | **OCI** | Oracle Cloud Infrastructure |
 | **p95** | 95th percentile: 95% of measurements were at or below this value |
 | **PCM / WAV** | Raw digital audio / a common audio file format containing PCM |
+| **PhET** | Free interactive science and maths simulations from the University of Colorado Boulder |
+| **Platform console** | The owner's control room at `/platform` on its own address, for super admins only |
 | **PostgreSQL** | The database system |
+| **PWA** | Progressive Web App: a website that can be installed like an app |
 | **Rate limiting** | Capping how many attempts are allowed in a time window |
 | **RBAC** | Role-Based Access Control: what each role may do |
+| **Recovery code** | A single-use backup code (like `abcd-2345`) that signs a super admin in without their phone |
 | **Redis** | A very fast in-memory data store |
 | **Reverse proxy** | A server in front of other servers that forwards requests (Traefik, Caddy) |
 | **SHA-256** | A fingerprint of data; any change gives a different fingerprint |
+| **SMTP** | The standard way programs send email through a mailbox provider (Gmail, GoDaddy) |
 | **Socket.IO / WebSocket** | A persistent two-way connection for real-time features |
+| **SPF** | A DNS record listing which mail servers may send email for a domain; mail from other servers is treated as suspicious |
 | **sslip.io** | A free service turning an IP into a hostname (e.g. classpulse.129.159.227.74.sslip.io) |
 | **STT** | Speech-to-text (transcription) |
 | **Structured outputs** | Forcing the AI to reply in an exact data format |
+| **Super admin** | A ClassPulse operator account for the platform console, above all schools |
 | **systemd / timer** | Linux's service manager / its scheduler (used instead of cron) |
 | **TLS / HTTPS** | Encryption for web traffic |
+| **TOTP** | Time-based one-time password: the 6-digit codes an authenticator app shows |
 | **Traefik** | Coolify's reverse proxy that handles HTTPS certificates |
 | **TypeScript** | JavaScript with type checking |
 | **UUID** | A random unique ID like `3f1c…` |
@@ -1148,7 +1514,10 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
 | Thing | Value |
 |---|---|
 | Live site | https://classpulse.129.159.227.74.sslip.io (planned: https://classpulse.benxsolutions.in) |
-| Health check | `/api/health/ready` |
+| Sign-in pages | `/admin/login`, `/teacher/login`, `/student/login` (`/login` is a chooser) |
+| Platform console | https://ops.129.159.227.74.sslip.io/platform (planned: https://ops.benxsolutions.in); password + authenticator code |
+| Create a super admin | `sudo docker exec -it $API node dist/scripts/createSuperAdmin.js --email … --name …` (section 15.5.1) |
+| Health check | `/api/health/ready` (or console → Health) |
 | Coolify | http://129.159.227.74:8000 → Project ClassPulse → production → classpulse |
 | GitHub | `NINJA981/classpulse` (private), branch `main` |
 | Server | Oracle Cloud `benx`, 129.159.227.74, Ubuntu 24.04, ARM64, 2 OCPU / 12 GB |
@@ -1157,5 +1526,7 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login.
 | Admins | `admin@benxsolutions.in` (BenX Pilot School, BENX), `admin2@benxsolutions.in` (BenX School 2, BENX2), `e2e-admin@benxsolutions.in` (E2E Test School, tests only) |
 | Backups | Nightly 02:30 UTC → `/var/backups/classpulse/{daily,weekly}`; key: `classpulse-backup.key` (owner only) |
 | Default AI | STT Sarvam `saaras:v3` (codemix); quiz `gpt-4.1-mini` for new schools (existing schools keep their saved choice); 5 questions; bilingual on |
-| Limits | Upload 300 MB; 1–30 questions per request; audio kept 30 days; session 12 h; join codes 30 days; enrollment tokens 24 h; live PIN 6 digits |
+| Limits | Upload 300 MB; 1–30 questions per request; audio kept 30 days; session 12 h (console 2 h); join codes 30 days; enrollment tokens 24 h; set-password links 72 h; live PIN 6 digits; exam access code 6 characters; assignment files 10 MB each, up to 10; teacher materials 20 MB; voice prompts 60 s |
+| Kept for | Console logs 14 days; audit log 365 days; health history 30 days |
+| Job queues | `lesson-generation`, `email`, `resources` (all run by the worker) |
 | Key docs | `docs/api.md`, `docs/architecture.md`, `docs/database.md`, `docs/deployment.md`, `docs/hardware-raspberry-pi.md`, `docs/pilot-runbook.md` |
