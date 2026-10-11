@@ -2,7 +2,9 @@
 import { useId, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  BLOOM_LEVELS,
   QUESTION_OPTION_COUNT,
+  type BloomLevel,
   type Difficulty,
   type Question,
   type QuestionInput,
@@ -11,6 +13,7 @@ import { Button, Checkbox, Dialog, Field, InlineError, Input, Select, Textarea, 
 import { ApiError, api } from '@/lib/api';
 import { optionLetter } from '@/components/teacher/status';
 import { lessonKey } from './use-lesson';
+import { BLOOM_LABEL } from './bloom';
 
 const blankOptions = () => Array.from({ length: QUESTION_OPTION_COUNT }, () => '');
 
@@ -99,6 +102,8 @@ function QuestionForm({
   const [explanation, setExplanation] = useState(question?.explanation ?? '');
   const [difficulty, setDifficulty] = useState<Difficulty>(question?.difficulty ?? 'medium');
   const [topicTag, setTopicTag] = useState(question?.topicTag ?? '');
+  const [bloomLevel, setBloomLevel] = useState<BloomLevel | ''>(question?.bloomLevel ?? '');
+  const [competency, setCompetency] = useState(question?.competency ?? '');
 
   const hasLocal = Boolean(question?.stemLocal || question?.optionsLocal || question?.explanationLocal);
   const [showLocal, setShowLocal] = useState(hasLocal);
@@ -129,6 +134,8 @@ function QuestionForm({
       explanation: explanation.trim() || null,
       difficulty,
       topicTag: topicTag.trim() || null,
+      bloomLevel: bloomLevel || null,
+      competency: competency.trim() || null,
       stemLocal: useLocal ? stemLocal.trim() || null : (question?.stemLocal ?? null),
       optionsLocal: useLocal ? (anyLocalOption ? optionsLocal.map((o) => o.trim()) : null) : (question?.optionsLocal ?? null),
       explanationLocal: useLocal ? explanationLocal.trim() || null : (question?.explanationLocal ?? null),
@@ -193,6 +200,21 @@ function QuestionForm({
         </Field>
         <Field label="Topic" error={fe.topicTag}>
           {(p) => <Input {...p} value={topicTag} maxLength={120} onChange={(e) => setTopicTag(e.target.value)} />}
+        </Field>
+        <Field label="Bloom level" error={fe.bloomLevel}>
+          {(p) => (
+            <Select {...p} value={bloomLevel} onChange={(e) => setBloomLevel(e.target.value as BloomLevel | '')}>
+              <option value="">Not set</option>
+              {BLOOM_LEVELS.map((b) => (
+                <option key={b} value={b}>
+                  {BLOOM_LABEL[b]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label="Competency" hint="The skill this question tests, in a few words." error={fe.competency}>
+          {(p) => <Input {...p} value={competency} maxLength={160} onChange={(e) => setCompetency(e.target.value)} />}
         </Field>
       </div>
 

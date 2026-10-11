@@ -1,7 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { SESSION_COOKIE, type Role, type SessionUser } from '@classpulse/shared';
 import { AppError, forbidden, unauthenticated } from '../lib/errors.js';
-import { resolveSession } from '../lib/session.js';
+import { loadSessionUser, sessionBlock } from '../lib/session.js';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -17,11 +17,16 @@ function extractToken(req: Request): string | null {
   return null;
 }
 
-/** Requires a valid session. Users who must change their password may only reach `allowDuringPasswordChange` routes. */
+/**
+ * Requires a valid session. Users who must change their password may only reach `allowDuringPasswordChange` routes.
+ * Platform maintenance (blockLogins) answers 503 MAINTENANCE and a suspended school 403 SCHOOL_SUSPENDED.
+ */
 export function authenticate(options: { allowDuringPasswordChange?: boolean } = {}): RequestHandler {
   return async (req: Request, _res: Response, next: NextFunction) => {
-    const user = await resolveSession(extractToken(req));
+    const user = await loadSessionUser(extractToken(req));
     if (!user) return next(unauthenticated());
+    const blocked = await sessionBlock(user);
+    if (blocked) return next(blocked);
     if (user.mustChangePassword && !options.allowDuringPasswordChange) {
       return next(new AppError('PASSWORD_CHANGE_REQUIRED', 'Please change your password to continue'));
     }

@@ -9,14 +9,24 @@ import {
   type ImportStudentsResult,
   type Paginated,
   type PasswordResetResult,
+  type PasswordTokenPurpose,
+  type SendLinkResult,
   type Student,
   type UpdateStudentInput,
 } from '@classpulse/shared';
 import { db, type DbOrTx } from '../../db/client.js';
-import { enrollments, sections, users } from '../../db/schema/index.js';
+import { enrollments, institutions, sections, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashInitialPassword, hashPassword } from '../../lib/crypto.js';
 import { badRequest, notFound } from '../../lib/errors.js';
-import { bumpTokenVersion, resetUserPassword, rethrowUserConflict } from '../auth/accounts.js';
+import {
+  bumpTokenVersion,
+  resetUserPassword,
+  rethrowUserConflict,
+  sendAccountLink,
+  updateUserRevokingOnEmailChange,
+} from '../auth/accounts.js';
+import { assertSeatsAvailable } from '../../lib/platformState.js';
+import { issueInvites, issueToken } from '../auth/passwordTokens.js';
 import { findStudents } from './repo.js';
 
 export const ListStudentsQuery = PaginationQuery.extend({
@@ -70,7 +80,9 @@ export async function assertSectionInInstitution(dbx: DbOrTx, institutionId: str
 export async function createStudent(
   institutionId: string,
   input: CreateStudentInput,
+  actorId: string,
 ): Promise<CreatedWithPassword<Student>> {
+  await assertSeatsAvailable(institutionId, 'student', 1);
   const generated = input.password ? null : generateInitialPassword();
   const passwordHash = await hashPassword(input.password ?? generated ?? '');
   const id = await db
@@ -93,12 +105,17 @@ export async function createStudent(
       return row!.id;
     })
     .catch(rethrowUserConflict);
-  return { record: await getStudent(institutionId, id), initialPassword: generated };
+  const invite = await issueToken(id, 'invite', actorId);
+  return { record: await getStudent(institutionId, id), initialPassword: generated, invite };
 }
 
 type ImportRow = ImportStudentsInput['rows'][number];
 
-export async function importStudents(institutionId: string, input: ImportStudentsInput): Promise<ImportStudentsResult> {
+export async function importStudents(
+  institutionId: string,
+  input: ImportStudentsInput,
+  actorId: string,
+): Promise<ImportStudentsResult> {
   const skipped: ImportStudentsResult['skipped'] = [];
   if (input.sectionId) await assertSectionInInstitution(db, institutionId, input.sectionId);
 
@@ -141,6 +158,9 @@ export async function importStudents(institutionId: string, input: ImportStudent
     else candidates.push(r);
   }
 
+  // The school's seat limit (if any) must cover every row that would be created.
+  await assertSeatsAvailable(institutionId, 'student', candidates.length);
+
   // 3. Hash before opening the transaction so it is not held open during bcrypt work.
   const prepared: (ImportRow & { initialPassword: string; passwordHash: string })[] = [];
   for (const row of candidates) {
@@ -166,18 +186,36 @@ export async function importStudents(institutionId: string, input: ImportStudent
         })),
       )
       .onConflictDoNothing()
-      .returning({ id: users.id, name: users.name, rollNumber: users.rollNumber });
+      .returning({ id: users.id, name: users.name, rollNumber: users.rollNumber, email: users.email });
     if (sectionId && rows.length > 0) {
       await tx.insert(enrollments).values(rows.map((r) => ({ sectionId, studentId: r.id })));
     }
     return rows;
   });
 
+  // 5. Invitations after commit, for the students who have an email address.
+  const [school] = await db
+    .select({ name: institutions.name, code: institutions.code })
+    .from(institutions)
+    .where(eq(institutions.id, institutionId));
+  const invites = await issueInvites(
+    inserted.map((r) => ({ ...r, role: 'student' as const, schoolName: school!.name, schoolCode: school!.code })),
+    actorId,
+  );
+
   const byRoll = new Map(inserted.map((r) => [r.rollNumber, r]));
   const created: ImportStudentsResult['created'] = [];
   for (const p of prepared) {
     const row = byRoll.get(p.rollNumber);
-    if (row) created.push({ id: row.id, name: row.name, rollNumber: p.rollNumber, initialPassword: p.initialPassword });
+    if (row) {
+      created.push({
+        id: row.id,
+        name: row.name,
+        rollNumber: p.rollNumber,
+        initialPassword: p.initialPassword,
+        invite: invites.get(row.id) ?? 'no_email',
+      });
+    }
     else skipped.push({ rollNumber: p.rollNumber, reason: 'Roll number or email already exists' });
   }
   return { created, skipped };
@@ -185,16 +223,11 @@ export async function importStudents(institutionId: string, input: ImportStudent
 
 export async function updateStudent(institutionId: string, id: string, input: UpdateStudentInput): Promise<Student> {
   if (Object.keys(input).length > 0) {
-    const updated = await db
-      .update(users)
-      .set({
-        ...input,
-        ...(input.status === 'disabled' && { tokenVersion: bumpTokenVersion }),
-      })
-      .where(and(studentScope(institutionId), eq(users.id, id)))
-      .returning({ id: users.id })
-      .catch(rethrowUserConflict);
-    if (updated.length === 0) throw notFound('Student');
+    const found = await updateUserRevokingOnEmailChange(studentScope(institutionId), id, {
+      ...input,
+      ...(input.status === 'disabled' && { tokenVersion: bumpTokenVersion }),
+    }).catch(rethrowUserConflict);
+    if (!found) throw notFound('Student');
   }
   return getStudent(institutionId, id);
 }
@@ -209,3 +242,10 @@ export async function deleteStudent(institutionId: string, id: string): Promise<
 
 export const resetStudentPassword = (institutionId: string, id: string): Promise<PasswordResetResult> =>
   resetUserPassword(institutionId, id, 'student');
+
+export const sendStudentLink = (
+  institutionId: string,
+  id: string,
+  purpose: PasswordTokenPurpose,
+  actorId: string,
+): Promise<SendLinkResult> => sendAccountLink(institutionId, id, 'student', purpose, actorId);

@@ -7,6 +7,7 @@
 import { readFile, rm } from 'node:fs/promises';
 import type { Language, TranscriptSegment } from '@classpulse/shared';
 import { env } from '../config/env.js';
+import { trackAiCall } from '../lib/aiUsage.js';
 import { sliceWav } from '../lib/ffmpeg.js';
 import { storage } from '../lib/storage.js';
 import { PipelineError } from './errors.js';
@@ -67,7 +68,11 @@ export async function transcribeWithOpenAI(input: TranscribeInput): Promise<Tran
   let approximate = false;
   try {
     for (const part of parts) {
-      const result = await transcribePart(part.path, model, input.language);
+      // One Whisper request per part, each recorded with its share of the audio.
+      const partSec = Math.min(PART_SEC, duration - part.offset) || duration;
+      const result = await trackAiCall(input.usage, { provider: 'openai', model }, () => transcribePart(part.path, model, input.language), () => ({
+        audioSeconds: partSec,
+      }));
       const text = (result.text ?? '').trim();
       if (!text) continue;
       texts.push(text);

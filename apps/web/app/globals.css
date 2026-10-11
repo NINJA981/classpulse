@@ -33,6 +33,7 @@
   --color-warning-soft: var(--cp-warning-soft);
   --color-danger: var(--cp-danger);
   --color-danger-soft: var(--cp-danger-soft);
+  --color-on-danger: var(--cp-on-danger);
   --color-info-soft: var(--cp-info-soft);
 
   --radius-card: var(--cp-radius);
@@ -64,6 +65,7 @@
   --cp-warning: #8a5a00;
   --cp-warning-soft: #f6efdf;
   --cp-danger: #a3231a;
+  --cp-on-danger: #ffffff;
   --cp-danger-soft: #f7e8e6;
   --cp-info-soft: #ecece8;
 
@@ -105,6 +107,41 @@
 
   --cp-font-sans: var(--font-jakarta), -apple-system, 'Segoe UI', Roboto, sans-serif;
   --cp-font-display: var(--font-outfit), var(--font-jakarta), sans-serif;
+}
+
+/* Platform console (/platform, [data-theme="platform"]): a dark operations theme with the
+   same component tokens, so the shared UI kit renders unchanged. */
+[data-theme='platform'] {
+  --cp-canvas: #0d1117;
+  --cp-surface: #151b23;
+  --cp-surface-2: #1e2630;
+  --cp-ink: #e8edf2;
+  --cp-ink-2: #c2cbd5;
+  --cp-muted: #94a1b0;
+  --cp-line: #2d3743;
+  --cp-line-strong: #6b7a8b;
+  --cp-accent: #5eead4;
+  --cp-accent-ink: #062925;
+  --cp-accent-soft: #123c38;
+  --cp-success: #4ade80;
+  --cp-success-soft: #12301f;
+  --cp-warning: #fbbf24;
+  --cp-warning-soft: #3a2c0b;
+  --cp-danger: #f87171;
+  /* Light red needs dark text for contrast (≈7:1). */
+  --cp-on-danger: #1f0707;
+  --cp-danger-soft: #3d1717;
+  --cp-info-soft: #172a3d;
+
+  --cp-radius: 10px;
+  --cp-radius-control: 8px;
+  --cp-shadow-card: none;
+  --cp-shadow-hard: 0 0 0 1px #5eead4;
+  --cp-shadow-pop: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  background-color: var(--cp-canvas);
+  color: var(--cp-ink);
+  color-scheme: dark;
 }
 
 html,

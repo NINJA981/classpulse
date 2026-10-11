@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SESSION_COOKIE } from '@classpulse/shared';
 import { db } from '../src/db/client.js';
-import { users } from '../src/db/schema/index.js';
+import { auditLogs, users } from '../src/db/schema/index.js';
 import { anon, as, createInstitution, createUser, createWorld, TEST_PASSWORD } from './helpers.js';
 
 function sessionCookieFrom(res: { headers: Record<string, unknown> }): string {
@@ -133,6 +133,15 @@ describe('auth', () => {
       expect((res.headers['set-cookie'] as unknown as string[]).join(';')).toMatch(new RegExp(`${SESSION_COOKIE}=;`));
     });
 
+    it('set-password routes are public; an unusable link is a 400, never a 401', async () => {
+      const preview = await anon().get(`/api/auth/password-token/${'a'.repeat(43)}`);
+      expect(preview.status).toBe(400);
+      expect(preview.body.error.code).toBe('BAD_REQUEST');
+      const redeem = await anon().post('/api/auth/set-password').send({ token: 'a'.repeat(43), newPassword: 'Whatever#123' });
+      expect(redeem.status).toBe(400);
+      expect((await anon().post('/api/auth/forgot-password').send({ email: 'x@y.in' })).status).toBe(204);
+    });
+
     it('/me requires a session', async () => {
       expect((await anon().get('/api/auth/me')).status).toBe(401);
     });
@@ -210,6 +219,45 @@ describe('auth', () => {
       expect(changed.status).toBe(200);
       const dash = await anon().get('/api/student/dashboard').set('Cookie', sessionCookieFrom(changed));
       expect(dash.status).toBe(200);
+    });
+  });
+
+  describe('separate role logins', () => {
+    it('each staff endpoint accepts only its own role, with the generic 401 for any other', async () => {
+      const admin = await anon().post('/api/auth/admin/login').send({ email: world.admin.email, password: TEST_PASSWORD });
+      expect(admin.status).toBe(200);
+      expect(admin.body.user.role).toBe('admin');
+      const teacher = await anon().post('/api/auth/teacher/login').send({ email: world.teacher.email, password: TEST_PASSWORD });
+      expect(teacher.status).toBe(200);
+      expect(teacher.body.user.role).toBe('teacher');
+
+      const teacherAtAdmin = await anon().post('/api/auth/admin/login').send({ email: world.teacher.email, password: TEST_PASSWORD });
+      const adminAtTeacher = await anon().post('/api/auth/teacher/login').send({ email: world.admin.email, password: TEST_PASSWORD });
+      for (const res of [teacherAtAdmin, adminAtTeacher]) {
+        expect(res.status).toBe(401);
+        expect(res.body.error.message).toBe('Invalid email or password');
+        expect(res.headers['set-cookie']).toBeUndefined();
+      }
+      const student = await createUser(world.institution.id, 'student', { email: 'pupil@test.local' });
+      expect(student.id).toBeTruthy();
+      expect((await anon().post('/api/auth/teacher/login').send({ email: 'pupil@test.local', password: TEST_PASSWORD })).status).toBe(401);
+      expect((await anon().post('/api/auth/admin/login').send({ email: 'pupil@test.local', password: TEST_PASSWORD })).status).toBe(401);
+    });
+
+    it('records sign-ins as auth.login and reports notice + features in /me', async () => {
+      const res = await anon().post('/api/auth/teacher/login').send({ email: world.teacher.email, password: TEST_PASSWORD });
+      const rows = await db.select().from(auditLogs).where(eq(auditLogs.action, 'auth.login'));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ actorId: world.teacher.id, actorRole: 'teacher', institutionId: world.institution.id });
+      const me = await anon().get('/api/auth/me').set('Cookie', sessionCookieFrom(res));
+      expect(me.body.notice).toEqual({ banner: null, maintenance: null });
+      expect(me.body.features).toMatchObject({ exams: true, assignments: true });
+    });
+
+    it('public status is always available', async () => {
+      const res = await anon().get('/api/status');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true, banner: null, maintenance: null });
     });
   });
 });

@@ -13,6 +13,7 @@ import {
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { pinLimiter } from '../../middleware/rateLimit.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';
+import { cleanupUploads, submissionUploadMiddleware } from '../assignments/upload.js';
 import * as service from './service.js';
 
 export const router = Router();
@@ -20,6 +21,7 @@ router.use(authenticate(), requireRole('student'));
 
 const LessonParams = z.object({ lessonId: Id });
 const JoinCodeParams = z.object({ joinCode: JoinCode });
+const AssignmentFileParams = z.object({ id: Id, fileId: Id });
 
 router.get('/dashboard', async (req, res) => {
   res.json(await service.dashboard(currentUser(req).id));
@@ -73,10 +75,33 @@ router.get('/assignments', async (req, res) => {
   res.json(await service.listAssignments(currentUser(req).id));
 });
 
-router.post('/assignments/:id/submission', async (req, res) => {
-  const { id } = parseParams(req, IdParams);
-  const input = parseBody(req, SubmitAssignmentInput);
-  res.json(await service.submitAssignment(currentUser(req).id, id, input));
+// Multipart: field `files` (array) plus `text`. A plain JSON body with `text` also works.
+router.post(
+  '/assignments/:id/submission',
+  async (req, _res, next) => {
+    // Check visibility and state before accepting a large request body.
+    const { id } = parseParams(req, IdParams);
+    await service.assertCanSubmit(currentUser(req).id, id);
+    next();
+  },
+  submissionUploadMiddleware,
+  async (req, res) => {
+    const { id } = parseParams(req, IdParams);
+    const files = Array.isArray(req.files) ? req.files : [];
+    let input: SubmitAssignmentInput;
+    try {
+      input = parseBody(req, SubmitAssignmentInput);
+    } catch (err) {
+      await cleanupUploads(files);
+      throw err;
+    }
+    res.json(await service.submitAssignment(currentUser(req).id, id, input, files));
+  },
+);
+
+router.delete('/assignments/:id/files/:fileId', async (req, res) => {
+  const { id, fileId } = parseParams(req, AssignmentFileParams);
+  res.json(await service.removeSubmissionFile(currentUser(req).id, id, fileId));
 });
 
 router.get('/guardians', async (req, res) => {

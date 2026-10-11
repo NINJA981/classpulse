@@ -18,6 +18,7 @@ import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { TranscriptSegment } from '@classpulse/shared';
 import { env } from '../config/env.js';
+import { trackAiCall } from '../lib/aiUsage.js';
 import { sliceWav } from '../lib/ffmpeg.js';
 import { logger } from '../lib/logger.js';
 import { storage } from '../lib/storage.js';
@@ -188,7 +189,14 @@ export function sarvamMode(model: string): { mode?: 'codemix' } {
   return model.startsWith('saaras:v3') ? { mode: 'codemix' } : {};
 }
 
-export async function transcribeWithSarvam(input: TranscribeInput): Promise<TranscribeResult> {
+/** One Sarvam batch job, recorded in ai_usage (audio seconds on success) when `input.usage` is given. */
+export function transcribeWithSarvam(input: TranscribeInput): Promise<TranscribeResult> {
+  return trackAiCall(input.usage, { provider: 'sarvam', model: input.model }, () => runSarvamJob(input), () => ({
+    audioSeconds: input.durationSec,
+  }));
+}
+
+async function runSarvamJob(input: TranscribeInput): Promise<TranscribeResult> {
   const apiKey = env.SARVAM_API_KEY;
   if (!apiKey) {
     throw new PipelineError('SARVAM_API_KEY is not set', { retryable: false, userMessage: 'Speech-to-text is not configured' });

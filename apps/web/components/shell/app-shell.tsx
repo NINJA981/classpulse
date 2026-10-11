@@ -1,26 +1,37 @@
 'use client';
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { LogOut, Menu, X } from 'lucide-react';
-import type { SessionUser } from '@classpulse/shared';
+import { ROLE_LOGIN, type MeResponse, type SessionUser } from '@classpulse/shared';
+import { NoticeBanners } from '@/components/auth/platform-notice';
 import { api } from '@/lib/api';
 import { SessionProvider } from '@/lib/session-context';
-import { NAV } from './nav';
+import { NAV, NAV_FEATURE } from './nav';
 
 export function AppShell({ user, children }: { user: SessionUser; children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
+  // Platform banner/maintenance notice and the school's feature switches (refreshed every minute).
+  const { data: me } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => api.get<MeResponse>('/auth/me'),
+    refetchInterval: 60_000,
+  });
   const nav = NAV[user.role];
+  const items = nav.items.filter((item) => {
+    const feature = NAV_FEATURE[item.href];
+    return !feature || !me || me.features[feature];
+  });
 
   const isActive = (href: string, exact?: boolean) => (exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
 
   async function logout() {
     await api.post('/auth/logout').catch(() => undefined);
-    router.replace('/login');
-    router.refresh();
+    // Full navigation: the area layout must not survive into the sign-in page.
+    window.location.assign(ROLE_LOGIN[user.role]);
   }
 
   const sidebar = (
@@ -32,7 +43,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
         <p className="eyebrow mt-1">{nav.title}</p>
       </div>
       <ul className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {nav.items.map((item) => {
+        {items.map((item) => {
           const active = isActive(item.href, item.exact);
           const Icon = item.icon;
           return (
@@ -91,7 +102,10 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
         )}
 
         <main id="main" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
+          <div className="mx-auto max-w-6xl">
+            <NoticeBanners notice={me?.notice} className="mb-6" />
+            {children}
+          </div>
         </main>
       </div>
     </SessionProvider>

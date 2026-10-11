@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import path from 'node:path';
+import { and, asc, count, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type {
   Guardian,
   GuardianInput,
@@ -6,6 +7,7 @@ import type {
   SectionPreview,
   SessionResponse,
   StudentAssignment,
+  StudentAssignmentState,
   StudentDashboard,
   StudentQuiz,
   StudentQuizListItem,
@@ -26,10 +28,15 @@ import {
   quizAttempts,
   sections,
   sectionTeachers,
+  submissionFiles,
   users,
 } from '../../db/schema/index.js';
-import { AppError, conflict, invalidState, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { AppError, badRequest, conflict, invalidState, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { logger } from '../../lib/logger.js';
 import { toSessionUser } from '../../lib/session.js';
+import { storage, storageKeys } from '../../lib/storage.js';
+import { filesBySubmission, maxMarksOf, toSubmissionFile, type SubmissionFileRow } from '../assignments/repo.js';
+import { cleanupUploads, uploadExtension } from '../assignments/upload.js';
 import { rethrowUserConflict } from '../auth/accounts.js';
 
 const IDEMPOTENCY_UNIQUE = 'quiz_attempts_idempotency_unique';
@@ -365,74 +372,195 @@ export async function latestAttempt(studentId: string, lessonId: string): Promis
 }
 
 /* ----------------------------------------------------------------------------
- * Assignments
+ * Assignments: published and closed ones of my sections (standalone, or of a published lesson)
  * ------------------------------------------------------------------------- */
+
+type AssignmentRow = typeof assignments.$inferSelect;
+type SubmissionRow = typeof assignmentSubmissions.$inferSelect;
+
+const visibleAssignments = (studentId: string): SQL =>
+  and(
+    inArray(assignments.status, ['published', 'closed']),
+    inArray(assignments.sectionId, enrolledSectionIds(studentId)),
+    or(isNull(assignments.lessonId), eq(lessons.status, 'published')),
+  )!;
+
+const isPastDue = (a: Pick<AssignmentRow, 'dueAt'>, now = Date.now()) => !!a.dueAt && a.dueAt.getTime() < now;
+
+/** Work is refused once the teacher closes the assignment, or after the due date under the "closed" policy. */
+const acceptsWork = (a: AssignmentRow) => a.status === 'published' && !(a.latePolicy === 'closed' && isPastDue(a));
+
+function assignmentState(a: AssignmentRow, sub: SubmissionRow | null): StudentAssignmentState {
+  if (sub?.status === 'returned') return 'returned';
+  if (sub) return sub.isLate ? 'late' : 'submitted';
+  return acceptsWork(a) ? 'todo' : 'closed';
+}
+
+function toStudentAssignment(
+  a: AssignmentRow,
+  sub: SubmissionRow | null,
+  names: { lessonTitle: string | null; sectionName: string },
+  files: SubmissionFileRow[],
+): StudentAssignment {
+  // Marks and feedback stay hidden until the teacher returns the work.
+  const returned = sub?.status === 'returned';
+  return {
+    id: a.id,
+    lessonId: a.lessonId,
+    lessonTitle: a.lessonId ? names.lessonTitle : null,
+    sectionName: names.sectionName,
+    title: a.title,
+    prompt: a.prompt,
+    rubric: a.rubric.map((item) => ({ criterion: item.criterion, marks: item.marks, descriptor: item.descriptor ?? '' })),
+    estimatedMinutes: a.estimatedMinutes,
+    dueAt: a.dueAt?.toISOString() ?? null,
+    latePolicy: a.latePolicy,
+    allowFiles: a.allowFiles,
+    maxFiles: a.maxFiles,
+    state: assignmentState(a, sub),
+    submission: sub
+      ? {
+          id: sub.id,
+          submittedAt: sub.submittedAt.toISOString(),
+          updatedAt: sub.updatedAt.toISOString(),
+          text: sub.text,
+          files: files.map(toSubmissionFile),
+          isLate: sub.isLate,
+          status: sub.status,
+          rubricMarks: returned ? sub.rubricMarks : null,
+          totalMarks: returned ? sub.totalMarks : null,
+          maxMarks: maxMarksOf(a.rubric),
+          feedback: returned ? sub.feedback : null,
+          returnedAt: returned ? (sub.returnedAt?.toISOString() ?? null) : null,
+        }
+      : null,
+  };
+}
 
 async function findAssignments(studentId: string, extra?: SQL): Promise<StudentAssignment[]> {
   const rows = await db
-    .select({
-      id: assignments.id,
-      lessonId: assignments.lessonId,
-      lessonTitle: lessons.title,
-      sectionName: sections.name,
-      title: assignments.title,
-      prompt: assignments.prompt,
-      rubric: assignments.rubric,
-      estimatedMinutes: assignments.estimatedMinutes,
-      dueAt: assignments.dueAt,
-      submissionId: assignmentSubmissions.id,
-      submittedAt: assignmentSubmissions.submittedAt,
-      submissionText: assignmentSubmissions.text,
-    })
+    .select({ a: assignments, sub: assignmentSubmissions, lessonTitle: lessons.title, sectionName: sections.name })
     .from(assignments)
-    .innerJoin(lessons, eq(lessons.id, assignments.lessonId))
-    .innerJoin(sections, eq(sections.id, lessons.sectionId))
+    .innerJoin(sections, eq(sections.id, assignments.sectionId))
+    .leftJoin(lessons, eq(lessons.id, assignments.lessonId))
     .leftJoin(
       assignmentSubmissions,
       and(eq(assignmentSubmissions.assignmentId, assignments.id), eq(assignmentSubmissions.studentId, studentId)),
     )
-    .where(and(eq(assignments.status, 'published'), visibleLessons(studentId), extra))
+    .where(and(visibleAssignments(studentId), extra))
     .orderBy(asc(assignments.dueAt), desc(assignments.createdAt));
-  return rows.map((r) => ({
-    id: r.id,
-    lessonId: r.lessonId,
-    lessonTitle: r.lessonTitle,
-    sectionName: r.sectionName,
-    title: r.title,
-    prompt: r.prompt,
-    rubric: r.rubric.map((item) => ({ criterion: item.criterion, marks: item.marks, descriptor: item.descriptor ?? '' })),
-    estimatedMinutes: r.estimatedMinutes,
-    dueAt: r.dueAt?.toISOString() ?? null,
-    submission:
-      r.submissionId && r.submittedAt && r.submissionText !== null
-        ? { id: r.submissionId, submittedAt: r.submittedAt.toISOString(), text: r.submissionText }
-        : null,
-  }));
+  const files = await filesBySubmission(rows.flatMap((r) => (r.sub ? [r.sub.id] : [])));
+  return rows.map((r) => toStudentAssignment(r.a, r.sub, r, r.sub ? (files.get(r.sub.id) ?? []) : []));
 }
 
 export const listAssignments = (studentId: string) => findAssignments(studentId);
 
+async function findAssignment(studentId: string, assignmentId: string): Promise<StudentAssignment> {
+  const [found] = await findAssignments(studentId, eq(assignments.id, assignmentId));
+  if (!found) throw notFound('Assignment');
+  return found;
+}
+
+const returnedLocked = () => invalidState('Your teacher has returned this work, so it can no longer be changed.');
+
+/** Visible, still accepting work, and not returned yet. Checked before accepting an upload body, and again inside the write. */
+export async function assertCanSubmit(studentId: string, assignmentId: string): Promise<AssignmentRow> {
+  const [row] = await db
+    .select({ a: assignments, status: assignmentSubmissions.status })
+    .from(assignments)
+    .leftJoin(lessons, eq(lessons.id, assignments.lessonId))
+    .leftJoin(
+      assignmentSubmissions,
+      and(eq(assignmentSubmissions.assignmentId, assignments.id), eq(assignmentSubmissions.studentId, studentId)),
+    )
+    .where(and(eq(assignments.id, assignmentId), visibleAssignments(studentId)));
+  if (!row) throw notFound('Assignment');
+  if (row.a.status === 'closed') throw invalidState('This assignment is closed.');
+  if (!acceptsWork(row.a)) throw invalidState('The due date for this assignment has passed');
+  if (row.status === 'returned') throw returnedLocked();
+  return row.a;
+}
+
+/** Strip any path and control characters from a client file name (display only; never used as a path). */
+const displayName = (name: string) =>
+  [...path.basename(name.replace(/\\/g, '/'))]
+    .filter((ch) => ch.charCodeAt(0) >= 0x20 && ch.charCodeAt(0) !== 0x7f)
+    .join('')
+    .slice(-255) || 'file';
+
+/**
+ * Create or update my submission: `text` (when sent) replaces the answer, uploaded files are added. Past the
+ * due date the work is flagged late ("allow late") or refused ("closed"). Needs text or a file overall.
+ */
 export async function submitAssignment(
   studentId: string,
   assignmentId: string,
   input: SubmitAssignmentInput,
+  uploads: Express.Multer.File[] = [],
 ): Promise<StudentAssignment> {
-  const [assignment] = await findAssignments(studentId, eq(assignments.id, assignmentId));
-  if (!assignment) throw notFound('Assignment');
-  if (assignment.dueAt && Date.parse(assignment.dueAt) < Date.now()) {
-    throw invalidState('The due date for this assignment has passed');
-  }
-  const now = new Date();
-  await db
-    .insert(assignmentSubmissions)
-    .values({ assignmentId, studentId, text: input.text, submittedAt: now })
-    .onConflictDoUpdate({
-      target: [assignmentSubmissions.assignmentId, assignmentSubmissions.studentId],
-      set: { text: input.text, submittedAt: now },
+  const stored: string[] = [];
+  try {
+    const a = await assertCanSubmit(studentId, assignmentId);
+    if (uploads.length && !a.allowFiles) throw badRequest('This assignment does not accept file uploads.');
+    if (uploads.length > a.maxFiles) throw badRequest(`You can attach at most ${a.maxFiles} file(s) to this assignment.`);
+    const files: Omit<typeof submissionFiles.$inferInsert, 'submissionId'>[] = [];
+    for (const f of uploads) {
+      const key = storageKeys.submissionFile(a.id, studentId, uploadExtension(f));
+      const stat = await storage.putFile(key, f.path);
+      stored.push(key);
+      files.push({ objectKey: key, originalName: displayName(f.originalname), mime: f.mimetype.toLowerCase(), sizeBytes: stat.size });
+    }
+    const now = new Date();
+    await db.transaction(async (tx) => {
+      // Create-or-lock my submission row so concurrent submits serialize (rolled back if anything below fails).
+      await tx.insert(assignmentSubmissions).values({ assignmentId, studentId, submittedAt: now }).onConflictDoNothing();
+      const [sub] = await tx
+        .select()
+        .from(assignmentSubmissions)
+        .where(and(eq(assignmentSubmissions.assignmentId, assignmentId), eq(assignmentSubmissions.studentId, studentId)))
+        .for('update');
+      if (sub!.status === 'returned') throw returnedLocked();
+      const [existing] = await tx.select({ n: count() }).from(submissionFiles).where(eq(submissionFiles.submissionId, sub!.id));
+      const fileCount = (existing?.n ?? 0) + files.length;
+      if (fileCount > a.maxFiles) throw badRequest(`You can attach at most ${a.maxFiles} file(s) to this assignment.`);
+      const text = input.text === undefined ? sub!.text : input.text || null;
+      if (!text && fileCount === 0) throw badRequest('Write an answer or attach at least one file.');
+      await tx
+        .update(assignmentSubmissions)
+        .set({ text, submittedAt: now, isLate: isPastDue(a, now.getTime()) })
+        .where(eq(assignmentSubmissions.id, sub!.id));
+      if (files.length) await tx.insert(submissionFiles).values(files.map((f) => ({ ...f, submissionId: sub!.id })));
     });
-  const [updated] = await findAssignments(studentId, eq(assignments.id, assignmentId));
-  if (!updated) throw notFound('Assignment');
-  return updated;
+    stored.length = 0; // now owned by the submission
+  } finally {
+    await cleanupUploads(uploads);
+    await Promise.all(stored.map((key) => storage.delete(key).catch(() => undefined)));
+  }
+  return findAssignment(studentId, assignmentId);
+}
+
+/** Remove one of my files (not after the work was returned). A submission left empty is withdrawn. */
+export async function removeSubmissionFile(studentId: string, assignmentId: string, fileId: string): Promise<StudentAssignment> {
+  await assertCanSubmit(studentId, assignmentId);
+  const key = await db.transaction(async (tx) => {
+    const [sub] = await tx
+      .select()
+      .from(assignmentSubmissions)
+      .where(and(eq(assignmentSubmissions.assignmentId, assignmentId), eq(assignmentSubmissions.studentId, studentId)))
+      .for('update');
+    if (!sub) throw notFound('File');
+    if (sub.status === 'returned') throw returnedLocked();
+    const [file] = await tx
+      .delete(submissionFiles)
+      .where(and(eq(submissionFiles.id, fileId), eq(submissionFiles.submissionId, sub.id)))
+      .returning();
+    if (!file) throw notFound('File');
+    const [left] = await tx.select({ n: count() }).from(submissionFiles).where(eq(submissionFiles.submissionId, sub.id));
+    if (!sub.text && (left?.n ?? 0) === 0) await tx.delete(assignmentSubmissions).where(eq(assignmentSubmissions.id, sub.id));
+    return file.objectKey;
+  });
+  await storage.delete(key).catch((err: Error) => logger.warn({ err: err.message }, 'Failed to delete a submission file'));
+  return findAssignment(studentId, assignmentId);
 }
 
 /* ----------------------------------------------------------------------------
@@ -464,7 +592,7 @@ export async function dashboard(studentId: string): Promise<StudentDashboard> {
     pendingQuizzes: quizzes.filter((q) => q.latestAttempt === null),
     recentAttempts: recent.map((r) => ({ ...r, submittedAt: r.submittedAt.toISOString() })),
     upcomingAssignments: assignmentList
-      .filter((a) => a.dueAt === null || Date.parse(a.dueAt) >= now)
+      .filter((a) => a.state !== 'closed' && a.state !== 'returned' && (a.dueAt === null || Date.parse(a.dueAt) >= now))
       .slice(0, UPCOMING_ASSIGNMENTS)
       .map((a) => ({ id: a.id, title: a.title, dueAt: a.dueAt, submitted: a.submission !== null })),
     // Average of the latest attempt per quiz.

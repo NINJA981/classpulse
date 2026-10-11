@@ -3,3 +3,6 @@ export * from './org.js';
 export * from './content.js';
 export * from './live.js';
 export * from './devices.js';
+export * from './exams.js';
+export * from './platform.js';
+export * from './teacherTools.js';

@@ -1,5 +1,5 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
-import { DAYS, LESSON_STATUSES, LIVE_STATUSES, RECORDING_STATUSES } from '@classpulse/shared';
+import { BLOOM_LEVELS, DAYS, EXAM_EVENT_TYPES, LESSON_STATUSES, LIVE_STATUSES, RECORDING_STATUSES } from '@classpulse/shared';
 
 export const userRole = pgEnum('user_role', ['admin', 'teacher', 'student']);
 export const recordStatus = pgEnum('record_status', ['active', 'disabled']);
@@ -8,7 +8,17 @@ export const lessonStatus = pgEnum('lesson_status', LESSON_STATUSES);
 export const lessonSourceType = pgEnum('lesson_source_type', ['device', 'upload']);
 export const questionStatus = pgEnum('question_status', ['draft', 'approved', 'rejected']);
 export const difficulty = pgEnum('difficulty', ['easy', 'medium', 'hard']);
-export const assignmentStatus = pgEnum('assignment_status', ['draft', 'published']);
+export const assignmentStatus = pgEnum('assignment_status', ['draft', 'published', 'closed']);
+export const latePolicy = pgEnum('late_policy', ['allow_late', 'closed']);
+export const submissionStatus = pgEnum('submission_status', ['submitted', 'returned']);
+export const passwordTokenPurpose = pgEnum('password_token_purpose', ['invite', 'reset']);
+export const emailStatus = pgEnum('email_status', ['queued', 'sent', 'failed']);
+export const examStatus = pgEnum('exam_status', ['draft', 'published', 'closed']);
+export const examResultsVisibility = pgEnum('exam_results_visibility', ['after_close', 'immediately', 'never']);
+export const examAttemptStatus = pgEnum('exam_attempt_status', ['in_progress', 'submitted', 'auto_submitted']);
+export const examEventType = pgEnum('exam_event_type', EXAM_EVENT_TYPES);
+export const institutionStatus = pgEnum('institution_status', ['active', 'suspended']);
+export const bloomLevel = pgEnum('bloom_level', BLOOM_LEVELS);
 export const liveStatus = pgEnum('live_status', LIVE_STATUSES);
 export const guardianRelation = pgEnum('guardian_relation', ['mother', 'father', 'guardian', 'other']);
 export const deviceStatus = pgEnum('device_status', ['online', 'offline', 'recording', 'error']);

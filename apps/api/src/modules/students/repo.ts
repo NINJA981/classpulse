@@ -3,6 +3,7 @@ import { asc, sql, type SQL } from 'drizzle-orm';
 import type { Student } from '@classpulse/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { enrollments, sections, users } from '../../db/schema/index.js';
+import { inviteStatusSql } from '../auth/passwordTokens.js';
 
 type Ref = { id: string; name: string };
 
@@ -26,6 +27,7 @@ export async function findStudents(
       status: users.status,
       createdAt: users.createdAt,
       sections: studentSectionsJson,
+      inviteStatus: inviteStatusSql,
     })
     .from(users)
     .where(where)
@@ -40,6 +42,7 @@ export async function findStudents(
     email: r.email,
     status: r.status,
     sections: r.sections,
+    inviteStatus: r.inviteStatus,
     createdAt: r.createdAt.toISOString(),
   }));
 }

@@ -2,7 +2,7 @@
  * The single browser API client. Always same-origin `/api` with the httpOnly
  * session cookie — no tokens in JS, no per-app base URLs.
  */
-import type { ApiErrorBody, ErrorCode } from '@classpulse/shared';
+import { ROLE_LOGIN, ROLES, type ApiErrorBody, type ErrorCode } from '@classpulse/shared';
 
 export class ApiError extends Error {
   constructor(
@@ -41,6 +41,23 @@ function buildUrl(path: string, query?: Query): string {
   return s ? `${url}?${s}` : url;
 }
 
+export const PLATFORM_LOGIN = '/platform/login';
+const LOGIN_PAGES = new Set(['/login', ...Object.values(ROLE_LOGIN), PLATFORM_LOGIN]);
+
+/** The sign-in page for the area a path belongs to (/admin/x -> /admin/login, /platform/x -> /platform/login). */
+export function loginPathFor(pathname: string): string {
+  if (pathname === '/platform' || pathname.startsWith('/platform/')) return PLATFORM_LOGIN;
+  const role = ROLES.find((r) => pathname === `/${r}` || pathname.startsWith(`/${r}/`));
+  return role ? ROLE_LOGIN[role] : '/login';
+}
+
+/** Send the browser to the area's sign-in page (full navigation, so area layouts re-run). */
+function toLogin(pathname: string, blocked?: 'suspended' | 'maintenance') {
+  const qs = new URLSearchParams({ next: pathname });
+  if (blocked) qs.set('blocked', blocked);
+  window.location.assign(`${loginPathFor(pathname)}?${qs}`);
+}
+
 async function request<T>(method: Method, path: string, opts: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 30_000);
@@ -69,10 +86,16 @@ async function request<T>(method: Method, path: string, opts: RequestOptions = {
     const err = (data as ApiErrorBody | null)?.error;
     const apiError = new ApiError(res.status, err?.code ?? 'INTERNAL', err?.message ?? `Request failed (${res.status})`, err?.details);
     if (typeof window !== 'undefined') {
-      if (apiError.code === 'UNAUTHENTICATED' && !window.location.pathname.startsWith('/login')) {
-        window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
-      } else if (apiError.code === 'PASSWORD_CHANGE_REQUIRED' && window.location.pathname !== '/change-password') {
-        window.location.assign('/change-password');
+      const path = window.location.pathname;
+      const onLogin = LOGIN_PAGES.has(path) || path.startsWith('/login/');
+      const platform = loginPathFor(path) === PLATFORM_LOGIN;
+      if (apiError.code === 'UNAUTHENTICATED' && !onLogin) {
+        toLogin(path);
+      } else if (apiError.code === 'PASSWORD_CHANGE_REQUIRED' && !onLogin && path !== '/change-password') {
+        window.location.assign(platform ? PLATFORM_LOGIN : '/change-password');
+      } else if ((apiError.code === 'SCHOOL_SUSPENDED' || apiError.code === 'MAINTENANCE') && !onLogin && !platform) {
+        // The school can't be used right now: the sign-in page explains why.
+        toLogin(path, apiError.code === 'SCHOOL_SUSPENDED' ? 'suspended' : 'maintenance');
       }
     }
     throw apiError;

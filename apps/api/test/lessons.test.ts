@@ -235,7 +235,9 @@ describe('lessons: generate / publish', () => {
     const w = await createWorld();
     const lesson = await lessonFor(w, { withAudio: true, status: 'published' });
     await insertQuestions(lesson.id, 2, 'approved');
-    await db.insert(assignments).values({ lessonId: lesson.id, title: 'T', prompt: 'P', status: 'published' });
+    await db
+      .insert(assignments)
+      .values({ lessonId: lesson.id, sectionId: w.section.id, teacherId: w.teacher.id, isPrimary: true, title: 'T', prompt: 'P', status: 'published' });
 
     const refused = await as(w.teacher).post(`/api/lessons/${lesson.id}/generate`).send({});
     expect(refused.status).toBe(409);
@@ -331,10 +333,29 @@ describe('lessons: generate / publish', () => {
     const body = { title: 'Lab', prompt: 'Do it', rubric: [{ criterion: 'Care', marks: 5 }], estimatedMinutes: 20, dueAt: '2026-12-01T10:00:00.000Z' };
     const r1 = await as(w.teacher).put(`/api/lessons/${lesson.id}/assignment`).send(body);
     expect(r1.status).toBe(200);
-    expect(r1.body).toMatchObject({ title: 'Lab', status: 'draft', dueAt: '2026-12-01T10:00:00.000Z', rubric: [{ criterion: 'Care', marks: 5, descriptor: '' }] });
-    const r2 = await as(w.teacher).put(`/api/lessons/${lesson.id}/assignment`).send({ ...body, title: 'Lab 2' });
+    expect(r1.body).toMatchObject({
+      title: 'Lab',
+      status: 'draft',
+      lessonId: lesson.id,
+      sectionId: w.section.id,
+      dueAt: '2026-12-01T10:00:00.000Z',
+      rubric: [{ criterion: 'Care', marks: 5, descriptor: '' }],
+      // Defaults for the homework settings
+      latePolicy: 'allow_late',
+      allowFiles: true,
+      maxFiles: 5,
+      reminders: true,
+      publishedAt: null,
+    });
+    const r2 = await as(w.teacher)
+      .put(`/api/lessons/${lesson.id}/assignment`)
+      .send({ ...body, title: 'Lab 2', latePolicy: 'closed', allowFiles: false, maxFiles: 2, reminders: false });
     expect(r2.body.id).toBe(r1.body.id);
-    expect(r2.body.title).toBe('Lab 2');
+    expect(r2.body).toMatchObject({ title: 'Lab 2', latePolicy: 'closed', allowFiles: false, maxFiles: 2, reminders: false });
+    // Fields left out keep their value.
+    const r3 = await as(w.teacher).put(`/api/lessons/${lesson.id}/assignment`).send({ ...body, title: 'Lab 3' });
+    expect(r3.body).toMatchObject({ title: 'Lab 3', latePolicy: 'closed', maxFiles: 2 });
+    expect((await as(w.teacher).put(`/api/lessons/${lesson.id}/assignment`).send({ ...body, maxFiles: 11 })).status).toBe(400);
     expect((await as(w.teacher).put(`/api/lessons/${lesson.id}/assignment`).send({ title: 'x' })).status).toBe(400);
   });
 });

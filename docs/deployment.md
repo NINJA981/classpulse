@@ -101,6 +101,7 @@ Coolify's Traefik terminates TLS. It forwards the domain to the internal `router
    | `JWT_SECRET` | `openssl rand -base64 48` |
    | `SARVAM_API_KEY`, `OPENAI_API_KEY` | your provider keys |
    | `GENERATION_CONCURRENCY` | defaults to 1; raise it on servers with more than 2 vCPU |
+   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | optional email (invitations, password resets, assignment reminders). Gmail/Workspace: `smtp.gmail.com`, `465`, the sending address, an **App password** (needs 2-Step Verification), `ClassPulse <noreply@your-domain>`. Without them, admins hand out one-time passwords |
 
 6. **Deploy.** The first build on a 2-vCPU ARM server takes about 10–15 minutes. Add swap first if the server has less than 8 GB of RAM.
 7. **First administrator:** run this on the server.

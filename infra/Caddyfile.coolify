@@ -27,6 +27,33 @@
 		max_size 25MB
 	}
 
+	# Platform console (super admin) lives only on PLATFORM_HOST (e.g. ops.example.org): invisible on school
+	# addresses, and the platform address serves nothing but the console. Named-matcher `handle` blocks keep
+	# the order written here, so these run before the general routes below.
+	@platformOnSchoolHost {
+		not host {$PLATFORM_HOST:platform.invalid}
+		path /platform /platform/* /api/platform /api/platform/*
+	}
+	handle @platformOnSchoolHost {
+		respond "Not found" 404
+	}
+
+	@platformRoot {
+		host {$PLATFORM_HOST:platform.invalid}
+		path /
+	}
+	handle @platformRoot {
+		redir * /platform 302
+	}
+
+	@platformHostOther {
+		host {$PLATFORM_HOST:platform.invalid}
+		not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt
+	}
+	handle @platformHostOther {
+		respond "Not found" 404
+	}
+
 	@backend path /api/* /socket.io/*
 	handle @backend {
 		reverse_proxy api:5000 {

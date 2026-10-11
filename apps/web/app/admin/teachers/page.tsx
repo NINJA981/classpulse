@@ -2,13 +2,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
+import { FileUp, GraduationCap, KeyRound, Mail, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { CreatedWithPassword, Teacher } from '@classpulse/shared';
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Table, TBody, TD, TH, THead, TR, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, useTeachers } from '@/components/admin/queries';
 import { ConfirmDialog, OneTimePasswordDialog } from '@/components/admin/common';
-import { useResetPassword } from '@/components/admin/reset-password';
+import { InviteStatusBadge } from '@/components/admin/invite-status';
+import { useResetPassword, useSendInvite } from '@/components/admin/reset-password';
+import { ImportTeachersDialog } from '@/components/admin/teachers/import-dialog';
 import { TeacherDialog } from '@/components/admin/teachers/teacher-dialog';
 
 export default function TeachersPage() {
@@ -18,7 +20,9 @@ export default function TeachersPage() {
   const [editing, setEditing] = useState<Teacher | 'new' | null>(null);
   const [created, setCreated] = useState<CreatedWithPassword<Teacher> | null>(null);
   const [deleting, setDeleting] = useState<Teacher | null>(null);
+  const [importing, setImporting] = useState(false);
   const resetPw = useResetPassword('teachers');
+  const invite = useSendInvite('teachers');
 
   const remove = useMutation({
     mutationFn: (t: Teacher) => api.delete(`/admin/teachers/${t.id}`),
@@ -31,10 +35,15 @@ export default function TeachersPage() {
     },
   });
 
-  const addButton = (
-    <Button icon={<Plus className="size-4" aria-hidden />} onClick={() => setEditing('new')}>
-      Add teacher
-    </Button>
+  const actions = (
+    <>
+      <Button variant="secondary" icon={<FileUp className="size-4" aria-hidden />} onClick={() => setImporting(true)}>
+        Import CSV
+      </Button>
+      <Button icon={<Plus className="size-4" aria-hidden />} onClick={() => setEditing('new')}>
+        Add teacher
+      </Button>
+    </>
   );
 
   return (
@@ -43,7 +52,7 @@ export default function TeachersPage() {
         eyebrow="People"
         title="Teachers"
         description="Staff accounts that record classes, review generated quizzes and run live sessions."
-        actions={addButton}
+        actions={actions}
       />
       <Card>
         {teachers.isPending ? (
@@ -54,8 +63,8 @@ export default function TeachersPage() {
           <EmptyState
             icon={<GraduationCap className="size-8" aria-hidden />}
             title="No teachers yet"
-            description="Add teachers so they can sign in and be assigned to sections."
-            action={addButton}
+            description="Add teachers one by one, or import them from a CSV file. Each one is emailed an invitation."
+            action={<div className="flex flex-wrap justify-center gap-2">{actions}</div>}
           />
         ) : (
           <Table>
@@ -66,6 +75,7 @@ export default function TeachersPage() {
                 <TH>Department</TH>
                 <TH>Sections</TH>
                 <TH>Status</TH>
+                <TH>Invite</TH>
                 <TH>
                   <span className="sr-only">Actions</span>
                 </TH>
@@ -92,16 +102,31 @@ export default function TeachersPage() {
                   </TD>
                   <TD>{t.status === 'active' ? <Badge tone="success">Active</Badge> : <Badge tone="danger">Disabled</Badge>}</TD>
                   <TD>
+                    <InviteStatusBadge status={t.inviteStatus} />
+                  </TD>
+                  <TD>
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" icon={<Pencil className="size-3.5" aria-hidden />} aria-label={`Edit teacher ${t.name}`} onClick={() => setEditing(t)}>
                         Edit
                       </Button>
+                      {t.inviteStatus !== 'accepted' && t.status === 'active' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Mail className="size-3.5" aria-hidden />}
+                          aria-label={`${t.inviteStatus === 'none' ? 'Send' : 'Resend'} invite to ${t.name}`}
+                          loading={invite.pendingId === t.id}
+                          onClick={() => invite.send({ id: t.id, name: t.name, login: t.email, email: t.email })}
+                        >
+                          {t.inviteStatus === 'none' ? 'Send invite' : 'Resend invite'}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
                         icon={<KeyRound className="size-3.5" aria-hidden />}
                         aria-label={`Reset password for ${t.name}`}
-                        onClick={() => resetPw.open({ id: t.id, name: t.name, login: t.email })}
+                        onClick={() => resetPw.open({ id: t.id, name: t.name, login: t.email, email: t.email })}
                       >
                         Reset password
                       </Button>
@@ -142,7 +167,10 @@ export default function TeachersPage() {
         title="Teacher created"
         who={created ? `${created.record.name} (${created.record.email})` : ''}
         password={created?.initialPassword ?? null}
+        invite={created?.invite}
+        email={created?.record.email}
       />
+      {importing && <ImportTeachersDialog onClose={() => setImporting(false)} />}
       {resetPw.dialogs}
       <ConfirmDialog
         open={deleting !== null}

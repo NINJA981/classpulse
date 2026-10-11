@@ -60,6 +60,27 @@ const EnvSchema = z
     /** Login attempts allowed per IP+identifier per 15 minutes. */
     LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
     DEVICE_OFFLINE_AFTER_SEC: z.coerce.number().int().min(30).default(90),
+
+    /** Outgoing email (Gmail/Workspace SMTP with an app password). Email is off unless all are set. */
+    SMTP_HOST: z.string().optional().default(''),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+    SMTP_USER: z.string().optional().default(''),
+    SMTP_PASS: z.string().optional().default(''),
+    /** e.g. "ClassPulse <noreply@benxsolutions.in>". */
+    MAIL_FROM: z.string().optional().default(''),
+
+    /** Platform (super admin) console. Its own origin (e.g. https://ops.example.org); empty = same origin. */
+    PLATFORM_ORIGIN: z.string().optional().default(''),
+    /** base64 32-byte key encrypting platform admins' 2FA secrets (openssl rand -base64 32). */
+    PLATFORM_ENCRYPTION_KEY: z.string().optional().default(''),
+    /** Coolify API for the deployments page (least-privilege token: read + deploy). */
+    COOLIFY_API_URL: z.string().optional().default(''),
+    COOLIFY_API_TOKEN: z.string().optional().default(''),
+    COOLIFY_APP_UUID: z.string().optional().default(''),
+    /** Where the host's encrypted backups are mounted read-only (for the health page). */
+    BACKUP_DIR: z.string().default('/backups'),
+    /** End-to-end tests only: capture outgoing email instead of sending it and expose GET /api/test/emails. */
+    E2E_MAIL_CAPTURE: bool,
   })
   .superRefine((e, ctx) => {
     if (e.NODE_ENV !== 'production') return;
@@ -70,6 +91,10 @@ const EnvSchema = z
     if (!e.REDIS_URL) fail('REDIS_URL', 'is required in production');
     if (e.PIPELINE_DEMO_FALLBACK) fail('PIPELINE_DEMO_FALLBACK', 'must not be enabled in production');
     if (!e.PUBLIC_ORIGIN.startsWith('https://')) fail('PUBLIC_ORIGIN', 'must be https in production');
+    if (e.E2E_MAIL_CAPTURE) fail('E2E_MAIL_CAPTURE', 'must not be enabled in production');
+    if (Buffer.from(e.PLATFORM_ENCRYPTION_KEY, 'base64').length !== 32) {
+      fail('PLATFORM_ENCRYPTION_KEY', 'must be a base64 32-byte key in production (openssl rand -base64 32)');
+    }
   });
 
 const parsed = EnvSchema.safeParse(process.env);
@@ -84,8 +109,11 @@ export type Env = typeof env;
 
 export const isProd = env.NODE_ENV === 'production';
 export const isTest = env.NODE_ENV === 'test';
+/** Whether outgoing email is configured (otherwise admins hand over one-time passwords). */
+export const mailEnabled = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS && env.MAIL_FROM);
 
 export const allowedOrigins = [
   env.PUBLIC_ORIGIN,
+  ...(env.PLATFORM_ORIGIN ? [env.PLATFORM_ORIGIN] : []),
   ...(isProd ? [] : env.DEV_EXTRA_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)),
 ];

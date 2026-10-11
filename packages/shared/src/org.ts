@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Id, text, type IsoDate } from './common.js';
-import { Password } from './auth.js';
+import { Password, type EmailDelivery, type InviteStatus } from './auth.js';
 
 /* ----------------------------------------------------------------------------
  * Institution
@@ -74,7 +74,27 @@ export interface Teacher {
   department: string | null;
   status: 'active' | 'disabled';
   sections: { id: Id; name: string }[];
+  inviteStatus: InviteStatus;
   createdAt: IsoDate;
+}
+
+export const ImportTeachersInput = z.object({
+  rows: z
+    .array(
+      z.object({
+        name: text(120),
+        email: z.email().trim().toLowerCase(),
+        department: z.string().trim().max(120).optional(),
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+export type ImportTeachersInput = z.infer<typeof ImportTeachersInput>;
+
+export interface ImportTeachersResult {
+  created: { id: Id; name: string; email: string; initialPassword: string; invite: EmailDelivery }[];
+  skipped: { email: string; reason: string }[];
 }
 
 /* ----------------------------------------------------------------------------
@@ -119,18 +139,27 @@ export interface Student {
   email: string | null;
   status: 'active' | 'disabled';
   sections: { id: Id; name: string }[];
+  inviteStatus: InviteStatus;
   createdAt: IsoDate;
 }
 
 /** Returned once when the API generated a password for a newly created user. */
 export interface CreatedWithPassword<T> {
   record: T;
+  /** Fallback login handed over in person; null when the admin supplied the password. */
   initialPassword: string | null;
+  /** Whether a set-password invitation email was queued. */
+  invite: EmailDelivery;
 }
 
 export interface ImportStudentsResult {
-  created: { id: Id; name: string; rollNumber: string; initialPassword: string }[];
+  created: { id: Id; name: string; rollNumber: string; initialPassword: string; invite: EmailDelivery }[];
   skipped: { rollNumber: string; reason: string }[];
+}
+
+/** Result of "send invite" / "email a reset link". */
+export interface SendLinkResult {
+  invite: EmailDelivery;
 }
 
 export interface PasswordResetResult {

@@ -5,6 +5,8 @@ import { SESSION_COOKIE, type Role, type SessionUser } from '@classpulse/shared'
 import { env, isProd } from '../config/env.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema/index.js';
+import { AppError } from './errors.js';
+import { assertNotInMaintenance, assertSchoolActive } from './platformState.js';
 
 interface TokenClaims {
   sub: string;
@@ -50,9 +52,9 @@ export function toSessionUser(row: typeof users.$inferSelect): SessionUser {
 
 /**
  * Verify a session token and load the current user. Returns null for any
- * invalid/expired/revoked token or a disabled account.
+ * invalid/expired/revoked token or a disabled account. Platform state is not checked here.
  */
-export async function resolveSession(token: string | undefined | null): Promise<SessionUser | null> {
+export async function loadSessionUser(token: string | undefined | null): Promise<SessionUser | null> {
   if (!token) return null;
   let claims: TokenClaims;
   try {
@@ -64,4 +66,23 @@ export async function resolveSession(token: string | undefined | null): Promise<
   const row = await db.query.users.findFirst({ where: eq(users.id, claims.sub) });
   if (!row || row.status !== 'active' || row.tokenVersion !== claims.ver) return null;
   return toSessionUser(row);
+}
+
+/** Why a valid session may not be used right now: maintenance (503) or a suspended school (403). */
+export async function sessionBlock(user: SessionUser): Promise<AppError | null> {
+  try {
+    await assertNotInMaintenance();
+    await assertSchoolActive(user.institutionId);
+    return null;
+  } catch (err) {
+    if (err instanceof AppError) return err;
+    throw err;
+  }
+}
+
+/** loadSessionUser + platform state: null also while maintenance blocks or the school is suspended (sockets). */
+export async function resolveSession(token: string | undefined | null): Promise<SessionUser | null> {
+  const user = await loadSessionUser(token);
+  if (!user) return null;
+  return (await sessionBlock(user)) ? null : user;
 }

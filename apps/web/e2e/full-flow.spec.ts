@@ -37,21 +37,20 @@ const state: {
   lessonUrl: '',
 };
 
-async function staffLogin(page: Page, email: string, password: string) {
-  await page.goto('/login');
+async function staffLogin(page: Page, email: string, password: string, role: 'admin' | 'teacher') {
+  await page.goto(`/${role}/login`);
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith('/login'));
+  await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
 
 async function studentLogin(page: Page, roll: string, password: string) {
-  await page.goto('/login');
-  await page.getByRole('tab', { name: 'Student' }).click();
+  await page.goto('/student/login');
   await page.getByLabel('Roll number').fill(roll);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith('/login'));
+  await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
 
 async function changePassword(page: Page, current: string) {
@@ -98,7 +97,7 @@ async function newPage(browser: Browser): Promise<Page> {
 test.describe.serial('ClassPulse pilot flow', () => {
   test('1. admin onboards a room, teacher, section and students', async ({ browser }) => {
     const page = await newPage(browser);
-    await staffLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    await staffLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD, 'admin');
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
@@ -163,7 +162,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
   test('2. teacher uploads a lecture; AI transcribes, teacher generates the quiz', async ({ browser }) => {
     test.setTimeout(12 * 60_000);
     const page = await newPage(browser);
-    await staffLogin(page, state.teacherEmail, state.teacherPassword);
+    await staffLogin(page, state.teacherEmail, state.teacherPassword, 'teacher');
     await changePassword(page, state.teacherPassword);
     await expect(page).toHaveURL(/\/teacher$/);
 
@@ -185,7 +184,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
 
   test('3. teacher edits, approves and publishes', async ({ browser }) => {
     const page = await newPage(browser);
-    await staffLogin(page, state.teacherEmail, NEW_PASSWORD);
+    await staffLogin(page, state.teacherEmail, NEW_PASSWORD, 'teacher');
     await page.goto(state.lessonUrl);
 
     await page.getByRole('button', { name: 'Edit question 1' }).click();
@@ -234,7 +233,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
   test('5. live quiz: teacher hosts, two students play to the end', async ({ browser }) => {
     test.setTimeout(5 * 60_000);
     const teacher = await newPage(browser);
-    await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD);
+    await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD, 'teacher');
     await teacher.goto(`${state.lessonUrl}/live`);
     await teacher.getByLabel('Time per question').selectOption('20');
     await teacher.getByRole('button', { name: 'Create live session' }).click();
@@ -283,7 +282,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
     test.setTimeout(14 * 60_000);
     // Admin provisions a device for the section's room.
     const admin = await newPage(browser);
-    await staffLogin(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
+    await staffLogin(admin, ADMIN_EMAIL, ADMIN_PASSWORD, 'admin');
     await admin.goto('/admin/devices');
     await admin.getByRole('button', { name: 'Add classroom device' }).first().click();
     const dlg = admin.getByRole('dialog');
@@ -326,7 +325,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
 
       // Teacher starts the class recording from the web app.
       const teacher = await newPage(browser);
-      await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD);
+      await staffLogin(teacher, state.teacherEmail, NEW_PASSWORD, 'teacher');
       await teacher.goto('/teacher/record');
       await teacher.getByLabel('Section').selectOption({ label: `${state.sectionName} — Mathematics` });
       await teacher.getByLabel('Lesson title').fill(`Pi recorded class ${RUN}`);
@@ -360,7 +359,7 @@ test.describe.serial('ClassPulse pilot flow', () => {
 
   test('7. teacher sees analytics for the attempts', async ({ browser }) => {
     const page = await newPage(browser);
-    await staffLogin(page, state.teacherEmail, NEW_PASSWORD);
+    await staffLogin(page, state.teacherEmail, NEW_PASSWORD, 'teacher');
     await page.goto(`${state.lessonUrl}/analytics`);
     await expect(page.getByText(state.students[0]!.name)).toBeVisible();
     await expect(page.getByText(state.students[1]!.name)).toBeVisible();

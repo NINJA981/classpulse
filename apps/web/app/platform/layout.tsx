@@ -1,0 +1,34 @@
+import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { PlatformShell } from '@/components/platform/shell';
+import { getPlatformAdmin } from '@/lib/platform-session';
+
+export const metadata: Metadata = {
+  title: { default: 'Platform console', template: '%s · ClassPulse platform' },
+  robots: { index: false, follow: false },
+};
+
+/**
+ * The platform console: its own dark theme, sidebar and session (cp_platform). The sign-in page
+ * shares this segment, so proxy.ts passes the path in `x-cp-path` and the login renders bare.
+ * Moving between the sign-in page and the console is always a full navigation.
+ */
+export default async function PlatformLayout({ children }: { children: ReactNode }) {
+  const path = (await headers()).get('x-cp-path') ?? '';
+  if (path === '/platform/login') {
+    return (
+      <div data-theme="platform" className="min-h-dvh">
+        {children}
+      </div>
+    );
+  }
+  const admin = await getPlatformAdmin();
+  if (!admin || admin.mustChangePassword) redirect('/platform/login');
+  return (
+    <div data-theme="platform" className="min-h-dvh">
+      <PlatformShell admin={admin}>{children}</PlatformShell>
+    </div>
+  );
+}

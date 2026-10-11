@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Outfit, Plus_Jakarta_Sans } from 'next/font/google';
+import { RegisterServiceWorker } from '@/components/pwa/register-sw';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -11,9 +12,18 @@ const mono = JetBrains_Mono({ variable: '--font-mono-jb', subsets: ['latin'], di
 export const metadata: Metadata = {
   title: { default: 'ClassPulse', template: '%s · ClassPulse' },
   description: 'AI-assisted lectures, quizzes and live classroom engagement.',
+  applicationName: 'ClassPulse',
+  appleWebApp: { capable: true, title: 'ClassPulse', statusBarStyle: 'default' },
+  icons: {
+    icon: [
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#111111' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <Providers>{children}</Providers>
+        <RegisterServiceWorker />
       </body>
     </html>
   );

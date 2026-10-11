@@ -38,9 +38,13 @@ const identifier = (b: unknown) => {
 
 /** Login: LOGIN_RATE_LIMIT (default 10) attempts / 15 min per IP+identifier. */
 export const loginLimiter = limiter('login', 15 * 60_000, env.LOGIN_RATE_LIMIT, identifier);
+/** Platform (super admin) sign-in steps: 5 / 15 min per IP+email (per IP for the code steps). */
+export const platformLoginLimiter = limiter('platform-login', 15 * 60_000, 5, identifier);
 /** Live-quiz PIN lookups/joins: 30 / min per IP. */
 export const pinLimiter = limiter('pin', 60_000, 30);
 /** Paid AI calls (generation, remedial): 20 / hour per IP. */
 export const aiLimiter = limiter('ai', 60 * 60_000, 20);
 /** Device registration: 10 / hour per IP. */
 export const deviceRegisterLimiter = limiter('device-register', 60 * 60_000, 10);
+/** Set-password links (preview, redeem, forgot-password): 20 / 15 min per IP. */
+export const tokenLimiter = limiter('pw-token', 15 * 60_000, 20);

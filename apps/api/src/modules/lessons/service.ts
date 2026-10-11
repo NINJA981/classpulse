@@ -1,5 +1,5 @@
-/** Lesson business rules: visibility/ownership, state machine, publish, assignment, manual questions. */
-import { and, count, eq, inArray, max, or } from 'drizzle-orm';
+/** Lesson business rules: visibility/ownership, state machine, publish, lesson assignments, manual questions. */
+import { and, count, eq, inArray, max, or, sql } from 'drizzle-orm';
 import type {
   Assignment,
   AssignmentInput,
@@ -21,6 +21,7 @@ import { assignments, lessons, questions, quizAttempts, sections, sectionTeacher
 import { badRequest, forbidden, invalidState, notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { storage } from '../../lib/storage.js';
+import { assignmentValues, createAssignment } from '../assignments/service.js';
 import { defaultQuestionCount } from '../settings/service.js';
 import { queueLessonGeneration } from './audio.js';
 import { hasLiveAudio, toAssignment, toLessonDetail, toLessonSummary, toQuestion, type LessonRow } from './mappers.js';
@@ -198,10 +199,11 @@ async function setPublished(lessonId: string, published: boolean): Promise<Lesso
       .set(published ? { status: 'published', publishedAt: new Date() } : { status: 'ready_for_review', publishedAt: null })
       .where(eq(lessons.id, lessonId))
       .returning();
+    // Every assignment attached to the lesson follows it; closed ones stay closed (and hidden while unpublished).
     await tx
       .update(assignments)
-      .set({ status: published ? 'published' : 'draft' })
-      .where(eq(assignments.lessonId, lessonId));
+      .set(published ? { status: 'published', publishedAt: sql`coalesce(${assignments.publishedAt}, now())` } : { status: 'draft', publishedAt: null })
+      .where(and(eq(assignments.lessonId, lessonId), eq(assignments.status, published ? 'draft' : 'published')));
     return row!;
   });
 }
@@ -219,22 +221,32 @@ export async function unpublishLesson(user: SessionUser, id: string): Promise<Le
   return buildLessonDetail(await setPublished(id, false));
 }
 
+/** Create or edit the lesson's primary (AI-drafted) assignment. Fields left out keep their current value. */
 export async function upsertAssignment(user: SessionUser, id: string, input: AssignmentInput): Promise<Assignment> {
   const lesson = await getOwnedLesson(user, id);
   assertContentEditable(lesson);
-  const values = {
-    title: input.title,
-    prompt: input.prompt,
-    rubric: input.rubric,
-    estimatedMinutes: input.estimatedMinutes ?? null,
-    dueAt: input.dueAt ? new Date(input.dueAt) : null,
-  };
+  const values = assignmentValues(input);
   const [row] = await db
     .insert(assignments)
-    .values({ lessonId: id, status: 'draft', ...values })
-    .onConflictDoUpdate({ target: assignments.lessonId, set: values })
+    .values({
+      ...values,
+      title: input.title,
+      prompt: input.prompt,
+      lessonId: id,
+      sectionId: lesson.sectionId,
+      teacherId: lesson.teacherId,
+      isPrimary: true,
+      status: 'draft',
+    })
+    .onConflictDoUpdate({ target: assignments.lessonId, targetWhere: sql`${assignments.isPrimary}`, set: values })
     .returning();
   return toAssignment(row!);
+}
+
+/** An extra assignment attached to the lesson (not the primary one; never touched by regeneration). */
+export async function addLessonAssignment(user: SessionUser, id: string, input: AssignmentInput): Promise<Assignment> {
+  const lesson = await getOwnedLesson(user, id);
+  return createAssignment(user, { ...input, sectionId: lesson.sectionId, lessonId: lesson.id });
 }
 
 /* ----------------------------------------------------------------------------
@@ -267,6 +279,8 @@ export async function addQuestion(user: SessionUser, id: string, input: Question
         explanationLocal: input.explanationLocal ?? null,
         difficulty: input.difficulty,
         topicTag: input.topicTag ?? null,
+        bloomLevel: input.bloomLevel ?? null,
+        competency: input.competency ?? null,
         citationStartSec: input.citationStartSec ?? null,
         citationEndSec: input.citationEndSec ?? null,
         status: 'approved',

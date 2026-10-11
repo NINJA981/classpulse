@@ -1,113 +1,63 @@
 'use client';
-import { Suspense, useState, type FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ROLE_HOME, type SessionResponse } from '@classpulse/shared';
-import { Button, Field, InlineError, Input, Tabs } from '@/components/ui';
-import { ApiError, api } from '@/lib/api';
+import { Suspense } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { ArrowRight, GraduationCap, School, UserRound, type LucideIcon } from 'lucide-react';
+import { ROLE_HOME, ROLE_LOGIN, ROLES, type Role } from '@classpulse/shared';
+import { LoginNotice } from '@/components/auth/platform-notice';
+import { ROLE_LOGIN_COPY } from '@/components/auth/role-login';
 
-type Mode = 'staff' | 'student';
+const CARDS: Record<Role, { icon: LucideIcon; description: string }> = {
+  admin: { icon: School, description: 'Manage teachers, students, classes and devices.' },
+  teacher: { icon: GraduationCap, description: 'Record lessons, review quizzes, exams and assignments.' },
+  student: { icon: UserRound, description: 'Take quizzes, exams and hand in assignments.' },
+};
 
-function safeNext(next: string | null, role: keyof typeof ROLE_HOME): string {
-  const home = ROLE_HOME[role];
-  if (next && next.startsWith(home) && !next.startsWith('//')) return next;
-  return home;
-}
-
-function LoginForm() {
-  const router = useRouter();
+/** "Who are you?" — links to each role's own sign-in page, forwarding ?next= (and any notice). */
+function Chooser() {
   const params = useSearchParams();
-  const [mode, setMode] = useState<Mode>('staff');
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [schoolCode, setSchoolCode] = useState('');
-  const [needSchoolCode, setNeedSchoolCode] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const next = params.get('next');
+  const blocked = params.get('blocked');
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setPending(true);
-    setError(null);
-    try {
-      const { user } =
-        mode === 'staff'
-          ? await api.post<SessionResponse>('/auth/login', { email: identifier, password })
-          : await api.post<SessionResponse>('/auth/student/login', {
-              rollNumber: identifier,
-              password,
-              ...(schoolCode.trim() ? { institutionCode: schoolCode.trim() } : {}),
-            });
-      router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next'), user.role));
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError && (err.details as { field?: string } | undefined)?.field === 'institutionCode') {
-        setNeedSchoolCode(true);
-      }
-      setError(err);
-      setPending(false);
-    }
-  }
+  const hrefFor = (role: Role) => {
+    const qs = new URLSearchParams();
+    if (next && (next === ROLE_HOME[role] || next.startsWith(`${ROLE_HOME[role]}/`))) qs.set('next', next);
+    if (blocked) qs.set('blocked', blocked);
+    const s = qs.toString();
+    return s ? `${ROLE_LOGIN[role]}?${s}` : ROLE_LOGIN[role];
+  };
 
   return (
-    <div className="w-full max-w-md border border-line-strong bg-surface p-8 shadow-hard rounded-card">
+    <div className="w-full max-w-3xl">
       <p className="eyebrow">Welcome to</p>
-      <h1 className="font-display text-3xl font-black">ClassPulse</h1>
-      <p className="mt-1 text-sm text-muted">Sign in to continue.</p>
-
-      <div className="mt-6">
-        <Tabs
-          label="Account type"
-          value={mode}
-          onChange={(m) => {
-            setMode(m);
-            setIdentifier('');
-            setError(null);
-          }}
-          tabs={[
-            { value: 'staff', label: 'Teacher / Admin' },
-            { value: 'student', label: 'Student' },
-          ]}
-        />
-      </div>
-
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        {mode === 'staff' ? (
-          <Field label="Email" required>
-            {(p) => (
-              <Input {...p} type="email" autoComplete="username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
-            )}
-          </Field>
-        ) : (
-          <Field label="Roll number" required hint="As given by your school, e.g. 10B-01">
-            {(p) => (
-              <Input {...p} autoComplete="username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
-            )}
-          </Field>
-        )}
-        {mode === 'student' && needSchoolCode && (
-          <Field label="School code" required hint="Ask your teacher if you don’t know it">
-            {(p) => (
-              <Input {...p} autoComplete="organization" value={schoolCode} onChange={(e) => setSchoolCode(e.target.value.toUpperCase())} />
-            )}
-          </Field>
-        )}
-        <Field label="Password" required>
-          {(p) => (
-            <Input
-              {...p}
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          )}
-        </Field>
-        <InlineError error={error} />
-        <Button type="submit" size="lg" loading={pending} disabled={!identifier || !password}>
-          Sign in
-        </Button>
-      </form>
-      <p className="mt-6 text-xs text-muted">Forgot your password? Ask your school administrator to reset it.</p>
+      <h1 className="font-display text-3xl font-black sm:text-4xl">ClassPulse</h1>
+      <p className="mt-1 text-sm text-muted">Choose how you sign in.</p>
+      <LoginNotice className="mt-5" />
+      <ul className="mt-6 grid gap-4 sm:grid-cols-3">
+        {ROLES.map((role) => {
+          const { icon: Icon, description } = CARDS[role];
+          return (
+            <li key={role}>
+              <Link
+                href={hrefFor(role)}
+                className="group flex h-full flex-col gap-3 border border-line-strong bg-surface p-5 rounded-card hover:shadow-hard"
+              >
+                <Icon className="size-6" aria-hidden />
+                <span className="font-display text-lg font-extrabold">{ROLE_LOGIN_COPY[role].heading}</span>
+                <span className="text-sm text-muted">{description}</span>
+                <span className="mt-auto inline-flex items-center gap-1 text-sm font-bold">
+                  Continue <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-6 text-sm">
+        <Link href="/forgot-password" className="inline-block py-1 font-semibold underline underline-offset-4">
+          Forgot password?
+        </Link>
+      </p>
     </div>
   );
 }
@@ -116,7 +66,7 @@ export default function LoginPage() {
   return (
     <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-10">
       <Suspense>
-        <LoginForm />
+        <Chooser />
       </Suspense>
     </main>
   );

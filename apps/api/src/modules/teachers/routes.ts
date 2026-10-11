@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { CreateTeacherInput, IdParams, UpdateTeacherInput } from '@classpulse/shared';
+import { CreateTeacherInput, IdParams, ImportTeachersInput, UpdateTeacherInput } from '@classpulse/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';
 import * as service from './service.js';
@@ -13,7 +13,14 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const input = parseBody(req, CreateTeacherInput);
-  res.status(201).json(await service.createTeacher(currentUser(req).institutionId, input));
+  const actor = currentUser(req);
+  res.status(201).json(await service.createTeacher(actor.institutionId, input, actor.id));
+});
+
+router.post('/import', async (req, res) => {
+  const input = parseBody(req, ImportTeachersInput);
+  const actor = currentUser(req);
+  res.json(await service.importTeachers(actor.institutionId, input, actor.id));
 });
 
 router.patch('/:id', async (req, res) => {
@@ -31,4 +38,16 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/reset-password', async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.json(await service.resetTeacherPassword(currentUser(req).institutionId, id));
+});
+
+router.post('/:id/send-invite', async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  const actor = currentUser(req);
+  res.json(await service.sendTeacherLink(actor.institutionId, id, 'invite', actor.id));
+});
+
+router.post('/:id/send-reset-link', async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  const actor = currentUser(req);
+  res.json(await service.sendTeacherLink(actor.institutionId, id, 'reset', actor.id));
 });

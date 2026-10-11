@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -22,6 +22,7 @@ export function Dialog({
   size?: 'sm' | 'md' | 'lg';
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const id = useId();
 
   useEffect(() => {
     const el = ref.current;
@@ -33,6 +34,8 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={`${id}-title`}
+      aria-describedby={description ? `${id}-desc` : undefined}
       onClose={onClose}
       onCancel={(e) => {
         e.preventDefault();
@@ -47,8 +50,14 @@ export function Dialog({
         <div className="flex max-h-[85vh] flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div>
-              <h2 className="font-display text-lg font-extrabold">{title}</h2>
-              {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+              <h2 id={`${id}-title`} className="font-display text-lg font-extrabold">
+                {title}
+              </h2>
+              {description && (
+                <p id={`${id}-desc`} className="mt-1 text-sm text-muted">
+                  {description}
+                </p>
+              )}
             </div>
             <button type="button" onClick={onClose} className="p-1 hover:bg-surface-2 rounded-control" aria-label="Close">
               <X className="size-5" />

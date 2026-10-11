@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -11,7 +12,14 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { dayOfWeek, recordStatus, userRole } from './enums.js';
+import {
+  DEFAULT_INSTITUTION_FEATURES,
+  DEFAULT_INSTITUTION_LIMITS,
+  type InstitutionContact,
+  type InstitutionFeatures,
+  type InstitutionLimits,
+} from '@classpulse/shared';
+import { dayOfWeek, emailStatus, institutionStatus, passwordTokenPurpose, recordStatus, userRole } from './enums.js';
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -28,6 +36,14 @@ export const institutions = pgTable('institutions', {
   code: varchar('code', { length: 20 }).notNull().unique(),
   timezone: varchar('timezone', { length: 64 }).notNull().default('Asia/Kolkata'),
   academicYear: varchar('academic_year', { length: 20 }),
+  /** Platform controls (super admin). */
+  status: institutionStatus('status').notNull().default('active'),
+  suspendedReason: varchar('suspended_reason', { length: 300 }),
+  suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+  features: jsonb('features').$type<InstitutionFeatures>().notNull().default(DEFAULT_INSTITUTION_FEATURES),
+  limits: jsonb('limits').$type<InstitutionLimits>().notNull().default(DEFAULT_INSTITUTION_LIMITS),
+  contact: jsonb('contact').$type<InstitutionContact>(),
+  notes: text('notes'),
   ...timestamps,
 });
 
@@ -147,4 +163,27 @@ export const timetableSlots = pgTable(
     index('timetable_teacher_idx').on(t.teacherId),
     index('timetable_room_idx').on(t.roomId),
   ],
+);
+
+/** Emailed set-password links (account invitations and password resets). Only the sha256 is stored. */
+export const passwordTokens = pgTable(
+  'password_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: passwordTokenPurpose('purpose').notNull(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    /** Set when a newer link for the same user replaced this one. */
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    emailStatus: emailStatus('email_status'),
+    emailError: varchar('email_error', { length: 300 }),
+    emailSentAt: timestamp('email_sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('password_tokens_user_idx').on(t.userId, t.createdAt)],
 );

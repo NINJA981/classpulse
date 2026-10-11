@@ -1,15 +1,17 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList } from 'lucide-react';
-import type { StudentAssignment } from '@classpulse/shared';
+import type { StudentAssignment, StudentAssignmentState } from '@classpulse/shared';
 import { ButtonLink, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { AssignmentCard } from '@/components/student/assignments/assignment-card';
 import { api } from '@/lib/api';
 
-/** Unsubmitted first (soonest due first), then submitted. */
+const STATE_ORDER: Record<StudentAssignmentState, number> = { todo: 0, late: 1, submitted: 1, returned: 2, closed: 3 };
+
+/** To do first (soonest due first), then handed in, returned and closed. */
 function sortAssignments(list: StudentAssignment[]): StudentAssignment[] {
   const due = (a: StudentAssignment) => (a.dueAt ? new Date(a.dueAt).getTime() : Number.POSITIVE_INFINITY);
-  return [...list].sort((a, b) => Number(Boolean(a.submission)) - Number(Boolean(b.submission)) || due(a) - due(b));
+  return [...list].sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state] || due(a) - due(b));
 }
 
 export default function AssignmentsPage() {
@@ -22,7 +24,7 @@ export default function AssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader eyebrow="Homework" title="Assignments" description="Tap an assignment to read the task and submit your answer." />
+      <PageHeader eyebrow="Homework" title="Assignments" description="Tap an assignment to read the task, hand in your answer or photos of your work, and see your marks once it is returned." />
       {assignments.isPending ? (
         <div className="flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
@@ -36,7 +38,7 @@ export default function AssignmentsPage() {
           <EmptyState
             icon={<ClipboardList className="size-8" aria-hidden />}
             title="No assignments yet"
-            description="When your teacher sets homework for a lesson, it appears here."
+            description="When your teacher sets homework, it appears here."
             action={
               <ButtonLink href="/student/quizzes" size="lg" variant="secondary">
                 Practise with quizzes

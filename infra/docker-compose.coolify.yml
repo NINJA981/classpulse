@@ -4,7 +4,11 @@
 #   docker compose --project-directory . -f infra/docker-compose.coolify.yml ...
 # Set these in Coolify → Environment variables:
 #   PUBLIC_ORIGIN, POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET, SARVAM_API_KEY, OPENAI_API_KEY
-#   optional: AUDIO_RETENTION_DAYS, GENERATION_CONCURRENCY, LOG_LEVEL
+#   optional: AUDIO_RETENTION_DAYS, GENERATION_CONCURRENCY, LOG_LEVEL,
+#             SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM (email invites, resets, reminders)
+#   platform console: PLATFORM_ENCRYPTION_KEY (required: openssl rand -base64 32), PLATFORM_ORIGIN
+#             (e.g. https://ops.example.org) + PLATFORM_HOST (ops.example.org; also add that domain to `router`),
+#             COOLIFY_API_URL, COOLIFY_API_TOKEN, COOLIFY_APP_UUID (deployments page; read + deploy token)
 
 x-logging: &logging
   driver: json-file
@@ -29,6 +33,16 @@ x-api-env: &api-env
   SARVAM_API_KEY: ${SARVAM_API_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   GENERATION_CONCURRENCY: ${GENERATION_CONCURRENCY:-1}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-465}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASS: ${SMTP_PASS:-}
+  MAIL_FROM: ${MAIL_FROM:-}
+  PLATFORM_ORIGIN: ${PLATFORM_ORIGIN:-}
+  PLATFORM_ENCRYPTION_KEY: ${PLATFORM_ENCRYPTION_KEY:?set PLATFORM_ENCRYPTION_KEY (openssl rand -base64 32)}
+  COOLIFY_API_URL: ${COOLIFY_API_URL:-}
+  COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN:-}
+  COOLIFY_APP_UUID: ${COOLIFY_APP_UUID:-}
 
 services:
   postgres:
@@ -74,6 +88,8 @@ services:
     environment: *api-env
     volumes:
       - storage_data:/data/storage
+      # Host backups (infra/backup.sh), read-only, for the platform health page's backup age check.
+      - /var/backups/classpulse:/backups:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,8 +133,10 @@ services:
       dockerfile: infra/router.Dockerfile
     restart: unless-stopped
     environment:
-      # Coolify: the public domain is attached to this service on port 80.
+      # Coolify: the public domain(s) are attached to this service on port 80.
       SERVICE_FQDN_ROUTER_80: ''
+      # The platform console's host name; /platform is 404 on every other host.
+      PLATFORM_HOST: ${PLATFORM_HOST:-platform.invalid}
     depends_on:
       - web
       - api

@@ -33,12 +33,17 @@ async function createLesson(world: World, sectionId: string, status: 'published'
 
 async function createAssignment(
   lessonId: string,
-  opts: { status?: 'draft' | 'published'; dueAt?: Date | null } = {},
+  opts: { status?: 'draft' | 'published' | 'closed'; dueAt?: Date | null; latePolicy?: 'allow_late' | 'closed' } = {},
 ) {
+  const lesson = await db.query.lessons.findFirst({ where: eq(lessons.id, lessonId) });
   const [row] = await db
     .insert(assignments)
     .values({
       lessonId,
+      sectionId: lesson!.sectionId,
+      teacherId: lesson!.teacherId,
+      isPrimary: true,
+      latePolicy: opts.latePolicy ?? 'allow_late',
       title: 'Write a summary',
       prompt: 'Summarise the lesson',
       rubric: [{ criterion: 'Clarity', marks: 5, descriptor: 'Clear writing' }],
@@ -108,9 +113,10 @@ describe('student: assignments', () => {
     world = await createWorld();
   });
 
-  it('lists published assignments of published lessons in my sections', async () => {
+  it('lists published and closed assignments of published lessons in my sections', async () => {
     const lesson = await createLesson(world, world.section.id);
     const visible = await createAssignment(lesson.id);
+    const closed = await createAssignment((await createLesson(world, world.section.id)).id, { status: 'closed' });
     await createAssignment((await createLesson(world, world.section.id)).id, { status: 'draft' });
     await createAssignment((await createLesson(world, world.section.id, 'draft')).id);
     const otherSection = await createSection(world.institution.id);
@@ -118,22 +124,29 @@ describe('student: assignments', () => {
 
     const res = await as(world.student).get('/api/student/assignments');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0]).toMatchObject({
-      id: visible.id,
+    expect(res.body).toHaveLength(2);
+    const byId = new Map(res.body.map((a: { id: string }) => [a.id, a]));
+    expect(byId.get(visible.id)).toMatchObject({
+      lessonId: lesson.id,
       lessonTitle: lesson.title,
       sectionName: world.section.name,
       rubric: [{ criterion: 'Clarity', marks: 5, descriptor: 'Clear writing' }],
+      latePolicy: 'allow_late',
+      allowFiles: true,
+      maxFiles: 5,
+      state: 'todo',
       submission: null,
     });
+    expect(byId.get(closed.id)).toMatchObject({ state: 'closed', submission: null });
   });
 
-  it('creates and updates a submission until the due date', async () => {
+  it('creates and updates a submission (JSON text) until it is returned', async () => {
     const lesson = await createLesson(world, world.section.id);
     const assignment = await createAssignment(lesson.id);
     const first = await as(world.student).post(`/api/student/assignments/${assignment.id}/submission`).send({ text: 'Draft one' });
     expect(first.status).toBe(200);
-    expect(first.body.submission).toMatchObject({ text: 'Draft one' });
+    expect(first.body.state).toBe('submitted');
+    expect(first.body.submission).toMatchObject({ text: 'Draft one', files: [], isLate: false, status: 'submitted', maxMarks: 5 });
     const second = await as(world.student).post(`/api/student/assignments/${assignment.id}/submission`).send({ text: 'Final' });
     expect(second.body.submission).toMatchObject({ id: first.body.submission.id, text: 'Final' });
 
@@ -141,14 +154,25 @@ describe('student: assignments', () => {
     const theirs = await as(world.otherStudent).get('/api/student/assignments');
     expect(theirs.body[0].submission).toBeNull();
 
-    expect((await as(world.student).post(`/api/student/assignments/${assignment.id}/submission`).send({ text: '' })).status).toBe(400);
+    // Needs an answer or a file.
+    expect((await as(world.otherStudent).post(`/api/student/assignments/${assignment.id}/submission`).send({ text: '' })).status).toBe(400);
+    expect((await as(world.otherStudent).post(`/api/student/assignments/${assignment.id}/submission`).send({})).status).toBe(400);
   });
 
-  it('rejects submissions after the due date and for invisible assignments', async () => {
+  it('flags late work (allow late) and refuses it (closed policy or closed assignment)', async () => {
     const lesson = await createLesson(world, world.section.id);
-    const late = await createAssignment(lesson.id, { dueAt: new Date(Date.now() - 60_000) });
-    const res = await as(world.student).post(`/api/student/assignments/${late.id}/submission`).send({ text: 'Late' });
-    expect(res.status).toBe(409);
+    const lateOk = await createAssignment(lesson.id, { dueAt: new Date(Date.now() - 60_000) });
+    const res = await as(world.student).post(`/api/student/assignments/${lateOk.id}/submission`).send({ text: 'Late' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ state: 'late', submission: { isLate: true } });
+
+    const strict = await createAssignment((await createLesson(world, world.section.id)).id, {
+      dueAt: new Date(Date.now() - 60_000),
+      latePolicy: 'closed',
+    });
+    expect((await as(world.student).post(`/api/student/assignments/${strict.id}/submission`).send({ text: 'x' })).status).toBe(409);
+    const closed = await createAssignment((await createLesson(world, world.section.id)).id, { status: 'closed' });
+    expect((await as(world.student).post(`/api/student/assignments/${closed.id}/submission`).send({ text: 'x' })).status).toBe(409);
 
     const otherSection = await createSection(world.institution.id);
     const hidden = await createAssignment((await createLesson(world, otherSection.id)).id);

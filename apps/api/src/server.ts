@@ -7,6 +7,11 @@ import { storage } from './lib/storage.js';
 import { createApp } from './app.js';
 import { attachSockets } from './sockets/index.js';
 import { closeQueue } from './jobs/queue.js';
+import { closeEmailQueue } from './jobs/emailQueue.js';
+import { closeMailer } from './lib/mailer.js';
+import { flushLogSink } from './lib/logSink.js';
+import { closeOpsQueues } from './modules/platform/opsQueues.js';
+import { closeResourceQueue, startResourceWorker, type ResourceWorkerHandle } from './modules/resources/queue.js';
 import { startLessonWorker, type LessonWorkerHandle } from './jobs/lessonWorker.js';
 import { startPeriodicTasks } from './jobs/periodic.js';
 import { maintenanceTasks } from './jobs/tasks.js';
@@ -29,9 +34,11 @@ const sockets = attachSockets(server);
 // Without Redis (dev only) the API process also runs the generation worker and maintenance tasks.
 let worker: LessonWorkerHandle | null = null;
 let periodic: { stop(): void } | null = null;
+let resourceWorker: ResourceWorkerHandle | null = null;
 if (!env.REDIS_URL) {
   logger.warn('REDIS_URL not set — running generation jobs and maintenance tasks in-process (development mode)');
   worker = startLessonWorker();
+  resourceWorker = startResourceWorker();
   periodic = startPeriodicTasks(maintenanceTasks);
   void recoverStuckLessons();
 }
@@ -50,8 +57,14 @@ async function shutdown(signal: string) {
   periodic?.stop();
   await sockets.close();
   await worker?.close();
+  await resourceWorker?.close();
   await closeQueue();
+  await closeEmailQueue();
+  await closeOpsQueues();
+  await closeResourceQueue();
+  await closeMailer();
   await closeRedis();
+  await flushLogSink();
   await closeDb();
   clearTimeout(force);
   process.exit(0);

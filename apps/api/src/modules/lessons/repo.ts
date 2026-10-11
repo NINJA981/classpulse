@@ -88,8 +88,12 @@ export async function lessonNames(lesson: LessonRow, dbx: DbOrTx = db): Promise<
 export const lessonQuestions = (lessonId: string, dbx: DbOrTx = db): Promise<QuestionRow[]> =>
   dbx.select().from(questions).where(eq(questions.lessonId, lessonId)).orderBy(asc(questions.position), asc(questions.createdAt));
 
+/** The lesson's primary (AI-drafted) assignment; extra lesson assignments are managed under /assignments. */
 export async function lessonAssignment(lessonId: string, dbx: DbOrTx = db): Promise<AssignmentRow | null> {
-  const [row] = await dbx.select().from(assignments).where(eq(assignments.lessonId, lessonId));
+  const [row] = await dbx
+    .select()
+    .from(assignments)
+    .where(and(eq(assignments.lessonId, lessonId), eq(assignments.isPrimary, true)));
   return row ?? null;
 }
 

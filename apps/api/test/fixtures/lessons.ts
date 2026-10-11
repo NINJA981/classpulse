@@ -170,6 +170,8 @@ export function rawModelOutput(n: number, opts: { twoCorrect?: boolean; cited?: 
       explanation: 'The lecture says oxygen is released.',
       difficulty: 'easy',
       topicTag: 'Products',
+      bloomLevel: 'remember',
+      competency: 'Identifying products of photosynthesis',
       citedSegments: opts.cited ?? [2],
     })),
     assignment: {

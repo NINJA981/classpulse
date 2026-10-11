@@ -24,6 +24,9 @@ describe('admin: teachers', () => {
     expect(res.status).toBe(201);
     expect(res.body.record).toMatchObject({ name: 'Neha', email: 'neha@school.in', department: 'Maths', status: 'active', sections: [] });
     expect(res.body.initialPassword).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{2}$/);
+    // No email transport configured in this suite: the one-time password is the only way in.
+    expect(res.body.invite).toBe('email_disabled');
+    expect(res.body.record.inviteStatus).toBe('none');
 
     const login = await anon().post('/api/auth/login').send({ email: 'neha@school.in', password: res.body.initialPassword });
     expect(login.status).toBe(200);
@@ -167,6 +170,8 @@ describe('admin: students', () => {
     expect(res.status).toBe(200);
     expect(res.body.created.map((c: { rollNumber: string }) => c.rollNumber).sort()).toEqual(['IMP-1', 'IMP-2']);
     expect(res.body.created.every((c: { initialPassword: string }) => c.initialPassword.length > 0)).toBe(true);
+    const invites = Object.fromEntries(res.body.created.map((c: { rollNumber: string; invite: string }) => [c.rollNumber, c.invite]));
+    expect(invites).toEqual({ 'IMP-1': 'no_email', 'IMP-2': 'email_disabled' });
     expect(res.body.skipped.map((s: { rollNumber: string }) => s.rollNumber).sort()).toEqual(
       ['IMP-1', 'IMP-3', world.student.rollNumber].sort(),
     );

@@ -10,6 +10,9 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './modules/health/routes.js';
 import { apiRoutes } from './modules/index.js';
 
+/** Secrets that travel in URL paths (set-password links) must never reach the logs. */
+const redactUrl = (url: string) => url.replace(/(\/password-token\/)[^/?#]+/, '$1[redacted]');
+
 export function createApp(): Express {
   const app = express();
 
@@ -29,7 +32,7 @@ export function createApp(): Express {
       autoLogging: { ignore: (req) => req.url?.startsWith('/api/health') ?? false },
       customLogLevel: (_req, res, err) => (err || res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info'),
       serializers: {
-        req: (req: { id: string; method: string; url: string }) => ({ id: req.id, method: req.method, url: req.url }),
+        req: (req: { id: string; method: string; url: string }) => ({ id: req.id, method: req.method, url: redactUrl(req.url) }),
         res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
       },
     }),

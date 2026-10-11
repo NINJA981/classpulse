@@ -11,6 +11,8 @@ import type {
   GenerateQuestionsResult,
   GenerateResult,
   GeneratedQuestion,
+  GradeInput,
+  GradeResult,
   RemedialInput,
   TranscribeInput,
   TranscribeResult,
@@ -89,5 +91,15 @@ export function demoRemedial(input: RemedialInput): RemedialPlan {
           recommendation: `[Demo] Revisit question ${q.position} (accuracy ${q.accuracyPct}%).`,
         }))
       : [{ topic: 'General', recommendation: '[Demo] No question data available.' }],
+  };
+}
+
+export function demoGrade(input: GradeInput): GradeResult {
+  return {
+    // Half marks on every criterion: obviously a placeholder, never a real judgement.
+    rubricMarks: input.rubric.map((r) => ({ criterion: r.criterion, marks: Math.round(r.marks) / 2 })),
+    feedback: '[Demo] AI grading is not configured. This placeholder feedback is not a real assessment of the work.',
+    note: '[Demo] No AI model read this submission.',
+    model: 'demo',
   };
 }

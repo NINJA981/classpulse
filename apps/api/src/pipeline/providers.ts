@@ -1,5 +1,5 @@
 /**
- * Provider indirection used by the generation job and the remedial endpoint.
+ * Provider indirection used by the generation job, the remedial endpoint and assignment grading.
  * Tests swap implementations with `setPipelineProvidersForTests()` so nothing
  * hits the network.
  *
@@ -10,17 +10,28 @@
 import type { RemedialPlan } from '@classpulse/shared';
 import { env } from '../config/env.js';
 import { logger } from '../lib/logger.js';
-import { demoGenerate, demoGenerateQuestions, demoRemedial, demoTranscribe } from './demo.js';
-import { generateQuestionsWithOpenAI, generateRemedialPlan, generateWithOpenAI } from './llm.js';
+import { demoGenerate, demoGenerateQuestions, demoGrade, demoRemedial, demoTranscribe } from './demo.js';
+import { generateQuestionsWithOpenAI, generateRemedialPlan, generateWithOpenAI, gradeSubmissionWithOpenAI } from './llm.js';
 import { transcribeWithOpenAI } from './openaiStt.js';
 import { transcribeWithSarvam } from './sarvam.js';
-import type { GenerateInput, GenerateQuestionsResult, GenerateResult, RemedialInput, TranscribeInput, TranscribeResult } from './types.js';
+import type {
+  GenerateInput,
+  GenerateQuestionsResult,
+  GenerateResult,
+  GradeInput,
+  GradeResult,
+  RemedialInput,
+  TranscribeInput,
+  TranscribeResult,
+} from './types.js';
 
 export interface PipelineProviders {
   transcribe(input: TranscribeInput): Promise<TranscribeResult>;
   generate(input: GenerateInput): Promise<GenerateResult>;
   generateQuestions(input: GenerateInput): Promise<GenerateQuestionsResult>;
   remedial(input: RemedialInput): Promise<RemedialPlan>;
+  /** Grading suggestion for an assignment submission (reviewed by the teacher). */
+  gradeSubmission(input: GradeInput): Promise<GradeResult>;
 }
 
 const useDemo = (key: string, what: string) => {
@@ -38,6 +49,7 @@ const defaults: PipelineProviders = {
   generateQuestions: async (input) =>
     useDemo(env.OPENAI_API_KEY, 'llm') ? demoGenerateQuestions(input) : generateQuestionsWithOpenAI(input),
   remedial: async (input) => (useDemo(env.OPENAI_API_KEY, 'remedial') ? demoRemedial(input) : generateRemedialPlan(input)),
+  gradeSubmission: async (input) => (useDemo(env.OPENAI_API_KEY, 'grading') ? demoGrade(input) : gradeSubmissionWithOpenAI(input)),
 };
 
 export const providers: PipelineProviders = { ...defaults };

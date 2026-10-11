@@ -1,11 +1,12 @@
 # ClassPulse edge proxy. One origin serves the web app, the API and Socket.IO.
 # DOMAIN=app.example.org → automatic Let's Encrypt certificates.
 # DOMAIN=localhost       → Caddy's internal CA (local production smoke tests).
+# PLATFORM_HOST=ops.example.org → the super admin console's own address (it is invisible on DOMAIN).
 {
 	email {$ACME_EMAIL:admin@localhost}
 }
 
-{$DOMAIN:localhost} {
+(common) {
 	encode zstd gzip
 
 	header {
@@ -16,17 +17,13 @@
 		-Server
 	}
 
-	# Lecture uploads can be large; device chunks are ~2 MB. The matchers must not overlap: Caddy applies
-	# every matching request_body in turn, so a catch-all limit would also cap lecture uploads.
-	@lectureUpload path /api/lessons/*/audio
-	request_body @lectureUpload {
-		max_size 400MB
+	log {
+		output stdout
+		format json
 	}
-	@otherBodies not path /api/lessons/*/audio
-	request_body @otherBodies {
-		max_size 25MB
-	}
+}
 
+(upstreams) {
 	@backend path /api/* /socket.io/*
 	handle @backend {
 		reverse_proxy api:5000 {
@@ -46,9 +43,47 @@
 			}
 		}
 	}
+}
 
-	log {
-		output stdout
-		format json
+{$DOMAIN:localhost} {
+	import common
+
+	# Lecture uploads can be large; device chunks are ~2 MB. The matchers must not overlap: Caddy applies
+	# every matching request_body in turn, so a catch-all limit would also cap lecture uploads.
+	@lectureUpload path /api/lessons/*/audio
+	request_body @lectureUpload {
+		max_size 400MB
 	}
+	@otherBodies not path /api/lessons/*/audio
+	request_body @otherBodies {
+		max_size 25MB
+	}
+
+	# The platform console is served only on PLATFORM_HOST.
+	@platform path /platform /platform/* /api/platform /api/platform/*
+	handle @platform {
+		respond "Not found" 404
+	}
+
+	import upstreams
+}
+
+{$PLATFORM_HOST:platform.localhost} {
+	import common
+
+	request_body {
+		max_size 5MB
+	}
+
+	@root path /
+	handle @root {
+		redir * /platform 302
+	}
+
+	@notConsole not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt
+	handle @notConsole {
+		respond "Not found" 404
+	}
+
+	import upstreams
 }

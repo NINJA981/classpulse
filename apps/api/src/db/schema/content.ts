@@ -7,20 +7,24 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import type { QuizRequest, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
+import type { AiGradeSuggestion, QuizRequest, RemedialPlan, RubricItem, RubricMark, TranscriptSegment } from '@classpulse/shared';
 import {
   assignmentStatus,
+  bloomLevel,
   difficulty,
   guardianRelation,
+  latePolicy,
   lessonSourceType,
   lessonStatus,
   questionStatus,
+  submissionStatus,
 } from './enums.js';
 import { institutions, sections, timestamps, users } from './org.js';
 
@@ -103,6 +107,8 @@ export const questions = pgTable(
     explanationLocal: text('explanation_local'),
     difficulty: difficulty('difficulty').notNull().default('medium'),
     topicTag: varchar('topic_tag', { length: 120 }),
+    bloomLevel: bloomLevel('bloom_level'),
+    competency: varchar('competency', { length: 160 }),
     citationStartSec: doublePrecision('citation_start_sec'),
     citationEndSec: doublePrecision('citation_end_sec'),
     status: questionStatus('status').notNull().default('draft'),
@@ -115,22 +121,43 @@ export const questions = pgTable(
   ],
 );
 
+/**
+ * Homework. Standalone (lesson_id null) or attached to a lesson (several per lesson). Lesson-attached
+ * assignments publish/unpublish together with their lesson; standalone ones are published on their own.
+ * `is_primary` marks the lesson's AI-drafted assignment (the one regeneration rewrites).
+ */
 export const assignments = pgTable(
   'assignments',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    lessonId: uuid('lesson_id')
+    lessonId: uuid('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
+    sectionId: uuid('section_id')
       .notNull()
-      .unique()
-      .references(() => lessons.id, { onDelete: 'cascade' }),
+      .references(() => sections.id, { onDelete: 'cascade' }),
+    teacherId: uuid('teacher_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    isPrimary: boolean('is_primary').notNull().default(false),
     title: varchar('title', { length: 200 }).notNull(),
     prompt: text('prompt').notNull(),
     rubric: jsonb('rubric').$type<RubricItem[]>().notNull().default([]),
     estimatedMinutes: integer('estimated_minutes'),
     dueAt: timestamp('due_at', { withTimezone: true }),
     status: assignmentStatus('status').notNull().default('draft'),
+    latePolicy: latePolicy('late_policy').notNull().default('allow_late'),
+    allowFiles: boolean('allow_files').notNull().default(true),
+    maxFiles: integer('max_files').notNull().default(5),
+    reminders: boolean('reminders').notNull().default(true),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps,
   },
+  (t) => [
+    index('assignments_lesson_idx').on(t.lessonId),
+    index('assignments_section_status_idx').on(t.sectionId, t.status),
+    index('assignments_teacher_idx').on(t.teacherId),
+    // At most one AI-drafted (primary) assignment per lesson.
+    uniqueIndex('assignments_primary_per_lesson').on(t.lessonId).where(sql`${t.isPrimary}`),
+  ],
 );
 
 export const assignmentSubmissions = pgTable(
@@ -143,11 +170,53 @@ export const assignmentSubmissions = pgTable(
     studentId: uuid('student_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    text: text('text').notNull(),
+    /** Null when the student submitted files only. */
+    text: text('text'),
     submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+    status: submissionStatus('status').notNull().default('submitted'),
+    isLate: boolean('is_late').notNull().default(false),
+    rubricMarks: jsonb('rubric_marks').$type<RubricMark[]>(),
+    totalMarks: doublePrecision('total_marks'),
+    feedback: text('feedback'),
+    gradedBy: uuid('graded_by').references(() => users.id, { onDelete: 'set null' }),
+    gradedAt: timestamp('graded_at', { withTimezone: true }),
+    returnedAt: timestamp('returned_at', { withTimezone: true }),
+    aiSuggestion: jsonb('ai_suggestion').$type<AiGradeSuggestion>(),
     ...timestamps,
   },
   (t) => [uniqueIndex('assignment_submissions_unique').on(t.assignmentId, t.studentId)],
+);
+
+/** Files attached to a submission (stored via lib/storage; only the key is kept here). */
+export const submissionFiles = pgTable(
+  'submission_files',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    submissionId: uuid('submission_id')
+      .notNull()
+      .references(() => assignmentSubmissions.id, { onDelete: 'cascade' }),
+    objectKey: text('object_key').notNull(),
+    originalName: varchar('original_name', { length: 255 }).notNull(),
+    mime: varchar('mime', { length: 120 }).notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('submission_files_submission_idx').on(t.submissionId)],
+);
+
+/** One due-date reminder email per (assignment, student). */
+export const assignmentReminders = pgTable(
+  'assignment_reminders',
+  {
+    assignmentId: uuid('assignment_id')
+      .notNull()
+      .references(() => assignments.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.assignmentId, t.studentId] })],
 );
 
 export const quizAttempts = pgTable(

@@ -15,6 +15,27 @@
       "when": 1791648235050,
       "tag": "0001_teacher_quiz_generation",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791702000603,
+      "tag": "0002_invites_exams_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791703957127,
+      "tag": "0003_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791704269105,
+      "tag": "0004_teacher_tools",
+      "breakpoints": true
     }
   ]
 }

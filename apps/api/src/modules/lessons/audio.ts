@@ -8,6 +8,7 @@ import { logger } from '../../lib/logger.js';
 import { env } from '../../config/env.js';
 import { db, type DbOrTx } from '../../db/client.js';
 import { lessons } from '../../db/schema/index.js';
+import { assertAiAudioAvailable } from '../../lib/aiUsage.js';
 import { enqueueLessonGeneration } from '../../jobs/queue.js';
 import { storage } from '../../lib/storage.js';
 import { AppError, notFound } from '../../lib/errors.js';
@@ -48,9 +49,24 @@ export async function attachLessonAudio(input: AttachAudioInput, tx: DbOrTx = db
  * Move the lesson to `queued`, bump its generation attempt and enqueue the job.
  * `request` null transcribes only (the lesson ends `transcribed`, waiting for the
  * teacher's quiz settings); otherwise the job also generates the quiz.
- * Callers must already have validated ownership and state.
+ * Callers must already have validated ownership and state. Refused (INVALID_STATE) when the job would
+ * transcribe and the school's monthly AI transcription minutes would be exceeded.
  */
 export async function queueLessonGeneration(lessonId: string, request: QuizRequest | null): Promise<string> {
+  const [current] = await db
+    .select({
+      institutionId: lessons.institutionId,
+      durationSec: lessons.durationSec,
+      // Same test as the job: a transcript of this exact audio is reused, so no transcription is needed.
+      reusesTranscript: sql<boolean>`(${lessons.transcript} is not null
+        and coalesce(jsonb_array_length(${lessons.transcriptSegments}), 0) > 0
+        and ${lessons.pipelineMeta}->>'transcriptAudioKey' = ${lessons.audioObjectKey}
+        and coalesce((${lessons.pipelineMeta}->>'sttDemo')::boolean, false) = false)`,
+    })
+    .from(lessons)
+    .where(eq(lessons.id, lessonId));
+  if (!current) throw notFound('Lesson');
+  if (!current.reusesTranscript) await assertAiAudioAvailable(current.institutionId, current.durationSec ?? 0);
   const [row] = await db
     .update(lessons)
     .set({

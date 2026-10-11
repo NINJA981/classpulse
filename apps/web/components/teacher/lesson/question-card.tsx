@@ -10,6 +10,7 @@ import { formatDuration } from '@/lib/format';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { QuestionStatusBadge, optionLetter } from '@/components/teacher/status';
 import { lessonKey } from './use-lesson';
+import { BLOOM_LABEL } from './bloom';
 
 /** One generated question with review actions. */
 export function QuestionCard({
@@ -51,6 +52,18 @@ export function QuestionCard({
           <QuestionStatusBadge status={q.status} />
           <Badge>{q.difficulty}</Badge>
           {q.topicTag && <Badge tone="info">{q.topicTag}</Badge>}
+          {q.bloomLevel && (
+            <Badge tone="accent">
+              <span className="sr-only">Bloom level: </span>
+              {BLOOM_LABEL[q.bloomLevel]}
+            </Badge>
+          )}
+          {q.competency && (
+            <span className="text-xs text-muted">
+              <span className="sr-only">Competency: </span>
+              {q.competency}
+            </span>
+          )}
           {q.editedByTeacher && <Badge tone="accent">Edited by you</Badge>}
           {q.citationStartSec != null && onSeek && (
             <button

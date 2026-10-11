@@ -1,30 +1,53 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ROLE_HOME, SESSION_COOKIE, type Role, type SessionResponse, type SessionUser } from '@classpulse/shared';
+import {
+  ROLE_HOME,
+  ROLE_LOGIN,
+  SESSION_COOKIE,
+  type ApiErrorBody,
+  type MeResponse,
+  type Role,
+  type SessionUser,
+} from '@classpulse/shared';
 
 const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://localhost:5000';
 
-/** Resolve the current user server-side by forwarding the session cookie to the API. */
-export async function getSession(): Promise<SessionUser | null> {
+/** Why there is no usable session: none/expired, or the platform is blocking the school right now. */
+type SessionResult = { user: SessionUser } | { user: null; blocked?: 'suspended' | 'maintenance' };
+
+async function resolve(): Promise<SessionResult> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  if (!token) return { user: null };
   try {
     const res = await fetch(`${API_INTERNAL_URL}/api/auth/me`, {
       headers: { cookie: `${SESSION_COOKIE}=${token}` },
       cache: 'no-store',
     });
-    if (!res.ok) return null;
-    return ((await res.json()) as SessionResponse).user;
+    if (res.ok) return { user: ((await res.json()) as MeResponse).user };
+    const code = ((await res.json().catch(() => null)) as ApiErrorBody | null)?.error.code;
+    if (code === 'SCHOOL_SUSPENDED') return { user: null, blocked: 'suspended' };
+    if (code === 'MAINTENANCE') return { user: null, blocked: 'maintenance' };
+    return { user: null };
   } catch {
-    return null;
+    return { user: null };
   }
 }
 
-/** Guard for an area layout: redirects to /login, /change-password or the user's own home. */
+/** Resolve the current user server-side by forwarding the session cookie to the API. */
+export async function getSession(): Promise<SessionUser | null> {
+  return (await resolve()).user;
+}
+
+/** Guard for an area layout: redirects to the role's sign-in page, /change-password or the user's own home. */
 export async function requireRole(role: Role, currentPath: string): Promise<SessionUser> {
-  const user = await getSession();
-  if (!user) redirect(`/login?next=${encodeURIComponent(currentPath)}`);
+  const result = await resolve();
+  if (!result.user) {
+    const qs = new URLSearchParams({ next: currentPath });
+    if ('blocked' in result && result.blocked) qs.set('blocked', result.blocked);
+    redirect(`${ROLE_LOGIN[role]}?${qs}`);
+  }
+  const user = result.user;
   if (user.mustChangePassword) redirect('/change-password');
   if (user.role !== role) redirect(ROLE_HOME[user.role]);
   return user;

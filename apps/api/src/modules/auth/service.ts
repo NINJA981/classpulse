@@ -1,10 +1,12 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { ChangePasswordInput, StaffLoginInput, StudentLoginInput } from '@classpulse/shared';
+import type { ChangePasswordInput, ForgotPasswordInput, StaffLoginInput, StudentLoginInput } from '@classpulse/shared';
 import { db } from '../../db/client.js';
 import { institutions, users } from '../../db/schema/index.js';
 import { hashPassword, verifyPassword } from '../../lib/crypto.js';
 import { AppError, badRequest, forbidden, notFound, unauthenticated } from '../../lib/errors.js';
+import { assertNotInMaintenance, assertSchoolActive } from '../../lib/platformState.js';
 import { bumpTokenVersion, DUMMY_PASSWORD_HASH } from './accounts.js';
+import { issueToken } from './passwordTokens.js';
 
 type UserRow = typeof users.$inferSelect;
 
@@ -23,18 +25,25 @@ async function checkCredentials(row: UserRow | undefined, password: string, inva
   return row;
 }
 
-async function markLoggedIn(userId: string): Promise<UserRow> {
-  const [row] = await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, userId)).returning();
+/** Refuse sign-in to a suspended school (only revealed to someone who knows the password). */
+async function markLoggedIn(user: UserRow): Promise<UserRow> {
+  await assertSchoolActive(user.institutionId);
+  const [row] = await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id)).returning();
   if (!row) throw unauthenticated();
   return row;
 }
 
-export async function staffLogin(input: StaffLoginInput): Promise<UserRow> {
+/**
+ * Staff sign-in by email. Each login page accepts only its own role(s); any other account gets the
+ * same generic 401 as a wrong password, so the endpoint never reveals which role an email has.
+ */
+export async function staffLogin(input: StaffLoginInput, roles: readonly ('admin' | 'teacher')[] = ['admin', 'teacher']): Promise<UserRow> {
+  await assertNotInMaintenance();
   const row = await db.query.users.findFirst({
-    where: and(eq(users.email, input.email), inArray(users.role, ['admin', 'teacher'])),
+    where: and(eq(users.email, input.email), inArray(users.role, [...roles])),
   });
   const user = await checkCredentials(row, input.password, STAFF_INVALID);
-  return markLoggedIn(user.id);
+  return markLoggedIn(user);
 }
 
 /**
@@ -61,6 +70,7 @@ async function resolveStudentInstitution(code: string | undefined, rollNumber: s
 }
 
 export async function studentLogin(input: StudentLoginInput): Promise<UserRow> {
+  await assertNotInMaintenance();
   const institutionId = await resolveStudentInstitution(input.institutionCode, input.rollNumber);
   const row = institutionId
     ? await db.query.users.findFirst({
@@ -72,7 +82,7 @@ export async function studentLogin(input: StudentLoginInput): Promise<UserRow> {
       })
     : undefined;
   const user = await checkCredentials(row, input.password, STUDENT_INVALID);
-  return markLoggedIn(user.id);
+  return markLoggedIn(user);
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput): Promise<UserRow> {
@@ -99,3 +109,25 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   return updated;
 }
 
+
+/**
+ * "Forgot password?": email a reset link when an active account with an email address
+ * matches. Silent otherwise — the route always answers 204 so nothing about the account leaks.
+ */
+export async function requestPasswordReset(input: ForgotPasswordInput): Promise<void> {
+  let userId: string | undefined;
+  if ('email' in input) {
+    const row = await db.query.users.findFirst({ where: eq(users.email, input.email), columns: { id: true, status: true } });
+    if (row?.status === 'active') userId = row.id;
+  } else {
+    const [row] = await db
+      .select({ id: users.id, status: users.status, email: users.email })
+      .from(users)
+      .innerJoin(institutions, eq(institutions.id, users.institutionId))
+      .where(
+        and(eq(institutions.code, input.institutionCode), eq(users.rollNumber, input.rollNumber), eq(users.role, 'student')),
+      );
+    if (row?.status === 'active' && row.email) userId = row.id;
+  }
+  if (userId) await issueToken(userId, 'reset', null);
+}

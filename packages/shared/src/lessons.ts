@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { Id, Language, text, type IsoDate } from './common.js';
+// Type-only: teacher-tools.ts imports Difficulty from this module at runtime.
+import type { BloomLevel } from './teacher-tools.js';
 
 /* ----------------------------------------------------------------------------
  * Lessons
@@ -159,6 +161,10 @@ export const QuestionInput = z.object({
   explanationLocal: z.string().trim().max(2000).nullable().optional(),
   difficulty: Difficulty.default('medium'),
   topicTag: z.string().trim().max(120).nullable().optional(),
+  /** Bloom's taxonomy level (same values as teacher-tools BLOOM_LEVELS). */
+  bloomLevel: z.enum(['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create']).nullable().optional(),
+  /** Short competency phrase, e.g. "Interpreting distance-time graphs". */
+  competency: z.string().trim().max(160).nullable().optional(),
   citationStartSec: z.number().min(0).nullable().optional(),
   citationEndSec: z.number().min(0).nullable().optional(),
 });
@@ -182,6 +188,8 @@ export interface Question {
   explanationLocal: string | null;
   difficulty: Difficulty;
   topicTag: string | null;
+  bloomLevel: BloomLevel | null;
+  competency: string | null;
   citationStartSec: number | null;
   citationEndSec: number | null;
   status: QuestionStatus;
@@ -210,8 +218,14 @@ export const RubricItem = z.object({
 });
 export type RubricItem = z.infer<typeof RubricItem>;
 
-export const AssignmentStatus = z.enum(['draft', 'published']);
+export const AssignmentStatus = z.enum(['draft', 'published', 'closed']);
 export type AssignmentStatus = z.infer<typeof AssignmentStatus>;
+
+/** `allow_late`: accepted after the due date and flagged late. `closed`: refused after the due date. */
+export const LatePolicy = z.enum(['allow_late', 'closed']);
+export type LatePolicy = z.infer<typeof LatePolicy>;
+
+export const MAX_SUBMISSION_FILES = 10;
 
 export const AssignmentInput = z.object({
   title: text(200),
@@ -219,16 +233,28 @@ export const AssignmentInput = z.object({
   rubric: z.array(RubricItem).max(20).default([]),
   estimatedMinutes: z.number().int().min(1).max(600).nullable().optional(),
   dueAt: z.iso.datetime().nullable().optional(),
+  latePolicy: LatePolicy.optional(),
+  allowFiles: z.boolean().optional(),
+  maxFiles: z.number().int().min(1).max(MAX_SUBMISSION_FILES).optional(),
+  /** Email students who have not submitted, 24 hours before the due date. */
+  reminders: z.boolean().optional(),
 });
 export type AssignmentInput = z.infer<typeof AssignmentInput>;
 
 export interface Assignment {
   id: Id;
-  lessonId: Id;
+  /** Null for a standalone assignment. */
+  lessonId: Id | null;
+  sectionId: Id;
   title: string;
   prompt: string;
   rubric: RubricItem[];
   estimatedMinutes: number | null;
   dueAt: IsoDate | null;
   status: AssignmentStatus;
+  latePolicy: LatePolicy;
+  allowFiles: boolean;
+  maxFiles: number;
+  reminders: boolean;
+  publishedAt: IsoDate | null;
 }

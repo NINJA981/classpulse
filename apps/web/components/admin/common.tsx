@@ -1,7 +1,8 @@
 'use client';
 import { useState, type ReactNode } from 'react';
-import { AlertTriangle, Check, Copy } from 'lucide-react';
+import { AlertTriangle, Check, Copy, MailCheck } from 'lucide-react';
 import clsx from 'clsx';
+import type { EmailDelivery } from '@classpulse/shared';
 import { Button, Dialog, InlineError, useToast } from '@/components/ui';
 
 /** Copies `value` to the clipboard. Icon-only unless `children` is given. */
@@ -134,13 +135,15 @@ export function SecretValue({ value, label }: { value: string; label: string }) 
   );
 }
 
-/** Shows a generated password exactly once. */
+/** Shows a generated password exactly once (and whether an invitation email went out). */
 export function OneTimePasswordDialog({
   open,
   onClose,
   title,
   who,
   password,
+  invite,
+  email,
 }: {
   open: boolean;
   onClose: () => void;
@@ -148,7 +151,11 @@ export function OneTimePasswordDialog({
   /** e.g. "Asha Rao (asha@school.in)" */
   who: string;
   password: string | null;
+  /** Set when the account was just created. */
+  invite?: EmailDelivery;
+  email?: string | null;
 }) {
+  const invited = invite === 'queued' && Boolean(email);
   return (
     <Dialog
       open={open}
@@ -158,12 +165,23 @@ export function OneTimePasswordDialog({
       footer={<Button onClick={onClose}>I have saved it</Button>}
     >
       <div className="flex flex-col gap-4">
+        {invited && (
+          <p role="status" className="flex items-start gap-2 border border-line bg-success-soft px-3 py-2.5 text-sm font-semibold text-success rounded-control">
+            <MailCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>Invitation email sent to {email}</span>
+          </p>
+        )}
+        {invite === 'email_disabled' && (
+          <p className="text-sm text-muted">Email isn’t set up on this server, so no invitation was sent.</p>
+        )}
         {password ? (
           <>
             <SecretValue value={password} label="Initial password" />
             <Callout title="This password is shown only once">
-              Copy it now and share it privately. They will be asked to change it when they first sign in. If it is lost,
-              reset the password again.
+              {invited
+                ? 'The email lets them choose their own password. This one-time password is a fallback in case the email doesn’t arrive — share it privately only if needed. '
+                : 'Copy it now and share it privately. '}
+              They will be asked to change it when they first sign in. If it is lost, reset the password again.
             </Callout>
           </>
         ) : (

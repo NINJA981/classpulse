@@ -11,6 +11,12 @@ export const ERROR_CODES = [
   'PASSWORD_CHANGE_REQUIRED',
   'INVALID_STATE',
   'UPSTREAM_FAILED',
+  /** The school was suspended by the platform (403). */
+  'SCHOOL_SUSPENDED',
+  /** Platform maintenance with sign-ins blocked (503). */
+  'MAINTENANCE',
+  /** The feature is switched off for this school (403). */
+  'FEATURE_DISABLED',
   'INTERNAL',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];

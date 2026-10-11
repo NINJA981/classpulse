@@ -120,4 +120,6 @@ export const storageKeys = {
   lessonAudio: (lessonId: string) => `audio/${lessonId}/${randomUUID()}.wav`,
   recordingChunk: (sessionId: string, idx: number) => `recordings/${sessionId}/${String(idx).padStart(5, '0')}.pcm`,
   recordingPrefix: (sessionId: string) => `recordings/${sessionId}`,
+  /** `ext` must be a validated extension such as ".pdf" (never taken unchecked from the client). */
+  submissionFile: (assignmentId: string, studentId: string, ext: string) => `submissions/${assignmentId}/${studentId}/${randomUUID()}${ext}`,
 };

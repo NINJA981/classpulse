@@ -2,6 +2,7 @@ import { asc, sql, type SQL } from 'drizzle-orm';
 import type { Teacher } from '@classpulse/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { sections, sectionTeachers, users } from '../../db/schema/index.js';
+import { inviteStatusSql } from '../auth/passwordTokens.js';
 
 type Ref = { id: string; name: string };
 
@@ -21,6 +22,7 @@ export async function findTeachers(dbx: DbOrTx, where: SQL | undefined): Promise
       status: users.status,
       createdAt: users.createdAt,
       sections: teacherSectionsJson,
+      inviteStatus: inviteStatusSql,
     })
     .from(users)
     .where(where)
@@ -32,6 +34,7 @@ export async function findTeachers(dbx: DbOrTx, where: SQL | undefined): Promise
     department: r.department,
     status: r.status,
     sections: r.sections,
+    inviteStatus: r.inviteStatus,
     createdAt: r.createdAt.toISOString(),
   }));
 }

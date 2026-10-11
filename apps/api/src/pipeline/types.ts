@@ -1,4 +1,15 @@
-import type { Difficulty, Language, LessonAnalytics, QuizDifficulty, RemedialPlan, RubricItem, TranscriptSegment } from '@classpulse/shared';
+import type {
+  BloomLevel,
+  Difficulty,
+  Language,
+  LessonAnalytics,
+  QuizDifficulty,
+  RemedialPlan,
+  RubricItem,
+  RubricMark,
+  TranscriptSegment,
+} from '@classpulse/shared';
+import type { AiUsageContext } from '../lib/aiUsage.js';
 
 export interface TranscribeInput {
   /** Configured STT provider for the institution. */
@@ -9,6 +20,8 @@ export interface TranscribeInput {
   /** Real audio duration from ffprobe. */
   durationSec: number;
   model: string;
+  /** Records one ai_usage row per provider call (institution, lesson, kind); omit to record nothing. */
+  usage?: AiUsageContext;
 }
 
 export interface TranscribeResult {
@@ -35,6 +48,8 @@ export interface GenerateInput {
   existingStems: string[];
   bilingual: boolean;
   model: string;
+  /** Records one ai_usage row per provider call (institution, lesson, kind); omit to record nothing. */
+  usage?: AiUsageContext;
 }
 
 export interface GeneratedQuestion {
@@ -47,6 +62,9 @@ export interface GeneratedQuestion {
   explanationLocal: string | null;
   difficulty: Difficulty;
   topicTag: string | null;
+  /** Optional so older providers (demo) need not set them; persisted as null when absent. */
+  bloomLevel?: BloomLevel | null;
+  competency?: string | null;
   citationStartSec: number | null;
   citationEndSec: number | null;
 }
@@ -77,6 +95,37 @@ export interface RemedialInput {
   subject: string;
   language: Language;
   analytics: LessonAnalytics;
+  model: string;
+  /** Records one ai_usage row per provider call (institution, lesson, kind); omit to record nothing. */
+  usage?: AiUsageContext;
+}
+
+/** A photo of the student's work sent to the model (JPEG/PNG only). */
+export interface GradeImage {
+  name: string;
+  mime: 'image/jpeg' | 'image/png';
+  data: Buffer;
+}
+
+export interface GradeInput {
+  title: string;
+  prompt: string;
+  rubric: RubricItem[];
+  text: string | null;
+  images: GradeImage[];
+  /** Files the model was not given, with the reason (e.g. "notes.pdf (PDF files are not read)"). */
+  skippedFiles: string[];
+  model: string;
+  /** Records one ai_usage row per provider call (institution, lesson, kind); omit to record nothing. */
+  usage?: AiUsageContext;
+}
+
+/** A grading suggestion; the teacher must review it before anything reaches the student. */
+export interface GradeResult {
+  /** One entry per rubric criterion, in rubric order, clamped to the criterion's marks. */
+  rubricMarks: RubricMark[];
+  feedback: string;
+  note: string;
   model: string;
 }
 

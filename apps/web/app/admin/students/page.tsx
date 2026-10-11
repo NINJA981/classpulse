@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileUp, KeyRound, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
+import { FileUp, KeyRound, Mail, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
 import type { CreatedWithPassword, Paginated, Student } from '@classpulse/shared';
 import {
   Badge,
@@ -29,7 +29,8 @@ import { adminKeys, useSections } from '@/components/admin/queries';
 import { ConfirmDialog, OneTimePasswordDialog } from '@/components/admin/common';
 import { Pager } from '@/components/admin/pager';
 import { useDebounced } from '@/components/admin/use-debounced';
-import { useResetPassword } from '@/components/admin/reset-password';
+import { InviteStatusBadge } from '@/components/admin/invite-status';
+import { useResetPassword, useSendInvite } from '@/components/admin/reset-password';
 import { StudentDialog } from '@/components/admin/students/student-dialog';
 import { ImportStudentsDialog } from '@/components/admin/students/import-dialog';
 
@@ -57,6 +58,7 @@ export default function StudentsPage() {
   const [created, setCreated] = useState<CreatedWithPassword<Student> | null>(null);
   const [deleting, setDeleting] = useState<Student | null>(null);
   const resetPw = useResetPassword('students');
+  const invite = useSendInvite('students');
 
   const remove = useMutation({
     mutationFn: (s: Student) => api.delete(`/admin/students/${s.id}`),
@@ -170,6 +172,7 @@ export default function StudentsPage() {
                     <TH>Email</TH>
                     <TH>Sections</TH>
                     <TH>Status</TH>
+                    <TH>Invite</TH>
                     <TH>
                       <span className="sr-only">Actions</span>
                     </TH>
@@ -195,17 +198,30 @@ export default function StudentsPage() {
                         )}
                       </TD>
                       <TD>{s.status === 'active' ? <Badge tone="success">Active</Badge> : <Badge tone="danger">Disabled</Badge>}</TD>
+                      <TD>{s.email ? <InviteStatusBadge status={s.inviteStatus} /> : <span className="text-xs text-muted">No email</span>}</TD>
                       <TD>
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" icon={<Pencil className="size-3.5" aria-hidden />} aria-label={`Edit student ${s.name}`} onClick={() => setEditing(s)}>
                             Edit
                           </Button>
+                          {s.email && s.inviteStatus !== 'accepted' && s.status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Mail className="size-3.5" aria-hidden />}
+                              aria-label={`${s.inviteStatus === 'none' ? 'Send' : 'Resend'} invite to ${s.name}`}
+                              loading={invite.pendingId === s.id}
+                              onClick={() => invite.send({ id: s.id, name: s.name, login: s.rollNumber, email: s.email })}
+                            >
+                              {s.inviteStatus === 'none' ? 'Send invite' : 'Resend invite'}
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             icon={<KeyRound className="size-3.5" aria-hidden />}
                             aria-label={`Reset password for ${s.name}`}
-                            onClick={() => resetPw.open({ id: s.id, name: s.name, login: s.rollNumber })}
+                            onClick={() => resetPw.open({ id: s.id, name: s.name, login: s.rollNumber, email: s.email })}
                           >
                             Reset password
                           </Button>
@@ -253,6 +269,8 @@ export default function StudentsPage() {
         title="Student created"
         who={created ? `${created.record.name} (roll ${created.record.rollNumber})` : ''}
         password={created?.initialPassword ?? null}
+        invite={created?.invite}
+        email={created?.record.email}
       />
       {resetPw.dialogs}
       <ConfirmDialog

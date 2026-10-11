@@ -69,6 +69,8 @@ export function toQuestion(q: QuestionRow): Question {
     explanationLocal: q.explanationLocal,
     difficulty: q.difficulty,
     topicTag: q.topicTag,
+    bloomLevel: q.bloomLevel,
+    competency: q.competency,
     citationStartSec: q.citationStartSec,
     citationEndSec: q.citationEndSec,
     status: q.status,
@@ -80,12 +82,18 @@ export function toAssignment(a: AssignmentRow): Assignment {
   return {
     id: a.id,
     lessonId: a.lessonId,
+    sectionId: a.sectionId,
     title: a.title,
     prompt: a.prompt,
     rubric: a.rubric,
     estimatedMinutes: a.estimatedMinutes,
     dueAt: iso(a.dueAt),
     status: a.status,
+    latePolicy: a.latePolicy,
+    allowFiles: a.allowFiles,
+    maxFiles: a.maxFiles,
+    reminders: a.reminders,
+    publishedAt: iso(a.publishedAt),
   };
 }
 

@@ -14,12 +14,14 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const input = parseBody(req, CreateStudentInput);
-  res.status(201).json(await service.createStudent(currentUser(req).institutionId, input));
+  const actor = currentUser(req);
+  res.status(201).json(await service.createStudent(actor.institutionId, input, actor.id));
 });
 
 router.post('/import', async (req, res) => {
   const input = parseBody(req, ImportStudentsInput);
-  res.json(await service.importStudents(currentUser(req).institutionId, input));
+  const actor = currentUser(req);
+  res.json(await service.importStudents(actor.institutionId, input, actor.id));
 });
 
 router.patch('/:id', async (req, res) => {
@@ -37,4 +39,16 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/reset-password', async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.json(await service.resetStudentPassword(currentUser(req).institutionId, id));
+});
+
+router.post('/:id/send-invite', async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  const actor = currentUser(req);
+  res.json(await service.sendStudentLink(actor.institutionId, id, 'invite', actor.id));
+});
+
+router.post('/:id/send-reset-link', async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  const actor = currentUser(req);
+  res.json(await service.sendStudentLink(actor.institutionId, id, 'reset', actor.id));
 });

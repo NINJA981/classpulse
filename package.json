@@ -25,7 +25,9 @@
     "db:generate": "npm run db:generate -w @classpulse/api",
     "db:migrate": "npm run db:migrate -w @classpulse/api",
     "db:seed": "npm run db:seed -w @classpulse/api",
-    "create-admin": "npm run create-admin -w @classpulse/api --"
+    "create-admin": "npm run create-admin -w @classpulse/api --",
+    "create-superadmin": "npm run create-superadmin -w @classpulse/api --",
+    "create-superadmin:prod": "npm run create-superadmin:prod -w @classpulse/api --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

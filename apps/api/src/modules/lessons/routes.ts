@@ -170,9 +170,16 @@ router.post('/:id/questions', teacherOnly, async (req, res) => {
   res.status(201).json(await service.addQuestion(currentUser(req), id, parseBody(req, QuestionInput)));
 });
 
+/** The lesson's primary (AI-drafted) assignment. */
 router.put('/:id/assignment', teacherOnly, async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.json(await service.upsertAssignment(currentUser(req), id, parseBody(req, AssignmentInput)));
+});
+
+/** An extra assignment for the lesson; it is then managed under /api/assignments. */
+router.post('/:id/assignments', teacherOnly, async (req, res) => {
+  const { id } = parseParams(req, IdParams);
+  res.status(201).json(await service.addLessonAssignment(currentUser(req), id, parseBody(req, AssignmentInput)));
 });
 
 router.post('/:id/analytics/remedial', teacherOnly, aiLimiter, async (req, res) => {

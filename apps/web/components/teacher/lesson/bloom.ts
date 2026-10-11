@@ -1,0 +1,11 @@
+import type { BloomLevel } from '@classpulse/shared';
+
+/** Display names for Bloom's taxonomy levels (lesson questions, question papers, insights). */
+export const BLOOM_LABEL: Record<BloomLevel, string> = {
+  remember: 'Remember',
+  understand: 'Understand',
+  apply: 'Apply',
+  analyze: 'Analyse',
+  evaluate: 'Evaluate',
+  create: 'Create',
+};

@@ -149,6 +149,7 @@ export async function generateRemedial(user: SessionUser, lessonId: string): Pro
       language: lesson.language as Language,
       analytics,
       model: settings?.llmModel ?? DEFAULT_MODEL_SETTINGS.llmModel,
+      usage: { institutionId: lesson.institutionId, lessonId: lesson.id, kind: 'remedial' },
     });
   } catch (err) {
     if (isPipelineError(err)) throw new AppError('UPSTREAM_FAILED', err.userMessage);

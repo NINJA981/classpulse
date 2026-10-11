@@ -9,7 +9,7 @@
  * a regenerate) can never overwrite newer state. There is no fake content: on
  * failure the job throws and, after the final attempt, the lesson is `failed`.
  */
-import { and, asc, eq, inArray, notInArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import {
   DEFAULT_MODEL_SETTINGS,
   LESSON_PROCESSING_STATUSES,
@@ -20,6 +20,8 @@ import {
 } from '@classpulse/shared';
 import { db } from '../db/client.js';
 import { assignments, lessons, modelSettings, questions, type PipelineMeta } from '../db/schema/index.js';
+import { AI_AUDIO_LIMIT_MESSAGE } from '../lib/aiUsage.js';
+import { AppError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { storage } from '../lib/storage.js';
 import { queueLessonGeneration } from '../modules/lessons/audio.js';
@@ -110,6 +112,7 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
       language,
       durationSec: lesson.durationSec ?? 0,
       model: settings.sttModel,
+      usage: { institutionId: lesson.institutionId, lessonId: lesson.id, kind: 'stt' },
     });
     timings.sttMs = Date.now() - started;
     segments = stt.segments;
@@ -155,6 +158,7 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
     existingStems: keep.map((q) => q.stem),
     bilingual: settings.bilingual,
     model: settings.llmModel,
+    usage: { institutionId: lesson.institutionId, lessonId: lesson.id, kind: full ? ('quiz' as const) : ('questions' as const) },
   };
   const started = Date.now();
   const gen = full ? await providers.generate(genInput) : { ...(await providers.generateQuestions(genInput)), summary: null };
@@ -197,6 +201,8 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
         explanationLocal: q.explanationLocal,
         difficulty: q.difficulty,
         topicTag: q.topicTag,
+        bloomLevel: q.bloomLevel ?? null,
+        competency: q.competency ?? null,
         citationStartSec: q.citationStartSec,
         citationEndSec: q.citationEndSec,
         status: 'draft' as const,
@@ -211,11 +217,15 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
         estimatedMinutes: gen.assignment.estimatedMinutes,
         status: 'draft' as const,
       };
-      // Starting over replaces the assignment; otherwise a teacher-edited one is kept.
-      const upsert = tx.insert(assignments).values({ lessonId: lesson.id, ...assignment });
+      // The lesson's AI-drafted ("primary") assignment. Starting over replaces it; otherwise a teacher-edited one
+      // is kept. Extra assignments the teacher added to the lesson are never touched.
+      const upsert = tx
+        .insert(assignments)
+        .values({ lessonId: lesson.id, sectionId: lesson.sectionId, teacherId: lesson.teacherId, isPrimary: true, ...assignment });
+      const primary = sql`${assignments.isPrimary}`;
       await (request.mode === 'replace_all'
-        ? upsert.onConflictDoUpdate({ target: assignments.lessonId, set: assignment })
-        : upsert.onConflictDoNothing({ target: assignments.lessonId }));
+        ? upsert.onConflictDoUpdate({ target: assignments.lessonId, targetWhere: primary, set: assignment })
+        : upsert.onConflictDoNothing({ target: assignments.lessonId, where: primary }));
     }
     await tx
       .update(lessons)
@@ -286,7 +296,19 @@ export async function recoverStuckLessons(): Promise<void> {
         }));
         continue;
       }
-      await queueLessonGeneration(lesson.id, lesson.quizRequest ?? null);
+      try {
+        await queueLessonGeneration(lesson.id, lesson.quizRequest ?? null);
+      } catch (err) {
+        // The school ran out of monthly AI minutes since the lesson was queued: fail it visibly.
+        if (err instanceof AppError && err.message === AI_AUDIO_LIMIT_MESSAGE) {
+          await markLessonJobFailed(
+            { lessonId: lesson.id, attempt: lesson.attempt },
+            new PipelineError('AI audio limit reached', { retryable: false, userMessage: AI_AUDIO_LIMIT_MESSAGE }),
+          );
+          continue;
+        }
+        throw err;
+      }
       logger.warn({ lessonId: lesson.id }, 'Re-queued lesson stuck in processing');
     } catch (err) {
       logger.error({ err, lessonId: lesson.id }, 'Failed to recover stuck lesson');

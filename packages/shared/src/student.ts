@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Id, text, type IsoDate } from './common.js';
-import type { Difficulty, StudentQuestion } from './lessons.js';
+import type { Difficulty, LatePolicy, StudentQuestion } from './lessons.js';
+import type { RubricMark, SubmissionFile, SubmissionStatus } from './assignments.js';
 import { JoinCode } from './org.js';
 
 /* ----------------------------------------------------------------------------
@@ -95,21 +96,46 @@ export interface QuizAttemptResult {
  * Assignments (student side)
  * ------------------------------------------------------------------------- */
 
+/** Student-facing state of one assignment. */
+export type StudentAssignmentState = 'todo' | 'submitted' | 'late' | 'returned' | 'closed';
+
 export interface StudentAssignment {
   id: Id;
-  lessonId: Id;
-  lessonTitle: string;
+  lessonId: Id | null;
+  lessonTitle: string | null;
   sectionName: string;
   title: string;
   prompt: string;
   rubric: { criterion: string; marks: number; descriptor: string }[];
   estimatedMinutes: number | null;
   dueAt: IsoDate | null;
-  submission: { id: Id; submittedAt: IsoDate; text: string } | null;
+  latePolicy: LatePolicy;
+  allowFiles: boolean;
+  maxFiles: number;
+  state: StudentAssignmentState;
+  submission: {
+    id: Id;
+    submittedAt: IsoDate;
+    updatedAt: IsoDate;
+    text: string | null;
+    files: SubmissionFile[];
+    isLate: boolean;
+    status: SubmissionStatus;
+    /** Present once the teacher has returned the work. */
+    rubricMarks: RubricMark[] | null;
+    totalMarks: number | null;
+    maxMarks: number;
+    feedback: string | null;
+    returnedAt: IsoDate | null;
+  } | null;
 }
 
+/**
+ * Multipart form fields of POST /student/assignments/:id/submission (files go in `files`).
+ * The submission needs text or at least one file overall.
+ */
 export const SubmitAssignmentInput = z.object({
-  text: z.string().trim().min(1).max(20000),
+  text: z.string().trim().max(20000).optional(),
 });
 export type SubmitAssignmentInput = z.infer<typeof SubmitAssignmentInput>;
 
