@@ -78,7 +78,7 @@ const EnvSchema = z
      * Requests to the sign-in, set-password and 2FA endpoints allowed per IP per 15 minutes, on top of the
      * per-account limits. Generous because a whole school can share one NAT address.
      */
-    AUTH_IP_RATE_LIMIT: z.coerce.number().int().min(1).default(300),
+    AUTH_IP_RATE_LIMIT: z.coerce.number().int().min(1).default(1500),
     DEVICE_OFFLINE_AFTER_SEC: z.coerce.number().int().min(30).default(90),
 
     /** Outgoing email (Gmail/Workspace SMTP with an app password). Email is off unless all are set. */

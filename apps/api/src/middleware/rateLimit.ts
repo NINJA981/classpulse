@@ -17,7 +17,11 @@ function store(prefix: string): Options['store'] | undefined {
 /** Builds the account part of a limiter key from the request body; undefined = per IP only. */
 type AccountKey = (body: unknown) => string | undefined;
 
-function limiter(prefix: string, windowMs: number, limit: number, accountKey?: AccountKey) {
+/**
+ * `perUser`: count per signed-in user instead of per IP. Used behind authentication, where a whole
+ * class (or a staffroom) shares one school internet IP and per-IP counting would block them.
+ */
+function limiter(prefix: string, windowMs: number, limit: number, accountKey?: AccountKey, perUser = false) {
   const body: ApiErrorBody = { error: { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait and try again.' } };
   return rateLimit({
     windowMs,
@@ -27,6 +31,7 @@ function limiter(prefix: string, windowMs: number, limit: number, accountKey?: A
     skip: () => isTest,
     store: store(prefix),
     keyGenerator: (req) => {
+      if (perUser && req.user) return `user:${req.user.id}`;
       const ip = ipKeyGenerator(req.ip ?? 'unknown');
       const account = accountKey?.(req.body);
       return account === undefined ? ip : `${ip}:${account}`;
@@ -73,9 +78,9 @@ export const platformLoginLimiter = limiter('platform-login', LOGIN_WINDOW, 5, p
  */
 export const platformCodeLimiter = limiter('platform-code', LOGIN_WINDOW, 5);
 /** Live-quiz PIN lookups/joins: 30 / min per IP. */
-export const pinLimiter = limiter('pin', 60_000, 30);
+export const pinLimiter = limiter('pin', 60_000, 30, undefined, true);
 /** Paid AI calls (generation, remedial): 20 / hour per IP. */
-export const aiLimiter = limiter('ai', 60 * 60_000, 20);
+export const aiLimiter = limiter('ai', 60 * 60_000, 20, undefined, true);
 /** Device registration: 10 / hour per IP. */
 export const deviceRegisterLimiter = limiter('device-register', 60 * 60_000, 10);
 /** Set-password links (preview, redeem, forgot-password): 20 / 15 min per IP. */

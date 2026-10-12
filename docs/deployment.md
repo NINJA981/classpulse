@@ -256,7 +256,7 @@ The full audit is kept privately.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `AUTH_IP_RATE_LIMIT` | 300 | Sign-in attempts per IP per 15 min, across all accounts. Schools behind one NAT share an IP. |
+| `AUTH_IP_RATE_LIMIT` | 1500 | Sign-in attempts per IP per 15 min across all accounts (a backstop against password spraying). A whole school behind one NAT shares an IP, so keep it well above the number of students who sign in within 15 minutes. |
 | `MAX_LESSON_AUDIO_SEC` | 14400 (4 h) | Longest lecture accepted (uploads and recordings) |
 | `DEFAULT_AI_AUDIO_MINUTES_PER_MONTH` | 3000 | Monthly transcription cap for schools without their own limit (0 = none) |
 | `TRANSCRIPT_RETENTION_DAYS` | 365 | Transcripts older than this are cleared; quizzes stay |
