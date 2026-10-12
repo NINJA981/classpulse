@@ -1,17 +1,19 @@
 # ClassPulse
 
-ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones.
+ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones. Teachers also get secure timed exams, assignments with file uploads and AI-suggested grading, and AI teaching tools (lesson plans, worksheets, question papers, presentations) grounded in their own courses and materials. A separate super admin console runs every school on the installation.
+
+**Live:** schools sign in at https://classpulse.benxsolutions.in (`/admin/login`, `/teacher/login`, `/student/login`); the super admin console is at https://ops.benxsolutions.in.
 
 **New here? Read [docs/HANDBOOK.md](docs/HANDBOOK.md)**: the complete guide to every feature, the architecture, the AI pipeline, the hardware, the deployment and operations, with an FAQ and a glossary.
 
 | | |
 |---|---|
 | `apps/api` | Express 5 + Socket.IO + PostgreSQL (Drizzle) + BullMQ worker |
-| `apps/web` | One Next.js 16 app with the `/admin`, `/teacher` and `/student` areas |
+| `apps/web` | One Next.js 16 app (installable PWA) with the `/admin`, `/teacher` and `/student` areas, their sign-in pages, and the `/platform` super admin console |
 | `apps/classroom-agent` | Raspberry Pi 5 recorder agent (Python, standard library only) |
 | `packages/shared` | API contracts (zod + TypeScript) shared by the API and the web app |
 | `infra/` | Docker Compose (dev and prod), Caddy, backup and restore |
-| `docs/` | [Architecture](docs/architecture.md) · [API](docs/api.md) · [Database](docs/database.md) · [Deployment](docs/deployment.md) · [Raspberry Pi hardware](docs/hardware-raspberry-pi.md) · [Pilot runbook](docs/pilot-runbook.md) · [Conventions](docs/conventions.md) |
+| `docs/` | [Architecture](docs/architecture.md) · [API](docs/api.md) · [Database](docs/database.md) · [Deployment](docs/deployment.md) · [Raspberry Pi hardware](docs/hardware-raspberry-pi.md) · [Pilot runbook](docs/pilot-runbook.md) · [Conventions](docs/conventions.md) · Research: [local models](docs/research/local-models-rnd.md), [STT benchmark](docs/research/stt-benchmark-2026-10-12.md) |
 
 ## Local development
 
@@ -28,7 +30,9 @@ npm run db:seed                           # demo school + accounts (printed)
 npm run dev                               # api :5000, worker, web :3000
 ```
 
-Open http://localhost:3000. The seed prints these demo logins:
+For the super admin console, set `PLATFORM_ENCRYPTION_KEY` in `apps/api/.env` (`openssl rand -base64 32`), then create an account with `npm run create-superadmin -- --email you@example.com --name "Your Name"` (it prints a one-time password) and sign in at http://localhost:3000/platform/login with an authenticator app. Locally the console shares the app's address; in production it has its own host.
+
+Open http://localhost:3000. The seed prints these demo logins (each role has its own sign-in page: `/admin/login`, `/teacher/login`, `/student/login`):
 
 | Role | Login | Password |
 |---|---|---|
@@ -45,6 +49,8 @@ npm run test:agent          # Raspberry Pi agent tests
 npm run test:e2e            # Playwright end-to-end tests (needs `npm run dev` running)
 ```
 
+The Playwright specs are `full-flow`, `accounts`, `exams`, `assignments`, `platform`, `teacher-tools` and `student-tour`. `accounts` needs the API started with `E2E_MAIL_CAPTURE=true`; `platform` needs a freshly created super admin (`E2E_PLATFORM_EMAIL` / `E2E_PLATFORM_PASSWORD`). See the spec headers and HANDBOOK §17.
+
 ## Production
 
-See [docs/deployment.md](docs/deployment.md). Production runs as a single-VPS Docker Compose stack: Caddy (automatic TLS), web, api, worker, Postgres and Redis.
+See [docs/deployment.md](docs/deployment.md). The pilot runs on Coolify on an Oracle Cloud ARM server (`infra/docker-compose.coolify.yml`): an internal Caddy router, web, api, worker, Postgres and Redis, with Coolify's proxy terminating TLS for both hosts. A plain single-VPS Compose stack (`infra/docker-compose.prod.yml`, Caddy with automatic TLS) is also supported. Deploys are manual (Coolify Redeploy or its API); pushing to `main` does not deploy.

@@ -1,6 +1,6 @@
 # ClassPulse architecture
 
-ClassPulse turns classroom lectures into reviewed, bilingual quizzes and live classroom games.
+ClassPulse turns classroom lectures into reviewed, bilingual quizzes and live classroom games, and gives teachers secure exams, assignments and AI teaching tools. Many schools share one installation; a separate super admin console (its own host, login and session) runs them all.
 
 ```mermaid
 flowchart LR
@@ -9,8 +9,9 @@ flowchart LR
     Phones["Student phones<br/>(browser)"]
     Projector["Projector<br/>(teacher browser)"]
   end
-  subgraph VPS["Single VPS (Docker Compose)"]
-    Caddy["Caddy<br/>TLS · :443"]
+  Owner["Super admin<br/>(browser)"]
+  subgraph VPS["Server (Docker Compose on Coolify)"]
+    Caddy["Router (Caddy)<br/>school host + ops host"]
     Web["web<br/>Next.js 16"]
     API["api<br/>Express 5 + Socket.IO"]
     Worker["worker<br/>BullMQ consumer"]
@@ -20,10 +21,13 @@ flowchart LR
   end
   Sarvam["Sarvam AI STT<br/>(or OpenAI Whisper)"]
   OpenAI["OpenAI LLM"]
+  SMTP["SMTP mailbox<br/>(invites, resets, reminders)"]
+  Coolify["Coolify API<br/>(deployments page)"]
 
   Pi -- "HTTPS outbound only<br/>register · heartbeat · long-poll commands · PCM chunks" --> Caddy
   Phones -- HTTPS + WSS --> Caddy
   Projector -- HTTPS + WSS --> Caddy
+  Owner -- "HTTPS (ops host only)" --> Caddy
   Caddy -- "/api, /socket.io" --> API
   Caddy -- "everything else" --> Web
   Web -- "server-side session check" --> API
@@ -35,15 +39,19 @@ flowchart LR
   Worker --> Store
   Worker --> Sarvam
   Worker --> OpenAI
+  Worker --> SMTP
+  API --> Coolify
 ```
+
+Two public hosts reach the same router. The school host (e.g. `classpulse.benxsolutions.in`) serves `/admin`, `/teacher`, `/student`, `/api` and `/socket.io`, and returns 404 for `/platform`. The ops host (e.g. `ops.benxsolutions.in`) serves only `/platform`, `/api/platform/*` and `/api/status` (`infra/Caddyfile*`, `PLATFORM_HOST`).
 
 ## Components
 
 | Component | Code | Responsibility |
 |---|---|---|
-| Web app | `apps/web` | One Next.js app. `/admin` is the institution console, `/teacher` is the recording, review and live-host studio, and `/student` is the mobile-first quiz portal. Each area's layout checks the user's role on the server, and `proxy.ts` redirects anonymous visitors to `/login`. |
-| API | `apps/api` | Handles REST and Socket.IO, authentication and RBAC, validation, the device contract, and the live-quiz engine. It is the only security boundary. |
-| Worker | `apps/api/src/worker.ts` | Runs the lesson-generation jobs (ffmpeg, then Sarvam STT, then the OpenAI quiz) from BullMQ with 3 attempts and exponential backoff. It also runs the maintenance tasks: audio retention and the device-offline sweep. |
+| Web app | `apps/web` | One Next.js app, installable as a PWA. `/admin` is the school console; `/teacher` is the studio (recording and review, live quizzes, assignments, exams, AI teaching tools, courses and materials, simulations, class insights); `/student` is the mobile-first portal (quizzes, live quiz, assignments, exams, with a first-login guided tour). Each role has its own sign-in page (`/admin/login`, `/teacher/login`, `/student/login`, rewritten by `proxy.ts`); `/platform` is the super admin console with its own sign-in and `cp_platform` session. Area layouts check the role on the server, and `proxy.ts` sends anonymous visitors to the right sign-in page. |
+| API | `apps/api` | Handles REST and Socket.IO, authentication and RBAC, per-school feature switches, suspension and maintenance checks, validation, the device contract, the live-quiz and exam engines, the platform console API (`/api/platform/*`), the audit log and the database log sink. It is the only security boundary. |
+| Worker | `apps/api/src/worker.ts` | Consumes three BullMQ queues: `lesson-generation` (ffmpeg, then Sarvam STT, then the OpenAI quiz; 3 attempts with backoff), `email` (invites, resets and reminders over SMTP) and `resources` (lesson plans, worksheets, question papers, presentations). It writes a heartbeat for the health page and runs the maintenance tasks: audio retention, device-offline sweep, exam auto-submit sweep, assignment reminders, log and audit retention, and health snapshots. Without Redis (development) the API process runs all of this in-process. |
 | Shared contracts | `packages/shared` | zod schemas and TypeScript types used by both the API and the web app, so the two cannot drift apart. |
 | Classroom agent | `apps/classroom-agent` | Python standard-library service on the Raspberry Pi. It records with `arecord`, buffers to disk, and uploads resumable chunks. |
 
@@ -61,6 +69,19 @@ flowchart LR
 
 A teacher can also upload an audio file instead (`POST /api/lessons/:id/audio`); it is transcribed automatically and follows the same steps. The complete owner's handbook is `docs/HANDBOOK.md`.
 
+### Teacher AI tools
+
+A teacher picks a type (lesson plan, worksheet, question paper or presentation) and, optionally, a course, units, recorded lessons and uploaded materials, then describes the request (typed, or spoken as a voice prompt). `POST /api/resources/generate` stores a `teaching_resources` row and queues a `resources` job. The job builds grounding text (unit summaries, the teacher's lesson transcripts, material text), calls the type's generator (strict JSON schema, zod validation, one repair round, deterministic fixes) and saves the content. The teacher can edit it, export it (Word or PowerPoint, or print to PDF) and share it with the school. A question paper's MCQs can be published as a draft secure exam.
+
+### Exams and assignments
+
+- **Exams:** a teacher builds a timed exam from approved questions (or a question paper). Each student gets their own shuffled set, answers autosave, and leaving fullscreen or the tab is recorded as an integrity event. A sweep auto-submits attempts when time runs out.
+- **Assignments:** standalone or per lesson, with optional file uploads, rubrics, a late policy and email reminders. Teachers grade with an optional AI suggestion and return marks and feedback.
+
+### Super admin console
+
+The owner signs in on the ops host with a password plus an authenticator code (TOTP; the secrets are encrypted with `PLATFORM_ENCRYPTION_KEY`). The console creates schools and their admins, switches features and limits per school, suspends schools, sets maintenance mode and banners, and shows health, live logs, the audit log, usage and estimated AI cost, and Coolify deployments.
+
 ### Live quiz
 
 - The teacher creates a live session and gets a 6-digit PIN. Students join from their phones over Socket.IO, and the session cookie identifies each student.
@@ -77,6 +98,11 @@ A teacher can also upload an audio file instead (`POST /api/lessons/:id/audio`);
   - Passwords are hashed with bcrypt (cost 12).
   - Passwords issued by an admin must be changed on first login.
   - Login is rate-limited per IP and per identifier.
+- **Separate identities.**
+  - Each role signs in on its own page and endpoint (`/api/auth/{admin|teacher|student}/login`), which refuses other roles.
+  - Super admins live in their own table and session (`cp_platform`: SameSite=Strict, 2 hours, TOTP required, recovery codes). School sessions never reach `/api/platform/*`, and the console is served only on the ops host.
+  - Platform sign-in is strictly rate-limited, and every platform action is written to the audit log.
+- **School controls.** A suspended school's users are refused at sign-in and on every request; maintenance mode can block all school sign-ins; switched-off features return `FEATURE_DISABLED` (`requireFeature`).
 - **Authorization.**
   - Every router applies `authenticate()` and `requireRole()`.
   - Services enforce ownership: teachers can only access their own lessons and the sections they teach, and students only the sections they are enrolled in.
@@ -91,12 +117,14 @@ A teacher can also upload an audio file instead (`POST /api/lessons/:id/audio`);
   - Devices never accept inbound connections.
 - **Privacy.**
   - Raw audio is deleted `AUDIO_RETENTION_DAYS` days after upload (30 by default).
-  - Logs redact credentials and do not contain student names.
+  - Logs redact credentials and do not contain student names. Emailed set-password links are single-use, stored only as hashes, and expire after 72 hours.
+  - Super admins can view a school's data read-only but cannot sign in as its users.
 
 ## Scaling notes
 
 The pilot runs as a single instance of each service.
 
 - **More API replicas:** add `@socket.io/redis-adapter` and move the live-room timers to a Redis-backed scheduler.
-- **More worker throughput:** scale the `worker` service. BullMQ concurrency is set by `GENERATION_CONCURRENCY`.
+- **More worker throughput:** scale the `worker` service. BullMQ concurrency is set by `GENERATION_CONCURRENCY` (lessons); the `resources` queue runs 2 jobs at a time.
+- **Zero-downtime deploys:** today every Coolify deploy recreates all containers (about 30–60 s of 503). Rolling updates need health-checked replicas behind the router.
 - **Object storage:** implement the S3/R2 driver behind `lib/storage.ts`.
