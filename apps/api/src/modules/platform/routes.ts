@@ -20,7 +20,7 @@ platformRouter.use('/schools', schoolsRouter);
 
 platformRouter.get('/users', authenticatePlatform(), async (req, res) => {
   const query = parseQuery(req, PlatformUserSearchQuery);
-  res.json(await searchUsers(query));
+  res.json(await searchUsers(query, req));
 });
 
 platformRouter.get('/settings', authenticatePlatform(), async (_req, res) => {

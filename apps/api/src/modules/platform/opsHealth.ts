@@ -31,6 +31,7 @@ import { healthSnapshots } from '../../db/schema/index.js';
 import { emailEnabled } from '../../lib/mailer.js';
 import { getRedis } from '../../lib/redis.js';
 import { queueCounts } from './opsQueues.js';
+import { clientIpWarning } from '../../lib/clientIp.js';
 import { runningVersion } from './opsDeployments.js';
 
 export const WORKER_HEARTBEAT_KEY = 'cp:worker:heartbeat';
@@ -463,6 +464,10 @@ export function computeAlerts(h: Omit<PlatformHealth, 'status' | 'alerts' | 'che
   }
   if (!h.backups.mounted && isProd) {
     alerts.push({ id: 'backup-missing', severity: 'warning', component: 'backups', message: 'The backup folder is not mounted, so backups cannot be checked' });
+  }
+  const ipWarning = clientIpWarning();
+  if (ipWarning) {
+    alerts.push({ id: 'client-ip', severity: 'warning', component: 'proxy', message: ipWarning });
   }
   if (h.storage.usedPercent !== null && h.storage.usedPercent > DISK_ALERT_PERCENT) {
     alerts.push({ id: 'disk-full', severity: h.storage.usedPercent > 95 ? 'critical' : 'warning', component: 'storage', message: `Disk is ${h.storage.usedPercent}% full` });

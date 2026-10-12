@@ -23,7 +23,7 @@ export interface EmailContent {
   footnote?: string;
 }
 
-/** Absolute URL on the web app, e.g. appUrl('/set-password?token=…'). */
+/** Absolute URL on the web app, e.g. appUrl('/set-password#token=…'). */
 export function appUrl(path: string): string {
   return `${env.PUBLIC_ORIGIN.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
 }

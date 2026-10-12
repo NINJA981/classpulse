@@ -1,14 +1,15 @@
 /**
- * Platform (super admin) sessions: a separate `cp_platform` cookie whose JWT carries `aud: 'platform'`.
- * School tokens (no audience) are rejected here, and platform tokens are rejected by the school
+ * Platform (super admin) sessions: a separate `cp_platform` cookie whose JWT carries `aud: 'platform'` and is
+ * signed with its own derived key (lib/keys). School tokens are rejected here, and platform tokens are rejected by the school
  * session check (their subject is not a `users` row). Sessions last 2 hours.
  */
 import type { CookieOptions, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
-import { env, isProd } from '../config/env.js';
+import { isProd } from '../config/env.js';
 import { db } from '../db/client.js';
 import { platformAdmins } from '../db/schema/index.js';
+import { keyFor } from './keys.js';
 
 export const PLATFORM_COOKIE = 'cp_platform';
 export const PLATFORM_SESSION_HOURS = 2;
@@ -24,7 +25,7 @@ export interface PlatformSessionAdmin {
 }
 
 export function signPlatformToken(admin: { id: string; tokenVersion: number }): string {
-  return jwt.sign({ sub: admin.id, ver: admin.tokenVersion }, env.JWT_SECRET, {
+  return jwt.sign({ sub: admin.id, ver: admin.tokenVersion }, keyFor('platform-session'), {
     expiresIn: `${PLATFORM_SESSION_HOURS}h`,
     algorithm: 'HS256',
     audience: AUDIENCE,
@@ -58,7 +59,7 @@ export async function resolvePlatformSession(token: string | null): Promise<Plat
   if (!token) return null;
   let claims: { sub: string; ver: number };
   try {
-    claims = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'], audience: AUDIENCE }) as { sub: string; ver: number };
+    claims = jwt.verify(token, keyFor('platform-session'), { algorithms: ['HS256'], audience: AUDIENCE }) as { sub: string; ver: number };
   } catch {
     return null;
   }

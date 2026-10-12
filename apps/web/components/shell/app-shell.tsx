@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { LogOut, Menu, X } from 'lucide-react';
 import { ROLE_LOGIN, type MeResponse, type SessionUser } from '@classpulse/shared';
 import { NoticeBanners } from '@/components/auth/platform-notice';
+import { LegalLinks } from '@/components/legal/legal-links';
 import { api } from '@/lib/api';
 import { SessionProvider } from '@/lib/session-context';
 import { NAV, NAV_FEATURE } from './nav';
@@ -107,6 +108,9 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           <div className="mx-auto max-w-6xl">
             <NoticeBanners notice={me?.notice} className="mb-6" />
             {children}
+            <footer className="mt-12 border-t border-line pt-4">
+              <LegalLinks />
+            </footer>
           </div>
         </main>
       </div>

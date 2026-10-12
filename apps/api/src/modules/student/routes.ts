@@ -12,8 +12,10 @@ import {
 } from '@classpulse/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { pinLimiter } from '../../middleware/rateLimit.js';
+import { requireFeature } from '../../middleware/requireFeature.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';
 import { cleanupUploads, submissionUploadMiddleware } from '../assignments/upload.js';
+import { institutionState } from '../../lib/platformState.js';
 import * as service from './service.js';
 
 export const router = Router();
@@ -24,7 +26,9 @@ const JoinCodeParams = z.object({ joinCode: JoinCode });
 const AssignmentFileParams = z.object({ id: Id, fileId: Id });
 
 router.get('/dashboard', async (req, res) => {
-  res.json(await service.dashboard(currentUser(req).id));
+  const user = currentUser(req);
+  const state = await institutionState(user.institutionId);
+  res.json(await service.dashboard(user.id, state?.features.assignments ?? true));
 });
 
 router.patch('/profile', async (req, res) => {
@@ -70,6 +74,9 @@ router.get('/quizzes/:lessonId/attempts/latest', async (req, res) => {
   const { lessonId } = parseParams(req, LessonParams);
   res.json(await service.latestAttempt(currentUser(req).id, lessonId));
 });
+
+// Assignments can be switched off per school by the platform.
+router.use('/assignments', requireFeature('assignments'));
 
 router.get('/assignments', async (req, res) => {
   res.json(await service.listAssignments(currentUser(req).id));

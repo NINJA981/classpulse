@@ -17,8 +17,14 @@ function contentDisposition(name: string, inline: boolean): string {
   return `${inline ? 'inline' : 'attachment'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 
-/** Shown in the browser (image previews, PDFs in a new tab); everything else downloads. */
-const INLINE_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf']);
+/**
+ * Shown in the browser (image previews); everything else, PDFs included, downloads. A student's PDF is
+ * never rendered on the app's origin, where its scripts or forms could act as the viewer.
+ */
+const INLINE_TYPES = new Set(['image/jpeg', 'image/png']);
+
+/** Every file response: a sandboxed, resource-less document even if a browser ever renders it. */
+export const FILE_CSP = "sandbox; default-src 'none'";
 
 export const assignmentFilesRouter = Router();
 assignmentFilesRouter.use(authenticate());
@@ -33,6 +39,8 @@ assignmentFilesRouter.get('/:id', async (req, res) => {
   res.setHeader('Content-Disposition', contentDisposition(file.originalName, INLINE_TYPES.has(file.mime)));
   res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', FILE_CSP);
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   try {
     await pipeline(storage.read(file.objectKey), res);
   } catch (err) {

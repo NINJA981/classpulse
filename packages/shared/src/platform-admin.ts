@@ -31,7 +31,7 @@ export const RecoveryCode = z
   .pipe(z.string().regex(/^[a-z0-9]{8}$/, 'Recovery codes look like abcd-2345'))
   .transform((s) => `${s.slice(0, 4)}-${s.slice(4)}`);
 
-export const PlatformLoginInput = z.object({
+export const PlatformLoginInput = z.strictObject({
   email: z.email().trim().toLowerCase(),
   password: z.string().min(1).max(128),
 });
@@ -54,11 +54,11 @@ export interface PlatformLoginResponse {
 
 const ChallengeToken = z.string().trim().min(20).max(2000);
 
-export const PlatformEnrollInput = z.object({ challengeToken: ChallengeToken, code: TotpCode });
+export const PlatformEnrollInput = z.strictObject({ challengeToken: ChallengeToken, code: TotpCode });
 export type PlatformEnrollInput = z.infer<typeof PlatformEnrollInput>;
 
 export const PlatformVerifyInput = z
-  .object({ challengeToken: ChallengeToken, code: TotpCode.optional(), recoveryCode: RecoveryCode.optional() })
+  .strictObject({ challengeToken: ChallengeToken, code: TotpCode.optional(), recoveryCode: RecoveryCode.optional() })
   .refine((v) => Boolean(v.code) !== Boolean(v.recoveryCode), {
     message: 'Enter either an authenticator code or a recovery code',
     path: ['code'],
@@ -68,7 +68,7 @@ export type PlatformVerifyInput = z.infer<typeof PlatformVerifyInput>;
 export const PlatformChangePasswordInput = ChangePasswordInput;
 export type PlatformChangePasswordInput = z.infer<typeof PlatformChangePasswordInput>;
 
-export const RegenerateRecoveryCodesInput = z.object({ code: TotpCode });
+export const RegenerateRecoveryCodesInput = z.strictObject({ code: TotpCode });
 export type RegenerateRecoveryCodesInput = z.infer<typeof RegenerateRecoveryCodesInput>;
 
 export interface PlatformAdmin {

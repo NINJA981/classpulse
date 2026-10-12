@@ -36,6 +36,7 @@ import {
 } from '@classpulse/shared';
 import { AppError, forbidden, invalidState, notFound } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
+import { assertNotInMaintenance, assertSchoolActive } from '../lib/platformState.js';
 import {
   ensureParticipant,
   findActiveSessionIdByPin,
@@ -99,6 +100,16 @@ const rooms = {
   players: (id: string) => `live:${id}:players`,
   player: (id: string, participantId: string) => `live:${id}:p:${participantId}`,
 };
+
+/**
+ * The platform may suspend the school, switch live quizzes off or block sign-ins for maintenance
+ * at any time: checked on every live-quiz action (the platform state is cached for 30 s).
+ */
+async function assertLiveQuizAllowed(socket: AppSocket): Promise<void> {
+  await assertNotInMaintenance();
+  const state = await assertSchoolActive(socket.data.user.institutionId);
+  if (!state.features.liveQuiz) throw new AppError('FEATURE_DISABLED', 'Live quiz is switched off for your school.');
+}
 
 function toAckError(err: unknown): { code: ErrorCode; message: string } {
   if (err instanceof AppError) return { code: err.code, message: err.message };
@@ -168,6 +179,7 @@ export class LiveQuizEngine {
     const user = socket.data.user;
     if (user.role !== 'teacher') throw forbidden('Only the lesson teacher can host a live quiz');
     const { sessionId } = HostJoinPayload.parse(raw);
+    await assertLiveQuizAllowed(socket);
     const room = await this.getRoom(sessionId);
     if (!room || room.hostTeacherId !== user.id) throw notFound('Live session');
     await this.leave(socket);
@@ -192,6 +204,7 @@ export class LiveQuizEngine {
     const user = socket.data.user;
     if (user.role !== 'student') throw forbidden('Only students can join a live quiz');
     const { pin } = PlayerJoinPayload.parse(raw);
+    await assertLiveQuizAllowed(socket);
     const sessionId = await findActiveSessionIdByPin(pin);
     const room = sessionId ? await this.getRoom(sessionId) : null;
     if (!room || room.status === 'ended' || !(await isEnrolled(user.id, room.sectionId))) {
@@ -218,6 +231,7 @@ export class LiveQuizEngine {
   private async hostAction(socket: AppSocket, action: HostAction): Promise<undefined> {
     const membership = socket.data.live;
     if (!membership || membership.role !== 'host') throw forbidden('Join the session as host first');
+    await assertLiveQuizAllowed(socket);
     const room = await this.getRoom(membership.sessionId);
     if (!room || room.hostTeacherId !== socket.data.user.id) throw notFound('Live session');
     await this.run(room, async () => {
@@ -258,6 +272,7 @@ export class LiveQuizEngine {
       throw forbidden('Join the quiz before answering');
     }
     const { questionId, optionIndex } = PlayerAnswerPayload.parse(raw);
+    await assertLiveQuizAllowed(socket);
     const participantId = membership.participantId;
     const room = await this.getRoom(membership.sessionId);
     if (!room) throw notFound('Live quiz');

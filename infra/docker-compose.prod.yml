@@ -2,6 +2,8 @@
 #   cp infra/.env.example infra/.env   # fill in every value
 #   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build
 # Only Caddy publishes ports (80/443). Everything else is on the private network.
+# Hardening as in docker-compose.coolify.yml: no-new-privileges, all capabilities dropped (Postgres, Redis and
+# Caddy get back only what they need), memory/CPU caps, base images pinned by tag + digest.
 name: classpulse
 
 x-logging: &logging
@@ -12,6 +14,8 @@ x-logging: &logging
 
 x-api-env: &api-env
   NODE_ENV: production
+  # Caddy is the edge and replaces any client-sent X-Forwarded-For, so the API trusts exactly one hop.
+  TRUST_PROXY_HOPS: 1
   LOG_LEVEL: ${LOG_LEVEL:-info}
   DATABASE_URL: postgres://classpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/classpulse
   REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
@@ -32,7 +36,7 @@ x-api-env: &api-env
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     restart: unless-stopped
     environment:
       POSTGRES_USER: classpulse
@@ -46,24 +50,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    mem_limit: 1536m
+    cpus: 2
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    # The entrypoint fixes ownership of the data directory as root, then su-execs to postgres.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID]
     logging: *logging
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
     restart: unless-stopped
-    command: >
-      redis-server --requirepass ${REDIS_PASSWORD:?set REDIS_PASSWORD}
-      --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    # The password goes into a 0600 config file at start-up instead of `--requirepass <password>`, so it is
+    # not part of the container's command (`docker inspect`, `ps`). The entrypoint then drops to redis.
+    command:
+      - sh
+      - -c
+      - |
+        umask 077
+        printf 'requirepass "%s"\n' "$$REDIS_PASSWORD" > /tmp/redis-auth.conf
+        chown redis:redis /tmp/redis-auth.conf
+        exec docker-entrypoint.sh redis-server /tmp/redis-auth.conf --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
     volumes:
       - redis_data:/data
     networks: [internal]
     healthcheck:
-      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep PONG']
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep PONG']
       interval: 10s
       timeout: 5s
       retries: 10
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    mem_limit: 384m
+    cpus: 1
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID]
     logging: *logging
 
   migrate:
@@ -78,6 +100,8 @@ services:
       postgres:
         condition: service_healthy
     restart: 'no'
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     logging: *logging
 
   api:
@@ -94,6 +118,10 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+    mem_limit: 1536m
+    cpus: 2
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     logging: *logging
 
   worker:
@@ -111,6 +139,11 @@ services:
         condition: service_healthy
     healthcheck:
       disable: true
+    # ffmpeg (audio normalisation) runs here.
+    mem_limit: 2g
+    cpus: 2
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     logging: *logging
 
   web:
@@ -125,10 +158,14 @@ services:
     networks: [internal]
     depends_on:
       - api
+    mem_limit: 768m
+    cpus: 1
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     logging: *logging
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
     restart: unless-stopped
     ports:
       - '80:80'
@@ -146,6 +183,14 @@ services:
     depends_on:
       - web
       - api
+    mem_limit: 256m
+    cpus: 1
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    # The stock image's caddy binary carries a cap_net_bind_service file capability; exec fails unless that
+    # capability is in the bounding set. (The Coolify router image strips it and runs as non-root instead;
+    # this one stays root because its certificate volumes are root-owned.)
+    cap_add: [NET_BIND_SERVICE]
     logging: *logging
 
 volumes:

@@ -6,6 +6,7 @@ import { Router, type Request, type Response } from 'express';
 import { and, count, desc, eq, gte, ilike, lte, or, sql, type SQL } from 'drizzle-orm';
 import { AuditQuery, type AuditLogEntry, type AuditLogPage } from '@classpulse/shared';
 import { db } from '../../db/client.js';
+import { audit } from '../../lib/audit.js';
 import { auditLogs, institutions } from '../../db/schema/index.js';
 import { parseQuery } from '../../middleware/validate.js';
 import { csvFilename, toCsv } from './opsCsv.js';
@@ -103,7 +104,9 @@ auditRouter.get('/', async (req, res) => {
 });
 
 export async function sendAuditCsv(req: Request, res: Response): Promise<void> {
-  const csv = await auditCsv(parseQuery(req, AuditQuery));
+  const query = parseQuery(req, AuditQuery);
+  const csv = await auditCsv(query);
+  await audit(req, { action: 'platform.audit.export', metadata: { filters: query } });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${csvFilename('audit-log')}"`);
   res.setHeader('Cache-Control', 'private, no-store');

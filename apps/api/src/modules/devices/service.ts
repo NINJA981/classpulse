@@ -31,7 +31,9 @@ import { randomToken, safeEqualHex, sha256Hex } from '../../lib/crypto.js';
 import { AppError, badRequest, conflict, invalidState, notFound, unauthenticated } from '../../lib/errors.js';
 import { probeDurationSec } from '../../lib/ffmpeg.js';
 import { logger } from '../../lib/logger.js';
+import { getPlatformSettings, institutionState, SCHOOL_SUSPENDED_MESSAGE } from '../../lib/platformState.js';
 import { storage, storageKeys } from '../../lib/storage.js';
+import { assertStorageAvailable } from '../../lib/storageQuota.js';
 import { iso } from '../../lib/time.js';
 import { attachLessonAudio, queueLessonGeneration } from '../lessons/audio.js';
 import { assemblePcmToWav } from './wav.js';
@@ -112,6 +114,8 @@ export async function registerDevice(input: DeviceRegisterInput, ipAddress: stri
       )
       .for('update');
     if (!token) throw unauthenticated('The enrollment token is invalid, expired or already used');
+    const blocked = await deviceBlock(token);
+    if (blocked) throw blocked;
 
     const [room] = await tx.select({ id: rooms.id, name: rooms.name }).from(rooms).where(eq(rooms.id, token.roomId));
     if (!room) throw unauthenticated('The enrollment token is invalid, expired or already used');
@@ -166,6 +170,32 @@ export async function registerDevice(input: DeviceRegisterInput, ipAddress: stri
   });
 }
 
+export type DeviceAccess = 'ok' | 'suspended' | 'disabled' | 'maintenance';
+
+/** Whether the device's school may use classroom devices right now (platform state, cached 30 s). */
+export async function deviceAccessState(institutionId: string): Promise<DeviceAccess> {
+  const state = await institutionState(institutionId);
+  if (!state || state.status !== 'active') return 'suspended';
+  if (!state.features.devices) return 'disabled';
+  const { maintenance } = await getPlatformSettings();
+  if (maintenance.enabled && maintenance.blockLogins) return 'maintenance';
+  return 'ok';
+}
+
+/** The error refusing a device request, or null when the device may proceed. */
+export async function deviceBlock(device: Pick<DeviceRow, 'institutionId'>): Promise<AppError | null> {
+  switch (await deviceAccessState(device.institutionId)) {
+    case 'ok':
+      return null;
+    case 'suspended':
+      return new AppError('SCHOOL_SUSPENDED', SCHOOL_SUSPENDED_MESSAGE);
+    case 'disabled':
+      return new AppError('FEATURE_DISABLED', 'Classroom devices are switched off for this school.');
+    case 'maintenance':
+      return new AppError('MAINTENANCE', 'ClassPulse is undergoing maintenance. Try again later.');
+  }
+}
+
 /** Resolve a device from its id + raw key. Returns null for unknown/revoked devices or a wrong key. */
 export async function authenticateDevice(deviceId: string, deviceKey: string): Promise<DeviceRow | null> {
   const presented = sha256Hex(deviceKey);
@@ -195,7 +225,8 @@ export async function recordHeartbeat(device: DeviceRow, input: DeviceHeartbeatI
     .update(devices)
     .set({ status, stats, agentVersion: input.agentVersion || null, lastHeartbeatAt: now, ipAddress })
     .where(eq(devices.id, device.id));
-  return { serverTime: now.toISOString() };
+  // Heartbeats always work; `access` tells the agent when commands and uploads are refused.
+  return { serverTime: now.toISOString(), access: await deviceAccessState(device.institutionId) };
 }
 
 /* ----------------------------------------------------------------------------
@@ -388,7 +419,7 @@ export async function finalizeRecording(
   if (finalizing.has(sessionId)) throw invalidState('This recording is already being finalized');
 
   const rows = await db
-    .select({ idx: recordingChunks.idx, objectKey: recordingChunks.objectKey })
+    .select({ idx: recordingChunks.idx, objectKey: recordingChunks.objectKey, bytes: recordingChunks.bytes })
     .from(recordingChunks)
     .where(and(eq(recordingChunks.sessionId, sessionId), lt(recordingChunks.idx, input.totalChunks)))
     .orderBy(asc(recordingChunks.idx));
@@ -397,6 +428,14 @@ export async function finalizeRecording(
   for (let i = 0; i < input.totalChunks; i++) if (!have.has(i)) missing.push(i);
   if (missing.length) {
     throw new AppError('CONFLICT', `Missing ${missing.length} chunk(s); upload them before finalizing`, { missing });
+  }
+
+  // The school's storage limit: the assembled WAV is the chunks' PCM plus a 44-byte header.
+  try {
+    await assertStorageAvailable(device.institutionId, rows.reduce((sum, r) => sum + r.bytes, 44));
+  } catch (err) {
+    if (err instanceof AppError) await failRecordingSession(sessionId, err.message);
+    throw err;
   }
 
   finalizing.add(sessionId);

@@ -1,7 +1,8 @@
 /**
  * Teacher materials (notes, textbook chapters) that ground AI output. A material belongs to the teacher who
  * uploaded it (other teachers never see it) and may be attached to a course / unit of the school.
- * Uploads go to the storage temp dir via multer (≤ MATERIAL_MAX_MB), text is extracted, and the original
+ * Uploads (rate-limited per teacher) go to the storage temp dir via multer (≤ MATERIAL_MAX_MB), text is
+ * extracted in a sandboxed worker (extract.ts), the school's storage limit is checked, and the original
  * file is moved into storage under a server-generated key.
  */
 import { randomUUID } from 'node:crypto';
@@ -17,6 +18,8 @@ import { courses, teacherMaterials, units } from '../../db/schema/index.js';
 import { badRequest, notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { storage } from '../../lib/storage.js';
+import { assertStorageAvailable } from '../../lib/storageQuota.js';
+import { limited, materialUploadLimiter } from '../../middleware/uploadLimit.js';
 import { MATERIAL_EXTENSIONS, extractMaterialText } from './extract.js';
 import { getSchoolCourse, getSchoolUnit } from './service.js';
 
@@ -35,8 +38,8 @@ export const ListMaterialsQuery = z.object({
 });
 export type ListMaterialsQuery = z.infer<typeof ListMaterialsQuery>;
 
-/** Field `file` (one file) plus text fields title / courseId / unitId. */
-export const materialUploadMiddleware: RequestHandler = (req, res, next) => {
+/** Field `file` (one file) plus text fields title / courseId / unitId. Rate-limited per teacher. */
+export const materialUploadMiddleware: RequestHandler = limited(materialUploadLimiter, (req, res, next) => {
   multer({
     storage: multer.diskStorage({
       destination: (_req, _file, cb) => {
@@ -56,7 +59,7 @@ export const materialUploadMiddleware: RequestHandler = (req, res, next) => {
       cb(null, true);
     },
   }).single('file')(req, res, next);
-};
+});
 
 type MaterialRow = typeof teacherMaterials.$inferSelect;
 
@@ -112,6 +115,7 @@ export async function uploadMaterial(
     const ext = path.extname(file.originalname).toLowerCase();
     const kind = MATERIAL_EXTENSIONS[ext]!;
     const attach = await resolveAttachment(user, fields.courseId || null, fields.unitId || null);
+    await assertStorageAvailable(user.institutionId, file.size);
     const text = await extractMaterialText(kind, await readFile(file.path));
     const title = (fields.title?.trim() || path.basename(file.originalname, path.extname(file.originalname)) || 'Material').slice(0, 200);
 

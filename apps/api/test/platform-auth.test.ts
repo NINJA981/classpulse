@@ -5,6 +5,7 @@ import { SESSION_COOKIE } from '@classpulse/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { auditLogs, platformAdmins } from '../src/db/schema/index.js';
+import { keyFor } from '../src/lib/keys.js';
 import { PLATFORM_COOKIE, signPlatformToken } from '../src/lib/platformSession.js';
 import { resetPlatformStateCache } from '../src/lib/platformState.js';
 import { base32Decode, base32Encode, totpAt, verifyTotp } from '../src/lib/totp.js';
@@ -144,12 +145,17 @@ describe('platform sign-in', () => {
 
   it('rejects an expired or forged challenge', async () => {
     await enrolPlatformAdmin(admin.email);
-    const expired = jwt.sign({ sub: admin.id, ver: 0, exp: Math.floor(Date.now() / 1000) - 5 }, env.JWT_SECRET, {
+    const expired = jwt.sign({ sub: admin.id, ver: 0, exp: Math.floor(Date.now() / 1000) - 5 }, keyFor('platform-challenge'), {
       audience: 'platform-challenge',
+      jwtid: 'expired-challenge',
     });
     const res = await anon().post('/api/platform/auth/verify').send({ challengeToken: expired, code: '123456' });
     expect(res.status).toBe(401);
     expect(res.body.error.message).toMatch(/took too long/);
+
+    // Signed with the raw JWT_SECRET (not the derived challenge key): refused.
+    const rawKey = jwt.sign({ sub: admin.id, ver: 0 }, env.JWT_SECRET, { audience: 'platform-challenge', jwtid: 'raw', expiresIn: '5m' });
+    expect((await anon().post('/api/platform/auth/verify').send({ challengeToken: rawKey, code: '123456' })).status).toBe(401);
 
     // A platform session token is not a challenge token.
     const session = signPlatformToken(admin);
@@ -228,6 +234,109 @@ describe('platform sign-in', () => {
       .from(auditLogs)
       .where(and(eq(auditLogs.action, 'platform.recovery_codes.regenerate'), eq(auditLogs.actorId, admin.id)));
     expect(rows).toHaveLength(1);
+  });
+});
+
+describe('platform 2FA attempt limits', () => {
+  let admin: Awaited<ReturnType<typeof createPlatformAdmin>>;
+  beforeEach(async () => {
+    admin = await createPlatformAdmin();
+  });
+
+  const login = async () =>
+    (await anon().post('/api/platform/auth/login').send({ email: admin.email, password: PLATFORM_PASSWORD })).body as {
+      challengeToken: string;
+      enrolment?: { secret: string };
+    };
+  /** A well-formed code that is not valid for `secret` now. */
+  const wrongCode = (secret: string) => {
+    const valid = new Set([-1, 0, 1].map((o) => codeFor(secret, o)));
+    for (let n = 0; ; n++) {
+      const c = String(n).padStart(6, '0');
+      if (!valid.has(c)) return c;
+    }
+  };
+
+  it('locks the code steps after 5 wrong codes, even for a correct code, and audits the lock', async () => {
+    const { secret } = await enrolPlatformAdmin(admin.email);
+    const { challengeToken } = await login();
+    for (let i = 0; i < 5; i++) {
+      const res = await anon().post('/api/platform/auth/verify').send({ challengeToken, code: wrongCode(secret) });
+      expect(res.status).toBe(401);
+    }
+    // A fresh challenge does not help: the admin is locked.
+    const fresh = await login();
+    const locked = await anon().post('/api/platform/auth/verify').send({ challengeToken: fresh.challengeToken, code: codeFor(secret, 1) });
+    expect(locked.status).toBe(429);
+    expect(locked.body.error.code).toBe('RATE_LIMITED');
+    expect(locked.headers['set-cookie']).toBeUndefined();
+    const recovery = await anon().post('/api/platform/auth/verify').send({ challengeToken: fresh.challengeToken, recoveryCode: 'abcd-2345' });
+    expect(recovery.status).toBe(429);
+
+    const lockRows = await db
+      .select()
+      .from(auditLogs)
+      .where(and(eq(auditLogs.action, 'platform.login.locked'), eq(auditLogs.actorId, admin.id)));
+    expect(lockRows).toHaveLength(1);
+  });
+
+  it('counts wrong recovery codes too', async () => {
+    await enrolPlatformAdmin(admin.email);
+    const { challengeToken } = await login();
+    for (let i = 0; i < 5; i++) {
+      expect((await anon().post('/api/platform/auth/verify').send({ challengeToken, recoveryCode: 'zzzz-zzzz' })).status).toBe(401);
+    }
+    const { challengeToken: next } = await login();
+    expect((await anon().post('/api/platform/auth/verify').send({ challengeToken: next, recoveryCode: 'zzzz-zzzz' })).status).toBe(429);
+  });
+
+  it('revokes a challenge after 5 wrong codes on it', async () => {
+    const { secret } = await enrolPlatformAdmin(admin.email);
+    const first = await login();
+    for (let i = 0; i < 4; i++) {
+      await anon().post('/api/platform/auth/verify').send({ challengeToken: first.challengeToken, code: wrongCode(secret) });
+    }
+    // A successful sign-in resets the admin's count, but not the challenge's.
+    const second = await login();
+    expect((await anon().post('/api/platform/auth/verify').send({ challengeToken: second.challengeToken, code: codeFor(secret, 1) })).status).toBe(200);
+    expect((await anon().post('/api/platform/auth/verify').send({ challengeToken: first.challengeToken, code: wrongCode(secret) })).status).toBe(401);
+    const spent = await anon().post('/api/platform/auth/verify').send({ challengeToken: first.challengeToken, code: codeFor(secret, 1) });
+    expect(spent.status).toBe(401);
+    expect(spent.body.error.message).toMatch(/took too long/);
+  });
+
+  it('limits enrolment the same way and keeps the pending secret across password steps', async () => {
+    const first = await login();
+    const second = await login();
+    expect(second.enrolment?.secret).toBe(first.enrolment?.secret);
+    const secret = first.enrolment!.secret;
+    for (let i = 0; i < 5; i++) {
+      expect((await anon().post('/api/platform/auth/enroll').send({ challengeToken: second.challengeToken, code: wrongCode(secret) })).status).toBe(401);
+    }
+    const third = await login();
+    expect(third.enrolment?.secret).toBe(secret);
+    const locked = await anon().post('/api/platform/auth/enroll').send({ challengeToken: third.challengeToken, code: codeFor(secret) });
+    expect(locked.status).toBe(429);
+  });
+
+  it('limits recovery-code regeneration', async () => {
+    const { cookie, secret } = await enrolPlatformAdmin(admin.email);
+    for (let i = 0; i < 5; i++) {
+      const res = await anon().post('/api/platform/auth/recovery-codes/regenerate').set('Cookie', cookie).send({ code: wrongCode(secret) });
+      expect(res.status).toBe(400);
+    }
+    const locked = await anon().post('/api/platform/auth/recovery-codes/regenerate').set('Cookie', cookie).send({ code: codeFor(secret, 1) });
+    expect(locked.status).toBe(429);
+  });
+
+  it('refuses unknown fields in the sign-in bodies', async () => {
+    const extra = await anon().post('/api/platform/auth/login').send({ email: admin.email, password: PLATFORM_PASSWORD, nonce: 'x' });
+    expect(extra.status).toBe(400);
+    const { challengeToken } = await login();
+    const verify = await anon().post('/api/platform/auth/verify').send({ challengeToken, code: '123456', email: 'random@x.in' });
+    expect(verify.status).toBe(400);
+    const enrol = await anon().post('/api/platform/auth/enroll').send({ challengeToken, code: '123456', email: 'random@x.in' });
+    expect(enrol.status).toBe(400);
   });
 });
 

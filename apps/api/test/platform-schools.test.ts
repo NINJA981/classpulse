@@ -183,13 +183,16 @@ describe('platform: schools, admins, settings and enforcement', () => {
     const login = await anon().post('/api/auth/admin/login').send({ email: world.admin.email, password: TEST_PASSWORD });
     expect(login.status).toBe(503);
     expect((await as(world.admin).post('/api/auth/logout')).status).toBe(204);
+    // Logout revoked that session (token_version bumped): later requests use a fresh one.
+    const adminRow = (await db.query.users.findFirst({ where: eq(users.id, world.admin.id) }))!;
+    expect(adminRow.tokenVersion).toBe(world.admin.tokenVersion + 1);
 
     // The platform keeps working.
     expect((await platform.get('/api/platform/schools')).status).toBe(200);
 
     // Banner only (no blocking): school users see it in /me.
     await platform.put('/api/platform/settings').send({ maintenance: { enabled: false, message: '', blockLogins: false } });
-    const after = await as(world.admin).get('/api/auth/me');
+    const after = await as(adminRow).get('/api/auth/me');
     expect(after.status).toBe(200);
     expect(after.body.notice).toEqual({ banner: { message: 'Planned upgrade tonight', level: 'warning' }, maintenance: null });
   });

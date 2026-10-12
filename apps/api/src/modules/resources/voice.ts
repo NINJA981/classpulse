@@ -1,6 +1,8 @@
 /**
  * Voice prompts: a teacher speaks their request (any Indian language, up to 60 s) and gets the text back.
- * The upload is normalised to 16 kHz mono WAV with ffmpeg, then transcribed synchronously with the school's
+ * The upload must start like an audio container, its claimed length is checked before decoding, and it is
+ * normalised to 16 kHz mono WAV with ffmpeg (cut at VOICE_MAX_SEC + 1 s whatever the container claims;
+ * the decoded length is what is billed), then transcribed synchronously with the school's
  * STT provider: Sarvam's REST endpoint (saaras:v3 in codemix mode keeps English terms in Latin script,
  * language auto-detected) or OpenAI whisper-1. Audio is never stored; temp files are always removed.
  */
@@ -16,8 +18,9 @@ import { db } from '../../db/client.js';
 import { modelSettings } from '../../db/schema/index.js';
 import { trackAiCall } from '../../lib/aiUsage.js';
 import { AppError, badRequest } from '../../lib/errors.js';
-import { normalizeToWav, probeDurationSec } from '../../lib/ffmpeg.js';
+import { assertAudioContainer, normalizedWavDurationSec, normalizeToWav, probeAudioDurationSec } from '../../lib/ffmpeg.js';
 import { storage } from '../../lib/storage.js';
+import { limited, voicePromptLimiter } from '../../middleware/uploadLimit.js';
 import { isPipelineError, PipelineError } from '../../pipeline/errors.js';
 import { fetchStep, readJson } from '../../pipeline/http.js';
 import { sarvamMode } from '../../pipeline/sarvam.js';
@@ -37,8 +40,8 @@ function allowed(file: Express.Multer.File): boolean {
   return mimeOk && (ext === '' || EXTENSIONS.has(ext));
 }
 
-/** Multipart field `audio` (one file, ≤ 5 MB) into the storage temp dir with a server-generated name. */
-export const voiceUploadMiddleware: RequestHandler = (req, res, next) => {
+/** Multipart field `audio` (one file, ≤ 5 MB) into the storage temp dir with a server-generated name. Rate-limited per teacher. */
+export const voiceUploadMiddleware: RequestHandler = limited(voicePromptLimiter, (req, res, next) => {
   multer({
     storage: multer.diskStorage({
       destination: (_req, _file, cb) => {
@@ -52,7 +55,7 @@ export const voiceUploadMiddleware: RequestHandler = (req, res, next) => {
     limits: { fileSize: VOICE_MAX_BYTES, files: 1, fields: 2, parts: 3 },
     fileFilter: (_req, file, cb) => (allowed(file) ? cb(null, true) : cb(unsupported())),
   }).single('audio')(req, res, next);
-};
+});
 
 async function transcribeSarvam(wavPath: string, model: string): Promise<VoicePromptResult> {
   if (!env.SARVAM_API_KEY) throw new PipelineError('SARVAM_API_KEY is not set', { retryable: false, userMessage: 'Voice input is not configured.' });
@@ -93,9 +96,15 @@ export async function transcribeVoicePrompt(user: SessionUser, file: Express.Mul
   if (!file) throw badRequest('Attach the recording as "audio"');
   const wav = storage.newTmpPath('.wav');
   try {
-    await normalizeToWav(file.path, wav);
-    const duration = await probeDurationSec(wav);
-    if (duration > VOICE_MAX_SEC + 1) throw badRequest(`Voice prompts can be at most ${VOICE_MAX_SEC} seconds long`);
+    const tooLong = () => badRequest(`Voice prompts can be at most ${VOICE_MAX_SEC} seconds long`);
+    await assertAudioContainer(file.path);
+    // Check the claimed length BEFORE decoding; a missing or false claim is cut by `maxSec`.
+    const claimed = await probeAudioDurationSec(file.path);
+    if (claimed !== null && claimed > VOICE_MAX_SEC + 1) throw tooLong();
+    await normalizeToWav(file.path, wav, { maxSec: VOICE_MAX_SEC + 1 });
+    const duration = await normalizedWavDurationSec(wav);
+    if (duration <= 0) throw unsupported();
+    if (duration > VOICE_MAX_SEC + 1) throw tooLong();
 
     const settings = (await db.query.modelSettings.findFirst({ where: eq(modelSettings.institutionId, user.institutionId) })) ?? DEFAULT_MODEL_SETTINGS;
     const openai = settings.sttProvider === 'openai';

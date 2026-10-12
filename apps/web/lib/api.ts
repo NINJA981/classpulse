@@ -32,7 +32,33 @@ interface RequestOptions {
   timeoutMs?: number;
 }
 
+/** Backslashes, `?`, `#` and control characters never belong in an API path. */
+const hasUnsafeChars = (s: string) =>
+  s.includes('\\') || s.includes('?') || s.includes('#') || [...s].some((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f);
+
+/**
+ * Ids from the address bar end up in API paths (`/lessons/${id}`). A crafted id such as
+ * `..%2F..%2Fadmin%2Fteachers` must not turn a request into a call to another endpoint, so every
+ * path is checked: no `.`/`..` segments (plain or percent-encoded), no empty segments, no
+ * backslashes, control characters, `?` or `#` (queries go through `query`).
+ */
+export function isSafeApiPath(path: string): boolean {
+  if (!path.startsWith('/') || hasUnsafeChars(path)) return false;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    return false;
+  }
+  if (hasUnsafeChars(decoded)) return false;
+  return decoded
+    .slice(1)
+    .split('/')
+    .every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
 function buildUrl(path: string, query?: Query): string {
+  if (!isSafeApiPath(path)) throw new ApiError(0, 'BAD_REQUEST', 'This link is not valid.');
   const url = path.startsWith('/api') ? path : `/api${path}`;
   if (!query) return url;
   const qs = new URLSearchParams();
@@ -59,6 +85,7 @@ function toLogin(pathname: string, blocked?: 'suspended' | 'maintenance') {
 }
 
 async function request<T>(method: Method, path: string, opts: RequestOptions = {}): Promise<T> {
+  const url = buildUrl(path, opts.query); // throws before anything is sent for an unsafe path
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 30_000);
   opts.signal?.addEventListener('abort', () => controller.abort());
@@ -66,7 +93,7 @@ async function request<T>(method: Method, path: string, opts: RequestOptions = {
   const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
   let res: Response;
   try {
-    res = await fetch(buildUrl(path, opts.query), {
+    res = await fetch(url, {
       method,
       credentials: 'include',
       headers: opts.body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : undefined,
@@ -108,7 +135,8 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
-  delete: <T = void>(path: string) => request<T>('DELETE', path),
+  /** `body` is for deletes that need a typed confirmation (e.g. a school code). */
+  delete: <T = void>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
   /** Multipart upload (e.g. lecture audio). Long timeout. */
   upload: <T>(path: string, form: FormData, timeoutMs = 15 * 60_000) => request<T>('POST', path, { body: form, timeoutMs }),
 };

@@ -4,6 +4,7 @@
  */
 import { Router } from 'express';
 import { PlatformStatsCsvQuery, PlatformStatsQuery } from '@classpulse/shared';
+import { audit } from '../../lib/audit.js';
 import { parseQuery } from '../../middleware/validate.js';
 import * as service from './statsService.js';
 
@@ -18,7 +19,9 @@ statsRouter.get('/overview', async (_req, res) => {
 });
 
 statsRouter.get('/export.csv', async (req, res) => {
-  const { filename, csv } = await service.statsCsv(parseQuery(req, PlatformStatsCsvQuery));
+  const query = parseQuery(req, PlatformStatsCsvQuery);
+  const { filename, csv } = await service.statsCsv(query);
+  await audit(req, { action: 'platform.stats.export', metadata: { filters: query } });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Cache-Control', 'no-store');

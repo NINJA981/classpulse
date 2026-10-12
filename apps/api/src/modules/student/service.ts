@@ -37,7 +37,7 @@ import { toSessionUser } from '../../lib/session.js';
 import { storage, storageKeys } from '../../lib/storage.js';
 import { filesBySubmission, maxMarksOf, toSubmissionFile, type SubmissionFileRow } from '../assignments/repo.js';
 import { cleanupUploads, uploadExtension } from '../assignments/upload.js';
-import { rethrowUserConflict } from '../auth/accounts.js';
+import { EMAIL_UNIQUE } from '../auth/accounts.js';
 
 const IDEMPOTENCY_UNIQUE = 'quiz_attempts_idempotency_unique';
 const RECENT_ATTEMPTS = 5;
@@ -567,7 +567,8 @@ export async function removeSubmissionFile(studentId: string, assignmentId: stri
  * Dashboard & profile
  * ------------------------------------------------------------------------- */
 
-export async function dashboard(studentId: string): Promise<StudentDashboard> {
+/** `assignmentsEnabled` false (the school switched Assignments off) hides upcoming assignments. */
+export async function dashboard(studentId: string, assignmentsEnabled = true): Promise<StudentDashboard> {
   const [mySections, quizzes, recent, assignmentList] = await Promise.all([
     listMySections(studentId),
     listQuizzes(studentId),
@@ -583,7 +584,7 @@ export async function dashboard(studentId: string): Promise<StudentDashboard> {
       .where(eq(quizAttempts.studentId, studentId))
       .orderBy(desc(quizAttempts.submittedAt))
       .limit(RECENT_ATTEMPTS),
-    listAssignments(studentId),
+    assignmentsEnabled ? listAssignments(studentId) : Promise.resolve([]),
   ]);
   const scored = quizzes.flatMap((q) => (q.latestAttempt ? [q.latestAttempt.scorePct] : []));
   const now = Date.now();
@@ -600,6 +601,9 @@ export async function dashboard(studentId: string): Promise<StudentDashboard> {
   };
 }
 
+/** Never says whether (or whose) account already uses the address. */
+const EMAIL_UNAVAILABLE = "This email can't be used. Use a different address.";
+
 export async function updateProfile(userId: string, input: UpdateStudentProfileInput): Promise<SessionResponse> {
   if (input.email !== undefined) {
     const [row] = await db
@@ -607,7 +611,10 @@ export async function updateProfile(userId: string, input: UpdateStudentProfileI
       .set({ email: input.email })
       .where(eq(users.id, userId))
       .returning()
-      .catch(rethrowUserConflict);
+      .catch((err: unknown) => {
+        if (isUniqueViolation(err, EMAIL_UNIQUE)) throw conflict(EMAIL_UNAVAILABLE);
+        throw err;
+      });
     if (!row) throw notFound('User');
     return { user: toSessionUser(row) };
   }

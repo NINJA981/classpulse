@@ -3,7 +3,9 @@
 #   docker build -f apps/api/Dockerfile -t classpulse-api .
 # The same image runs the API (default CMD) and the worker (`node dist/worker.js`).
 
-FROM node:22-alpine AS build
+# Base image pinned by tag + digest (multi-arch index: linux/amd64 + linux/arm64); Dependabot (docker)
+# proposes updates. Keep every stage on the same reference.
+FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
 WORKDIR /repo
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
@@ -16,7 +18,7 @@ RUN npm run build -w @classpulse/shared \
  && npm run build -w @classpulse/api \
  && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations
 
-FROM node:22-alpine AS prod-deps
+FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS prod-deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
@@ -25,7 +27,7 @@ COPY apps/web/package.json apps/web/
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund -w @classpulse/shared -w @classpulse/api \
  && rm -rf node_modules/ffmpeg-static node_modules/ffprobe-static/bin
 
-FROM node:22-alpine AS runtime
+FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
 RUN apk add --no-cache ffmpeg tini
 ENV NODE_ENV=production \
     FFMPEG_PATH=/usr/bin/ffmpeg \

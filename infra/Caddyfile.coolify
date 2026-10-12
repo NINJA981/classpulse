@@ -3,6 +3,56 @@
 {
 	auto_https off
 	admin off
+
+	servers {
+		# Traefik (Coolify's proxy) reaches us from a private Docker address. Trusting private ranges makes
+		# reverse_proxy APPEND Traefik's address to the X-Forwarded-For that Traefik built (… , client, traefik)
+		# instead of replacing it with Traefik's address, so the API (TRUST_PROXY_HOPS=2: Caddy + Traefik)
+		# sees the real client IP. Without this every visitor shares one IP and all rate limits are shared.
+		# Only this router trusts XFF: it is never reachable from the internet except through Traefik.
+		trusted_proxies static private_ranges
+		# Access-log client_ip: walk X-Forwarded-For from the right, skipping trusted (private) hops.
+		trusted_proxies_strict
+	}
+}
+
+# Security headers for the web app's pages. /api and /socket.io are excluded: the API sets its own
+# (stricter) helmet CSP and X-Frame-Options, and this must not override them.
+# - script-src needs 'unsafe-inline': Next.js emits inline bootstrap scripts without nonces. A nonce-based
+#   script-src set from apps/web/proxy.ts is the follow-up that lets this drop 'unsafe-inline'.
+# - connect-src: 'self' covers same-host wss: in current browsers; wss://<this host> is listed for older
+#   Safari. No other host is reachable from scripts.
+# - frame-src: the simulation allow-list (apps/api/src/modules/resources/simulations.ts). Keep in sync.
+# - HSTS preload is NOT set: it commits every *.benxsolutions.in name to HTTPS for good. Recommended once
+#   every subdomain (including any future one) is HTTPS-only: add "; preload" and submit at hstspreload.org.
+(page_headers) {
+	@pages not path /api/* /socket.io/*
+	header @pages {
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' wss://{http.request.host}; worker-src 'self'; manifest-src 'self'; frame-src https://phet.colorado.edu https://www.geogebra.org https://geogebra.org https://www.desmos.com https://ophysics.com https://www.olabs.edu.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+		X-Frame-Options "DENY"
+		Cross-Origin-Opener-Policy "same-origin"
+	}
+}
+
+# JSON access log without secrets. Cookie, Set-Cookie and Authorization are already redacted by Caddy.
+# Removed here: the long-lived device key, the exam device token, set-password tokens in the query string
+# (?token=) and in /api/auth/password-token/<token>.
+(access_log) {
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>headers>X-Device-Key delete
+				request>headers>X-Exam-Token delete
+				request>uri multi_regexp {
+					regexp "\?token=[^&#]*" "?token=REDACTED"
+					regexp "&token=[^&#]*" "&token=REDACTED"
+					regexp "/api/auth/password-token/[^/?#]+" "/api/auth/password-token/REDACTED"
+				}
+			}
+		}
+	}
 }
 
 :80 {
@@ -15,6 +65,7 @@
 		Permissions-Policy "camera=(), geolocation=(), microphone=(self)"
 		-Server
 	}
+	import page_headers
 
 	# Lecture uploads can be large; device chunks are ~2 MB. The matchers must not overlap: Caddy applies
 	# every matching request_body in turn, so a catch-all limit would also cap lecture uploads.
@@ -48,7 +99,7 @@
 
 	@platformHostOther {
 		host {$PLATFORM_HOST:platform.invalid}
-		not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt
+		not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt /privacy /terms
 	}
 	handle @platformHostOther {
 		respond "Not found" 404
@@ -74,8 +125,5 @@
 		}
 	}
 
-	log {
-		output stdout
-		format json
-	}
+	import access_log
 }

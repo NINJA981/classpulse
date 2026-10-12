@@ -1,0 +1,19 @@
+# gitleaks: reviewed findings in git history (fingerprint = commit:file:rule:line). Each was checked by hand.
+# Add a line here only after confirming a finding is not a secret; never to silence a real one (rotate it instead).
+
+# false positive: a code comment about output-token limits
+e42981a5a6c89a0d1f4f76317142a3eb34829b73:apps/api/src/pipeline/llm.ts:generic-api-key:324
+# false positive: curriculum catalog identifiers (`key:` fields)
+ceb780cfa103081a65347914d7c79d8d9affb02e:apps/api/src/modules/curriculum/catalog.ts:generic-api-key:502
+# false positive: curriculum catalog identifiers (`key:` fields)
+ceb780cfa103081a65347914d7c79d8d9affb02e:apps/api/src/modules/curriculum/catalog.ts:generic-api-key:530
+# false positive: curriculum catalog identifiers (`key:` fields)
+ceb780cfa103081a65347914d7c79d8d9affb02e:apps/api/src/modules/curriculum/catalog.ts:generic-api-key:616
+# false positive: curriculum catalog identifiers (`key:` fields)
+ceb780cfa103081a65347914d7c79d8d9affb02e:apps/api/src/modules/curriculum/catalog.ts:generic-api-key:638
+# false positive: dummy key set inside a test
+ceb780cfa103081a65347914d7c79d8d9affb02e:apps/api/test/platform-ops.test.ts:generic-api-key:128
+# false positive: the public test-only JWT secret
+e298ac8c0df6a0363abd6acc1f861a8caf48955a:apps/api/vitest.config.ts:generic-api-key:20
+# legacy prototype invite token from another contributor (audit I3: confirm it is dead); code removed long ago
+d1cbb37eb999a96d69ac478b8fc62793f38568b7:frontend/src/onboardingApi.js:generic-api-key:29

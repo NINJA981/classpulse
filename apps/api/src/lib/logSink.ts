@@ -1,7 +1,9 @@
 /**
  * Database sink for pino: keeps a filtered copy of log lines in `app_logs` for the platform console.
  *
- * - Receives pino's serialized JSON lines (already redacted by the logger's redact paths).
+ * - Receives pino's serialized JSON lines (already redacted by the logger's redact paths and error
+ *   scrubbing). Query parameters and Postgres row values are scrubbed again here (lib/logScrub.ts), as a
+ *   second line of defence for anything logged in an unexpected shape.
  * - Stores: level >= warn always; info from application logs; HTTP request logs (pino-http
  *   "request completed" lines with req/res/responseTime) only for non-GET requests, status >= 400
  *   or responses slower than 1 s — polling GETs would flood the table otherwise.
@@ -12,6 +14,7 @@
  * that `db/client.ts` is not part of the logger's import graph.
  */
 import { isTest } from '../config/env.js';
+import { scrubLogValue, scrubText } from './logScrub.js';
 
 export interface AppLogRow {
   at: Date;
@@ -92,9 +95,10 @@ export function toRow(o: LogObject): AppLogRow {
     msg = `${String(o.req?.method ?? '?')} ${String(o.req?.url ?? '?')} → ${String(o.res?.statusCode ?? '?')} (${ms} ms)`;
   }
   if (!msg) msg = '(no message)';
+  msg = scrubText(msg);
 
   const context: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(o)) if (!OMIT.has(k)) context[k] = v;
+  for (const [k, v] of Object.entries(o)) if (!OMIT.has(k)) context[k] = scrubLogValue(v);
   let ctx: Record<string, unknown> | null = Object.keys(context).length ? context : null;
   if (ctx) {
     const json = JSON.stringify(ctx);

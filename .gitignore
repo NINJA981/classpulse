@@ -13,7 +13,6 @@ coverage/
 .env
 .env.*
 !.env.example
-*.pem
 
 # --- Runtime data ---
 uploads/
@@ -41,9 +40,29 @@ Thumbs.db
 
 .e2e-fixtures/
 
-# --- Local credentials & sample recordings (never commit) ---
+# --- Local credentials, dumps & recordings (never commit) ---
+# Unanchored: they are ignored in every folder. Recordings of classrooms are minors' data. If a test ever
+# needs a small synthetic media fixture, add an explicit `!path/to/fixture.wav` exception.
 *.key
-/*.mp3
-/*.mpeg
-/*.mp4
-/*.m4a
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.dump
+*.age
+*.sql.gz
+*.mp3
+*.mpeg
+*.mp4
+*.m4a
+*.wav
+*.ogg
+*.oga
+*.opus
+*.webm
+*.flac
+*.aac
+*.3gp
+*.mov
+*.mkv

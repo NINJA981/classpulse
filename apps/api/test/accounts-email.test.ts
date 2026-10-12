@@ -26,7 +26,7 @@ function sessionCookieFrom(res: { headers: Record<string, unknown> }): string {
 function tokenFor(to: string): string {
   const mail = [...outbox].reverse().find((m) => m.to === to);
   if (!mail) throw new Error(`no email to ${to}`);
-  const match = /\/set-password\?token=([A-Za-z0-9_-]+)/.exec(mail.text);
+  const match = /\/set-password#token=([A-Za-z0-9_-]+)/.exec(mail.text);
   if (!match) throw new Error('no link in email');
   return decodeURIComponent(match[1]!);
 }
@@ -67,7 +67,9 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(mail.text).toContain('teacher');
       expect(mail.text).toContain('neha@school.in');
       expect(mail.text).toContain('72 hours');
-      expect(mail.text).toContain('http://localhost:3000/set-password?token=');
+      // The token travels in the URL fragment, which browsers never send to a server.
+      expect(mail.text).toContain('http://localhost:3000/set-password#token=');
+      expect(mail.text).not.toContain('set-password?token=');
       expect(mail.html).toContain('Set your password');
       // The fallback password is never emailed.
       expect(mail.text).not.toContain(res.body.initialPassword);
@@ -77,8 +79,11 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(stored[0]).toMatchObject({ purpose: 'invite', emailStatus: 'sent', createdBy: world.admin.id });
       expect(stored[0]!.tokenHash).not.toBe(tokenFor('neha@school.in'));
 
-      const preview = await anon().get(`/api/auth/password-token/${tokenFor('neha@school.in')}`);
+      const preview = await anon().post('/api/auth/password-token/preview').send({ token: tokenFor('neha@school.in') });
       expect(preview.status).toBe(200);
+      // The old GET (token in the path) keeps working during the transition.
+      expect((await anon().get(`/api/auth/password-token/${tokenFor('neha@school.in')}`)).body).toEqual(preview.body);
+      expect((await anon().post('/api/auth/password-token/preview').send({ token: tokenFor('neha@school.in'), x: 1 })).status).toBe(400);
       expect(preview.body).toMatchObject({
         purpose: 'invite',
         name: 'Neha Rao',
@@ -379,8 +384,8 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(res.body.skipped).toEqual(
         expect.arrayContaining([
           { email: 'one@school.in', reason: 'Duplicate email in the import' },
-          { email: world.teacher.email, reason: 'Email already in use' },
-          { email: 'kid@home.in', reason: 'Email already in use' },
+          { email: world.teacher.email, reason: "This email can't be used. Use a different address." },
+          { email: 'kid@home.in', reason: "This email can't be used. Use a different address." },
         ]),
       );
       expect(res.body.skipped).toHaveLength(3);
@@ -438,7 +443,7 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
       expect(res.body[0]).toMatchObject({ to: 'cap@school.in', subject: 'Welcome to ClassPulse — set your password' });
-      expect(res.body[0].text).toContain('/set-password?token=');
+      expect(res.body[0].text).toContain('/set-password#token=');
       expect(typeof res.body[0].html).toBe('string');
       expect(typeof res.body[0].at).toBe('string');
       const all = await request(testApp).get('/api/test/emails');

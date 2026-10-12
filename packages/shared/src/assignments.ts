@@ -75,6 +75,11 @@ export interface AiGradeSuggestion {
   note: string;
   model: string;
   createdAt: IsoDate;
+  /**
+   * The work seems to contain instructions aimed at the grader or the AI (possible prompt injection):
+   * the teacher is warned and the marks are not filled in automatically. Missing on older suggestions.
+   */
+  injectionSuspected?: boolean;
 }
 
 export type TrackerStatus = 'missing' | 'submitted' | 'late' | 'returned';

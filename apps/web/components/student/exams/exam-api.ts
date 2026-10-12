@@ -5,7 +5,7 @@
  * sessionStorage, so closing the tab ends the device binding.
  */
 import { EXAM_TOKEN_HEADER, type ApiErrorBody } from '@classpulse/shared';
-import { ApiError } from '@/lib/api';
+import { ApiError, isSafeApiPath } from '@/lib/api';
 
 const tokenKey = (examId: string) => `classpulse:exam-token:${examId}`;
 
@@ -38,6 +38,7 @@ export async function examRequest<T>(
   path: string,
   opts: { body?: unknown; token?: string | null; timeoutMs?: number } = {},
 ): Promise<T> {
+  if (!isSafeApiPath(path)) throw new ApiError(0, 'BAD_REQUEST', 'This link is not valid.');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15_000);
   const headers: Record<string, string> = {};

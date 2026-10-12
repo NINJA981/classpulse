@@ -13,6 +13,7 @@ import {
 import { storage } from '../../lib/storage.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { aiLimiter } from '../../middleware/rateLimit.js';
+import { requireFeature } from '../../middleware/requireFeature.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';
 import { generateRemedial, getLessonAnalytics, listLessonAttempts } from './analytics.js';
 import * as service from './service.js';
@@ -171,13 +172,13 @@ router.post('/:id/questions', teacherOnly, async (req, res) => {
 });
 
 /** The lesson's primary (AI-drafted) assignment. */
-router.put('/:id/assignment', teacherOnly, async (req, res) => {
+router.put('/:id/assignment', teacherOnly, requireFeature('assignments'), async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.json(await service.upsertAssignment(currentUser(req), id, parseBody(req, AssignmentInput)));
 });
 
 /** An extra assignment for the lesson; it is then managed under /api/assignments. */
-router.post('/:id/assignments', teacherOnly, async (req, res) => {
+router.post('/:id/assignments', teacherOnly, requireFeature('assignments'), async (req, res) => {
   const { id } = parseParams(req, IdParams);
   res.status(201).json(await service.addLessonAssignment(currentUser(req), id, parseBody(req, AssignmentInput)));
 });

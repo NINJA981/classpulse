@@ -21,6 +21,7 @@ import { assignments, lessons, questions, quizAttempts, sections, sectionTeacher
 import { badRequest, forbidden, invalidState, notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { storage } from '../../lib/storage.js';
+import { deleteStorageObjects, lessonSubmissionKeys } from '../../lib/storageCleanup.js';
 import { assignmentValues, createAssignment } from '../assignments/service.js';
 import { defaultQuestionCount } from '../settings/service.js';
 import { queueLessonGeneration } from './audio.js';
@@ -102,10 +103,13 @@ export async function deleteLesson(user: SessionUser, id: string): Promise<void>
   }
   const [attempts] = await db.select({ n: count() }).from(quizAttempts).where(eq(quizAttempts.lessonId, id));
   if ((attempts?.n ?? 0) > 0) throw invalidState('This lesson has quiz attempts and cannot be deleted.');
+  // Its assignments and their submissions go with it (cascade): collect their files first.
+  const submissionKeys = await lessonSubmissionKeys(db, id);
   await db.delete(lessons).where(eq(lessons.id, id));
   if (lesson.audioObjectKey) {
     await storage.delete(lesson.audioObjectKey).catch((err: Error) => logger.warn({ err: err.message, lessonId: id }, 'Failed to delete lesson audio'));
   }
+  await deleteStorageObjects(submissionKeys, { lessonId: id });
 }
 
 /* ----------------------------------------------------------------------------

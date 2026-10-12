@@ -1,5 +1,5 @@
 /** Exam queries and rules shared by the teacher routes, the student routes and the sweep. */
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, max, sql } from 'drizzle-orm';
 import type { ExamDetail, ExamPoolQuestion, ExamResultsVisibility, ExamSummary } from '@classpulse/shared';
 import { db, type DbOrTx, type Tx } from '../../db/client.js';
 import {
@@ -148,6 +148,27 @@ export function resultsVisible(
   if (exam.resultsVisibility === 'after_close' && exam.status === 'closed') return true;
   const at = resultsAvailableAt(exam, attempt);
   return at !== null && at.getTime() <= now.getTime();
+}
+
+/**
+ * When students may see the correct answers and explanations, or null once they may. Results can
+ * be visible earlier (results "immediately"), but the answer key waits until nobody can still be
+ * writing: the exam is closed, or its window has ended and every attempt's deadline (extra time
+ * can run past closes_at) has passed.
+ */
+export async function answerKeyReleaseAt(
+  exam: Pick<ExamRow, 'id' | 'status' | 'closesAt'>,
+  now = new Date(),
+  dbx: DbOrTx = db,
+): Promise<Date | null> {
+  if (exam.status === 'closed') return null;
+  let releaseAt = exam.closesAt;
+  const [open] = await dbx
+    .select({ last: max(examAttempts.deadlineAt) })
+    .from(examAttempts)
+    .where(and(eq(examAttempts.examId, exam.id), eq(examAttempts.status, 'in_progress'), gt(examAttempts.deadlineAt, now)));
+  if (open?.last && open.last.getTime() > releaseAt.getTime()) releaseAt = open.last;
+  return releaseAt.getTime() <= now.getTime() ? null : releaseAt;
 }
 
 /* ----------------------------------------------------------------------------

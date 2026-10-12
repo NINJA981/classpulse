@@ -1,0 +1,47 @@
+# Weekly dependency and pin updates (audit L13). Base images and CI actions are pinned by digest/SHA, so these
+# PRs are how they move forward; each one runs CI (tests, gitleaks, npm audit, Trivy) before it can merge.
+# The classroom agent (apps/classroom-agent) uses only the Python standard library, so there is no pip manifest
+# to watch; add a `pip` entry here if it ever gains a requirements.txt or pyproject.toml.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Patch and minor bumps arrive as one PR per ecosystem; majors stay separate for review.
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directories:
+      - /apps/api
+      - /apps/web
+      - /infra
+    schedule:
+      interval: weekly
+    ignore:
+      # Node.js majors are a runtime upgrade (test first); Postgres majors need a dump/restore.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: docker-compose
+    directory: /infra
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+      - dependency-name: redis
+        update-types: [version-update:semver-major]

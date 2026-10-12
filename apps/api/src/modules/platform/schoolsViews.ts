@@ -5,8 +5,10 @@
  */
 import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import type { Request } from 'express';
 import type { Paginated, PlatformSchoolView, PlatformViewQuery, PlatformViewRow } from '@classpulse/shared';
 import { db } from '../../db/client.js';
+import { audit } from '../../lib/audit.js';
 import {
   assignments,
   assignmentSubmissions,
@@ -289,14 +291,25 @@ const VIEWS: Record<PlatformSchoolView, ViewFn> = {
   'live-sessions': liveView,
 };
 
+/** A super admin reading a school's data: every view (and search) is audited when `req` is given. */
 export async function schoolView(
   schoolId: string,
   view: PlatformSchoolView,
   query: PlatformViewQuery,
+  req: Request | null = null,
 ): Promise<Paginated<PlatformViewRow>> {
   const { items, total } = await VIEWS[view](schoolId, query.q, {
     limit: query.pageSize,
     offset: (query.page - 1) * query.pageSize,
   });
+  if (req) {
+    await audit(req, {
+      action: 'platform.school.view',
+      institutionId: schoolId,
+      targetType: 'institution',
+      targetId: schoolId,
+      metadata: { view, q: query.q ?? null, page: query.page, rows: items.length },
+    });
+  }
   return { items, total, page: query.page, pageSize: query.pageSize };
 }

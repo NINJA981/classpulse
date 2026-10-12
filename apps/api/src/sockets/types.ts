@@ -10,6 +10,8 @@ export interface LiveMembership {
 export interface SocketData {
   /** Set by the handshake middleware from the session cookie — the only source of identity. */
   user: SessionUser;
+  /** The session token the socket connected with; re-validated periodically (never sent anywhere). */
+  token: string;
   live: LiveMembership | null;
 }
 

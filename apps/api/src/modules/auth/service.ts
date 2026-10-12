@@ -3,8 +3,9 @@ import type { ChangePasswordInput, ForgotPasswordInput, StaffLoginInput, Student
 import { db } from '../../db/client.js';
 import { institutions, users } from '../../db/schema/index.js';
 import { hashPassword, verifyPassword } from '../../lib/crypto.js';
-import { AppError, badRequest, forbidden, notFound, unauthenticated } from '../../lib/errors.js';
+import { AppError, forbidden, notFound, unauthenticated } from '../../lib/errors.js';
 import { assertNotInMaintenance, assertSchoolActive } from '../../lib/platformState.js';
+import { verifySessionToken } from '../../lib/session.js';
 import { bumpTokenVersion, DUMMY_PASSWORD_HASH } from './accounts.js';
 import { issueToken } from './passwordTokens.js';
 
@@ -46,43 +47,55 @@ export async function staffLogin(input: StaffLoginInput, roles: readonly ('admin
   return markLoggedIn(user);
 }
 
-/**
- * Without a school code, find the institution by roll number: it is only
- * ambiguous (and the code required) when several schools use the same roll number.
- */
-async function resolveStudentInstitution(code: string | undefined, rollNumber: string): Promise<string | null> {
-  if (code) {
-    const inst = await db.query.institutions.findFirst({
-      where: eq(institutions.code, code.toUpperCase()),
-      columns: { id: true },
-    });
-    return inst?.id ?? null;
-  }
-  const rows = await db
-    .selectDistinct({ id: users.institutionId })
-    .from(users)
-    .where(and(eq(users.rollNumber, rollNumber), eq(users.role, 'student')))
-    .limit(2);
-  if (rows.length > 1) {
-    throw badRequest('Several schools use this roll number. Enter your school code to sign in.', { field: 'institutionCode' });
-  }
-  return rows[0]?.id ?? null;
-}
+/** Schools checked when a roll number is used by several of them and no school code was given. */
+const MAX_ROLL_CANDIDATES = 5;
 
+/** Answered to a correct password for a roll number several schools use: the school code is needed. */
+export const SCHOOL_CODE_NEEDED = 'Enter your school code to sign in.';
+
+/**
+ * Student sign-in by roll number. With a school code, the student of that school. Without one, the
+ * school is found from the roll number. When several schools use it, nobody is signed in: every
+ * answer is the generic 401, and only a password that is correct for one of those students adds the
+ * hint `{ field: 'institutionCode' }` (so the response never reveals whether a roll number exists).
+ */
 export async function studentLogin(input: StudentLoginInput): Promise<UserRow> {
   await assertNotInMaintenance();
-  const institutionId = await resolveStudentInstitution(input.institutionCode, input.rollNumber);
-  const row = institutionId
-    ? await db.query.users.findFirst({
-        where: and(
-          eq(users.institutionId, institutionId),
-          eq(users.rollNumber, input.rollNumber),
-          eq(users.role, 'student'),
-        ),
-      })
-    : undefined;
-  const user = await checkCredentials(row, input.password, STUDENT_INVALID);
-  return markLoggedIn(user);
+  if (input.institutionCode) {
+    const [row] = await db
+      .select({ user: users })
+      .from(users)
+      .innerJoin(institutions, eq(institutions.id, users.institutionId))
+      .where(
+        and(eq(institutions.code, input.institutionCode), eq(users.rollNumber, input.rollNumber), eq(users.role, 'student')),
+      );
+    return markLoggedIn(await checkCredentials(row?.user, input.password, STUDENT_INVALID));
+  }
+
+  const candidates = await db.query.users.findMany({
+    where: and(eq(users.rollNumber, input.rollNumber), eq(users.role, 'student')),
+    limit: MAX_ROLL_CANDIDATES,
+  });
+  if (candidates.length <= 1) return markLoggedIn(await checkCredentials(candidates[0], input.password, STUDENT_INVALID));
+
+  const matches = await Promise.all(candidates.map((c) => verifyPassword(input.password, c.passwordHash)));
+  if (matches.some(Boolean)) throw new AppError('UNAUTHENTICATED', SCHOOL_CODE_NEEDED, { field: 'institutionCode' });
+  throw unauthenticated(STUDENT_INVALID);
+}
+
+/**
+ * Sign-out revokes the presented session and every other session of the user (bumps the token
+ * version). Returns the signed-out user, or null when no valid session was presented.
+ */
+export async function signOut(token: string | null): Promise<UserRow | null> {
+  const claims = token ? verifySessionToken(token) : null;
+  if (!claims) return null;
+  const [row] = await db
+    .update(users)
+    .set({ tokenVersion: bumpTokenVersion })
+    .where(and(eq(users.id, claims.sub), eq(users.tokenVersion, claims.ver)))
+    .returning();
+  return row ?? null;
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput): Promise<UserRow> {

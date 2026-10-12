@@ -29,10 +29,10 @@ sudo ./install.sh
 ```
 
 `install.sh` does the following:
-- creates the `classpulse` system user (in the `audio` group)
+- creates the `classpulse` system user with its own `classpulse` group (and adds it to `audio` for the microphone)
 - installs the agent to `/opt/classpulse-agent`
-- creates `/etc/classpulse/agent.json` from `agent.example.json` (an existing config is kept)
-- creates `/var/lib/classpulse`
+- creates `/etc/classpulse/agent.json` from `agent.example.json` (an existing config is kept), mode 0640 `root:classpulse`
+- creates `/var/lib/classpulse` (device key and buffered audio), mode 0700, owned by `classpulse` only
 - installs and enables `classpulse-agent.service`
 
 ## Provisioning
@@ -53,7 +53,7 @@ sudo ./install.sh
 
    | Key | Default | Meaning |
    |---|---|---|
-   | `server_url` | (required) | e.g. `https://app.classpulse.example`. Must be `https://`. |
+   | `server_url` | (required) | e.g. `https://app.classpulse.example`. Must be `https://`, and the exact address: the agent never follows HTTP redirects (they would carry the device key elsewhere), so a redirecting URL shows as a network error in the log. |
    | `device_id` | (required) | Unique name: 3–64 characters of lowercase letters, digits and dashes, e.g. `rpi5-room-101` |
    | `enrollment_token` | (required the first time) | Token from step 1 |
    | `alsa_device` | `default` | ALSA capture device from `arecord -l` |

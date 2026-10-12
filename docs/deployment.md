@@ -74,8 +74,13 @@ sudo crontab -e
 # 30 2 * * * /opt/classpulse/infra/backup.sh >> /var/log/classpulse-backup.log 2>&1
 ```
 
-- Each backup archive holds a `pg_dump -Fc` of the database and a tarball of the stored audio, encrypted with age.
-- The script keeps 7 daily and 4 weekly archives. If `BACKUP_S3_URI` is set, it also copies each archive off-site.
+- Each backup `classpulse-<stamp>.tar.age` is a plain tar holding two age-encrypted parts: `db.dump.age` (a `pg_dump -Fc`) and `storage.tar.gz.age` (stored audio, submissions and materials). Each part is encrypted as it streams out of its container, so no plaintext ever touches the disk. Archives are mode 0600; the folders stay 0755 so the API's health check can list them.
+- `restore.sh` reads this format and the older single-archive format. It checks the key and the archive before stopping anything. To decrypt by hand: `tar -xf classpulse-<stamp>.tar.age`, then `age -d -i ~/classpulse-backup.key db.dump.age > db.dump` (and the same for `storage.tar.gz.age`).
+- The script keeps 7 daily and 4 weekly archives.
+- **Off-site copy (recommended):**
+  - Set `BACKUP_S3_URI` (for example `s3://classpulse-backups/pilot`, or an rclone remote), plus `BACKUP_S3_ENDPOINT` for OCI Object Storage's S3-compatible endpoint.
+  - `BACKUP_S3_KEEP_DAYS` prunes remote copies older than that many days.
+  - Use a write-only credential, and prefer a bucket lifecycle or retention rule.
 - The `api` service mounts the host's backup folder read-only at `/backups` (`${BACKUP_DIR:-/var/backups/classpulse}:/backups:ro`). The console's Health page uses it to report the age of the latest backup, and raises an alert when it is older than 26 hours. The API reads the folder from its own `BACKUP_DIR` variable, which defaults to `/backups`.
 
 **Restore drill.** Do this before the pilot and then once a month, on a staging VM:
@@ -213,7 +218,11 @@ If a domain ever changes, update the router's domains, `PUBLIC_ORIGIN`, `PLATFOR
 
 - Done: Coolify registration is disabled. SSH is key-only (password authentication off).
 - To do: enable 2FA on the Coolify account; change the passwords that were shared; delete the old root Coolify API token now that the least-privilege `classpulse-console` token works; close public port 8000 in the OCI security list. The dashboard is served on `https://coolify.benxsolutions.in`, deploys go through `https://coolify.benxsolutions.in/api/v1`, and the console uses the private `10.0.0.112:8000`, so none of them needs the public port.
-- Optional: disable root login over SSH (a key still allows it today), and install fail2ban (not installed).
+- Done (13 Oct 2026):
+  - The old SIH prototype is stopped. Its pm2 apps were removed; the code remains in `/home/ubuntu/Project/SIH`.
+  - The host firewall no longer opens ports 3000–5174.
+  - fail2ban guards SSH (5 failures in 10 minutes → 1 hour ban).
+- Root SSH login stays allowed **with a key only**, because Coolify manages the server through root SSH. Its key is in `/root/.ssh/authorized_keys`.
 - If the admin machine's public IP changes, add the new one to Coolify's "Allowed IPs for API access", or its API deploys are refused.
 
 ## Local production check
@@ -223,3 +232,37 @@ cp infra/.env.example infra/.env.local-prod   # DOMAIN=localhost, any secrets
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.local-prod up -d --build
 curl -kfsS https://localhost/api/health/ready   # Caddy uses its internal CA for localhost
 ```
+
+## Security settings (added 13 Oct 2026)
+
+The full audit is kept privately.
+
+- **Edge.**
+  - The router sends a Content-Security-Policy, `X-Frame-Options: DENY` and `Cross-Origin-Opener-Policy` on every page (not on `/api`, which has Helmet's own).
+  - Pages may load only same-origin scripts, styles, fonts and connections. Frames are limited to the simulation hosts.
+  - The router access log removes `X-Device-Key` and `X-Exam-Token` headers, and redacts password-link tokens.
+- **Client IPs.**
+  - `Caddyfile.coolify` trusts Coolify's Traefik (`trusted_proxies private_ranges`), and the API uses `TRUST_PROXY_HOPS=2`. Together they give the real visitor IP, which rate limits and the audit log depend on.
+  - The console's Health page raises an alert if every request still arrives from a private address.
+- **Requests.**
+  - The API refuses cross-site state-changing requests, returning `403 Cross-site request blocked`.
+  - It refuses non-JSON request bodies except file uploads.
+  - It sends no CORS headers: the browser always talks to its own host.
+- **Sessions.**
+  - Session tokens are signed with per-purpose keys derived from `JWT_SECRET`.
+  - Changing `JWT_SECRET` signs everyone out.
+  - Production refuses the example secrets.
+- **New environment variables (all optional):**
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `AUTH_IP_RATE_LIMIT` | 300 | Sign-in attempts per IP per 15 min, across all accounts. Schools behind one NAT share an IP. |
+| `MAX_LESSON_AUDIO_SEC` | 14400 (4 h) | Longest lecture accepted (uploads and recordings) |
+| `DEFAULT_AI_AUDIO_MINUTES_PER_MONTH` | 3000 | Monthly transcription cap for schools without their own limit (0 = none) |
+| `TRANSCRIPT_RETENTION_DAYS` | 365 | Transcripts older than this are cleared; quizzes stay |
+
+- **Containers.**
+  - Every service has a memory/CPU limit, `no-new-privileges` and `cap_drop: ALL`. Postgres and Redis get back only what they need.
+  - The router runs as a non-root user on a read-only filesystem.
+  - Base images are pinned by digest; Dependabot proposes updates.
+  - `REDIS_PASSWORD` must be hex (`openssl rand -hex 32`), because it goes into a URL and a config file.

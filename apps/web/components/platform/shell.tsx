@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { PlatformAdmin } from '@classpulse/shared';
+import { LegalLinks } from '@/components/legal/legal-links';
 import { api } from '@/lib/api';
 
 interface PlatformNavItem {
@@ -123,7 +124,12 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
         )}
 
         <main id="main" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
+          <div className="mx-auto max-w-6xl">
+            {children}
+            <footer className="mt-12 border-t border-line pt-4">
+              <LegalLinks />
+            </footer>
+          </div>
         </main>
       </div>
     </PlatformAdminContext.Provider>

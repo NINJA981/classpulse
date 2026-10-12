@@ -6,6 +6,7 @@ import { env, isProd } from '../config/env.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import { AppError } from './errors.js';
+import { keyFor } from './keys.js';
 import { assertNotInMaintenance, assertSchoolActive } from './platformState.js';
 
 interface TokenClaims {
@@ -14,9 +15,26 @@ interface TokenClaims {
   role: Role;
 }
 
+/** School session tokens carry `aud: 'school'` and are signed with their own derived key. */
+const AUDIENCE = 'school';
+
 export function signSessionToken(user: { id: string; tokenVersion: number; role: Role }): string {
   const claims: TokenClaims = { sub: user.id, ver: user.tokenVersion, role: user.role };
-  return jwt.sign(claims, env.JWT_SECRET, { expiresIn: `${env.SESSION_TTL_HOURS}h`, algorithm: 'HS256' });
+  return jwt.sign(claims, keyFor('school-session'), {
+    expiresIn: `${env.SESSION_TTL_HOURS}h`,
+    algorithm: 'HS256',
+    audience: AUDIENCE,
+  });
+}
+
+/** The claims of a valid school session token (signature, expiry and audience checked), or null. */
+export function verifySessionToken(token: string): TokenClaims | null {
+  try {
+    const claims = jwt.verify(token, keyFor('school-session'), { algorithms: ['HS256'], audience: AUDIENCE }) as TokenClaims;
+    return typeof claims.sub === 'string' && typeof claims.ver === 'number' ? claims : null;
+  } catch {
+    return null;
+  }
 }
 
 function cookieOptions(): CookieOptions {
@@ -56,13 +74,8 @@ export function toSessionUser(row: typeof users.$inferSelect): SessionUser {
  */
 export async function loadSessionUser(token: string | undefined | null): Promise<SessionUser | null> {
   if (!token) return null;
-  let claims: TokenClaims;
-  try {
-    claims = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as TokenClaims;
-  } catch {
-    return null;
-  }
-  if (typeof claims.sub !== 'string') return null;
+  const claims = verifySessionToken(token);
+  if (!claims) return null;
   const row = await db.query.users.findFirst({ where: eq(users.id, claims.sub) });
   if (!row || row.status !== 'active' || row.tokenVersion !== claims.ver) return null;
   return toSessionUser(row);

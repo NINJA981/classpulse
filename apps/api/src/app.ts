@@ -1,11 +1,12 @@
 import express, { type Express } from 'express';
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { randomUUID } from 'node:crypto';
-import { allowedOrigins, env } from './config/env.js';
+import { env } from './config/env.js';
+import { checkProxyConfig, watchClientIp } from './lib/clientIp.js';
 import { logger } from './lib/logger.js';
+import { sameOriginGuard } from './middleware/csrf.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './modules/health/routes.js';
 import { apiRoutes } from './modules/index.js';
@@ -19,6 +20,7 @@ export function createApp(): Express {
   app.disable('x-powered-by');
   app.set('trust proxy', env.TRUST_PROXY_HOPS); // Caddy, or Traefik + Caddy on Coolify
   app.set('query parser', 'simple'); // no nested objects in query strings
+  checkProxyConfig();
 
   app.use(
     pinoHttp({
@@ -38,12 +40,9 @@ export function createApp(): Express {
     }),
   );
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
-  app.use(
-    cors({
-      origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)),
-      credentials: true,
-    }),
-  );
+  // No CORS: the browser only ever calls its own origin, so no cross-origin script may read API responses.
+  app.use(watchClientIp);
+  app.use(sameOriginGuard());
   app.use(cookieParser());
   app.use(express.json({ limit: '1mb' }));
 

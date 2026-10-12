@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { Id, IdParams, StartRecordingInput } from '@classpulse/shared';
 import { devices } from '../../db/schema/index.js';
+import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';
 import { listDevices } from '../devices/service.js';
@@ -25,7 +26,14 @@ router.get('/devices', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const input = parseBody(req, StartRecordingInput);
-  res.status(201).json(await service.startRecording(currentUser(req).id, input));
+  const session = await service.startRecording(currentUser(req).id, input);
+  await audit(req, {
+    action: 'recording.start',
+    targetType: 'recording',
+    targetId: session.id,
+    metadata: { lessonId: session.lessonId, deviceId: session.device.id },
+  });
+  res.status(201).json(session);
 });
 
 router.get('/:id', async (req, res) => {
@@ -35,10 +43,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/:id/stop', async (req, res) => {
   const { id } = parseParams(req, IdParams);
-  res.json(await service.stopRecording(currentUser(req).id, id));
+  const session = await service.stopRecording(currentUser(req).id, id);
+  await audit(req, { action: 'recording.stop', targetType: 'recording', targetId: id, metadata: { lessonId: session.lessonId } });
+  res.json(session);
 });
 
 router.post('/:id/cancel', async (req, res) => {
   const { id } = parseParams(req, IdParams);
-  res.json(await service.cancelRecording(currentUser(req).id, id));
+  const session = await service.cancelRecording(currentUser(req).id, id);
+  await audit(req, { action: 'recording.cancel', targetType: 'recording', targetId: id, metadata: { lessonId: session.lessonId } });
+  res.json(session);
 });

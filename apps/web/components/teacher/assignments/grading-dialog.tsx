@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, Sparkles } from 'lucide-react';
+import { AlertTriangle, FileText, Sparkles } from 'lucide-react';
 import type { AiGradeSuggestion, Assignment, GradeSubmissionInput, RubricMark, SubmissionDetail } from '@classpulse/shared';
 import { Badge, Button, Dialog, ErrorState, Field, InlineError, Input, LoadingBlock, Textarea, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -93,12 +93,17 @@ function GradingPanel({ assignment, detail }: { assignment: Assignment; detail: 
     },
   });
 
+  function applySuggestion(s: AiGradeSuggestion) {
+    setMarks(marksFrom(assignment, s.rubricMarks));
+    setFeedback(s.feedback);
+  }
+
   const suggest = useMutation({
     mutationFn: () => api.post<AiGradeSuggestion>(`/assignments/${assignment.id}/submissions/${detail.id}/ai-suggest`),
     onSuccess: (s) => {
       setSuggestion(s);
-      setMarks(marksFrom(assignment, s.rubricMarks));
-      setFeedback(s.feedback);
+      // The form is only filled in, never saved. A suspicious suggestion is not even filled in.
+      if (!s.injectionSuspected) applySuggestion(s);
     },
   });
 
@@ -163,7 +168,25 @@ function GradingPanel({ assignment, detail }: { assignment: Assignment; detail: 
           </Button>
         </div>
         <InlineError error={suggest.error} />
-        {suggestion && (
+        {suggestion?.injectionSuspected && (
+          <div role="alert" className="flex gap-3 rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-warning">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <div className="flex flex-col gap-2">
+              <p className="font-bold">This work may be trying to steer the AI</p>
+              <p className="font-medium">
+                It seems to contain instructions aimed at the grader or the AI (for example asking for full marks). The AI&apos;s marks were not
+                filled in. Read the work yourself before grading.
+              </p>
+              {suggestion.note && <p className="font-medium">AI note: {suggestion.note}</p>}
+              <div>
+                <Button variant="secondary" size="sm" onClick={() => applySuggestion(suggestion)}>
+                  Fill in the AI&apos;s marks anyway
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {suggestion && !suggestion.injectionSuspected && (
           <div role="status" className="rounded-control border border-line-strong bg-accent-soft px-4 py-3 text-sm">
             <p className="font-bold">AI suggestion — review before returning</p>
             <p className="text-ink-2">The marks and feedback below were filled in by the AI. Check and edit them; nothing is sent to the student until you return the work.</p>

@@ -1,13 +1,16 @@
 /** Global user search across every school (name, email or roll number). */
 import { and, asc, eq, ilike, or } from 'drizzle-orm';
+import type { Request } from 'express';
 import type { PlatformUserHit, PlatformUserSearchQuery } from '@classpulse/shared';
 import { db } from '../../db/client.js';
+import { audit } from '../../lib/audit.js';
 import { institutions, users } from '../../db/schema/index.js';
 
 const LIMIT = 50;
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-export async function searchUsers(query: PlatformUserSearchQuery): Promise<PlatformUserHit[]> {
+/** Every search is audited when `req` is given (a super admin reading people across schools). */
+export async function searchUsers(query: PlatformUserSearchQuery, req: Request | null = null): Promise<PlatformUserHit[]> {
   const pattern = `%${escapeLike(query.q)}%`;
   const rows = await db
     .select({
@@ -33,6 +36,9 @@ export async function searchUsers(query: PlatformUserSearchQuery): Promise<Platf
     )
     .orderBy(asc(users.name))
     .limit(LIMIT);
+  if (req) {
+    await audit(req, { action: 'platform.users.search', targetType: 'user', metadata: { q: query.q, role: query.role ?? null, rows: rows.length } });
+  }
   return rows.map((r) => ({
     id: r.id,
     name: r.name,

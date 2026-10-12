@@ -54,8 +54,32 @@ export async function institutionState(institutionId: string): Promise<Instituti
   return value;
 }
 
+/**
+ * Listeners told after a platform write in this process changed a school's state (`institutionId`)
+ * or the platform-wide settings (`null`). Sockets use it to drop sessions of a suspended school or
+ * during maintenance straight away. Listeners must not throw.
+ */
+type PlatformStateListener = (institutionId: string | null) => void;
+const listeners = new Set<PlatformStateListener>();
+
+export function onPlatformStateChange(listener: PlatformStateListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyListeners(institutionId: string | null): void {
+  for (const listener of listeners) {
+    try {
+      listener(institutionId);
+    } catch {
+      // A listener's failure must never break the platform write that triggered it.
+    }
+  }
+}
+
 export function invalidateInstitutionState(institutionId: string): void {
   institutionCache.delete(institutionId);
+  notifyListeners(institutionId);
 }
 
 const SECTIONS = {
@@ -83,6 +107,7 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
 
 export function invalidatePlatformSettings(): void {
   settingsCache = null;
+  notifyListeners(null);
 }
 
 /** Tests: forget everything cached (the database is truncated between tests). */

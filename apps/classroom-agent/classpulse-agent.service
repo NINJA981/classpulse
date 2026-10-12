@@ -7,8 +7,10 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=classpulse
-Group=audio
+Group=classpulse
 SupplementaryGroups=audio
+# Everything the agent writes (device key, audio chunks, manifests) is owner-only.
+UMask=0077
 WorkingDirectory=/opt/classpulse-agent
 Environment=PYTHONUNBUFFERED=1
 Environment=CLASSPULSE_CONFIG=/etc/classpulse/agent.json

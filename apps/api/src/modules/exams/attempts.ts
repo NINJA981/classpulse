@@ -26,7 +26,6 @@ import {
   type StudentExamResult,
   type StudentExamState,
 } from '@classpulse/shared';
-import { env } from '../../config/env.js';
 import { db, type DbOrTx, type Tx } from '../../db/client.js';
 import type { ExamPaperItem } from '../../db/schema/exams.js';
 import {
@@ -40,8 +39,10 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { randomToken, safeEqualHex, sha256Hex } from '../../lib/crypto.js';
+import { keyFor } from '../../lib/keys.js';
 import { badRequest, conflict, forbidden, invalidState, notFound } from '../../lib/errors.js';
 import {
+  answerKeyReleaseAt,
   examPool,
   finalizeAttempt,
   iso,
@@ -117,7 +118,7 @@ async function lockAttempt(tx: Tx, examId: string, studentId: string): Promise<E
 function issueToken(exam: ExamRow, attemptId: string): string {
   return exam.singleDevice
     ? randomToken()
-    : createHmac('sha256', env.JWT_SECRET).update(`exam-device:${attemptId}`).digest('base64url');
+    : createHmac('sha256', keyFor('exam-device')).update(`exam-device:${attemptId}`).digest('base64url');
 }
 
 const tokenMatches = (token: string | undefined, hash: string | null) =>
@@ -531,7 +532,9 @@ export async function getResult(studentId: string, examId: string): Promise<Stud
     submittedAt: iso(attempt.submittedAt),
     resultsAvailableAt: attempt.status === 'in_progress' ? null : iso(resultsAvailableAt(exam, attempt)),
   };
-  if (!resultsVisible(exam, attempt, now)) return { ...base, score: null, answers: null };
+  if (!resultsVisible(exam, attempt, now)) return { ...base, score: null, answers: null, answerKeyAvailableAt: null };
+  // Score and per-question correctness now; the answer key only once nobody can still be writing.
+  const keyAt = await answerKeyReleaseAt(exam, now);
 
   const ids = attempt.paper.map((p) => p.examQuestionId);
   const [qs, saved] = await Promise.all([
@@ -549,6 +552,7 @@ export async function getResult(studentId: string, examId: string): Promise<Stud
   const selected = new Map(saved.map((s) => [s.examQuestionId, s.selectedIndex]));
   return {
     ...base,
+    answerKeyAvailableAt: iso(keyAt),
     score: scoreOf(attempt),
     answers: attempt.paper.map((p, i) => {
       const q = byId.get(p.examQuestionId)!;
@@ -559,9 +563,9 @@ export async function getResult(studentId: string, examId: string): Promise<Stud
         stem: q.stem,
         options: p.optionOrder.map((c) => q.options[c]!),
         selectedIndex: shownSelected >= 0 ? shownSelected : null,
-        correctIndex: p.optionOrder.indexOf(q.correctIndex),
+        correctIndex: keyAt ? null : p.optionOrder.indexOf(q.correctIndex),
         isCorrect: canonical !== null && canonical === q.correctIndex,
-        explanation: q.explanation,
+        explanation: keyAt ? null : q.explanation,
       };
     }),
   };

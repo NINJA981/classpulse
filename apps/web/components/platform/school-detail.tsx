@@ -49,6 +49,7 @@ import { useDebounced } from '@/components/admin/use-debounced';
 import { ApiError, api } from '@/lib/api';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { platformKeys } from './queries';
+import { SchoolOffboarding } from './school-offboarding';
 import { SchoolStatusBadge } from './schools-list';
 
 type Tab = 'overview' | 'admins' | 'people' | 'content' | 'devices' | 'features' | 'activity';
@@ -277,6 +278,7 @@ function OverviewTab({ school }: { school: PlatformSchoolDetail }) {
         Created {formatDateTime(school.createdAt)} · last activity {school.lastActivityAt ? formatRelative(school.lastActivityAt) : 'never'}
       </p>
       <ProfileForm key={school.id} school={school} />
+      <SchoolOffboarding school={school} />
     </div>
   );
 }
@@ -458,8 +460,8 @@ const FEATURE_LABEL: Record<keyof InstitutionFeatures, string> = {
 const LIMIT_FIELDS: { key: keyof InstitutionLimits; label: string; hint: string; step?: string }[] = [
   { key: 'maxStudents', label: 'Maximum students', hint: 'Enforced on create and CSV import' },
   { key: 'maxTeachers', label: 'Maximum teachers', hint: 'Enforced on create and CSV import' },
-  { key: 'aiAudioMinutesPerMonth', label: 'AI audio minutes per month', hint: 'Transcription stops when used up' },
-  { key: 'storageGb', label: 'Storage (GB)', hint: 'Warning only', step: '0.1' },
+  { key: 'aiAudioMinutesPerMonth', label: 'AI audio minutes per month', hint: 'Transcription stops when used up. Empty = the platform default (3000)' },
+  { key: 'storageGb', label: 'Storage (GB)', hint: 'Uploads are refused when used up. Empty = no limit', step: '0.1' },
 ];
 
 function FeaturesTab({ school }: { school: PlatformSchoolDetail }) {

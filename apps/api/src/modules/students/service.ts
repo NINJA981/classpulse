@@ -17,9 +17,11 @@ import {
 import { db, type DbOrTx } from '../../db/client.js';
 import { enrollments, institutions, sections, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashInitialPassword, hashPassword } from '../../lib/crypto.js';
-import { badRequest, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { deleteStorageObjects, studentSubmissionKeys } from '../../lib/storageCleanup.js';
 import {
   bumpTokenVersion,
+  EMAIL_UNIQUE,
   resetUserPassword,
   rethrowUserConflict,
   sendAccountLink,
@@ -27,7 +29,14 @@ import {
 } from '../auth/accounts.js';
 import { assertSeatsAvailable } from '../../lib/platformState.js';
 import { issueInvites, issueToken } from '../auth/passwordTokens.js';
+import { EMAIL_UNAVAILABLE } from '../teachers/service.js';
 import { findStudents } from './repo.js';
+
+/** Like rethrowUserConflict, but an email clash never says whose (or which school's) address it is. */
+function rethrowStudentConflict(err: unknown): never {
+  if (isUniqueViolation(err, EMAIL_UNIQUE)) throw conflict(EMAIL_UNAVAILABLE);
+  return rethrowUserConflict(err);
+}
 
 export const ListStudentsQuery = PaginationQuery.extend({
   q: z.string().trim().max(100).optional(),
@@ -104,7 +113,7 @@ export async function createStudent(
       if (input.sectionId) await tx.insert(enrollments).values({ sectionId: input.sectionId, studentId: row!.id });
       return row!.id;
     })
-    .catch(rethrowUserConflict);
+    .catch(rethrowStudentConflict);
   const invite = await issueToken(id, 'invite', actorId);
   return { record: await getStudent(institutionId, id), initialPassword: generated, invite };
 }
@@ -154,7 +163,7 @@ export async function importStudents(
   const candidates: ImportRow[] = [];
   for (const r of unique) {
     if (takenRolls.has(r.rollNumber)) skipped.push({ rollNumber: r.rollNumber, reason: 'Roll number already exists' });
-    else if (r.email && takenEmails.has(r.email)) skipped.push({ rollNumber: r.rollNumber, reason: 'Email already in use' });
+    else if (r.email && takenEmails.has(r.email)) skipped.push({ rollNumber: r.rollNumber, reason: EMAIL_UNAVAILABLE });
     else candidates.push(r);
   }
 
@@ -226,18 +235,21 @@ export async function updateStudent(institutionId: string, id: string, input: Up
     const found = await updateUserRevokingOnEmailChange(studentScope(institutionId), id, {
       ...input,
       ...(input.status === 'disabled' && { tokenVersion: bumpTokenVersion }),
-    }).catch(rethrowUserConflict);
+    }).catch(rethrowStudentConflict);
     if (!found) throw notFound('Student');
   }
   return getStudent(institutionId, id);
 }
 
 export async function deleteStudent(institutionId: string, id: string): Promise<void> {
+  // Submission rows go with the account (cascade); their uploaded files are removed afterwards.
+  const keys = await studentSubmissionKeys(db, id);
   const deleted = await db
     .delete(users)
     .where(and(studentScope(institutionId), eq(users.id, id)))
     .returning({ id: users.id });
   if (deleted.length === 0) throw notFound('Student');
+  await deleteStorageObjects(keys, { studentId: id });
 }
 
 export const resetStudentPassword = (institutionId: string, id: string): Promise<PasswordResetResult> =>

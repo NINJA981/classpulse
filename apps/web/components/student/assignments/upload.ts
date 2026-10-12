@@ -1,5 +1,5 @@
 import { SUBMISSION_FILE_MAX_MB, SUBMISSION_FILE_TYPES, type ApiErrorBody, type StudentAssignment } from '@classpulse/shared';
-import { ApiError } from '@/lib/api';
+import { ApiError, isSafeApiPath } from '@/lib/api';
 
 /** `accept` attribute for the file picker (MIME types and extensions). */
 export const SUBMISSION_ACCEPT = Object.entries(SUBMISSION_FILE_TYPES)
@@ -36,8 +36,13 @@ export function uploadSubmission(
   onProgress?: (pct: number) => void,
 ): Promise<StudentAssignment> {
   return new Promise<StudentAssignment>((resolve, reject) => {
+    const path = `/student/assignments/${assignmentId}/submission`;
+    if (!isSafeApiPath(path)) {
+      reject(new ApiError(0, 'BAD_REQUEST', 'This link is not valid.'));
+      return;
+    }
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/api/student/assignments/${assignmentId}/submission`);
+    xhr.open('POST', `/api${path}`);
     xhr.withCredentials = true;
     xhr.timeout = 10 * 60_000;
     xhr.upload.onprogress = (e) => {

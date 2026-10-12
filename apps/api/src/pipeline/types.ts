@@ -127,6 +127,8 @@ export interface GradeResult {
   feedback: string;
   note: string;
   model: string;
+  /** The model reported text in the work addressed to the grader/AI (possible prompt injection). */
+  injectionSuspected?: boolean;
 }
 
 export type { RemedialPlan };

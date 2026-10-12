@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileUp, KeyRound, Mail, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
+import { Download, FileUp, KeyRound, Mail, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
 import type { CreatedWithPassword, Paginated, Student } from '@classpulse/shared';
 import {
   Badge,
@@ -24,7 +24,8 @@ import {
   TR,
   useToast,
 } from '@/components/ui';
-import { api } from '@/lib/api';
+import { api, errorMessage } from '@/lib/api';
+import { downloadFromApi } from '@/lib/download';
 import { adminKeys, useSections } from '@/components/admin/queries';
 import { ConfirmDialog, OneTimePasswordDialog } from '@/components/admin/common';
 import { Pager } from '@/components/admin/pager';
@@ -58,6 +59,19 @@ export default function StudentsPage() {
   const [created, setCreated] = useState<CreatedWithPassword<Student> | null>(null);
   const [deleting, setDeleting] = useState<Student | null>(null);
   const resetPw = useResetPassword('students');
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  // Right of access: everything held about the student, as a JSON file.
+  async function downloadData(s: Student) {
+    setExportingId(s.id);
+    try {
+      await downloadFromApi('GET', `/admin/students/${s.id}/export`, { fallbackName: `classpulse-student-${s.rollNumber}.json` });
+      toast(`Data for “${s.name}” downloaded`);
+    } catch (err) {
+      toast(errorMessage(err), 'error');
+    } finally {
+      setExportingId(null);
+    }
+  }
   const invite = useSendInvite('students');
 
   const remove = useMutation({
@@ -228,6 +242,16 @@ export default function StudentsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            icon={<Download className="size-3.5" aria-hidden />}
+                            aria-label={`Download data for ${s.name}`}
+                            loading={exportingId === s.id}
+                            onClick={() => void downloadData(s)}
+                          >
+                            Download data
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             icon={<Trash2 className="size-3.5" aria-hidden />}
                             aria-label={`Delete student ${s.name}`}
                             onClick={() => {
@@ -276,15 +300,23 @@ export default function StudentsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onClose={() => setDeleting(null)}
-        title="Delete student?"
+        title="Delete student permanently?"
         description={
           deleting && (
             <>
-              <strong>{deleting.name}</strong> (roll {deleting.rollNumber}) will be removed along with their enrolments.
+              <p>
+                <strong>{deleting.name}</strong> (roll {deleting.rollNumber}) and <strong>all of their data</strong> will be erased:
+                enrolments, quiz, exam and live-quiz results, assignment submissions and uploaded files, and guardian contacts.
+                This cannot be undone.
+              </p>
+              <p className="mt-2">
+                If the student or a parent asked for a copy, use <strong>Download data</strong> first. To pause access instead,
+                disable the account.
+              </p>
             </>
           )
         }
-        confirmLabel="Delete student"
+        confirmLabel="Delete permanently (erases all data)"
         onConfirm={() => deleting && remove.mutate(deleting)}
         pending={remove.isPending}
         error={remove.error}

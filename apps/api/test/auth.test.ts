@@ -1,9 +1,12 @@
+import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SESSION_COOKIE } from '@classpulse/shared';
+import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { auditLogs, users } from '../src/db/schema/index.js';
-import { anon, as, createInstitution, createUser, createWorld, TEST_PASSWORD } from './helpers.js';
+import { keyFor } from '../src/lib/keys.js';
+import { anon, as, createInstitution, createUser, createWorld, sessionCookie, TEST_PASSWORD } from './helpers.js';
 
 function sessionCookieFrom(res: { headers: Record<string, unknown> }): string {
   const raw = res.headers['set-cookie'];
@@ -73,6 +76,28 @@ describe('auth', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
     });
+
+    it('refuses unknown fields (they would vary the rate-limit key)', async () => {
+      const res = await anon().post('/api/auth/teacher/login').send({ email: world.teacher.email, password: TEST_PASSWORD, rollNumber: 'x' });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_FAILED');
+      expect(res.headers['set-cookie']).toBeUndefined();
+    });
+
+    it('records failed sign-ins without the password or the full identifier', async () => {
+      await anon().post('/api/auth/teacher/login').send({ email: world.teacher.email, password: 'wrong-secret-pw' });
+      await anon().post('/api/auth/student/login').send({ rollNumber: 'NO-SUCH-ROLL', password: 'wrong-secret-pw' });
+      const rows = await db.select().from(auditLogs).where(eq(auditLogs.action, 'auth.login.failed'));
+      expect(rows).toHaveLength(2);
+      const staff = rows.find((r) => (r.metadata as { kind: string }).kind === 'staff')!;
+      expect(staff.metadata).toMatchObject({ endpoint: '/teacher/login', reason: 'invalid_credentials' });
+      expect((staff.metadata as { identifier: string }).identifier).toMatch(/^.{1,2}\*\*\*@test\.local$/);
+      expect((staff.metadata as { identifierHash: string }).identifierHash).toMatch(/^[0-9a-f]{16}$/);
+      const text = JSON.stringify(rows);
+      expect(text).not.toContain('wrong-secret-pw');
+      expect(text).not.toContain(world.teacher.email!);
+      expect(text).not.toContain('NO-SUCH-ROLL');
+    });
   });
 
   describe('student login', () => {
@@ -93,15 +118,31 @@ describe('auth', () => {
       expect(res.body.user.id).toBe(world.student.id);
     });
 
-    it('requires a school code when several schools share the roll number', async () => {
+    it('requires a school code when several schools share the roll number, without revealing that it exists', async () => {
       const other = await createInstitution({ code: 'OTHER1' });
       await createUser(other.id, 'student', { rollNumber: world.student.rollNumber });
       const missing = await anon()
         .post('/api/auth/student/login')
         .send({ rollNumber: world.student.rollNumber, password: TEST_PASSWORD });
-      expect(missing.status).toBe(400);
+      expect(missing.status).toBe(401);
+      expect(missing.body.error.code).toBe('UNAUTHENTICATED');
       expect(missing.body.error.message).toMatch(/school code/i);
       expect(missing.body.error.details).toEqual({ field: 'institutionCode' });
+      expect(missing.headers['set-cookie']).toBeUndefined();
+
+      // A wrong password for a shared roll number looks exactly like an unknown roll number.
+      const wrongShared = await anon().post('/api/auth/student/login').send({ rollNumber: world.student.rollNumber, password: 'nope-nope' });
+      const unknown = await anon().post('/api/auth/student/login').send({ rollNumber: 'NOBODY-1', password: 'nope-nope' });
+      for (const res of [wrongShared, unknown]) {
+        expect(res.status).toBe(401);
+        expect(res.body.error).toEqual({ code: 'UNAUTHENTICATED', message: 'Invalid roll number or password' });
+      }
+
+      // The school code is case-insensitive.
+      const lower = await anon()
+        .post('/api/auth/student/login')
+        .send({ rollNumber: ` ${world.student.rollNumber} `, password: TEST_PASSWORD, institutionCode: world.institution.code.toLowerCase() });
+      expect(lower.status).toBe(200);
 
       const ok = await anon()
         .post('/api/auth/student/login')
@@ -133,10 +174,49 @@ describe('auth', () => {
       expect((res.headers['set-cookie'] as unknown as string[]).join(';')).toMatch(new RegExp(`${SESSION_COOKIE}=;`));
     });
 
+    it('logout revokes the presented session token and is audited', async () => {
+      const cookie = sessionCookie(world.teacher);
+      expect((await anon().get('/api/auth/me').set('Cookie', cookie)).status).toBe(200);
+      expect((await anon().post('/api/auth/logout').set('Cookie', cookie)).status).toBe(204);
+      // A copy of the token no longer works.
+      expect((await anon().get('/api/auth/me').set('Cookie', cookie)).status).toBe(401);
+      const rows = await db.select().from(auditLogs).where(eq(auditLogs.action, 'auth.logout'));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ actorId: world.teacher.id, institutionId: world.institution.id });
+      // Without a (valid) session it still just clears the cookie.
+      expect((await anon().post('/api/auth/logout').set('Cookie', cookie)).status).toBe(204);
+      expect((await anon().post('/api/auth/logout')).status).toBe(204);
+    });
+
+    it('school tokens carry aud=school and are signed with the derived session key', async () => {
+      const payload = jwt.decode(sessionCookie(world.teacher).split('=')[1]!) as { aud: string };
+      expect(payload.aud).toBe('school');
+      const claims = { sub: world.teacher.id, ver: world.teacher.tokenVersion, role: 'teacher' };
+      const noAudience = jwt.sign(claims, keyFor('school-session'), { expiresIn: '1h' });
+      const rawSecret = jwt.sign(claims, env.JWT_SECRET, { expiresIn: '1h', audience: 'school' });
+      const otherPurpose = jwt.sign(claims, keyFor('platform-session'), { expiresIn: '1h', audience: 'school' });
+      for (const token of [noAudience, rawSecret, otherPurpose]) {
+        expect((await anon().get('/api/auth/me').set('Cookie', `${SESSION_COOKIE}=${token}`)).status).toBe(401);
+      }
+      const good = jwt.sign(claims, keyFor('school-session'), { expiresIn: '1h', audience: 'school' });
+      expect((await anon().get('/api/auth/me').set('Cookie', `${SESSION_COOKIE}=${good}`)).status).toBe(200);
+    });
+
+    it('per-purpose keys differ', () => {
+      const keys = (['school-session', 'platform-session', 'platform-challenge', 'exam-device', 'audit-identifier'] as const).map((p) =>
+        keyFor(p).toString('hex'),
+      );
+      expect(new Set(keys).size).toBe(keys.length);
+      expect(keys).not.toContain(Buffer.from(env.JWT_SECRET).toString('hex'));
+    });
+
     it('set-password routes are public; an unusable link is a 400, never a 401', async () => {
       const preview = await anon().get(`/api/auth/password-token/${'a'.repeat(43)}`);
       expect(preview.status).toBe(400);
       expect(preview.body.error.code).toBe('BAD_REQUEST');
+      const posted = await anon().post('/api/auth/password-token/preview').send({ token: 'a'.repeat(43) });
+      expect(posted.status).toBe(400);
+      expect(posted.body.error.code).toBe('BAD_REQUEST');
       const redeem = await anon().post('/api/auth/set-password').send({ token: 'a'.repeat(43), newPassword: 'Whatever#123' });
       expect(redeem.status).toBe(400);
       expect((await anon().post('/api/auth/forgot-password').send({ email: 'x@y.in' })).status).toBe(204);

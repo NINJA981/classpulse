@@ -31,7 +31,11 @@ export const DEFAULT_INSTITUTION_FEATURES: InstitutionFeatures = {
   teacherTools: true,
 };
 
-/** Per-school limits; null = unlimited. */
+/**
+ * Per-school limits; null = unlimited, except `aiAudioMinutesPerMonth`, where null means the platform
+ * default (the API's DEFAULT_AI_AUDIO_MINUTES_PER_MONTH, 3000 minutes unless configured).
+ * `storageGb` covers lesson audio, submission files and teacher materials; uploads over it are refused.
+ */
 export const InstitutionLimits = z.object({
   maxStudents: z.number().int().min(1).nullable(),
   maxTeachers: z.number().int().min(1).nullable(),

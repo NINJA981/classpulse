@@ -11,7 +11,7 @@ import {
   type RecoveryCodesResponse,
 } from '@classpulse/shared';
 import { authenticatePlatform, currentPlatformAdmin } from '../../middleware/platformAuth.js';
-import { platformLoginLimiter } from '../../middleware/rateLimit.js';
+import { authIpLimiter, platformCodeLimiter, platformLoginLimiter } from '../../middleware/rateLimit.js';
 import { parseBody } from '../../middleware/validate.js';
 import {
   clearPlatformCookie,
@@ -25,13 +25,13 @@ import * as service from './authService.js';
 /** /api/platform/auth — public sign-in steps plus the signed-in admin's own account. */
 export const platformAuthRouter = Router();
 
-platformAuthRouter.post('/login', platformLoginLimiter, async (req, res) => {
+platformAuthRouter.post('/login', authIpLimiter, platformLoginLimiter, async (req, res) => {
   const input = parseBody(req, PlatformLoginInput);
   const body: PlatformLoginResponse = await service.passwordStep(req, input);
   res.json(body);
 });
 
-platformAuthRouter.post('/enroll', platformLoginLimiter, async (req, res) => {
+platformAuthRouter.post('/enroll', authIpLimiter, platformCodeLimiter, async (req, res) => {
   const input = parseBody(req, PlatformEnrollInput);
   const { row, recoveryCodes } = await service.enroll(req, input);
   setPlatformCookie(res, signPlatformToken(row));
@@ -39,7 +39,7 @@ platformAuthRouter.post('/enroll', platformLoginLimiter, async (req, res) => {
   res.json(body);
 });
 
-platformAuthRouter.post('/verify', platformLoginLimiter, async (req, res) => {
+platformAuthRouter.post('/verify', authIpLimiter, platformCodeLimiter, async (req, res) => {
   const input = parseBody(req, PlatformVerifyInput);
   const row = await service.verify(req, input);
   setPlatformCookie(res, signPlatformToken(row));
@@ -68,7 +68,7 @@ platformAuthRouter.post('/change-password', accountAuth, async (req, res) => {
   res.json(body);
 });
 
-platformAuthRouter.post('/recovery-codes/regenerate', authenticatePlatform(), platformLoginLimiter, async (req, res) => {
+platformAuthRouter.post('/recovery-codes/regenerate', authenticatePlatform(), platformCodeLimiter, async (req, res) => {
   const { code } = parseBody(req, RegenerateRecoveryCodesInput);
   const body: RecoveryCodesResponse = { recoveryCodes: await service.regenerateRecoveryCodes(req, currentPlatformAdmin(req), code) };
   res.json(body);

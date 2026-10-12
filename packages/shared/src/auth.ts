@@ -18,21 +18,28 @@ export const SESSION_COOKIE = 'cp_session';
 export const PASSWORD_MIN_LENGTH = 8;
 export const Password = z.string().min(PASSWORD_MIN_LENGTH).max(128);
 
-export const StaffLoginInput = z.object({
+/*
+ * Sign-in and password inputs are strict: unknown fields are refused (400), never silently dropped,
+ * so a client can't vary a request (and its rate-limit bucket) with extra fields.
+ */
+export const StaffLoginInput = z.strictObject({
   email: z.email().trim().toLowerCase(),
   password: z.string().min(1).max(128),
 });
 export type StaffLoginInput = z.infer<typeof StaffLoginInput>;
 
-export const StudentLoginInput = z.object({
+export const StudentLoginInput = z.strictObject({
   rollNumber: z.string().trim().min(1).max(40),
   password: z.string().min(1).max(128),
-  /** Required only when more than one institution exists. */
-  institutionCode: z.string().trim().min(1).max(20).optional(),
+  /**
+   * Optional. Without it the school is found from the roll number; when several schools use the roll
+   * number, a correct password is answered with a 401 whose details are `{ field: 'institutionCode' }`.
+   */
+  institutionCode: z.string().trim().toUpperCase().min(1).max(20).optional(),
 });
 export type StudentLoginInput = z.infer<typeof StudentLoginInput>;
 
-export const ChangePasswordInput = z.object({
+export const ChangePasswordInput = z.strictObject({
   currentPassword: z.string().min(1).max(128),
   newPassword: Password,
 });
@@ -84,6 +91,10 @@ export type EmailDelivery = 'queued' | 'no_email' | 'email_disabled';
 
 export const PasswordTokenParams = z.object({ token: z.string().trim().min(20).max(200) });
 
+/** POST /api/auth/password-token/preview: the token travels in the body (links carry it in the URL fragment). */
+export const PasswordTokenPreviewInput = z.strictObject({ token: z.string().trim().min(20).max(200) });
+export type PasswordTokenPreviewInput = z.infer<typeof PasswordTokenPreviewInput>;
+
 /** Shown on /set-password before the user picks a password. */
 export interface PasswordTokenPreview {
   purpose: PasswordTokenPurpose;
@@ -95,15 +106,15 @@ export interface PasswordTokenPreview {
   expiresAt: IsoDate;
 }
 
-export const SetPasswordInput = z.object({
+export const SetPasswordInput = z.strictObject({
   token: z.string().trim().min(20).max(200),
   newPassword: Password,
 });
 export type SetPasswordInput = z.infer<typeof SetPasswordInput>;
 
 export const ForgotPasswordInput = z.union([
-  z.object({ email: z.email().trim().toLowerCase() }),
-  z.object({
+  z.strictObject({ email: z.email().trim().toLowerCase() }),
+  z.strictObject({
     rollNumber: z.string().trim().min(1).max(40),
     institutionCode: z.string().trim().toUpperCase().min(2).max(20),
   }),

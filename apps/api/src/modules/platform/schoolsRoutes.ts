@@ -140,5 +140,5 @@ schoolsRouter.get('/:id/:view', async (req, res) => {
   const { id, view } = parseParams(req, ViewParams);
   const query = parseQuery(req, PlatformViewQuery);
   await service.assertSchool(id);
-  res.json(await schoolView(id, view, query));
+  res.json(await schoolView(id, view, query, req));
 });

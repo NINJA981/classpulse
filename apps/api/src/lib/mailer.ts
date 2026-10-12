@@ -24,6 +24,9 @@ const smtpSender: Sender = async (msg) => {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_PORT === 465,
+    // On the submission port, refuse to send credentials if the server doesn't offer STARTTLS (no downgrade).
+    requireTLS: env.SMTP_PORT === 587,
+    tls: { minVersion: 'TLSv1.2' },
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   });
   await transport.sendMail({ from: env.MAIL_FROM, to: msg.to, subject: msg.subject, html: msg.html, text: msg.text });

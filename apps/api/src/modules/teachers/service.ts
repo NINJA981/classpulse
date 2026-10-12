@@ -13,9 +13,11 @@ import type {
 import { db } from '../../db/client.js';
 import { institutions, lessons, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashInitialPassword, hashPassword } from '../../lib/crypto.js';
-import { conflict, notFound } from '../../lib/errors.js';
+import { conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { deleteStorageObjects, teacherMaterialKeys } from '../../lib/storageCleanup.js';
 import {
   bumpTokenVersion,
+  EMAIL_UNIQUE,
   resetUserPassword,
   rethrowUserConflict,
   sendAccountLink,
@@ -24,6 +26,17 @@ import {
 import { assertSeatsAvailable } from '../../lib/platformState.js';
 import { issueInvites, issueTokenFor } from '../auth/passwordTokens.js';
 import { findTeachers } from './repo.js';
+
+/**
+ * Emails are unique across every school. The message never says whether the address belongs to
+ * this school or another one, so an admin can't probe other schools' staff lists.
+ */
+export const EMAIL_UNAVAILABLE = "This email can't be used. Use a different address.";
+
+function rethrowTeacherConflict(err: unknown): never {
+  if (isUniqueViolation(err, EMAIL_UNIQUE)) throw conflict(EMAIL_UNAVAILABLE);
+  return rethrowUserConflict(err);
+}
 
 const teacherScope = (institutionId: string) => and(eq(users.institutionId, institutionId), eq(users.role, 'teacher'));
 
@@ -65,7 +78,7 @@ export async function createTeacher(
       mustChangePassword: true,
     })
     .returning()
-    .catch(rethrowUserConflict);
+    .catch(rethrowTeacherConflict);
   const school = await getSchool(institutionId);
   const invite = await issueTokenFor(
     { ...row!, schoolName: school.name, schoolCode: school.code },
@@ -107,7 +120,7 @@ export async function importTeachers(
   const taken = new Set(existing.map((r) => r.v));
   const candidates: ImportRow[] = [];
   for (const r of unique) {
-    if (taken.has(r.email)) skipped.push({ email: r.email, reason: 'Email already in use' });
+    if (taken.has(r.email)) skipped.push({ email: r.email, reason: EMAIL_UNAVAILABLE });
     else candidates.push(r);
   }
 
@@ -154,7 +167,7 @@ export async function importTeachers(
     const row = byEmail.get(p.email);
     if (row) {
       created.push({ id: row.id, name: row.name, email: p.email, initialPassword: p.initialPassword, invite: invites.get(row.id) ?? 'no_email' });
-    } else skipped.push({ email: p.email, reason: 'Email already in use' });
+    } else skipped.push({ email: p.email, reason: EMAIL_UNAVAILABLE });
   }
   return { created, skipped };
 }
@@ -164,7 +177,7 @@ export async function updateTeacher(institutionId: string, id: string, input: Up
     const found = await updateUserRevokingOnEmailChange(teacherScope(institutionId), id, {
       ...input,
       ...(input.status === 'disabled' && { tokenVersion: bumpTokenVersion }),
-    }).catch(rethrowUserConflict);
+    }).catch(rethrowTeacherConflict);
     if (!found) throw notFound('Teacher');
   }
   return getTeacher(institutionId, id);
@@ -174,7 +187,10 @@ export async function deleteTeacher(institutionId: string, id: string): Promise<
   await getTeacher(institutionId, id);
   const [owned] = await db.select({ n: count() }).from(lessons).where(eq(lessons.teacherId, id));
   if ((owned?.n ?? 0) > 0) throw conflict('This teacher owns lessons. Disable the account instead of deleting it.');
+  // Materials rows go with the account (cascade); their files are removed afterwards.
+  const keys = await teacherMaterialKeys(db, id);
   await db.delete(users).where(and(teacherScope(institutionId), eq(users.id, id)));
+  await deleteStorageObjects(keys, { teacherId: id });
 }
 
 export const resetTeacherPassword = (institutionId: string, id: string): Promise<PasswordResetResult> =>

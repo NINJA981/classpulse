@@ -8,6 +8,7 @@
  */
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { AiUsageKind } from '@classpulse/shared';
+import { env } from '../config/env.js';
 import { db } from '../db/client.js';
 import { aiUsage, institutions } from '../db/schema/index.js';
 import { isPipelineError } from '../pipeline/errors.js';
@@ -135,13 +136,23 @@ export async function audioSecondsThisMonth(institutionId: string): Promise<numb
 export const AI_AUDIO_LIMIT_MESSAGE = "This school's monthly AI transcription minutes are used up. Contact your administrator.";
 
 /**
- * Monthly transcription limit (institution.limits.aiAudioMinutesPerMonth; null = unlimited): throws
- * INVALID_STATE when transcribing `addingSec` more seconds would go over this month's allowance.
+ * A school's monthly transcription allowance in minutes: its own limit, else the platform default
+ * (DEFAULT_AI_AUDIO_MINUTES_PER_MONTH). null = unlimited (only when the default is 0).
+ */
+export function effectiveAiAudioMinutes(schoolLimit: number | null | undefined): number | null {
+  if (schoolLimit !== null && schoolLimit !== undefined) return schoolLimit;
+  return env.DEFAULT_AI_AUDIO_MINUTES_PER_MONTH > 0 ? env.DEFAULT_AI_AUDIO_MINUTES_PER_MONTH : null;
+}
+
+/**
+ * Monthly transcription limit (institution.limits.aiAudioMinutesPerMonth, or the platform default when the
+ * school has none): throws INVALID_STATE when transcribing `addingSec` more seconds would go over this
+ * month's allowance.
  */
 export async function assertAiAudioAvailable(institutionId: string, addingSec: number): Promise<void> {
   const state = await institutionState(institutionId);
-  const limitMin = state?.limits.aiAudioMinutesPerMonth;
-  if (limitMin === null || limitMin === undefined) return;
+  const limitMin = effectiveAiAudioMinutes(state?.limits.aiAudioMinutesPerMonth);
+  if (limitMin === null) return;
   const used = await audioSecondsThisMonth(institutionId);
   if (used + Math.max(0, addingSec) > limitMin * 60) throw invalidState(AI_AUDIO_LIMIT_MESSAGE);
 }

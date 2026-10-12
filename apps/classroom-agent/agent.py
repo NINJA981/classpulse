@@ -57,6 +57,9 @@ UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]
 DEVICE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,63}$")
 
 DEFAULT_CONFIG_PATH = "/etc/classpulse/agent.json"
+# Credentials and classroom audio are readable by the agent's own user only.
+PRIVATE_DIR_MODE = 0o700
+PRIVATE_FILE_MODE = 0o600
 
 log = logging.getLogger("classpulse-agent")
 
@@ -176,9 +179,20 @@ def load_config(path: str) -> Config:
     return Config.from_dict(raw)
 
 
+def ensure_private_dir(path: Path) -> Path:
+    """Create a directory (and parents) owner-only, and tighten it if it already exists with a looser mode."""
+    path.mkdir(mode=PRIVATE_DIR_MODE, parents=True, exist_ok=True)
+    try:
+        if path.stat().st_mode & 0o077:
+            os.chmod(path, PRIVATE_DIR_MODE)
+    except OSError:  # not ours (e.g. a path owned by root in tests): leave it
+        pass
+    return path
+
+
 def write_json_atomic(path: Path, data: Any, mode: int | None = None) -> None:
     tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode if mode is not None else 0o644)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode if mode is not None else PRIVATE_FILE_MODE)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, sort_keys=True)
@@ -215,7 +229,7 @@ class Credentials:
 
     def save(self, data_dir: str) -> None:
         p = Credentials.path(data_dir)
-        p.parent.mkdir(parents=True, exist_ok=True)
+        ensure_private_dir(p.parent)
         write_json_atomic(
             p,
             {"device_id": self.device_id, "device_key": self.device_key, "token_sha256": self.token_sha256},
@@ -231,6 +245,26 @@ class Credentials:
 
 class TransientError(Exception):
     """Network problem: retry later."""
+
+
+class RedirectRefused(TransientError):
+    """The server answered with a redirect. Never followed: it would carry the device key to another URL."""
+
+
+class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
+    """urllib's default handler re-sends every request header (including X-Device-Key) to the redirect
+    target, which could be another host or plain HTTP. The agent talks to one fixed server_url, so any
+    redirect means a misconfiguration (http:// instead of https://, wrong path) or an attack: refuse it."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[override]
+        try:
+            fp.close()
+        except Exception:  # noqa: BLE001 - best effort
+            pass
+        raise RedirectRefused(
+            f"{req.get_method()} {req.full_url}: server answered HTTP {code} redirect to {newurl!r}; refused "
+            "(check server_url: it must be the exact https:// address of ClassPulse)"
+        )
 
 
 class ApiError(Exception):
@@ -264,6 +298,8 @@ class Api:
         self._ssl = ssl.create_default_context()
         if ca_file:
             self._ssl.load_verify_locations(cafile=ca_file)
+        # Same TLS settings as urlopen(context=...), but redirects raise instead of being followed.
+        self._opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=self._ssl), _RefuseRedirects())
 
     def _request(
         self,
@@ -288,7 +324,7 @@ class Api:
         hdrs.update(headers or {})
         req = urllib.request.Request(self.base_url + path, data=data, method=method, headers=hdrs)
         try:
-            with urllib.request.urlopen(req, timeout=timeout or self.timeout, context=self._ssl) as resp:
+            with self._opener.open(req, timeout=timeout or self.timeout) as resp:
                 raw = resp.read()
         except urllib.error.HTTPError as exc:
             try:
@@ -372,8 +408,8 @@ class Backoff:
 
 class Buffer:
     def __init__(self, data_dir: str):
-        self.root = Path(data_dir) / "buffer"
-        self.root.mkdir(parents=True, exist_ok=True)
+        ensure_private_dir(Path(data_dir))
+        self.root = ensure_private_dir(Path(data_dir) / "buffer")
         self._lock = threading.RLock()
         self.changed = threading.Event()
 
@@ -401,7 +437,7 @@ class Buffer:
             existing = self.manifest(session_id)
             if existing:
                 return existing
-            self._dir(session_id).mkdir(parents=True, exist_ok=True)
+            ensure_private_dir(self._dir(session_id))
             m = {
                 "sessionId": session_id.lower(),
                 "lessonId": lesson_id,
@@ -425,7 +461,8 @@ class Buffer:
                 raise KeyError(session_id)
             path = self._dir(session_id) / f"{idx:05d}.pcm"
             tmp = path.with_suffix(".pcm.tmp")
-            with open(tmp, "wb") as fh:
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, PRIVATE_FILE_MODE)
+            with os.fdopen(fd, "wb") as fh:
                 fh.write(data)
                 fh.flush()
                 os.fsync(fh.fileno())
@@ -941,7 +978,7 @@ class Agent:
     def __init__(self, cfg: Config, api: Api | None = None, source_factory: Callable[[threading.Event], AudioSource] | None = None,
                  disk_free_mb: Callable[[], float | None] | None = None):
         self.cfg = cfg
-        Path(cfg.data_dir).mkdir(parents=True, exist_ok=True)
+        ensure_private_dir(Path(cfg.data_dir))
         self.api = api or Api(cfg.server_url, cfg.device_id, ca_file=cfg.ca_file)
         self.buffer = Buffer(cfg.data_dir)
         self.recorder = Recorder(cfg, self.buffer, source_factory)

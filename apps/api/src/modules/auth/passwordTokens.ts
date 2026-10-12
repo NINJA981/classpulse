@@ -80,7 +80,8 @@ const loginLine = (t: TokenTarget) =>
 const EXPIRY_NOTE = `This link expires in ${PASSWORD_TOKEN_TTL_HOURS} hours and can be used only once.`;
 
 function composeEmail(t: TokenTarget & { email: string }, purpose: PasswordTokenPurpose, rawToken: string): MailMessage {
-  const button = { url: appUrl(`/set-password?token=${encodeURIComponent(rawToken)}`) };
+  // The token goes in the fragment: browsers never send it, so it stays out of proxy logs and Referer headers.
+  const button = { url: appUrl(`/set-password#token=${encodeURIComponent(rawToken)}`) };
   if (purpose === 'invite') {
     return renderEmail({
       to: t.email,

@@ -42,7 +42,7 @@ async function linkFromEmail(request: APIRequestContext, to: string, subject: st
     .poll(
       async () => {
         const mail = (await emailsTo(request, to)).find((m) => m.subject === subject);
-        link = /https?:\/\/\S+\/set-password\?token=[A-Za-z0-9_%-]+/.exec(mail?.text ?? '')?.[0] ?? '';
+        link = /https?:\/\/\S+\/set-password[#?]token=[A-Za-z0-9_%-]+/.exec(mail?.text ?? '')?.[0] ?? '';
         return link;
       },
       { timeout: 30_000, message: `waiting for "${subject}" to ${to}` },
@@ -50,7 +50,7 @@ async function linkFromEmail(request: APIRequestContext, to: string, subject: st
     .not.toBe('');
   // The email uses PUBLIC_ORIGIN; open it against the app under test.
   const url = new URL(link);
-  return `${url.pathname}${url.search}`;
+  return `${url.pathname}${url.search}${url.hash}`; // links carry the token in the fragment (#token=…)
 }
 
 async function staffLogin(page: Page, email: string, password: string, role: 'admin' | 'teacher') {

@@ -2,7 +2,10 @@
 # Restore a ClassPulse backup produced by backup.sh.
 #   sudo ./infra/restore.sh /var/backups/classpulse/daily/classpulse-<stamp>.tar.age ~/.config/age/classpulse.key
 # This REPLACES the current database and stored audio. The api/worker are stopped during restore.
+# Reads both archive formats (see backup.sh); decrypted data is streamed straight into the containers and is
+# never written to disk.
 set -euo pipefail
+umask 077
 
 ARCHIVE="${1:?usage: restore.sh <archive.tar.age> <age-identity-file>}"
 IDENTITY="${2:?usage: restore.sh <archive.tar.age> <age-identity-file>}"
@@ -15,21 +18,39 @@ fi
 # shellcheck source=lib-docker.sh
 source "$HERE/lib-docker.sh"
 
-read -r -p "This will overwrite the live database and audio. Type RESTORE to continue: " answer
-[ "$answer" = "RESTORE" ] || { echo "Aborted."; exit 1; }
-
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-age -d -i "$IDENTITY" "$ARCHIVE" | tar -C "$WORK" -xf -
+
+# v1: one age stream around tar(db.dump, storage.tar.gz). v2: tar(db.dump.age, storage.tar.gz.age).
+if [ "$(head -c 21 "$ARCHIVE" | tr -d '\0')" = "age-encryption.org/v1" ]; then
+  FORMAT=v1
+  db_stream() { age -d -i "$IDENTITY" "$ARCHIVE" | tar -xOf - db.dump; }
+  storage_stream() { age -d -i "$IDENTITY" "$ARCHIVE" | tar -xOf - storage.tar.gz; }
+else
+  FORMAT=v2
+  tar -C "$WORK" -xf "$ARCHIVE" db.dump.age storage.tar.gz.age # still encrypted
+  db_stream() { age -d -i "$IDENTITY" "$WORK/db.dump.age"; }
+  storage_stream() { age -d -i "$IDENTITY" "$WORK/storage.tar.gz.age"; }
+fi
+
+# Check the key and the archive's integrity before touching anything (age authenticates every chunk).
+echo "Verifying $ARCHIVE ($FORMAT)…"
+db_stream >/dev/null || { echo "The database dump does not decrypt cleanly (wrong key or damaged archive)."; exit 1; }
+magic="$(db_stream | head -c 5 || true)" # head closes the pipe early; only the bytes matter here
+[ "$magic" = "PGDMP" ] || { echo "The database dump is not a pg_dump custom-format archive."; exit 1; }
+storage_stream | tar -tzf - >/dev/null || { echo "The audio archive does not decrypt cleanly."; exit 1; }
+
+read -r -p "This will overwrite the live database and audio. Type RESTORE to continue: " answer
+[ "$answer" = "RESTORE" ] || { echo "Aborted."; exit 1; }
 
 echo "Stopping application services…"
 app_stop worker web api
 
 echo "Restoring PostgreSQL…"
-pg_exec pg_restore -U classpulse -d classpulse --clean --if-exists --no-owner < "$WORK/db.dump"
+db_stream | pg_exec pg_restore -U classpulse -d classpulse --clean --if-exists --no-owner
 
 echo "Restoring stored audio…"
-storage_sh 'rm -rf /data/storage/* && tar -C /data -xzf -' < "$WORK/storage.tar.gz"
+storage_stream | storage_sh 'rm -rf /data/storage/* && tar -C /data -xzf -'
 
 echo "Starting application services…"
 app_start api worker web

@@ -48,6 +48,18 @@ async function deviceAuth(req: Request, _res: Response, next: NextFunction) {
   next();
 }
 
+/**
+ * Everything but the heartbeat is refused while the device's school is suspended (403
+ * SCHOOL_SUSPENDED), classroom devices are switched off for it (403 FEATURE_DISABLED) or the
+ * platform blocks sign-ins for maintenance (503 MAINTENANCE): no commands, no uploads, so no paid
+ * transcription. The agent keeps its buffered audio and retries later. The heartbeat still works
+ * and reports the state in `access`.
+ */
+async function deviceAccess(req: Request, _res: Response, next: NextFunction) {
+  const blocked = await service.deviceBlock(currentDevice(req));
+  next(blocked ?? undefined);
+}
+
 function currentDevice(req: Request): service.DeviceRow {
   if (!req.device) throw unauthenticated('Device credentials required');
   return req.device;
@@ -64,6 +76,8 @@ router.post('/me/heartbeat', async (req, res) => {
   const input = parseBody(req, DeviceHeartbeatInput);
   res.json(await service.recordHeartbeat(currentDevice(req), input, req.ip ?? null));
 });
+
+router.use('/me', deviceAccess);
 
 const CommandsQuery = z.object({ wait: z.coerce.number().int().min(0).max(25).default(0) });
 

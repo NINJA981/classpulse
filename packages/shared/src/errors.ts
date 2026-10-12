@@ -8,6 +8,8 @@ export const ERROR_CODES = [
   'RATE_LIMITED',
   'PAYLOAD_TOO_LARGE',
   'UNSUPPORTED_MEDIA_TYPE',
+  /** The file is of an accepted type but couldn't be processed safely (too large when expanded, timed out) (422). */
+  'UNPROCESSABLE',
   'PASSWORD_CHANGE_REQUIRED',
   'INVALID_STATE',
   'UPSTREAM_FAILED',

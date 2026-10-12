@@ -116,6 +116,41 @@ class LocalStorage implements Storage {
 
 export const storage: Storage = new LocalStorage(env.STORAGE_DIR);
 
+/** Temp files older than this are leftovers of crashed or killed uploads and transcodes. */
+export const TMP_MAX_AGE_MS = 2 * 3600_000;
+
+/**
+ * Delete entries under storage.tmpDir not modified for `maxAgeMs` (files first, then directories that
+ * are old and empty). Symlinks are removed, never followed. Returns the number of files removed.
+ * Uploads in progress keep touching their file, so they are never old enough to be swept.
+ */
+export async function sweepTmpDir(maxAgeMs = TMP_MAX_AGE_MS, now = Date.now()): Promise<number> {
+  const cutoff = now - maxAgeMs;
+  let removed = 0;
+  const sweep = async (dir: string): Promise<void> => {
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await sweep(full);
+        const st = await fs.lstat(full).catch(() => null);
+        if (st && st.mtimeMs < cutoff) await fs.rmdir(full).catch(() => undefined); // only succeeds when empty
+        continue;
+      }
+      const st = await fs.lstat(full).catch(() => null);
+      if (!st || st.mtimeMs >= cutoff) continue;
+      try {
+        await fs.rm(full, { force: true });
+        removed++;
+      } catch {
+        // In use (Windows) or already gone: the next sweep retries.
+      }
+    }
+  };
+  await sweep(storage.tmpDir);
+  return removed;
+}
+
 export const storageKeys = {
   lessonAudio: (lessonId: string) => `audio/${lessonId}/${randomUUID()}.wav`,
   recordingChunk: (sessionId: string, idx: number) => `recordings/${sessionId}/${String(idx).padStart(5, '0')}.pcm`,

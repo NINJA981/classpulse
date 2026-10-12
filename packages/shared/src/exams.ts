@@ -296,10 +296,18 @@ export interface StudentExamResult {
         stem: string;
         options: string[];
         selectedIndex: number | null;
-        correctIndex: number;
+        /** Null until the answer key is released (see answerKeyAvailableAt). */
+        correctIndex: number | null;
         isCorrect: boolean;
+        /** Null until the answer key is released, or when the question has none. */
         explanation: string | null;
       }[]
     | null;
   resultsAvailableAt: IsoDate | null;
+  /**
+   * Results shown before the exam is over (results "immediately") hold back the correct answers
+   * and explanations while classmates may still be writing: this is when they will be shown.
+   * Null once they are shown (or when results are hidden).
+   */
+  answerKeyAvailableAt: IsoDate | null;
 }

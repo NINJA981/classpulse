@@ -10,6 +10,7 @@ import { router as institutions } from './institutions/routes.js';
 import { router as rooms } from './rooms/routes.js';
 import { router as teachers } from './teachers/routes.js';
 import { router as students } from './students/routes.js';
+import { router as studentExport } from './students/exportRoutes.js';
 import { router as sections } from './sections/routes.js';
 import { router as timetable } from './timetable/routes.js';
 import { router as settings } from './settings/routes.js';
@@ -28,6 +29,7 @@ import { examsRouter } from './exams/routes.js';
 import { examsStudentRouter } from './exams/studentRoutes.js';
 import { mailCaptureRouter } from './testing/routes.js';
 import { platformRouter } from './platform/routes.js';
+import { offboardingRouter } from './platform/offboardingRoutes.js';
 import { statsRouter } from './platform/stats.js';
 import { opsRouter } from './platform/opsRoutes.js';
 import { auditRouter } from './platform/opsAudit.js';
@@ -52,6 +54,8 @@ export const apiRoutes: ReadonlyArray<readonly [string, Router]> = [
   ['/api/admin/institution', institutions],
   ['/api/admin/rooms', rooms],
   ['/api/admin/teachers', teachers],
+  // Student data export (right of access); its routes authenticate themselves.
+  ['/api/admin/students', studentExport],
   ['/api/admin/students', students],
   ['/api/admin/sections', sections],
   ['/api/admin/timetable', timetable],
@@ -81,6 +85,8 @@ export const apiRoutes: ReadonlyArray<readonly [string, Router]> = [
   ['/api/platform/stats', platform(statsRouter)],
   ['/api/platform/ops', platform(opsRouter)],
   ['/api/platform/audit', platform(auditRouter)],
+  // School export and hard delete (offboarding); each route authenticates the platform session itself.
+  ['/api/platform/schools', offboardingRouter],
   ['/api/platform', platformRouter],
   // End-to-end tests only (E2E_MAIL_CAPTURE; refused in production)
   ...(env.E2E_MAIL_CAPTURE ? [['/api/test', mailCaptureRouter()] as const] : []),

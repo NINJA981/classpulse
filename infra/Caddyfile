@@ -2,6 +2,11 @@
 # DOMAIN=app.example.org → automatic Let's Encrypt certificates.
 # DOMAIN=localhost       → Caddy's internal CA (local production smoke tests).
 # PLATFORM_HOST=ops.example.org → the super admin console's own address (it is invisible on DOMAIN).
+#
+# This Caddy IS the edge: clients connect to it directly. It deliberately does NOT set trusted_proxies, so
+# reverse_proxy replaces any client-sent X-Forwarded-For with the real peer address and a client cannot
+# forge its IP. The API trusts exactly one hop (TRUST_PROXY_HOPS=1). Compare infra/Caddyfile.coolify,
+# which sits behind Coolify's Traefik and must trust it.
 {
 	email {$ACME_EMAIL:admin@localhost}
 }
@@ -10,6 +15,8 @@
 	encode zstd gzip
 
 	header {
+		# HSTS preload is NOT set: it commits every subdomain of the registered domain to HTTPS for good.
+		# Recommended once every subdomain is HTTPS-only: add "; preload" and submit at hstspreload.org.
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
@@ -17,9 +24,36 @@
 		-Server
 	}
 
+	# Security headers for the web app's pages. /api and /socket.io are excluded: the API sets its own
+	# (stricter) helmet CSP and X-Frame-Options, and this must not override them.
+	# - script-src needs 'unsafe-inline': Next.js emits inline bootstrap scripts without nonces. A
+	#   nonce-based script-src set from apps/web/proxy.ts is the follow-up that lets this drop it.
+	# - connect-src: 'self' covers same-host wss: in current browsers; wss://<this host> is for older Safari.
+	# - frame-src: the simulation allow-list (apps/api/src/modules/resources/simulations.ts). Keep in sync.
+	@pages not path /api/* /socket.io/*
+	header @pages {
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' wss://{http.request.host}; worker-src 'self'; manifest-src 'self'; frame-src https://phet.colorado.edu https://www.geogebra.org https://geogebra.org https://www.desmos.com https://ophysics.com https://www.olabs.edu.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+		X-Frame-Options "DENY"
+		Cross-Origin-Opener-Policy "same-origin"
+	}
+
+	# JSON access log without secrets. Cookie, Set-Cookie and Authorization are already redacted by Caddy.
+	# Removed here: the long-lived device key, the exam device token, set-password tokens in the query
+	# string (?token=) and in /api/auth/password-token/<token>.
 	log {
 		output stdout
-		format json
+		format filter {
+			wrap json
+			fields {
+				request>headers>X-Device-Key delete
+				request>headers>X-Exam-Token delete
+				request>uri multi_regexp {
+					regexp "\?token=[^&#]*" "?token=REDACTED"
+					regexp "&token=[^&#]*" "&token=REDACTED"
+					regexp "/api/auth/password-token/[^/?#]+" "/api/auth/password-token/REDACTED"
+				}
+			}
+		}
 	}
 }
 
@@ -80,7 +114,7 @@
 		redir * /platform 302
 	}
 
-	@notConsole not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt
+	@notConsole not path /platform /platform/* /api/platform/* /api/status /_next/* /favicon.ico /icon* /apple-icon* /icons/* /manifest.webmanifest /sw.js /offline /robots.txt /privacy /terms
 	handle @notConsole {
 		respond "Not found" 404
 	}

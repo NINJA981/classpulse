@@ -4,6 +4,7 @@ import { db, type DbOrTx } from '../../db/client.js';
 import { enrollments, lessons, rooms, sections, sectionTeachers, users } from '../../db/schema/index.js';
 import { generateJoinCode } from '../../lib/crypto.js';
 import { badRequest, conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { deleteStorageObjects, sectionSubmissionKeys } from '../../lib/storageCleanup.js';
 import { addDays } from '../../lib/time.js';
 import { findStudents } from '../students/repo.js';
 import { findSections } from './repo.js';
@@ -109,7 +110,10 @@ export async function deleteSection(institutionId: string, id: string): Promise<
   await getSection(institutionId, id);
   const [row] = await db.select({ n: count() }).from(lessons).where(eq(lessons.sectionId, id));
   if ((row?.n ?? 0) > 0) throw conflict('This section has lessons and cannot be deleted');
+  // Its assignments and their submissions go with it (cascade); remove the uploaded files too.
+  const keys = await sectionSubmissionKeys(db, id);
   await db.delete(sections).where(sectionScope(institutionId, id));
+  await deleteStorageObjects(keys, { sectionId: id });
 }
 
 export async function rotateJoinCode(institutionId: string, id: string): Promise<Section> {
@@ -136,10 +140,17 @@ export async function listSectionStudents(institutionId: string, id: string): Pr
   return findStudents(db, and(eq(users.institutionId, institutionId), eq(users.role, 'student'), enrolledIn(id)));
 }
 
+/** Enrolment changes made by setSectionStudents (for the audit trail). */
+export interface EnrolmentChange {
+  added: number;
+  removed: number;
+}
+
 export async function setSectionStudents(
   institutionId: string,
   id: string,
   input: SetSectionStudentsInput,
+  change: EnrolmentChange = { added: 0, removed: 0 },
 ): Promise<Student[]> {
   const studentIds = [...new Set(input.studentIds)];
   await db.transaction(async (tx) => {
@@ -153,18 +164,22 @@ export async function setSectionStudents(
         throw badRequest('Unknown student', [{ path: 'studentIds', message: 'One or more students were not found' }]);
       }
     }
-    await tx
+    const removed = await tx
       .delete(enrollments)
       .where(
         studentIds.length > 0
           ? and(eq(enrollments.sectionId, id), notInArray(enrollments.studentId, studentIds))
           : eq(enrollments.sectionId, id),
-      );
+      )
+      .returning({ id: enrollments.studentId });
+    change.removed = removed.length;
     if (studentIds.length > 0) {
-      await tx
+      const added = await tx
         .insert(enrollments)
         .values(studentIds.map((studentId) => ({ sectionId: id, studentId })))
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: enrollments.studentId });
+      change.added = added.length;
     }
   });
   return listSectionStudents(institutionId, id);

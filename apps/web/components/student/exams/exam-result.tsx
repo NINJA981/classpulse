@@ -67,6 +67,12 @@ export function ExamResultView({ examId, autoSubmitted }: { examId: string; auto
               <p className="text-ink-2">Your teacher has chosen not to share scores for this exam.</p>
             </Note>
           )}
+          {r.score && r.answerKeyAvailableAt && (
+            <Note tone="info" icon={<Clock className="size-4" aria-hidden />}>
+              Correct answers and explanations will be shown after {formatDateTime(r.answerKeyAvailableAt)}, when
+              everyone has finished.
+            </Note>
+          )}
           <ButtonLink href="/student/exams" variant="secondary" className="self-start">
             Back to exams
           </ButtonLink>
@@ -105,7 +111,7 @@ export function ExamResultView({ examId, autoSubmitted }: { examId: string; auto
                       <dt className="text-xs font-bold text-ink-2">Your answer</dt>
                       <dd className="font-semibold break-words">{optionText(a, a.selectedIndex)}</dd>
                     </div>
-                    {!a.isCorrect && (
+                    {!a.isCorrect && a.correctIndex !== null && (
                       <div className="rounded-control border border-success/40 bg-success-soft px-3 py-2">
                         <dt className="text-xs font-bold text-ink-2">Correct answer</dt>
                         <dd className="font-semibold break-words">{optionText(a, a.correctIndex)}</dd>

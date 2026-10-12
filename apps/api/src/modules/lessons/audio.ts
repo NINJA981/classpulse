@@ -11,7 +11,7 @@ import { lessons } from '../../db/schema/index.js';
 import { assertAiAudioAvailable } from '../../lib/aiUsage.js';
 import { enqueueLessonGeneration } from '../../jobs/queue.js';
 import { storage } from '../../lib/storage.js';
-import { AppError, notFound } from '../../lib/errors.js';
+import { AppError, invalidState, notFound } from '../../lib/errors.js';
 import type { LessonSourceType, QuizRequest } from '@classpulse/shared';
 
 export interface AttachAudioInput {
@@ -50,7 +50,8 @@ export async function attachLessonAudio(input: AttachAudioInput, tx: DbOrTx = db
  * `request` null transcribes only (the lesson ends `transcribed`, waiting for the
  * teacher's quiz settings); otherwise the job also generates the quiz.
  * Callers must already have validated ownership and state. Refused (INVALID_STATE) when the job would
- * transcribe and the school's monthly AI transcription minutes would be exceeded.
+ * transcribe audio longer than MAX_LESSON_AUDIO_SEC, or the school's monthly AI transcription minutes
+ * would be exceeded.
  */
 export async function queueLessonGeneration(lessonId: string, request: QuizRequest | null): Promise<string> {
   const [current] = await db
@@ -66,7 +67,16 @@ export async function queueLessonGeneration(lessonId: string, request: QuizReque
     .from(lessons)
     .where(eq(lessons.id, lessonId));
   if (!current) throw notFound('Lesson');
-  if (!current.reusesTranscript) await assertAiAudioAvailable(current.institutionId, current.durationSec ?? 0);
+  if (!current.reusesTranscript) {
+    // Global cap for every source (uploads are cut at the limit; device recordings are checked here).
+    if ((current.durationSec ?? 0) > env.MAX_LESSON_AUDIO_SEC + 1) {
+      const message = `This recording is longer than the ${Math.round(env.MAX_LESSON_AUDIO_SEC / 60)}-minute limit and can't be transcribed.`;
+      // Fail visibly (and leave nothing in `queued` for stuck-lesson recovery to retry forever).
+      await db.update(lessons).set({ status: 'failed', failureReason: message, progressMessage: null }).where(eq(lessons.id, lessonId));
+      throw invalidState(message);
+    }
+    await assertAiAudioAvailable(current.institutionId, current.durationSec ?? 0);
+  }
   const [row] = await db
     .update(lessons)
     .set({

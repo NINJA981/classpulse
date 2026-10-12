@@ -21,23 +21,33 @@ sys.exit(0 if sys.version_info >= (3, 11) else 1)
 PY
 command -v arecord >/dev/null || { echo "Installing alsa-utils (arecord)…"; apt-get update -qq && apt-get install -y -qq alsa-utils; }
 
-# Dedicated unprivileged system user, allowed to use the sound card.
+# Dedicated unprivileged system user with its OWN primary group. It is also in `audio` to use the sound card,
+# but nothing it owns is shared with `audio` (on a Pi the desktop user is in that group too).
+getent group classpulse >/dev/null || groupadd --system classpulse
 if ! id classpulse >/dev/null 2>&1; then
-  useradd --system --home-dir "$DATA_DIR" --no-create-home --shell /usr/sbin/nologin --gid audio classpulse
+  useradd --system --home-dir "$DATA_DIR" --no-create-home --shell /usr/sbin/nologin --gid classpulse classpulse
 fi
-usermod -a -G audio classpulse
+usermod -g classpulse -a -G audio classpulse   # upgrades: older installs used `audio` as the primary group
 
 install -d -m 0755 "$APP_DIR"
 install -m 0755 "$SRC_DIR/agent.py" "$APP_DIR/agent.py"
 install -m 0644 "$SRC_DIR/README.md" "$APP_DIR/README.md"
 
-install -d -m 0750 -o root -g audio "$CONF_DIR"
+# Config (holds the one-time enrollment token): root-owned, readable only by the agent's group.
+install -d -m 0750 -o root -g classpulse "$CONF_DIR"
 if [[ ! -f "$CONF_DIR/agent.json" ]]; then
-  install -m 0640 -o root -g audio "$SRC_DIR/agent.example.json" "$CONF_DIR/agent.json"
+  install -m 0640 -o root -g classpulse "$SRC_DIR/agent.example.json" "$CONF_DIR/agent.json"
   CONFIG_CREATED=1
+else
+  chown root:classpulse "$CONF_DIR/agent.json"
+  chmod 0640 "$CONF_DIR/agent.json"
 fi
 
-install -d -m 0750 -o classpulse -g audio "$DATA_DIR" "$DATA_DIR/buffer"
+# State (device key, buffered classroom audio): the agent's user only. Re-applied on upgrade, including to
+# anything an older version left group-readable.
+install -d -m 0700 -o classpulse -g classpulse "$DATA_DIR" "$DATA_DIR/buffer"
+chown -R classpulse:classpulse "$DATA_DIR"
+chmod -R go-rwx "$DATA_DIR"
 
 install -m 0644 "$SRC_DIR/classpulse-agent.service" "$UNIT"
 systemctl daemon-reload

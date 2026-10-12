@@ -88,7 +88,9 @@ opsRouter.get('/logs', async (req, res) => {
 });
 
 opsRouter.get('/logs.csv', async (req, res) => {
-  const csv = await logsCsv(parseQuery(req, LogsQuery));
+  const query = parseQuery(req, LogsQuery);
+  const csv = await logsCsv(query);
+  await audit(req, { action: 'platform.logs.export', metadata: { filters: query } });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${csvFilename('logs')}"`);
   res.setHeader('Cache-Control', 'private, no-store');

@@ -1,7 +1,7 @@
 'use client';
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PASSWORD_MIN_LENGTH, ROLE_HOME, type PasswordTokenPreview, type SessionResponse } from '@classpulse/shared';
 import { Button, ButtonLink, Field, InlineError, Input, LoadingBlock } from '@/components/ui';
@@ -29,9 +29,39 @@ function InvalidLink({ message }: { message?: string }) {
   );
 }
 
+/**
+ * The link's token. Emails put it in the URL fragment (#token=…), which browsers never send to a
+ * server, so it stays out of access logs and Referer headers. Older links used ?token=….
+ */
+function readLinkToken(): string {
+  const fromHash = new URLSearchParams(window.location.hash.slice(1)).get('token');
+  return (fromHash ?? new URLSearchParams(window.location.search).get('token') ?? '').trim();
+}
+
+const subscribeToHash = (onChange: () => void) => {
+  window.addEventListener('hashchange', onChange);
+  return () => window.removeEventListener('hashchange', onChange);
+};
+
+/** The token, or null before the page has hydrated (the server never sees the fragment). */
+function useLinkToken(): string | null {
+  const token = useSyncExternalStore(subscribeToHash, readLinkToken, () => null);
+  useEffect(() => {
+    // Move a token from an older ?token= link into the fragment, so a reload doesn't send it to the server.
+    const query = new URLSearchParams(window.location.search);
+    const legacy = query.get('token');
+    if (legacy === null) return;
+    query.delete('token');
+    const rest = query.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}#token=${encodeURIComponent(legacy.trim())}`);
+  }, []);
+  return token;
+}
+
 function SetPasswordForm() {
   const router = useRouter();
-  const token = useSearchParams().get('token')?.trim() ?? '';
+  const linkToken = useLinkToken();
+  const token = linkToken ?? '';
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
   const [pending, setPending] = useState(false);
@@ -39,7 +69,8 @@ function SetPasswordForm() {
 
   const preview = useQuery({
     queryKey: ['auth', 'password-token', token],
-    queryFn: ({ signal }) => api.get<PasswordTokenPreview>(`/auth/password-token/${encodeURIComponent(token)}`, undefined, signal),
+    // POST with the token in the body: a URL path would put it in the router's access log.
+    queryFn: () => api.post<PasswordTokenPreview>('/auth/password-token/preview', { token }),
     enabled: token.length > 0,
     retry: false,
     staleTime: Infinity,
@@ -63,6 +94,7 @@ function SetPasswordForm() {
     }
   }
 
+  if (linkToken === null) return <LoadingBlock label="Checking your link…" />;
   if (!token) return <InvalidLink />;
   if (preview.isPending) return <LoadingBlock label="Checking your link…" />;
   if (preview.error) {
@@ -105,7 +137,6 @@ export default function SetPasswordPage() {
   return (
     <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-md border border-line-strong bg-surface p-6 shadow-hard rounded-card sm:p-8">
-        {/* useSearchParams needs a Suspense boundary so the page can be prerendered. */}
         <Suspense fallback={<LoadingBlock label="Loading…" />}>
           <SetPasswordForm />
         </Suspense>

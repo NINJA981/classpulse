@@ -1,5 +1,5 @@
 import type { ApiErrorBody } from '@classpulse/shared';
-import { ApiError } from '@/lib/api';
+import { ApiError, isSafeApiPath } from '@/lib/api';
 
 export interface UploadHandle<T> {
   promise: Promise<T>;
@@ -30,6 +30,10 @@ export function uploadFile<T>(
   const url = path.startsWith('/api') ? path : `/api${path}`;
 
   const promise = new Promise<T>((resolve, reject) => {
+    if (!isSafeApiPath(path)) {
+      reject(new ApiError(0, 'BAD_REQUEST', 'This link is not valid.'));
+      return;
+    }
     xhr.open('POST', url);
     xhr.withCredentials = true;
     xhr.timeout = 30 * 60_000;

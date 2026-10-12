@@ -616,11 +616,21 @@ describe('exams', () => {
       expect(result).toMatchObject({ status: 'submitted', score: { correct: 2, total: 3, scorePct: 66.7 } });
       expect(result.answers).toHaveLength(3);
       expect(result.answers!.filter((x) => x.isCorrect)).toHaveLength(2);
+      // The exam is still open for classmates: score and correctness only, no answer key yet.
+      expect(result.answerKeyAvailableAt).toBe(e.exam.closesAt);
+      expect(JSON.stringify(result)).not.toContain('Secret explanation');
       for (const [i, a] of result.answers!.entries()) {
         expect(a.options).toEqual(s.paper.questions[i]!.options);
-        expect(a.explanation).toBe('Secret explanation');
+        expect(a.correctIndex).toBeNull();
+        expect(a.explanation).toBeNull();
       }
-      expect(result.answers![0]!.selectedIndex).toBe(result.answers![0]!.correctIndex);
+
+      // Once the exam closes the full review is shown.
+      await as(world.teacher).post(`/api/exams/${e.id}/close`);
+      const closed = (await as(world.student).get(`/api/student/exams/${e.id}/result`)).body as StudentExamResult;
+      expect(closed.answerKeyAvailableAt).toBeNull();
+      for (const a of closed.answers!) expect(a.explanation).toBe('Secret explanation');
+      expect(closed.answers![0]!.selectedIndex).toBe(closed.answers![0]!.correctIndex);
 
       const again = await submit(world.student, e.id, s.attemptToken);
       expect(again.body.score).toEqual(result.score);

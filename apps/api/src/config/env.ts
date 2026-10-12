@@ -22,6 +22,15 @@ const bool = z
   .optional()
   .transform((v) => v === 'true' || v === '1');
 
+/** Secrets published in this repository (.env.example files, test config): never valid in production. */
+const KNOWN_EXAMPLE_SECRETS = new Set([
+  'dev-only-local-secret-0123456789abcdef',
+  'dev-only-insecure-jwt-secret-change-me',
+  'test-secret-0123456789abcdef0123456789',
+  'change-me',
+  'changeme',
+]);
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -45,7 +54,13 @@ const EnvSchema = z
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_DIR: z.string().default('./storage'),
     AUDIO_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
+    /** Lesson transcripts older than this are deleted (the lesson, its summary and its quiz stay). */
+    TRANSCRIPT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(365),
     MAX_AUDIO_UPLOAD_MB: z.coerce.number().int().min(1).max(1024).default(300),
+    /** Longest lesson recording accepted and transcribed, in seconds (default 4 hours). Longer audio is refused or cut. */
+    MAX_LESSON_AUDIO_SEC: z.coerce.number().int().min(60).max(24 * 3600).default(4 * 3600),
+    /** Monthly AI transcription minutes for a school whose own limit is empty. 0 = no default cap. */
+    DEFAULT_AI_AUDIO_MINUTES_PER_MONTH: z.coerce.number().int().min(0).default(3000),
 
     SARVAM_API_KEY: z.string().optional().default(''),
     SARVAM_BASE_URL: z.string().url().default('https://api.sarvam.ai'),
@@ -59,6 +74,11 @@ const EnvSchema = z
     FEATURE_SMS_OTP: bool,
     /** Login attempts allowed per IP+identifier per 15 minutes. */
     LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
+    /**
+     * Requests to the sign-in, set-password and 2FA endpoints allowed per IP per 15 minutes, on top of the
+     * per-account limits. Generous because a whole school can share one NAT address.
+     */
+    AUTH_IP_RATE_LIMIT: z.coerce.number().int().min(1).default(300),
     DEVICE_OFFLINE_AFTER_SEC: z.coerce.number().int().min(30).default(90),
 
     /** Outgoing email (Gmail/Workspace SMTP with an app password). Email is off unless all are set. */
@@ -85,7 +105,7 @@ const EnvSchema = z
   .superRefine((e, ctx) => {
     if (e.NODE_ENV !== 'production') return;
     const fail = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
-    if (e.JWT_SECRET.length < 32 || e.JWT_SECRET.startsWith('dev-only')) {
+    if (e.JWT_SECRET.length < 32 || e.JWT_SECRET.startsWith('dev-only') || KNOWN_EXAMPLE_SECRETS.has(e.JWT_SECRET)) {
       fail('JWT_SECRET', 'must be a random secret of at least 32 characters in production');
     }
     if (!e.REDIS_URL) fail('REDIS_URL', 'is required in production');

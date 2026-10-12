@@ -9,7 +9,8 @@ declare module 'express-serve-static-core' {
   }
 }
 
-function extractToken(req: Request): string | null {
+/** The school session token of a request: the `cp_session` cookie, or a `Bearer` header (scripts, tests). */
+export function extractToken(req: Request): string | null {
   const cookie = (req.cookies as Record<string, string> | undefined)?.[SESSION_COOKIE];
   if (cookie) return cookie;
   const header = req.headers.authorization;
