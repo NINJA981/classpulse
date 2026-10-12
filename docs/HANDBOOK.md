@@ -9,7 +9,7 @@
 >
 > **Secrets are deliberately not in this file.** That covers passwords, API keys and private keys, because this repository is stored on GitHub. Section 14.8 says where each secret lives.
 >
-> **Last updated:** 11 October 2026 (commit `ceb780c`: platform console, separate sign-in pages, teacher AI tools, secure exams, better assignments, email invitations, installable app).
+> **Last updated:** 12 October 2026 (live state after commit `34ead36`: real `benxsolutions.in` addresses, email switched on, the console's Coolify connection, the console's light design, the backup-status fix, the student first-login tour, and the local speech-to-text benchmark).
 
 ---
 
@@ -66,14 +66,17 @@ One installation can serve **many schools** ("multi-tenant"). Each school's data
 
 ### 1.4 Current status (October 2026)
 - **Stage:** ready for a **pilot**, meaning a first real-world trial with about 100 users at one school.
-- **Live at:** `https://classpulse.129.159.227.74.sslip.io`. This is a temporary address. It moves to `https://classpulse.benxsolutions.in` once the DNS record is added (see 14.3).
-- **Platform console:** `https://ops.129.159.227.74.sslip.io/platform` (temporary), moving to `https://ops.benxsolutions.in` with the same DNS change.
+- **Live at:** `https://classpulse.benxsolutions.in` (the school site for admins, teachers and students).
+- **Platform console:** `https://ops.benxsolutions.in` (it opens `/platform`).
+- **Coolify dashboard:** `https://coolify.benxsolutions.in`.
+- The old temporary `…sslip.io` addresses are retired and no longer work (section 14.3).
 - **Servers:** a single cloud server (Oracle Cloud), managed with **Coolify**.
+- **Email:** switched on. Invitations, password resets and reminders are sent from `admin@benxsolutions.in` (section 14.5).
 - **Accounts:**
   - `admin@benxsolutions.in` for "BenX Pilot School" (code `BENX`)
   - `admin2@benxsolutions.in` for "BenX School 2" (code `BENX2`)
   - a test school, "E2E Test School" (code `E2ETEST`), used by automated tests
-  - super admin accounts for the console, created on the server with `create-superadmin` (section 15.5.1)
+  - the owner's super admin account for the console, `saicharan312008@gmail.com`, created on the server with `create-superadmin` (section 15.5.1)
 
 ---
 
@@ -213,17 +216,18 @@ BenX/                                   ← repository root (GitHub: NINJA981/cl
 │   │   │   ├── lib/                    ← helpers: crypto, storage, ffmpeg, logger, errors, mailer, totp, aiUsage
 │   │   │   └── scripts/                ← createAdmin.ts (school admin), createSuperAdmin.ts (console account)
 │   │   ├── scripts/loadtest-live.mjs   ← 100-student live quiz load test
-│   │   ├── test/*.test.ts              ← 32 automated test files (409 tests)
+│   │   ├── test/*.test.ts              ← 32 automated test files (410 tests)
 │   │   └── Dockerfile                  ← how the API/worker container image is built
 │   ├── web/                            ← the website (Next.js)
 │   │   ├── app/                        ← pages: /login, /admin/*, /teacher/*, /student/*, /platform/*
 │   │   ├── components/                 ← building blocks: ui/ (buttons, tables…), admin/, teacher/, student/,
-│   │   │                                 platform/ (the super admin console), auth/ (sign-in pages)
+│   │   │                                 platform/ (the super admin console), auth/ (sign-in pages),
+│   │   │                                 tour/ (reusable guided tour; the student tour is in student/tour/)
 │   │   ├── lib/                        ← api.ts (talks to API), socket.ts (live), server-session.ts
 │   │   ├── public/sw.js, app/manifest.ts ← installable app (PWA) and offline page
 │   │   ├── proxy.ts                    ← sends signed-out visitors to the right sign-in page
 │   │   ├── e2e/*.spec.ts               ← end-to-end browser tests (full-flow, accounts, exams,
-│   │   │                                 assignments, platform, teacher-tools)
+│   │   │                                 assignments, platform, teacher-tools, student-tour)
 │   │   └── Dockerfile
 │   └── classroom-agent/                ← Raspberry Pi software (Python)
 │       ├── agent.py                    ← the recorder/uploader program
@@ -243,6 +247,7 @@ BenX/                                   ← repository root (GitHub: NINJA981/cl
 │   └── .env.example                    ← list of settings for the plain setup
 ├── docs/                               ← documentation (this handbook + api, architecture, database,
 │                                          deployment, hardware, pilot runbook, conventions)
+│   └── research/                       ← local (self-hosted) AI research: R&D plan, speech-to-text benchmark
 ├── .github/workflows/ci.yml            ← automatic checks on GitHub
 └── package.json                        ← workspace definition + top-level commands
 ```
@@ -296,7 +301,7 @@ Both import dialogs offer **Download template**, a ready-made CSV with the right
 - **Forgotten password:**
   - The **Forgot password?** link (`/forgot-password`) emails a reset link to staff (by email) or to students (by roll number + school code), if the account has an email address and email is set up. The page always gives the same answer, so it never reveals whether an account exists.
   - Otherwise the admin clicks **Reset password** and chooses **Email a reset link** (when the person has an email address) or **Show a one-time password**.
-- **Super admins** sign in somewhere else entirely: `/platform/login` on the console's own address, with a password **and** an authenticator code (section 15.5.1).
+- **Super admins** sign in somewhere else entirely: `https://ops.benxsolutions.in/platform/login`, the console's own address, with a password **and** an authenticator code (section 15.5.1). The page looks like the school sign-in pages and is headed **"Super admin sign in"**.
 - **Notices:** when the console turns on a banner or maintenance mode, the message appears on every sign-in page and inside the app. With "block school sign-ins" ticked, sign-ins are refused until maintenance ends.
 
 ### 5.5 Sessions (staying signed in)
@@ -319,6 +324,8 @@ Both import dialogs offer **Download template**, a ready-made CSV with the right
 | Device registration | 10 per hour per IP |
 
 Login also always takes the same time whether or not the account exists, so attackers can't discover valid emails by timing the response.
+
+The limits count per **IP address** (the internet connection), so everyone on the same connection shares them: the whole school Wi-Fi shares the PIN, join-code and AI limits, for example. For sign-ins the email or roll number is counted as well, except the console's authenticator-code and recovery-code steps, which count per connection only. If you are locked out of the console, wait 15 minutes and try again.
 
 ---
 
@@ -444,10 +451,19 @@ These are controlled by the school's "Teacher tools" switch in the console.
 | **Live quiz** `/student/live` | Enter the PIN (or scan the projector's QR code). Lobby, then tap an answer (it can be changed until time runs out), see whether you were right, your points and your rank, then the final leaderboard. |
 | **Exams** `/student/exams` | Upcoming, open and finished exams. **Start** (with the access code if the teacher set one), then one question at a time with a countdown kept by the server. Answers save automatically. Warnings appear when the student leaves fullscreen or switches tabs. After submitting, the result shows when the teacher allows it. |
 | **Assignments** | Due badge, task and rubric, a text answer (up to 20,000 characters) and, if the teacher allows, **files** (photos of handwritten work, PDFs, Word documents). Submit and resubmit until the due date; after it, only if the teacher allows late work (marked late). Returned work shows marks per criterion and feedback. |
-| **Profile** | Name and roll number, optional email, change password, my classes, **guardians** (parent contacts: name, relation, phone, email, "send progress updates"). |
+| **Profile** | Name and roll number, optional email, change password, my classes, **guardians** (parent contacts: name, relation, phone, email, "send progress updates"), and **Take the tour again**. |
+
+#### 6.4.1 The first-login guided tour
+The first time a student reaches the **Home** page, a short **guided tour** starts by itself. It highlights one part of the screen at a time with a short explanation, and has **Back**, **Next** and **Skip tour** buttons (Esc also closes it).
+- **When it appears:** only on Home, and never on top of the forced password change at first sign-in; it starts after the student has chosen their own password.
+- **What it covers:** Home, **Join a class**, **Quizzes** (retakes are unlimited), **Live quiz** (enter the 6-digit PIN), **Assignments**, **Exams** (open only during their window, one attempt, answers saved automatically, fullscreen, leaving the tab is recorded, automatic submission when time runs out), **Profile**, **installing the app** (the steps for Android Chrome and iPhone Safari, plus an **Install app** button when the browser offers one), and a final "You're all set!" step.
+- **Switched-off features are skipped:** if the console has switched off exams, assignments or the live quiz for the school, those steps don't appear.
+- **Phones:** where the menu is folded into the ☰ button, the tour spotlights that button.
+- **"Seen" is remembered per student, per device**, in the browser's own storage. On a new phone or browser, or after clearing browser data, the tour shows once more. Students can replay it any time from **Profile → Take the tour again**.
+- The tour is built as a reusable piece (`apps/web/components/tour`), so a similar tour for teachers can be added later.
 
 ### 6.5 Platform console (`/platform`, super admins only)
-The owner's control room for the whole installation. It lives on its **own address** (planned `ops.benxsolutions.in`), separate from the schools' address, and asks for an authenticator code at every sign-in. Step-by-step instructions are in section 15.5.
+The owner's control room for the whole installation. It lives on its **own address**, `https://ops.benxsolutions.in`, separate from the schools' address, and asks for an authenticator code at every sign-in. It uses the same light design as the admin and teacher panels (the earlier dark theme was removed). Step-by-step instructions are in section 15.5.
 
 | Page | Features |
 |---|---|
@@ -458,7 +474,7 @@ The owner's control room for the whole installation. It lives on its **own addre
 | **Logs** | A live tail of the application's log lines (warnings, errors, slow or failed requests, and other notable events), filterable by level, service, school and text. CSV download. Kept **14 days**. |
 | **Audit log** | Who did what and when: sign-ins, school changes, feature switches, password resets, deployments. Filters and CSV download. Kept **365 days**. |
 | **Usage & costs** | Activity per day, week or month (active users, quiz attempts, exams and homework, emails) and **AI usage**: calls, failures, tokens, audio minutes and **estimated AI cost** in US dollars, per school and per model. CSV download. |
-| **Deployments** | The running version and recent deployments from Coolify, deployment logs, and **Redeploy** / **Restart** buttons (each needs typed confirmation). Needs the Coolify settings in section 14.5; until then the page shows how to set them up. |
+| **Deployments** | The running version and recent deployments from Coolify, deployment logs, and **Redeploy** / **Restart** buttons (each needs typed confirmation). Connected to Coolify in production (section 14.5). Build logs show only if the Coolify token has the "read:sensitive" permission; otherwise the page says so and the log can be read in Coolify itself. |
 | **Settings** | **Maintenance mode** and a **banner** for every school; **default AI models** for new schools; **AI price rates** used for the cost estimates; **My account** (change password, generate new recovery codes). |
 
 ### 6.6 Installing ClassPulse as an app (PWA)
@@ -536,7 +552,7 @@ Chosen per school in **Admin → AI settings**.
 - Audio over **50 minutes** is split into parts inside one job; the timestamps are stitched back together.
 - Returns **timestamps** per phrase. Very short word-level timestamps are merged into readable phrases. If Sarvam returns none, the sentences are spread over the audio length and marked "approximate".
 
-**OpenAI Whisper (alternative):** model `whisper-1`, with segment timestamps. Audio is split into parts of 10 minutes or less (the API has a 25 MB limit).
+**OpenAI Whisper (alternative):** model `whisper-1`, with segment timestamps. Audio is split into parts of 10 minutes or less (the API has a 25 MB limit). **It is only a fallback for English.** A benchmark on 12 October 2026 (section 8.10) found that it refuses Bengali, Gujarati, Malayalam, Punjabi and Telugu outright (left to guess the language, it gets 85–104% of the words wrong), and in the other Indian languages it gets about 40% (Hindi) to 82% (Marathi) of the words wrong, against 11–19% for Sarvam. If Sarvam is down, non-English lectures effectively cannot be transcribed (section 19).
 
 **Supported lesson languages:** English (en-IN), Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia. The teacher picks the language when creating the lesson.
 
@@ -623,6 +639,17 @@ On the analytics page the teacher clicks **Generate remedial plan**. The AI rece
 3. A job goes on the `resources` queue. The worker asks the school's quiz model for the result in a strict format (the same "structured outputs" as for quizzes), checks it, and saves it. The item shows **Ready**, or **Failed** with a reason and a retry.
 4. Downloads are built on the server: Word files for plans, worksheets and papers, PowerPoint for presentations.
 
+### 8.10 Research: running the AI on our own machines
+The long-term goal is to stop depending on outside AI services and run our own ("self-hosted" or "local") models for every feature. **For now, production stays on the Sarvam and OpenAI APIs; local models are research only.** Two reports in `docs/research/` cover the work:
+- **`docs/research/local-models-rnd.md`:** the research plan and the roadmap to a fully local ClassPulse: candidate models for speech-to-text, quiz writing, grading and teaching tools, the hardware they need, rough costs, and how they will be tested.
+- **`docs/research/stt-benchmark-2026-10-12.md`:** a real test of local speech-to-text models against Sarvam on Indian-language audio and our own classroom recordings. In short:
+  - **Sarvam Saaras v3 is still the best.** Across 9 Indian languages it gets 13.9% of words wrong (the "word error rate", WER; lower is better).
+  - **The best model we could run ourselves is AI4Bharat IndicConformer 600M** (free, MIT licence) at 16.5%, and it runs on an ordinary processor without a graphics card. But on real, noisy classroom audio that mixes Tamil and English, it writes English terms in Tamil script and drops much of the speech.
+  - **Whisper large-v3** handles mixed Tamil–English best of the local models, but is weak on purely Indian-language speech. Having an AI language model correct the transcript afterwards helps only slightly.
+  - **Next step:** record and hand-check 3–5 hours of real ClassPulse classroom audio, to measure accuracy properly, then use more labelled audio to train ("fine-tune") a local model on it.
+
+IndicConformer is also the planned option for a better **fallback** when Sarvam is unavailable, instead of OpenAI Whisper (section 19).
+
 ---
 
 ## 9. The live quiz engine
@@ -650,7 +677,7 @@ On the analytics page the teacher clicks **Generate remedial plan**. The AI rece
 ### 9.4 Reliability
 - Every state change and answer is **saved in PostgreSQL**. If the API restarts mid-quiz, the room is rebuilt from the database, and overdue questions are closed immediately.
 - If a student's phone disconnects and reconnects, they rejoin as the same participant with their score and current answer, and the screen catches up.
-- **Load test (live server, over the internet):** **100 students** in one live quiz, **500/500 answers acknowledged, 0 dropped**, response time **p95 = 42 ms** (95% of answers were confirmed within 42 milliseconds). The target was under 300 ms.
+- **Load test (live server, over the internet):** **100 students** in one live quiz, **0 join failures, 500/500 answers acknowledged, 0 dropped**, response time **p95 = 46 ms** (95% of answers were confirmed within 46 milliseconds) in the latest run on 11–12 October 2026; an earlier run measured 42 ms. The target was under 300 ms.
 
 ### 9.5 Technology
 The live quiz uses **Socket.IO** (a two-way live connection, WebSocket with fallback). Events:
@@ -706,7 +733,6 @@ The server-side states are: `lobby → question_open → question_closed → …
      "enrollment_token": "<token>", "alsa_device": "plughw:2,0" }
    ```
 5. `sudo systemctl enable --now classpulse-agent`. The device registers and shows **Online** in the admin console.
-
 To **replace** a Pi, revoke the old one and issue a new token.
 
 ### 10.4 How a classroom recording works (the device contract)
@@ -894,8 +920,7 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 - **Sign out** (school users) clears the cookie in the browser but does not revoke the token server-side. A stolen copy of a cookie would work until it expires (at most 12 hours) or until the password is changed. Console sign-out does revoke every console session.
 - There is **no two-factor authentication** for school admins, teachers or students yet. Only super admins use an authenticator.
 - **Password reset by email** needs email to be set up and the account to have an email address. Otherwise the admin resets passwords.
-- The **"Email invitations" feature switch** is stored, but nothing checks it yet: with email set up, invitations are sent even when it is off.
-- The Coolify dashboard is still reachable on `http://129.159.227.74:8000` (no HTTPS) until it gets its own domain and the port is closed (see 14.9).
+- The Coolify dashboard now has its own HTTPS address (`https://coolify.benxsolutions.in`), but the old unencrypted address `http://129.159.227.74:8000` still answers until public port 8000 is closed (see 14.9).
 
 ---
 
@@ -909,11 +934,12 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | OS | Ubuntu 24.04 LTS |
 | Public IP | `129.159.227.74` |
 | Extras | 4 GB swap file added (for building); `age` installed; Tailscale/WireGuard present (pre-existing) |
-| Login | SSH as `ubuntu` with the private key file `ssh-key-2026-07-19.key` (kept off GitHub) |
-| Firewall | OCI **Security List** (the cloud firewall) allows SSH 22, HTTP 80, HTTPS 443 and Coolify 8000 |
+| Private IP | `10.0.0.112` (inside Oracle's private network, the "VCN"; used by the console to reach Coolify) |
+| Login | SSH as `ubuntu` with the private key file `ssh-key-2026-07-19.key` (kept off GitHub). SSH accepts **keys only** (password sign-in is off) |
+| Firewall | OCI **Security List** (the cloud firewall) allows SSH 22, HTTP 80, HTTPS 443 and Coolify 8000 (8000 should now be closed; see 14.9) |
 
 ### 14.2 Coolify
-- **What it is:** a self-hosted control panel (like a private Heroku/Vercel) running on the same server, version 4.4.3, at `http://129.159.227.74:8000`. It:
+- **What it is:** a self-hosted control panel (like a private Heroku/Vercel) running on the same server, version 4.4.3, at **`https://coolify.benxsolutions.in`** (sign in with the Coolify account `admin@benxsolutions.in`). New sign-ups ("registration") are switched off, so nobody else can create an account. It:
   - pulls the code from GitHub,
   - builds the Docker images on the server,
   - runs them,
@@ -922,24 +948,28 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 - **Project:** "ClassPulse" → environment "production" → application **classpulse** (internal ID `bmbcqf7x63jjpirzhi8tzsby`).
 - **Source:** the private GitHub repo `NINJA981/classpulse`, branch `main`, compose file `/infra/docker-compose.coolify.yml`. Coolify pulls with a **read-only deploy key** (an SSH key that can only read this one repository).
 - **Build pack:** Docker Compose.
+- **The Coolify API:** Coolify can also be controlled by programs through its API, using an **API token** (a long secret that works like a password with limited permissions). Two things use it:
+  - the console's **Deployments** page, which talks to Coolify over the server's **private** address, `http://10.0.0.112:8000/api/v1`, so that traffic never leaves the server's private network;
+  - deploys started from the owner's computer, through `https://coolify.benxsolutions.in/api/v1`.
+- **Allowed IPs for API access** (Coolify → Settings): Coolify only accepts API calls from the addresses on this list. It holds:
+  - `10.0.0.0/16`, the private network range. This is **required**: the API container calls Coolify from an internal Docker address (for example `10.0.5.5`), and without this range the Deployments page is refused;
+  - `127.0.0.1` (the server itself);
+  - the owner's **home IP address**, for deploys from the owner's computer. Home IP addresses can change; when it does, deploys from home are refused until the new address is added to the list.
 
 ### 14.3 Domains and HTTPS
-- **Current address:** `https://classpulse.129.159.227.74.sslip.io`. **sslip.io** is a free service that turns an IP address into a hostname, so HTTPS works without owning a DNS record.
-- **Current console address:** `https://ops.129.159.227.74.sslip.io` (it opens `/platform`).
-- **Planned addresses:**
+All three addresses are **live**:
 
-  | Address | What it is |
-  |---|---|
-  | `classpulse.benxsolutions.in` | The school app (admins, teachers, students) |
-  | `ops.benxsolutions.in` | The platform console (super admins only) |
-  | `coolify.benxsolutions.in` | The Coolify dashboard |
+| Address | What it is |
+|---|---|
+| `https://classpulse.benxsolutions.in` | The school site (admins, teachers, students). `/platform` answers "Not found" here |
+| `https://ops.benxsolutions.in` | The platform console (super admins only). `/` goes straight to `/platform`; school pages answer "Not found" here |
+| `https://coolify.benxsolutions.in` | The Coolify dashboard |
 
-  To switch:
-  1. at **GoDaddy** (the DNS provider for benxsolutions.in), add three **A records**, `classpulse`, `ops` and `coolify`, each pointing to `129.159.227.74`;
-  2. in Coolify, give the **router** service both app domains (`https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`), and set `PUBLIC_ORIGIN`, `PLATFORM_HOST` (`ops.benxsolutions.in`) and `PLATFORM_ORIGIN` (`https://ops.benxsolutions.in`);
-  3. redeploy.
+- **DNS:** at **GoDaddy** (the DNS provider for `benxsolutions.in`) there are three **A records**, `classpulse`, `ops` and `coolify`, each pointing to the server, `129.159.227.74`.
+- **Coolify settings that go with them:** the **router** service has both app domains (`https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`); `PUBLIC_ORIGIN` is `https://classpulse.benxsolutions.in`, `PLATFORM_ORIGIN` is `https://ops.benxsolutions.in` and `PLATFORM_HOST` is `ops.benxsolutions.in`. If a domain ever changes, change all of these together and redeploy.
+- **The old addresses are retired:** the temporary `classpulse.129.159.227.74.sslip.io` and `ops.129.159.227.74.sslip.io` addresses (**sslip.io** is a free service that turns an IP address into a hostname) now answer with an error (503). Update any old bookmarks or printed links.
 - **Why the console has its own address:** on the school address, `/platform` simply answers "Not found", so nobody browsing a school can even find the console. On the console address, nothing except the console is served.
-- **Certificates:** Let's Encrypt, issued and renewed automatically by Traefik. It needs port 80 open; that's why opening port 80 in the OCI Security List was required.
+- **Certificates:** free Let's Encrypt certificates, issued and renewed automatically by Traefik for all three addresses. It needs port 80 open; that's why opening port 80 in the OCI Security List was required.
 
 ### 14.4 The production containers
 Seven services, all built from this repository (`infra/docker-compose.coolify.yml`):
@@ -957,19 +987,21 @@ Seven services, all built from this repository (`infra/docker-compose.coolify.ym
 **Traffic path:** Internet → Traefik (HTTPS, port 443) → `router:80` → `api:5000` or `web:3000`. Traefik's timeouts were raised to **600 seconds** so long lecture uploads aren't cut off (the default was 60 s).
 
 ### 14.5 Environment variables (production settings in Coolify)
+> **Watch out:** Coolify's Environment Variables page has two sections, **Production** and **Preview Deployments**. ClassPulse reads only the **Production** ones. A value put under "Preview Deployments" is silently ignored. This happened once with the email settings, and email stayed off until they were moved. After changing any variable, **redeploy** so the containers pick it up.
+
 | Variable | Purpose |
 |---|---|
-| `PUBLIC_ORIGIN` | The site's public address (used for security checks) |
+| `PUBLIC_ORIGIN` | The site's public address (used for security checks): `https://classpulse.benxsolutions.in` |
 | `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET` | Randomly generated secrets |
 | `SARVAM_API_KEY`, `OPENAI_API_KEY` | AI provider keys |
 | `AUDIO_RETENTION_DAYS` | 30 |
 | `GENERATION_CONCURRENCY` | 1 (one AI job at a time on this 2-CPU server) |
 | `LOG_LEVEL` | info |
 | `PLATFORM_ENCRYPTION_KEY` | **Required.** A random key (32 bytes, base64; made with `openssl rand -base64 32`) that locks the super admins' authenticator secrets. The deploy fails without it. **Keep a copy in the password manager:** if it is lost or changed, every super admin must set up their authenticator again (section 15.5.1) |
-| `PLATFORM_HOST` | The console's host name, e.g. `ops.benxsolutions.in` (no `https://`). Used by the router. The same domain must also be added to the `router` service's domains in Coolify. Until it is set, the console is hidden everywhere |
-| `PLATFORM_ORIGIN` | The console's full address, e.g. `https://ops.benxsolutions.in`. Used by the API's security checks |
-| `COOLIFY_API_URL`, `COOLIFY_API_TOKEN`, `COOLIFY_APP_UUID` | Optional, for the console's **Deployments** page: the Coolify API address (`http://<server>:8000/api/v1`), an API token, and the app's ID. Give the token the least it needs: **read** and **deploy** permissions only. Without them the page shows setup instructions |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Optional email for invitations, password resets and reminders. Two working choices:<br>• **Gmail:** `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>• **GoDaddy mailbox:** `smtpout.secureserver.net`, port `465`, the mailbox address and its password; send as that `@benxsolutions.in` address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
+| `PLATFORM_HOST` | The console's host name, `ops.benxsolutions.in` (no `https://`). Used by the router. The same domain must also be added to the `router` service's domains in Coolify. If it is missing, the console is hidden everywhere |
+| `PLATFORM_ORIGIN` | The console's full address, `https://ops.benxsolutions.in`. Used by the API's security checks |
+| `COOLIFY_API_URL`, `COOLIFY_API_TOKEN`, `COOLIFY_APP_UUID` | For the console's **Deployments** page (all set in production):<br>• `COOLIFY_API_URL` is the server's **private** address, `http://10.0.0.112:8000/api/v1`, so the traffic stays inside the server's private network. This keeps working after public port 8000 is closed.<br>• `COOLIFY_API_TOKEN` is a token named **classpulse-console** with only the **read** and **deploy** permissions (the least it needs).<br>• `COOLIFY_APP_UUID` is the app's ID (section 14.2).<br>Coolify must also allow API calls from `10.0.0.0/16` (section 14.2). Coolify only shares **build logs** with tokens that also have **read:sensitive**; without it, the Deployments page says the log is hidden and you read it in Coolify. Adding read:sensitive is optional and gives the token slightly more access. **Restart** should work with the deploy permission; if it answers with a permission error, add **write** to the token. Without these variables the page shows setup instructions |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Email for invitations, password resets and reminders. **Set up in production** with the GoDaddy mailbox `admin@benxsolutions.in`: `smtpout.secureserver.net`, port `465` (SSL), that mailbox and its password, and `MAIL_FROM` = `ClassPulse <admin@benxsolutions.in>`. A test email was accepted. **When the mailbox password changes, update `SMTP_PASS` (in Production) and redeploy**, or email stops.<br>**Daily cap:** GoDaddy mailboxes send at most roughly 250–300 emails a day (check your plan). Importing a large class with emailed invitations can hit this; the rest then fail and can be retried the next day from the console (Health → `email` queue). If that becomes a problem, switch to a sending service such as Amazon SES or Brevo.<br>The other working choice is **Gmail**: `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
 | `BACKUP_DIR` | Where the API looks for backups inside its container (default `/backups`; leave as is) |
 | Set in the compose file | `NODE_ENV=production`, `TRUST_PROXY_HOPS=2` (Traefik + Caddy), `STORAGE_DIR=/data/storage`, database/Redis URLs built from the passwords, and the read-only backup mount `/var/backups/classpulse:/backups:ro` on the api service |
 
@@ -977,9 +1009,11 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 
 ### 14.6 How a new version is deployed
 1. A developer commits code and pushes to `main` on GitHub. From this computer that uses the **write deploy key**, because the GitHub CLI login lacks the "workflow" permission.
-2. A deploy is triggered by **Coolify → classpulse → Deploy/Redeploy**, the console's **Deployments → Redeploy** (once the Coolify settings are in place), or the Coolify API (`POST /api/v1/deploy`). **Pushing does not deploy automatically yet** (no webhook).
+2. A deploy is started **by hand**, in one of three ways: **Coolify → classpulse → Deploy/Redeploy**, the console's **Deployments → Redeploy**, or the Coolify API (`POST /api/v1/deploy`, through `https://coolify.benxsolutions.in/api/v1` from the owner's computer). **Pushing to GitHub does not deploy anything** (no webhook is set up).
 3. Coolify clones the repo, builds the images (about 1.5–3 minutes once cached; the first build took about 3 minutes), and starts the new containers. The API applies any new migrations on start.
-4. Check: `https://<site>/api/health/ready` should return `{"status":"ok"}`.
+4. Check: `https://classpulse.benxsolutions.in/api/health/ready` should return `{"status":"ok"}`.
+
+**Expect a short outage on every deploy.** Coolify replaces **all** the containers each time, so the site answers with an error (503) for about **30–60 seconds** while they restart. Deploy **outside class hours**, never during a live quiz or an exam.
 
 **Rollback:** in Coolify → Deployments, redeploy an earlier commit. Migrations only go forward, so roll back only to commits with the same database structure.
 
@@ -996,19 +1030,23 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | Local development keys | `apps/api/.env` on the developer's PC (gitignored) |
 | Server SSH key | `ssh-key-2026-07-19.key` in the project folder on the owner's PC (gitignored); keep a safe copy |
 | GitHub deploy keys | Private halves in the session scratch folder on the owner's PC; public halves in GitHub → repo → Settings → Deploy keys ("local push", "Coolify (read-only)") |
-| Coolify API token | Created in Coolify → Keys & Tokens. **Revoke it when not needed.** A separate read + deploy token for the console lives only in Coolify's environment variables (`COOLIFY_API_TOKEN`) |
+| Coolify API tokens | Created in Coolify → Keys & Tokens. The console's token, **classpulse-console** (read + deploy only), lives only in Coolify's environment variables (`COOLIFY_API_TOKEN`, Production). The older all-powerful ("root") token **should be deleted** now that the new one works |
 | `PLATFORM_ENCRYPTION_KEY` | Coolify → classpulse → Environment variables, **plus a copy in the owner's password manager** |
-| Email password (`SMTP_PASS`: Gmail App password or GoDaddy mailbox password) | Coolify → classpulse → Environment variables |
+| Email password (`SMTP_PASS`: the password of the GoDaddy mailbox `admin@benxsolutions.in`) | Coolify → classpulse → Environment variables (Production). Update it there and redeploy whenever the mailbox password changes |
 | Super admin passwords, authenticator apps and recovery codes | Each super admin: password manager for the password, the authenticator app on their phone, and the 10 recovery codes saved somewhere safe (password manager or a printed copy) |
 | Backup decryption key (`classpulse-backup.key`) | **Owner only**, off the server (password manager). Without it, backups cannot be restored. |
 | Coolify admin login, Oracle Cloud login | The owner. **Change them**: they were shared in a chat. |
 
-### 14.9 Hardening still recommended
-- **Domains:** add the DNS records and move the site, the console (`ops`) and the Coolify dashboard to `benxsolutions.in` subdomains with HTTPS.
+### 14.9 Hardening: the owner's to-do list
+**Already done:** the site, console and Coolify dashboard are on `benxsolutions.in` addresses with HTTPS; Coolify registration is switched off; SSH accepts keys only (password sign-in is off); the console uses a least-privilege Coolify token.
+
+**Still to do:**
+- **Coolify 2FA:** turn on two-factor sign-in for the Coolify account (`admin@benxsolutions.in`).
+- **Shared passwords:** change the passwords that were shared in a chat: Coolify, Oracle Cloud, and rotate the Sarvam key.
+- **Old Coolify token:** delete the old root API token (Coolify → Keys & Tokens) now that `classpulse-console` works. If your computer's deploy commands still use the root token, create a separate deploy-only token for them first.
+- **Close public port 8000** in the OCI Security List (and 6001–6002 and 8080 if they are open). This is now safe: the dashboard is on `https://coolify.benxsolutions.in`, deploys from your computer go through `https://coolify.benxsolutions.in/api/v1`, and the console reaches Coolify on the private address `10.0.0.112:8000`, which closing the public port does not affect.
 - **Console key:** confirm `PLATFORM_ENCRYPTION_KEY` is saved in the password manager.
-- **Ports:** close public ports 8000, 6001–6002 and 8080 in the OCI Security List afterwards.
-- **Accounts:** enable 2FA on the Coolify admin account.
-- **Credentials:** rotate the Coolify password, the Oracle password and the Sarvam key, and revoke the Coolify API token.
+- **Optional:** stop `root` signing in over SSH even with a key (the `ubuntu` user plus `sudo` is enough), and install **fail2ban** (a tool that blocks addresses that keep guessing at SSH). Neither is in place yet.
 - **Billing:** if the Oracle account is "Always Free", Oracle may reclaim instances that sit idle for 7 days. Upgrading to Pay-As-You-Go avoids this.
 
 ---
@@ -1024,8 +1062,9 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 
 ### 15.2 Backups
 - **What:** a full database dump (`pg_dump`) plus all lecture audio, packed and **encrypted with `age`** using a public key. Only the owner's private key can decrypt it.
-- **When:** every night at **02:30 UTC**, by a **systemd timer** (`classpulse-backup.timer`; the server has no cron). If the server was off at that time, it runs at the next boot.
-- **Where:** `/var/backups/classpulse/daily/` (the last 7 nights) and `/weekly/` (the last 4 Sundays) on the server. Off-site copy to S3/Oracle Object Storage is supported (`BACKUP_S3_URI`) but not configured yet.
+- **When:** every night at about **02:30 server time**. A **systemd timer** (`classpulse-backup.timer`; the server has no cron) starts the service `classpulse-backup.service`, which runs `/opt/classpulse/infra/backup.sh`. If the server was off at that time, it runs at the next boot.
+- **Where:** `/var/backups/classpulse/daily/` (the last 7 nights) and `/weekly/` (the last 4 Sundays) on the server. Each archive is currently about **270 MB**. Off-site copy to S3/Oracle Object Storage is supported (`BACKUP_S3_URI`) but not configured yet.
+- **How the console sees them:** the API container (which runs as the unprivileged user `node`) looks into the backup folder through a read-only connection (`/backups`) to report the age of the latest backup. `backup.sh` therefore keeps the folders open for listing (mode 755); the archives themselves stay readable by root only and are encrypted anyway. Before this was fixed (11 October), the console wrongly said "No daily backup found".
 - **Config:** `/etc/classpulse/backup.env` (root only). It holds `COMPOSE_PROJECT=<Coolify app id>`, which lets the script find the containers.
 - **Scripts:** `/opt/classpulse/infra/backup.sh` and `restore.sh`.
 - **Tested:** a **restore drill** decrypted the backup with the offline key and restored it into a separate scratch database. Every table's row count matched the live database, and the 17 audio files were present.
@@ -1043,7 +1082,7 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | Reset a teacher/student password | Admin console → Teachers/Students → Reset password |
 | Disable a user | Admin console → edit → Account status: Disabled (signs them out everywhere) |
 | Change AI models | Admin → AI settings |
-| Deploy a new version | Coolify → classpulse → Redeploy |
+| Deploy a new version | Coolify → classpulse → Redeploy, or console → Deployments → Redeploy. Outside class hours: the site is down for 30–60 s (section 14.6) |
 | Check a failed lesson | Lesson page shows the reason; Coolify logs for the `worker` service show the details |
 
 ### 15.4 Incident playbook
@@ -1060,7 +1099,12 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | A super admin lost their phone (authenticator) | Sign in with one of the recovery codes (each works once). To move to a new phone, the account has to be created again (section 15.5.1, "Lost phone or lost key") |
 | Console sign-in says two-factor is "not configured" | `PLATFORM_ENCRYPTION_KEY` is missing on the API. Set it in Coolify and redeploy |
 | `/platform` shows "Not found" | You are on the school address. Use the console address (`PLATFORM_HOST`). If that also fails, check `PLATFORM_HOST` is set and the domain is on the `router` service |
-| Invitation or reset emails don't arrive | Console → Health → **Email** and the `email` queue's failed jobs. Check the `SMTP_*` settings, and the SPF advice in section 14.5. Retry failed emails from the queue |
+| Invitation or reset emails don't arrive | Console → Health → **Email** and the `email` queue's failed jobs. Check that the `SMTP_*` settings are in Coolify's **Production** section (not "Preview Deployments"), that `SMTP_PASS` still matches the mailbox password, and the SPF advice in section 14.5. After a large import, the GoDaddy daily sending cap (about 250–300) may have been reached. Retry failed emails from the queue |
+| The site shows an error (503) for a minute | A deploy is probably running: every deploy restarts all containers for 30–60 s. Wait, then reload. If it lasts longer, check Coolify |
+| Console sign-in says "Too many attempts" | 5 tries in 15 minutes were used from your connection (for the code steps, everyone on the same connection shares the limit). Wait 15 minutes |
+| Console → Deployments shows an error | Check Coolify → Settings → **Allowed IPs for API access** still includes `10.0.0.0/16`, and that the `classpulse-console` token still exists. A permission error on **Restart** means the token needs the **write** permission too (section 14.5) |
+| Deploys from your computer are refused | Your home IP address has probably changed. Add the new one to Coolify's **Allowed IPs for API access** (section 14.2) |
+| Console → Health says "No daily backup found" | Check the timer ran (`systemctl status classpulse-backup.service`) and that `/var/backups/classpulse` and its `daily` folder are mode 755 (`backup.sh` sets this on every run) |
 | A teacher sees "…switched off for your school" | The console has that feature off for the school: Console → the school → Features & limits |
 | "This school's monthly AI transcription minutes are used up" | The school reached its limit. Raise or clear it in Console → the school → Features & limits |
 | A school's users see "Your school's access is paused" | The school is suspended. Console → the school → **Reactivate** |
@@ -1069,14 +1113,15 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 ### 15.5 The platform console: owner's guide
 The platform console is where you, as the owner, run the whole service: add schools, switch features off, pause a school, and watch health, logs and costs. Section 6.5 lists every page; this section walks through the common jobs.
 
-- **Address:** `https://ops.benxsolutions.in` once the DNS records exist (section 14.3); until then `https://ops.129.159.227.74.sslip.io`. It opens the sign-in page at `/platform/login`.
-- **It is not on the school address.** `classpulse…/platform` answers "Not found" on purpose.
-- **Who can use it:** only super admin accounts. School admins, teachers and students cannot sign in here.
+- **Address:** `https://ops.benxsolutions.in`. It opens the sign-in page, headed **"Super admin sign in"**, at `/platform/login`.
+- **It is not on the school address.** `https://classpulse.benxsolutions.in/platform` answers "Not found" on purpose, and the console address doesn't serve school pages.
+- **Who can use it:** only super admin accounts. School admins, teachers and students cannot sign in here. The owner's account is `saicharan312008@gmail.com`.
+- **Look:** the console uses the same light design as the admin and teacher panels.
 
 #### 15.5.1 Signing in for the first time (authenticator and recovery codes)
 **Before you start:** install an **authenticator app** on your phone, for example Google Authenticator, Microsoft Authenticator or 1Password. It shows a new 6-digit code every 30 seconds for each account you add to it.
 
-**Step 1: create your account (once, on the server).** Super admin accounts can only be created from the server's command line, never from a web page.
+**Step 1: create your account (once, on the server).** Super admin accounts can only be created from the server's command line, never from a web page. (The owner's account, `saicharan312008@gmail.com`, was created this way; on its first sign-in it had to change the one-time password and set up the authenticator, as in Step 2. Use these steps for any further super admin.)
 1. SSH to the server (section 22).
 2. Run:
    ```bash
@@ -1096,7 +1141,7 @@ On your own computer (development) the command is `npm run create-superadmin -- 
 
 **Every sign-in after that:** email and password, then the 6-digit code from the app. To use a recovery code instead, click **Use a recovery code instead**.
 - A console session lasts **2 hours**. **Sign out** ends every console session of your account.
-- After 5 wrong attempts in 15 minutes, sign-in pauses for a while.
+- After 5 attempts in 15 minutes, sign-in is refused ("Too many attempts") until the 15 minutes are up. The password step counts per internet connection and email address. The authenticator-code and recovery-code steps count per connection only, so everyone signing in from the same connection shares that limit. If you are locked out, wait 15 minutes.
 
 **New recovery codes:** Settings → My account → enter a current authenticator code → new codes. The old codes stop working.
 
@@ -1121,7 +1166,7 @@ On your own computer (development) the command is `npm run create-superadmin -- 
    - optionally a contact name, email and phone, and private notes.
 3. Click **Create school**. The school is created with the default AI models from Settings and its first admin account.
 4. A box shows the admin's **one-time password, once**. Copy it and send it to the admin securely. If email is set up, the admin also receives a **set-password link** by email (valid 72 hours), so they can choose their own password without the one-time one.
-5. Tell the admin to sign in at `https://classpulse.benxsolutions.in/admin/login` (for now, the sslip.io address with `/admin/login`). From there they add teachers, students and classes themselves (section 6.2).
+5. Tell the admin to sign in at `https://classpulse.benxsolutions.in/admin/login`. From there they add teachers, students and classes themselves (section 6.2).
 
 **More admins later:** open the school → **Admins** → **Add admin**. The same tab lets you **reset** an admin's password, **resend** their invitation, or **disable** and re-enable them.
 
@@ -1136,7 +1181,7 @@ Open the school → **Features & limits**.
 | Assignments | Assignments and their file uploads |
 | Live quiz | Live, game-style quizzes |
 | Classroom devices (recording) | Raspberry Pi recorders and recording from the classroom (uploading a recording still works) |
-| Email invitations | Not enforced yet: invitations are still sent while email is set up (section 13.3) |
+| Email invitations | Emailed set-password invitations and reset links for that school; its admins hand out one-time passwords instead |
 | AI grading | The "Suggest with AI" button on assignment grading |
 | Teacher tools (materials, papers, presentations) | Courses & materials, AI teaching tools, simulations and class insights |
 
@@ -1165,7 +1210,7 @@ A switched-off feature **disappears from the school's menus** straight away, and
 | Who did what? | **Audit log** | Sign-ins, school changes, feature switches, password resets, deployments, by whom and when; filters and CSV. Kept 365 days. Each school's own trail is also on its **Activity** tab |
 | How much is it used, and what does AI cost? | **Usage & costs** | Choose dates, a school and day/week/month. Active users, quiz attempts, exams and homework, emails, AI calls and failures, tokens, audio minutes and **estimated AI cost (USD)**, with top schools and a per-model table. **Download CSV** (activity, schools or AI) |
 | Are the cost figures right? | **Settings → AI price rates** | The prices used for the estimate, per model. Update them when OpenAI or Sarvam change prices. The providers' invoices are always the real bill |
-| Which version is running? | **Deployments** | The deployed commit, recent deployments with logs, **Redeploy** and **Restart** (type the word to confirm). Needs the Coolify settings (section 14.5) |
+| Which version is running? | **Deployments** | The deployed commit, recent deployments, **Redeploy** and **Restart** (type the word to confirm). Build logs appear only if the Coolify token has "read:sensitive"; otherwise read them in Coolify. A redeploy takes the site down for 30–60 s, so use it outside class hours (sections 14.5, 14.6) |
 
 #### 15.5.6 Finding a person
 Console → **Users**: type at least 2 characters of a name, email or roll number, optionally pick a role. Results show the school, role, status and last sign-in. Password resets for teachers and students are still done by the school's admin; you can reset a school **admin's** password from the school's Admins tab.
@@ -1207,11 +1252,13 @@ Open http://localhost:3000.
 ### 17.1 Automated tests
 | Suite | Count | What it covers |
 |---|---|---|
-| **API tests** (Vitest + supertest, real PostgreSQL) | **32 files, 409 tests**, all passing | Login and sessions (including the separate role sign-ins); the permission matrix for every role (rbac); admin CRUD; sections and join codes; lessons, uploads, size and type limits; generation modes and difficulty; publishing; questions; analytics and remedial; student quizzes (server-side grading, duplicate-submit protection); live-quiz sockets (30 simulated players, no answer leak, auto-close, reconnect, rebuild after restart); devices and recordings (including running the real Pi agent); health. **New:** emailed invitations and resets; assignments (files, rubrics, grading, AI suggestions, reminders, late policy); secure exams; curriculum and materials; teaching resources, question papers and presentations; simulations; class insights; the platform console (authenticator sign-in, schools, features and limits, suspension, maintenance, stats, health, logs, audit, deployments) |
+| **API tests** (Vitest + supertest, real PostgreSQL) | **32 files, 410 tests**, all passing | Login and sessions (including the separate role sign-ins); the permission matrix for every role (rbac); admin CRUD; sections and join codes; lessons, uploads, size and type limits; generation modes and difficulty; publishing; questions; analytics and remedial; student quizzes (server-side grading, duplicate-submit protection); live-quiz sockets (30 simulated players, no answer leak, auto-close, reconnect, rebuild after restart); devices and recordings (including running the real Pi agent); health. **New:** emailed invitations and resets; assignments (files, rubrics, grading, AI suggestions, reminders, late policy); secure exams; curriculum and materials; teaching resources, question papers and presentations; simulations; class insights; the platform console (authenticator sign-in, schools, features and limits, suspension, maintenance, stats, health, logs, audit, deployments) |
 | **Pi agent tests** (pytest) | **11 tests** | HTTPS required, registration, chunking, resume, retries, finalize, cancel, disk guard, end-to-end against a stub server |
-| **Browser end-to-end** (Playwright) | **6 specs** | See the table below. |
+| **Browser end-to-end** (Playwright) | **7 specs** | See the table below. |
 
-**The Playwright specs** (`apps/web/e2e/`). Each runs against a running stack (`npm run dev` with the demo data, or the production stack via `E2E_BASE_URL`). The comment at the top of each file lists what it needs.
+**The Playwright specs** (`apps/web/e2e/`). Each runs against a running stack (`npm run dev` with the demo data, or the production stack via `E2E_BASE_URL`). The comment at the top of each file lists what it needs. Because the console and the school site have different addresses in production, the `platform` spec takes the console address in `E2E_BASE_URL` and the school address in `E2E_SCHOOL_URL`.
+
+**Latest results on the live site (11–12 October 2026):** `full-flow` 7/7, `teacher-tools` 4/4, `platform` 6/6 (run on `ops.benxsolutions.in`), `student-tour` 2/2, and the 100-student live-quiz load test passed (0 join failures, 500/500 answers, p95 46 ms).
 
 | Spec | What it checks | Needs |
 |---|---|---|
@@ -1221,7 +1268,8 @@ Open http://localhost:3000.
 | `assignments` | A standalone assignment with files and "allow late"; a student hands in text and a photo (flagged late); the teacher asks the AI for a suggestion, adjusts a mark and returns it; the student sees marks and feedback | Real AI; `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` |
 | `platform` | Console first sign-in (one-time password, authenticator set-up, recovery codes, password change); create a school and its admin; the admin signs in; suspend (admin refused) and reactivate; a banner; the ops pages | A **freshly created** super admin: `E2E_PLATFORM_EMAIL` and `E2E_PLATFORM_PASSWORD` (the printed one-time password), and `PLATFORM_ENCRYPTION_KEY` on the API |
 | `teacher-tools` | Import an NCERT course, generate a lesson plan and a presentation from one chapter, download them, share the plan, open a simulation in classroom mode | An OpenAI key, or `PIPELINE_DEMO_FALLBACK=true` in development (labelled demo content) |
-| **Load test** | 100 students | Live server, over the internet: 100/100 joined, 500/500 answers, 0 dropped, p95 42 ms |
+| `student-tour` | The first-login tour opens on Home, steps forward and back, closes with Esc, Skip tour or Finish, stays closed after a reload, and restarts from Profile → "Take the tour again"; on a 390 px phone screen the card fits and points at the ☰ menu | A seeded student (demo data); it clears the browser's "seen" flag first |
+| **Load test** | 100 students | Live server, over the internet: 100/100 joined (0 join failures), 500/500 answers, 0 dropped, p95 46 ms (latest run; an earlier run measured 42 ms) |
 | **UI audit** | 58 page views | Every page × 3 roles × desktop and phone: no overflow, no console errors, no failed requests, and accessibility checks (axe-core) clean (the last two minor items were fixed and deployed) |
 | **Backup/restore drill** | — | Encrypted backup restored; all table counts matched |
 | **Real recordings** | 3 lectures | Tamil–English (22 min), English (11 min), Tamil (25 min): all transcribed and turned into good quizzes |
@@ -1247,6 +1295,10 @@ The browser test is run manually, since it needs real AI keys.
 | Citations spanning 20 minutes | Used the first-to-last cited block | First continuous run only |
 | `.mp4` phone recordings rejected | Browsers label them "video" | Accept video/mp4 and video/mpeg (ffmpeg still checks the audio) |
 | Students couldn't log in once a second school existed | Login needed the school | Roll number finds the school; the school code is asked only if ambiguous |
+| Console said "No daily backup found" although backups existed | The API container (user `node`) couldn't list the root-owned backup folders | `backup.sh` keeps the folders mode 755; archives stay encrypted |
+| Email stayed off after the SMTP settings were added | They were entered under Coolify's "Preview Deployments" section | Moved to the **Production** section and redeployed |
+| Console's Deployments page refused by Coolify | Coolify's API allow-list didn't include the container's internal address | Added `10.0.0.0/16` to "Allowed IPs for API access" |
+| Deployments page showed an empty build log | Coolify hides build logs from tokens without "read:sensitive" | The page now explains this and points to Coolify |
 
 ---
 
@@ -1262,6 +1314,7 @@ The browser test is run manually, since it needs real AI keys.
 | 10 Oct 2026 | **Teacher-controlled quiz generation:** recordings transcribe automatically; the teacher chooses the number of questions and the difficulty; add/replace modes; model dropdowns in AI settings. |
 | 11 Oct 2026 | Second school and admin (`admin2@benxsolutions.in`, BenX School 2) created. This handbook written. |
 | 11 Oct 2026 | **Platform and teaching release** (commit `ceb780c`): the super admin **platform console** on its own address (authenticator sign-in, schools and admins, suspension, feature switches and limits, maintenance and banner, health, logs, audit, usage and AI cost, deployments); **separate sign-in pages** for admins, teachers and students; **teacher AI tools** (courses and materials, lesson plans, worksheets, question papers, presentations, voice prompts, Word/PowerPoint export, sharing, simulations, class insights, Bloom and competency tags); **secure exams**; **better assignments** (files, rubrics, AI-suggested grading, reminders, late policy); **emailed invitations and password resets**; CSV templates and teacher import; AI usage recording and a monthly AI audio limit per school; the **installable app**. |
+| 12 Oct 2026 | Follow-ups since the 11 Oct release, all live and verified on 12 Oct. **Live on the real domains:** `classpulse.benxsolutions.in` (schools), `ops.benxsolutions.in` (console) and `coolify.benxsolutions.in` (Coolify), with Let's Encrypt certificates; the sslip.io addresses retired. The owner's super admin account created. **Email switched on** (GoDaddy mailbox `admin@benxsolutions.in`). The console's **Deployments** page connected to Coolify with a least-privilege token over the private network. Console sign-in and the whole console moved to the same light design as the school panels ("Super admin sign in"). The "Email invitations" switch is now enforced. Backup status fixed in the console. **Student first-login guided tour.** Coolify registration off and SSH key-only. A local speech-to-text benchmark (section 8.10). |
 
 **Key decisions and why:**
 - **Drizzle (not Prisma):** lighter and closer to SQL.
@@ -1280,10 +1333,12 @@ The browser test is run manually, since it needs real AI keys.
   - Designed for a pilot: one server, one copy of each service.
   - Running several API copies would need the Socket.IO Redis adapter and shared live-quiz timers.
   - A 2-CPU server processes one AI job at a time.
-- **No automatic deploy on push:** a GitHub webhook can be added in Coolify.
-- **Domain:** still on sslip.io until the DNS records are added.
-- **Security gaps:** no two-factor sign-in for school users (only super admins have it), password reset by email only when email is set up, and school logout doesn't revoke tokens server-side (section 13.3).
-- **"Email invitations" switch:** shown in the console but not enforced yet (section 13.3).
+- **No automatic deploy on push:** deploys are started by hand (section 14.6). A GitHub webhook could be added in Coolify.
+- **Downtime on every deploy:** all containers are replaced, so the site is unavailable for about 30–60 seconds. Deploy outside class hours.
+- **Speech-to-text has no real backup for Indian languages.** If Sarvam is down, the only fallback is OpenAI `whisper-1`, which refuses Bengali, Gujarati, Malayalam, Punjabi and Telugu and gets roughly 40–100% of the words wrong in the other Indian languages. So **non-English lectures effectively cannot be transcribed while Sarvam is down** (English still works). The planned fix is to run AI4Bharat IndicConformer ourselves as the fallback (section 8.10).
+- **Email volume:** the GoDaddy mailbox sends at most roughly 250–300 emails a day (check the plan). A large student import with emailed invitations can exceed it. A sending service (Amazon SES, Brevo) is the option if that becomes a problem.
+- **Security gaps:** no two-factor sign-in for school users (only super admins have it), password reset by email only when email is set up, and school logout doesn't revoke tokens server-side (section 13.3). Outstanding server hardening is listed in section 14.9.
+- **Outside AI services:** quiz writing, grading and speech-to-text all use outside APIs (OpenAI, Sarvam). Running our own models is being researched but is not used in production (section 8.10).
 - **Console alerts** appear on the console's Overview and Health pages only; nothing emails or messages you yet. An external uptime monitor is still recommended (section 15.1).
 - **Cost figures** are estimates from editable price rates, not the providers' bills.
 - **Unused feature flag:** SMS OTP login (`FEATURE_SMS_OTP`) is declared but not implemented.
@@ -1323,7 +1378,10 @@ Transcription is about 15–70 seconds for a 10–25 minute lecture. Quiz writin
 The correct answer is never sent to students before the question closes. Identity comes from their login, timing is measured by the server, and late answers are rejected.
 
 **Q: How many students can join a live quiz?**
-It was tested with 100 simultaneous students over the internet: zero dropped answers, and 95% of answers confirmed within 42 ms.
+It was tested with 100 simultaneous students over the internet on the live site: no failed joins, zero dropped answers, and 95% of answers confirmed within 46 ms (latest run, 11–12 October 2026).
+
+**Q: How do students learn their way around?**
+The first time a student opens Home, a short guided tour shows each part of the student area, including how to install the app on their phone. It skips features the school has switched off and can be replayed from Profile (section 6.4.1).
 
 **Q: Can a student retake a quiz?**
 Yes, self-paced quizzes can be retaken any number of times. Analytics use each student's latest attempt.
@@ -1394,6 +1452,12 @@ Yes. Every page was audited at phone width (390 px) with no horizontal scrolling
 **Q: Is it accessible?**
 Pages were audited with axe-core (an automated accessibility checker): labels, landmarks, contrast, keyboard access and tap-target sizes.
 
+**Q: Could ClassPulse run its AI on its own servers instead of OpenAI and Sarvam?**
+That is the long-term goal, and it is being researched; production stays on the outside services for now. The plan is in `docs/research/local-models-rnd.md`. A first real test of self-hosted speech-to-text (`docs/research/stt-benchmark-2026-10-12.md`) found that Sarvam is still the most accurate. The best free model, AI4Bharat IndicConformer, comes close on clean Indian-language speech and needs no graphics card, but struggles with noisy classroom audio that mixes in English. The next step is to collect 3–5 hours of hand-checked classroom recordings to measure and train on (section 8.10).
+
+**Q: What happens if Sarvam (the speech-to-text service) is down?**
+English lectures can still be transcribed with OpenAI Whisper (switch in Admin → AI settings). Lectures in Indian languages effectively can't be until Sarvam is back, because Whisper refuses five of them and is very inaccurate on the rest. A self-hosted fallback is planned (section 19).
+
 ### About security and privacy
 **Q: How are passwords stored?**
 They are hashed with bcrypt and never stored or logged in plain text. Admin-issued passwords must be changed at first login.
@@ -1411,7 +1475,7 @@ No student personal data. OpenAI receives the lecture transcript and lesson deta
 For super admins, yes: every console sign-in needs a 6-digit code from an authenticator app, with 10 single-use recovery codes as a backup. School admins, teachers and students sign in with a password only (section 13.3).
 
 **Q: Is the site encrypted?**
-Yes. HTTPS with a Let's Encrypt certificate, plus HSTS. The Coolify dashboard itself still needs its own HTTPS domain (section 14.9).
+Yes. HTTPS with a Let's Encrypt certificate, plus HSTS, on all three addresses: the school site, the console and the Coolify dashboard. The old unencrypted Coolify port (8000) should still be closed (section 14.9).
 
 **Q: What if the server dies?**
 Encrypted backups run every night (7 daily and 4 weekly copies). A restore was tested successfully. Off-site copies are recommended next.
@@ -1421,7 +1485,7 @@ Encrypted backups run every night (7 daily and 4 weekly copies). A restore was t
 On an Oracle Cloud ARM server (2 CPUs, 12 GB RAM) in the benxsolutions tenancy, managed with Coolify.
 
 **Q: How do you release an update?**
-Push the code to GitHub, then click Redeploy in Coolify. It builds and restarts in a few minutes, and database changes apply automatically.
+Push the code to GitHub, then click Redeploy in Coolify (or in the console's Deployments page); pushing alone doesn't deploy. It builds and restarts in a few minutes, and database changes apply automatically. The site is down for about 30–60 seconds while the containers restart, so deploy outside class hours.
 
 **Q: What does it cost to run?**
 The server is an Oracle Cloud instance. Ongoing variable costs are the **AI API usage**: Sarvam per minute of audio, and OpenAI per quiz, teaching resource or grading suggestion. ClassPulse now records every AI call, and the console's **Usage & costs** page shows an **estimate** per school and per model, in US dollars, from the price rates in console Settings (section 15.5.5). The providers' invoices are the real bill; keep the rates in Settings up to date.
@@ -1494,7 +1558,7 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 | **SMTP** | The standard way programs send email through a mailbox provider (Gmail, GoDaddy) |
 | **Socket.IO / WebSocket** | A persistent two-way connection for real-time features |
 | **SPF** | A DNS record listing which mail servers may send email for a domain; mail from other servers is treated as suspicious |
-| **sslip.io** | A free service turning an IP into a hostname (e.g. classpulse.129.159.227.74.sslip.io) |
+| **sslip.io** | A free service turning an IP into a hostname (e.g. classpulse.129.159.227.74.sslip.io). ClassPulse used it before the real `benxsolutions.in` addresses; those old addresses no longer work |
 | **STT** | Speech-to-text (transcription) |
 | **Structured outputs** | Forcing the AI to reply in an exact data format |
 | **Super admin** | A ClassPulse operator account for the platform console, above all schools |
@@ -1504,7 +1568,9 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 | **Traefik** | Coolify's reverse proxy that handles HTTPS certificates |
 | **TypeScript** | JavaScript with type checking |
 | **UUID** | A random unique ID like `3f1c…` |
+| **VCN** | Virtual Cloud Network: the server's private network inside Oracle Cloud (addresses like `10.0.0.112`) |
 | **Volume** | Persistent storage for a container (survives restarts and redeploys) |
+| **WER** | Word error rate: the share of words a speech-to-text system gets wrong (lower is better; over 100% means it added many wrong words) |
 | **Worker** | The background process that runs slow jobs |
 | **zod** | A library that checks data has the expected shape |
 
@@ -1513,20 +1579,24 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 ## 22. Quick reference card
 | Thing | Value |
 |---|---|
-| Live site | https://classpulse.129.159.227.74.sslip.io (planned: https://classpulse.benxsolutions.in) |
+| Live site | https://classpulse.benxsolutions.in |
 | Sign-in pages | `/admin/login`, `/teacher/login`, `/student/login` (`/login` is a chooser) |
-| Platform console | https://ops.129.159.227.74.sslip.io/platform (planned: https://ops.benxsolutions.in); password + authenticator code |
+| Platform console | https://ops.benxsolutions.in ("Super admin sign in"); password + authenticator code; 5 attempts per 15 minutes |
+| Owner's super admin | `saicharan312008@gmail.com` |
 | Create a super admin | `sudo docker exec -it $API node dist/scripts/createSuperAdmin.js --email … --name …` (section 15.5.1) |
 | Health check | `/api/health/ready` (or console → Health) |
-| Coolify | http://129.159.227.74:8000 → Project ClassPulse → production → classpulse |
+| Coolify | https://coolify.benxsolutions.in → Project ClassPulse → production → classpulse (env vars go in the **Production** section) |
+| Deploying | By hand only (Coolify or console → Redeploy); 30–60 s of downtime, so outside class hours |
+| Email sender | `ClassPulse <admin@benxsolutions.in>` via GoDaddy (`smtpout.secureserver.net:465`); about 250–300 emails a day |
+| DNS | GoDaddy, A records `classpulse`, `ops`, `coolify` → 129.159.227.74 |
 | GitHub | `NINJA981/classpulse` (private), branch `main` |
 | Server | Oracle Cloud `benx`, 129.159.227.74, Ubuntu 24.04, ARM64, 2 OCPU / 12 GB |
 | SSH | `ssh -i ssh-key-2026-07-19.key ubuntu@129.159.227.74` (docker needs `sudo`) |
 | Coolify app ID | `bmbcqf7x63jjpirzhi8tzsby` |
 | Admins | `admin@benxsolutions.in` (BenX Pilot School, BENX), `admin2@benxsolutions.in` (BenX School 2, BENX2), `e2e-admin@benxsolutions.in` (E2E Test School, tests only) |
-| Backups | Nightly 02:30 UTC → `/var/backups/classpulse/{daily,weekly}`; key: `classpulse-backup.key` (owner only) |
+| Backups | Nightly about 02:30 server time (`classpulse-backup.service`) → `/var/backups/classpulse/{daily,weekly}`, about 270 MB each; key: `classpulse-backup.key` (owner only) |
 | Default AI | STT Sarvam `saaras:v3` (codemix); quiz `gpt-4.1-mini` for new schools (existing schools keep their saved choice); 5 questions; bilingual on |
 | Limits | Upload 300 MB; 1–30 questions per request; audio kept 30 days; session 12 h (console 2 h); join codes 30 days; enrollment tokens 24 h; set-password links 72 h; live PIN 6 digits; exam access code 6 characters; assignment files 10 MB each, up to 10; teacher materials 20 MB; voice prompts 60 s |
 | Kept for | Console logs 14 days; audit log 365 days; health history 30 days |
 | Job queues | `lesson-generation`, `email`, `resources` (all run by the worker) |
-| Key docs | `docs/api.md`, `docs/architecture.md`, `docs/database.md`, `docs/deployment.md`, `docs/hardware-raspberry-pi.md`, `docs/pilot-runbook.md` |
+| Key docs | `docs/api.md`, `docs/architecture.md`, `docs/database.md`, `docs/deployment.md`, `docs/hardware-raspberry-pi.md`, `docs/pilot-runbook.md`; research: `docs/research/local-models-rnd.md`, `docs/research/stt-benchmark-2026-10-12.md` |

@@ -51,7 +51,7 @@ Logins are rate-limited (`429 RATE_LIMITED`; `LOGIN_RATE_LIMIT` attempts per IP 
 
 Student login finds the school from the roll number. Only when several schools use the same roll number does it return `400` with `details: { field: 'institutionCode' }`, and the login page then asks for the school code.
 
-**Emailed links.** Set-password links (invitations and resets) are single-use and expire after 72 hours (`PASSWORD_TOKEN_TTL_HOURS`). Only the SHA-256 of a token is stored. Issuing a new link revokes the user's older ones. Email is sent only when `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM` are all set. Endpoints that send a link report what happened as `EmailDelivery`: `queued`, `no_email` (the account has no address) or `email_disabled` (SMTP not configured).
+**Emailed links.** Set-password links (invitations and resets) are single-use and expire after 72 hours (`PASSWORD_TOKEN_TTL_HOURS`). Only the SHA-256 of a token is stored. Issuing a new link revokes the user's older ones. Email is sent only when `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM` are all set. Endpoints that send a link report what happened as `EmailDelivery`: `queued`, `no_email` (the account has no address) or `email_disabled` (SMTP not configured, or the school's `emailInvites` switch is off).
 
 ### Feature switches
 
@@ -61,9 +61,10 @@ Student login finds the school from the roll number. Only when several schools u
 | `assignments` | `/api/assignments/*`, `/api/assignment-files/*` |
 | `liveQuiz` | `/api/live-sessions/*` |
 | `devices` | `/api/admin/devices/*`, `/api/recordings/*` |
-| `teacherTools` | `/api/curriculum/*`, `/api/resources/*` (except `POST /:id/publish-exam`), `/api/simulations/*`, `/api/insights/*` |
+| `teacherTools` | `/api/curriculum/*`, `/api/resources/*`, `/api/simulations/*`, `/api/insights/*` |
+| `exams` (with `teacherTools`) | `POST /api/resources/:id/publish-exam` needs both switches on |
 | `aiGrading` | `POST /api/assignments/:id/submissions/:sid/ai-suggest` |
-| `emailInvites` | Stored and returned in `features`, but no route checks it yet |
+| `emailInvites` | No route is refused. When it is off, no set-password link is created or emailed for that school's users (invitations, admin "email a reset link", "Forgot password?"), and endpoints report `email_disabled`, so admins fall back to one-time passwords |
 
 The web app also hides the matching menu items, using `features` from `GET /auth/me`.
 
@@ -281,7 +282,7 @@ AI teaching resources: `lesson_plan`, `worksheet`, `question_paper` and `present
 | POST | `/:id/copy` | — | `ResourceDetail` (201): a teacher's own copy of a shared resource |
 | GET | `/:id/export` | — | The file in the type's format: Word (`.docx`) for plans, worksheets and papers; PowerPoint (`.pptx`) for presentations |
 | GET | `/:id/export.docx`, `/:id/export.pptx` | — | The same, with an explicit format (`404` if the type uses the other one) |
-| POST | `/:id/publish-exam` | `PublishPaperExamInput` (`sectionId`, `opensAt`, `closesAt`, `durationMin`, optional `title`, `instructions`, `questionsPerStudent`) | `PublishPaperExamResult` (201: `examId`, `mcqCount`, `skipped`). Creates a **draft** exam from a question paper's MCQ and assertion–reason questions; the teacher reviews it in the exam editor and publishes. Not behind the `teacherTools` switch |
+| POST | `/:id/publish-exam` | `PublishPaperExamInput` (`sectionId`, `opensAt`, `closesAt`, `durationMin`, optional `title`, `instructions`, `questionsPerStudent`) | `PublishPaperExamResult` (201: `examId`, `mcqCount`, `skipped`). Creates a **draft** exam from a question paper's MCQ and assertion–reason questions; the teacher reviews it in the exam editor and publishes. Needs both the `teacherTools` and `exams` switches on (otherwise `403 FEATURE_DISABLED`) |
 
 `GenerateResourceInput`: `title`, `courseId`, `unitIds` (≤ 20), `lessonIds` (≤ 10, the teacher's recorded lessons), `materialIds` (≤ 10), `prompt`, `language` and `options` (per type):
 - `lesson_plan`: `durationMin`, `periods`, `pedagogy`.
