@@ -89,7 +89,7 @@ One installation can serve **many schools** ("multi-tenant"). Each school's data
  (admin, teacher,   │                                                         └─▶ API (Express)        │
   students, phones) │                                                               │   ▲              │
                     │                                   PostgreSQL (database) ◀─────┤   │ Redis        │
- Raspberry Pi ─HTTPS▶│                                   Audio storage (disk)  ◀─────┤   │ (queue)      │
+ Raspberry Pi ─HTTPS▶│                                   Files (disk / Garage) ◀─────┤   │ (queue)      │
  (classroom)        │                                                               ▼   │              │
                     │                                              Worker (background jobs) ──▶ Sarvam AI (speech→text)
                     │                                                                         ──▶ OpenAI (quiz writing)
@@ -103,7 +103,7 @@ One installation can serve **many schools** ("multi-tenant"). Each school's data
 | **Worker** | A background helper that does slow jobs so the website stays fast. It works through three queues: `lesson-generation` (transcription and quiz writing), `email` (invitations, password resets, reminders) and `resources` (lesson plans, worksheets, question papers, presentations). It also runs timed housekeeping such as closing finished exams and deleting old logs | `apps/api/src/worker.ts` (same code as the API, different program) |
 | **PostgreSQL** | The database: where all users, classes, lessons, questions and results are stored permanently | Docker container `postgres` |
 | **Redis** | A fast in-memory store used as the **job queue** (the list of jobs waiting for the worker), for login rate limiting, and for passing messages from the worker to the API | Docker container `redis` |
-| **Storage** | A folder on the server's disk holding the lecture audio files | Docker volume `storage-data` |
+| **Storage** | Where uploaded and recorded files are kept: lecture audio, Pi recording pieces, assignment submissions and teacher materials. Either a folder on the server's disk (`STORAGE_DRIVER=local`, the Docker volume `storage-data`) or **Garage**, a small self-hosted "S3" file store running next to the database (`STORAGE_DRIVER=s3`). Only the API talks to it; people never download from it directly | `apps/api/src/lib/storage.ts`, Docker containers `storage` + `storage-init` (`infra/garage/`) |
 | **Router (Caddy)** | Sends `/api/...` and `/socket.io/...` requests to the API and everything else to the web app. It also keeps the platform console on its own address: on a school address `/platform` answers "Not found", and the console address serves nothing but the console | `infra/Caddyfile.coolify` |
 | **Email** (optional) | Sends invitation and password-reset links and assignment reminders, through a normal mailbox (Gmail or GoDaddy) | `apps/api/src/lib/mailer.ts` |
 | **Traefik** | Coolify's front door: handles HTTPS certificates and forwards traffic to the router | Managed by Coolify |
@@ -912,7 +912,7 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
 | Brute force | Rate limits on login, PINs, join codes, AI actions and device registration; same login response time for unknown accounts |
 | Authorization | Every route checks the role. Teachers can only touch their own lessons and sections; students only their own classes, attempts and guardians; everything is scoped to the user's school. Another school's data appears as "not found". |
 | Input | Every input is validated (zod); unknown fields are stripped; query strings can't contain nested objects |
-| Files | Audio is addressed by internal keys, never by paths from the request, so a crafted request can't reach other files. Audio is streamed only to authorised users; nothing is publicly downloadable. |
+| Files | Audio is addressed by internal keys, never by paths from the request, so a crafted request can't reach other files. Audio is streamed only to authorised users; nothing is publicly downloadable. The Garage file store has no public address and no shareable links; the API's key can read and write its one bucket and nothing else. |
 | Devices | Single-use 24 h enrollment tokens; only key hashes are stored; constant-time comparison; revocation; outbound-only connections |
 | Live quiz | Answer key hidden until close; identity from the cookie; server-side clock; cross-site connections refused |
 | Exams | Answer key never sent to students; server-side clock; one attempt per student; optional access code and one-device lock; warnings logged with times |
@@ -990,7 +990,7 @@ All three addresses are **live**:
 - **Certificates:** free Let's Encrypt certificates, issued and renewed automatically by Traefik for all three addresses. It needs port 80 open; that's why opening port 80 in the OCI Security List was required.
 
 ### 14.4 The production containers
-Seven services, all built from this repository (`infra/docker-compose.coolify.yml`):
+The services, all built from this repository (`infra/docker-compose.coolify.yml`). `storage` and `storage-init` were added in October 2026 for the Garage file store; the pilot keeps using the `storage-data` folder until the switch in `deployment.md` → "Moving existing files to Garage" is done:
 
 | Service | Image | Role | Notes |
 |---|---|---|---|
@@ -1000,7 +1000,10 @@ Seven services, all built from this repository (`infra/docker-compose.coolify.ym
 | `worker` | Same image as api | Background jobs: the `lesson-generation`, `email` and `resources` queues, plus timed tasks (audio retention, device sweep, exam sweep, assignment reminders, log and audit clean-up, health snapshots, notification clean-up) | Starts after the API is healthy |
 | `postgres` | postgres:16-alpine | Database | Data in volume `pg-data` |
 | `redis` | redis:7-alpine | Queue, rate limits, messages | Password-protected; append-only persistence; volume `redis-data` |
-| (volume) `storage-data` | — | Lecture audio files | Shared by api and worker |
+| `storage` | Garage v2.4.1 (our config baked in) | The S3 file store for audio, recordings, submissions and materials | No public address, no published ports. Other containers can reach only its S3 port (3900); its admin and internal ports listen inside the container only. Its two secrets (`GARAGE_*`) are given to it and `storage-init`, never to api, worker or web. Data in volumes `garage-meta` and `garage-data`. Runs as a non-root user on a read-only filesystem; capped at 512 MB (uses about 25 MB) |
+| `storage-init` | Alpine + curl + jq | Sets Garage up on every deploy: the cluster layout, the `classpulse` bucket, the API's key and its read/write permission. Changes only what is missing. It shares Garage's network to reach the admin port, and stops the deploy with a clear message if a secret is missing, too short or one of the fake development values | Stays running (tiny) after it finishes, because Coolify shows a stopped container as a failure. The API and worker start only once it is ready |
+| (volume) `storage-data` | — | Stored files while `STORAGE_DRIVER=local` | Shared by api and worker. Kept for a week after the switch to Garage, then removed |
+| (volume) `tmp-data` | — | Temporary files (uploads in progress, audio conversions, files fetched from Garage) | Shared by api and worker; cleaned hourly |
 
 **Traffic path:** Internet → Traefik (HTTPS, port 443) → `router:80` → `api:5000` or `web:3000`. Traefik's timeouts were raised to **600 seconds** so long lecture uploads aren't cut off (the default was 60 s).
 
@@ -1021,8 +1024,12 @@ Seven services, all built from this repository (`infra/docker-compose.coolify.ym
 | `COOLIFY_API_URL`, `COOLIFY_API_TOKEN`, `COOLIFY_APP_UUID` | For the console's **Deployments** page (all set in production):<br>• `COOLIFY_API_URL` is the server's **private** address, `http://10.0.0.112:8000/api/v1`, so the traffic stays inside the server's private network. This keeps working after public port 8000 is closed.<br>• `COOLIFY_API_TOKEN` is a token named **classpulse-console** with only the **read** and **deploy** permissions (the least it needs).<br>• `COOLIFY_APP_UUID` is the app's ID (section 14.2).<br>Coolify must also allow API calls from `10.0.0.0/16` (section 14.2). Coolify only shares **build logs** with tokens that also have **read:sensitive**; without it, the Deployments page says the log is hidden and you read it in Coolify. Adding read:sensitive is optional and gives the token slightly more access. **Restart** should work with the deploy permission; if it answers with a permission error, add **write** to the token. Without these variables the page shows setup instructions |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Email for invitations, password resets and reminders. **Set up in production** with the GoDaddy mailbox `admin@benxsolutions.in`: `smtpout.secureserver.net`, port `465` (SSL), that mailbox and its password, and `MAIL_FROM` = `ClassPulse <admin@benxsolutions.in>`. A test email was accepted. **When the mailbox password changes, update `SMTP_PASS` (in Production) and redeploy**, or email stops.<br>**Daily cap:** GoDaddy mailboxes send at most roughly 250–300 emails a day (check your plan). Importing a large class with emailed invitations can hit this; the rest then fail and can be retried the next day from the console (Health → `email` queue). If that becomes a problem, switch to a sending service such as Amazon SES or Brevo.<br>The other working choice is **Gmail**: `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | **Optional:** phone/desktop push notifications ("your lesson is ready"). Make the pair once with `npx web-push generate-vapid-keys` and set both keys in Coolify (Production); `VAPID_SUBJECT` defaults to `mailto:admin@benxsolutions.in`. While `VAPID_PRIVATE_KEY` is empty, push is off and only the in-app bell and pop-ups work. **Keep the same pair:** a new pair stops push on every device that had it turned on until each person turns it on again. A half-set or malformed pair stops the API from starting |
+| `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN` | **Required** (the deploy fails without them). Garage's own secrets: `openssl rand -hex 32` and `openssl rand -base64 32`. Keep a copy in the password manager |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | The API's key for the Garage file store. Garage wants a particular shape: the id is `GK` plus 24 hex characters (`echo "GK$(openssl rand -hex 12)"`), the secret 64 hex characters (`openssl rand -hex 32`). Keep a copy in the password manager |
+| `STORAGE_DRIVER` | `local` (files in the `storage-data` folder; the default) or `s3` (files in Garage). Change it to `s3` only after copying the files over, following `deployment.md` → "Moving existing files to Garage" |
+| `GARAGE_CAPACITY`, `S3_BUCKET` | Optional: the space Garage may use (default `50G`) and the bucket name (default `classpulse`) |
 | `BACKUP_DIR` | Where the API looks for backups inside its container (default `/backups`; leave as is) |
-| Set in the compose file | `NODE_ENV=production`, `TRUST_PROXY_HOPS=2` (Traefik + Caddy), `STORAGE_DIR=/data/storage`, database/Redis URLs built from the passwords, and the read-only backup mount `/var/backups/classpulse:/backups:ro` on the api service |
+| Set in the compose file | `NODE_ENV=production`, `TRUST_PROXY_HOPS=2` (Traefik + Caddy), `STORAGE_DIR=/data/storage`, `TMP_DIR=/data/tmp`, `S3_ENDPOINT=http://storage:3900`, `S3_REGION=garage`, database/Redis URLs built from the passwords, and the read-only backup mount `/var/backups/classpulse:/backups:ro` on the api service |
 
 The full list of variables the API understands (with defaults) is in `apps/api/src/config/env.ts`. Important ones: `PORT` 5000, `SESSION_TTL_HOURS` 12, `MAX_AUDIO_UPLOAD_MB` 300, `LOGIN_RATE_LIMIT` 10, `DEVICE_OFFLINE_AFTER_SEC` 90, `PIPELINE_DEMO_FALLBACK` (forbidden in production).
 
@@ -1039,7 +1046,7 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 ### 14.7 Alternative deployment (without Coolify)
 `infra/docker-compose.prod.yml` runs the same stack on any Ubuntu server, with **Caddy doing HTTPS itself**:
 - Fill in `infra/.env`, then run `docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build`.
-- A one-shot `migrate` container applies migrations first.
+- A one-shot `migrate` container applies migrations first, and a one-shot `storage-init` sets up Garage.
 - `docs/agents/deployment.md` has step-by-step instructions.
 
 ### 14.8 Where the secrets are (no values here)
@@ -1051,6 +1058,7 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 | GitHub deploy keys | Private halves in the session scratch folder on the owner's PC; public halves in GitHub → repo → Settings → Deploy keys ("local push", "Coolify (read-only)") |
 | Coolify API tokens | Created in Coolify → Keys & Tokens. The console's token, **classpulse-console** (read + deploy only), lives only in Coolify's environment variables (`COOLIFY_API_TOKEN`, Production). The older all-powerful ("root") token **should be deleted** now that the new one works |
 | `PLATFORM_ENCRYPTION_KEY` | Coolify → classpulse → Environment variables, **plus a copy in the owner's password manager** |
+| Garage secrets and the API's file-store key (`GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`) | Coolify → classpulse → Environment variables (Production), plus a copy in the owner's password manager. The development values in `infra/docker-compose.dev.yml` are deliberately fake and work only on a developer's PC |
 | Web Push private key (`VAPID_PRIVATE_KEY`) | Coolify → classpulse → Environment variables (Production), plus a copy in the owner's password manager. Never in the repository; the development pair lives only in `apps/api/.env` |
 | Email password (`SMTP_PASS`: the password of the GoDaddy mailbox `admin@benxsolutions.in`) | Coolify → classpulse → Environment variables (Production). Update it there and redeploy whenever the mailbox password changes |
 | Super admin passwords, authenticator apps and recovery codes | Each super admin: password manager for the password, the authenticator app on their phone, and the 10 recovery codes saved somewhere safe (password manager or a printed copy) |
@@ -1075,17 +1083,18 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 
 ### 15.1 Health and monitoring
 - `GET /api/health/live` reports whether the server is running.
-- `GET /api/health/ready` checks the database, Redis and storage. It returns **503** if any of them fails.
+- `GET /api/health/ready` checks the database, Redis and storage (the folder, or the Garage bucket when `STORAGE_DRIVER=s3`). It returns **503** if any of them fails.
 - **Recommendation:** point a free uptime monitor (for example UptimeRobot) at `/api/health/ready`.
 - **The console is the easiest place to look** (section 15.5.5): Health (every component, alerts, history), Logs (live, last 14 days), Audit log, and Usage & costs.
 - **Raw logs:** in Coolify → classpulse → Logs, or `sudo docker logs <container>` over SSH. They are JSON, with secrets hidden.
 
 ### 15.2 Backups
-- **What:** a full database dump (`pg_dump`) plus all lecture audio, packed and **encrypted with `age`** using a public key. Only the owner's private key can decrypt it.
+- **What:** a full database dump (`pg_dump`) plus all stored files (audio, recordings, submissions, materials), packed and **encrypted with `age`** using a public key. Only the owner's private key can decrypt it.
+- **Files in Garage:** when `STORAGE_DRIVER=s3`, the script copies the bucket out with a temporary `rclone` container, then packs and encrypts it exactly as before. It needs free disk space for one extra copy of the files while it runs. Restoring puts the files back into the bucket. A backup made either way restores either way. Garage on the same server is **not** a backup in itself: it keeps a single copy on the same disk.
 - **When:** every night at about **02:30 server time**. A **systemd timer** (`classpulse-backup.timer`; the server has no cron) starts the service `classpulse-backup.service`, which runs `/opt/classpulse/infra/backup.sh`. If the server was off at that time, it runs at the next boot.
 - **Where:** `/var/backups/classpulse/daily/` (the last 7 nights) and `/weekly/` (the last 4 Sundays) on the server. Each archive is currently about **270 MB**. Off-site copy to S3/Oracle Object Storage is supported (`BACKUP_S3_URI`) but not configured yet.
 - **How the console sees them:** the API container (which runs as the unprivileged user `node`) looks into the backup folder through a read-only connection (`/backups`) to report the age of the latest backup. `backup.sh` therefore keeps the folders open for listing (mode 755); the archives themselves stay readable by root only and are encrypted anyway. Before this was fixed (11 October), the console wrongly said "No daily backup found".
-- **Config:** `/etc/classpulse/backup.env` (root only). It holds `COMPOSE_PROJECT=<Coolify app id>`, which lets the script find the containers.
+- **Config:** `/etc/classpulse/backup.env` (root only, mode 600). It holds `COMPOSE_PROJECT=<Coolify app id>`, which lets the script find the containers. Once files are in Garage it must also hold the file-store key as `RCLONE_CONFIG_GARAGE_ACCESS_KEY_ID` and `RCLONE_CONFIG_GARAGE_SECRET_ACCESS_KEY` (the same values as `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`); without them the backup stops with a clear message. The exact lines are in `deployment.md` → "Deploying on Coolify" → Backups.
 - **Scripts:** `/opt/classpulse/infra/backup.sh` and `restore.sh`.
 - **Tested:** a **restore drill** decrypted the backup with the offline key and restored it into a separate scratch database. Every table's row count matched the live database, and the 17 audio files were present.
 - **Restore (real emergency):** `sudo ENV_FILE=/etc/classpulse/backup.env /opt/classpulse/infra/restore.sh <archive.tar.age> <your-age-key-file>`. It asks you to type `RESTORE`, stops the app, replaces the database and audio, and restarts.
@@ -1243,7 +1252,7 @@ Console → **Users**: type at least 2 characters of a name, email or roll numbe
 
 ```bash
 npm install                          # download libraries
-npm run dev:infra                    # start local PostgreSQL + Redis in Docker
+npm run dev:infra                    # start local PostgreSQL, Redis and Garage (file store) in Docker
 cp apps/api/.env.example apps/api/.env          # then add SARVAM/OPENAI keys
 cp apps/web/.env.example apps/web/.env.local
 npm run build -w @classpulse/shared  # build shared definitions
@@ -1259,6 +1268,7 @@ Open http://localhost:3000.
 | `npm run lint` | Code style / error checks |
 | `npm run typecheck` | TypeScript checks |
 | `npm test` | API tests (needs the local database) |
+| `npm run test:s3 -w @classpulse/api` | The storage tests again against the local Garage (S3 on `127.0.0.1:3900`, started by `npm run dev:infra`). To run the whole app on Garage, uncomment the S3 lines in `apps/api/.env` (see `apps/api/.env.example`) |
 | `npm run test:agent` | Pi agent tests |
 | `npm run test:e2e` | Full browser test (needs `npm run dev` running) |
 | `npm run db:generate` | Create a new migration after changing the schema |
@@ -1367,11 +1377,14 @@ The browser test is run manually, since it needs real AI keys.
   - A phone that is off or offline gets the push when it comes back online within a day; after that it is dropped (the bell still has it).
   - The console has no live connection, so its bell refreshes by polling; push works there as on the school site.
 - **Unused feature flag:** SMS OTP login (`FEATURE_SMS_OTP`) is declared but not implemented.
-- **Storage:** audio lives on the server's disk. The code has a placeholder for S3/Cloudflare R2 object storage.
+- **Storage:** stored files can live in Garage, a self-hosted S3 file store (October 2026), but the pilot still uses the disk folder until the files are migrated (`deployment.md` → "Moving existing files to Garage"). Garage runs as **one node on the same server**, so it adds no redundancy: the encrypted nightly backup, copied off-site, is the only second copy. A second Garage node on another site is the planned fix.
 - **Off-site backups:** not configured yet (`BACKUP_S3_URI`).
 - **Language detection:** the teacher picks the lecture language. Sarvam can auto-detect, which could be added.
 - **Translation quality:** Tamil translations by the smaller models are sometimes awkward. Try GPT-4.1 or GPT-4o in AI settings for better local-language quality.
-- **Untested hardware:** the Pi agent hasn't yet been tested on a real Pi 5 with a real USB microphone. All tests used a WAV file as a stand-in for the microphone.
+- **Hardware tested once, not yet in a classroom:** on 13 Oct 2026 the agent ran on a real Pi 5 with a wireless USB clip-on mic. It registered with production and recorded, uploaded and finalised a 3-minute session; see `hardware-raspberry-pi.md`, "Field notes". Still open:
+  - heartbeats timing out during recording on campus Wi-Fi;
+  - the Pi going offline while powered from a laptop port;
+  - a full lesson in a real classroom.
 
 ---
 

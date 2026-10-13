@@ -97,7 +97,7 @@ async function streamAudio(req: Request, res: Response) {
     return;
   }
   try {
-    await pipeline(storage.read(audio.key, range ?? undefined), res);
+    await pipeline(await storage.read(audio.key, range ?? undefined), res);
   } catch (err) {
     // Client aborts are normal while seeking; anything else is logged.
     if ((err as NodeJS.ErrnoException).code !== 'ERR_STREAM_PREMATURE_CLOSE') req.log.warn({ err }, 'Audio stream failed');

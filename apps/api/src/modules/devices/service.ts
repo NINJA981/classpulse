@@ -446,7 +446,10 @@ export async function finalizeRecording(
     let durationSec: number;
     try {
       await fs.mkdir(storage.tmpDir, { recursive: true });
-      const pcmSec = await assemblePcmToWav(rows.map((r) => storage.localPath(r.objectKey)), wavPath);
+      const pcmSec = await assemblePcmToWav(
+        rows.map((r) => ({ size: r.bytes, open: () => storage.read(r.objectKey) })),
+        wavPath,
+      );
       // ffprobe validates the assembled file; fall back to the exact PCM length.
       durationSec = await probeDurationSec(wavPath).catch(() => pcmSec);
       if (!(durationSec > 0)) throw new Error('empty recording');

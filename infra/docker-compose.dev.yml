@@ -1,6 +1,14 @@
-# Local development infrastructure: PostgreSQL 16 + Redis 7.
+# Local development infrastructure: PostgreSQL 16 + Redis 7 + Garage (S3 object storage).
 #   npm run dev:infra        (from the repo root)
+# Every port is published on 127.0.0.1 only. The API uses Garage only with STORAGE_DRIVER=s3 in apps/api/.env
+# (see the S3 lines in apps/api/.env.example); the default `local` driver ignores it.
 name: classpulse-dev
+
+# DEV-ONLY credentials for the local Garage. Deliberately low-entropy placeholders, never used anywhere else:
+# production generates its own (docs/agents/deployment.md → "Object storage (Garage)").
+x-garage-dev: &garage-dev
+  GARAGE_RPC_SECRET: fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210  # gitleaks:allow (dev-only fake value)
+  GARAGE_ADMIN_TOKEN: dev-only-garage-admin-token-not-secret
 
 services:
   postgres:
@@ -35,6 +43,54 @@ services:
       timeout: 3s
       retries: 20
 
+  # S3 API on http://127.0.0.1:3900 (region garage, path-style). The admin API and RPC listen on the
+  # container's loopback only (as in production); use `docker compose -f infra/docker-compose.dev.yml exec
+  # storage /garage …` to inspect it.
+  storage:
+    build:
+      context: ..
+      dockerfile: infra/garage/Dockerfile
+    image: classpulse-storage:dev
+    restart: unless-stopped
+    environment:
+      <<: *garage-dev
+      RUST_LOG: garage=info,garage_net=warn,garage_api_admin=warn
+    ports:
+      - '127.0.0.1:3900:3900'
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    healthcheck:
+      test: ['CMD', '/garage', 'status']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+
+  # Creates the buckets `classpulse` (app) and `classpulse-test` (npm run test:s3) and the dev key; then exits.
+  storage-init:
+    build:
+      context: ..
+      dockerfile: infra/garage/init.Dockerfile
+    image: classpulse-storage-init:dev
+    restart: 'no'
+    network_mode: 'service:storage'
+    environment:
+      <<: *garage-dev
+      ALLOW_DEV_CREDENTIALS: '1'
+      GARAGE_ADMIN_URL: http://127.0.0.1:3903
+      GARAGE_CAPACITY: 10G
+      STORAGE_DRIVER: s3
+      S3_BUCKET: classpulse
+      S3_EXTRA_BUCKETS: classpulse-test
+      S3_ACCESS_KEY_ID: GK0123456789abcdef01234567
+      S3_SECRET_ACCESS_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  # gitleaks:allow (dev-only fake value)
+    depends_on:
+      storage:
+        condition: service_healthy
+
 volumes:
   pg_data:
   redis_data:
+  garage_meta:
+  garage_data:

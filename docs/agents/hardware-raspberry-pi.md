@@ -71,6 +71,38 @@ To **replace or re-provision** a Pi: revoke the old device in the admin console,
 | Upload backlog keeps growing | Network throughput. Check that the heartbeat's `lastError` doesn't show an expired key. |
 | `401` errors in the log | The device was revoked. Re-provision it with a new enrollment token. |
 | Recording never starts | The teacher must pick the section whose room has this device. Commands expire after 2 minutes if not picked up. |
+| Recording is silent (every sample is 0) | Check with `arecord -D <alsa_device> -f S16_LE -r 16000 -c 1 -d 5 /tmp/t.wav`, while the agent is stopped. A wireless clip-on kit's USB receiver records exact zeros while the transmitter is off, unpaired or muted. Switch it on, wait for the pairing light, and unmute it. |
+| `arecord: Device or resource busy` | Another program holds the mic. On the desktop image this is the user's PipeWire. Mask it as described in Field notes below. |
+
+## Field notes: first run on real hardware (13 Oct 2026)
+
+The first run used a Pi 5 (8 GB) with a preinstalled **Raspberry Pi OS desktop (Debian 13 "trixie")**, a Jieli-based wireless clip-on mic kit with a USB receiver, and the campus Wi-Fi.
+
+**What worked**
+- Agent v2.0.0 ran unchanged on Python 3.13, and `install.sh` worked as-is.
+- Registration over HTTPS succeeded. The first attempt timed out and the automatic retry worked.
+- A 183-second production recording was captured as 4 chunks of 1,920,000 bytes each (the last one partial), checked by sha256, uploaded, confirmed, and finalised.
+
+**What to know**
+- **Desktop image:** the login user's PipeWire and WirePlumber grab USB microphones. Stop them for good, and keep the desktop otherwise working:
+  ```bash
+  systemctl --user mask --now pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service
+  ```
+  The Lite image has no PipeWire, so this only applies to desktop images.
+- **Wireless mic kits:**
+  - The receiver capture runs at 48 kHz only. `plughw:` resamples to 16 kHz.
+  - Use the card name, for example `plughw:CARD=Device,DEV=0`, not a number, because numbers can change between boots.
+  - A switched-off transmitter gives digital silence, not an error.
+- **Wi-Fi:** turn power saving off on the Pi:
+  ```bash
+  sudo nmcli connection modify "<ssid>" 802-11-wireless.powersave 2
+  ```
+- **Remote access:** Tailscale on the Pi with `tailscale up --ssh` lets an admin reach it without a keyboard. The agent itself still makes only outbound HTTPS connections.
+- **Service user name:** `install.sh` creates a system user `classpulse`. If the Pi's login account is already named `classpulse`, the agent runs as that account instead. The systemd sandbox still applies: `NoNewPrivileges`, `ProtectHome` and a read-only system. Prefer a different login name, such as `admin`, on new Pis.
+
+**Open issues**
+- **Heartbeats during recording:** they failed with TLS handshake timeouts while chunk uploads in the same minutes succeeded. 25 test handshakes from the same Pi, idle, all took about 0.2 s.
+- **Power:** powered from a laptop USB port, the Pi went offline about 30 minutes in. Use the official 27 W supply. The cause is not yet confirmed from the logs.
 
 ## Updating the agent
 

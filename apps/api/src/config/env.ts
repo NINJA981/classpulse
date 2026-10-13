@@ -51,8 +51,21 @@ const EnvSchema = z
     /** Extra comma-separated origins allowed in development. */
     DEV_EXTRA_ORIGINS: z.string().optional().default(''),
 
-    STORAGE_DRIVER: z.enum(['local']).default('local'),
+    /** `local` = files under STORAGE_DIR; `s3` = an S3-compatible bucket (self-hosted Garage), see S3_*. */
+    STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
     STORAGE_DIR: z.string().default('./storage'),
+    /** Local scratch space for uploads in progress, transcodes and S3 downloads. Empty = `${STORAGE_DIR}/tmp`. */
+    TMP_DIR: z.string().trim().optional().default(''),
+    /** S3 API endpoint, e.g. http://storage:3900 (Garage on the compose network). Required with STORAGE_DRIVER=s3. */
+    S3_ENDPOINT: z.string().trim().optional().default(''),
+    S3_BUCKET: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/, 'must be a valid bucket name')
+      .default('classpulse'),
+    S3_REGION: z.string().trim().min(1).default('garage'),
+    S3_ACCESS_KEY_ID: z.string().trim().optional().default(''),
+    S3_SECRET_ACCESS_KEY: z.string().trim().optional().default(''),
     AUDIO_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
     /** Lesson transcripts older than this are deleted (the lesson, its summary and its quiz stay). */
     TRANSCRIPT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(365),
@@ -133,6 +146,14 @@ const EnvSchema = z
         ctx.addIssue({ code: 'custom', path: ['VAPID_PRIVATE_KEY'], message: 'must be a base64url 32-byte private key (npx web-push generate-vapid-keys)' });
       }
     }
+    // S3 storage needs the endpoint and the key pair; fail at boot, not on the first upload. Never echo the secret.
+    if (e.STORAGE_DRIVER === 's3') {
+      if (!/^https?:\/\/[^/\s]+\/?$/.test(e.S3_ENDPOINT)) {
+        ctx.addIssue({ code: 'custom', path: ['S3_ENDPOINT'], message: 'must be an http(s) URL such as http://storage:3900 when STORAGE_DRIVER=s3' });
+      }
+      if (!e.S3_ACCESS_KEY_ID) ctx.addIssue({ code: 'custom', path: ['S3_ACCESS_KEY_ID'], message: 'is required when STORAGE_DRIVER=s3' });
+      if (!e.S3_SECRET_ACCESS_KEY) ctx.addIssue({ code: 'custom', path: ['S3_SECRET_ACCESS_KEY'], message: 'is required when STORAGE_DRIVER=s3' });
+    }
     if (e.NODE_ENV !== 'production') return;
     const fail = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
     if (e.JWT_SECRET.length < 32 || e.JWT_SECRET.startsWith('dev-only') || KNOWN_EXAMPLE_SECRETS.has(e.JWT_SECRET)) {
@@ -145,7 +166,8 @@ const EnvSchema = z
     if (Buffer.from(e.PLATFORM_ENCRYPTION_KEY, 'base64').length !== 32) {
       fail('PLATFORM_ENCRYPTION_KEY', 'must be a base64 32-byte key in production (openssl rand -base64 32)');
     }
-  });
+  })
+  .transform((e) => ({ ...e, TMP_DIR: path.resolve(e.TMP_DIR || path.join(e.STORAGE_DIR, 'tmp')) }));
 
 const parsed = EnvSchema.safeParse(process.env);
 if (!parsed.success) {

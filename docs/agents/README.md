@@ -24,7 +24,7 @@ Requirements: Node 22+, Docker Desktop and Python 3.11+ (for the agent).
 
 ```bash
 npm install
-npm run dev:infra                         # Postgres 16 + Redis 7 in Docker
+npm run dev:infra                         # Postgres 16 + Redis 7 + Garage (S3) in Docker
 cp apps/api/.env.example apps/api/.env    # add SARVAM_API_KEY / OPENAI_API_KEY for real generation
 cp apps/web/.env.example apps/web/.env.local
 npm run build -w @classpulse/shared

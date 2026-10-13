@@ -3,7 +3,6 @@
  * transcripts are deleted without touching published quizzes, and orphaned storage objects are swept.
  */
 import { randomUUID } from 'node:crypto';
-import fs from 'node:fs/promises';
 import { eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { db } from '../src/db/client.js';
@@ -15,11 +14,6 @@ import { as, createWorld } from './helpers.js';
 import { insertLesson, insertQuestions } from './fixtures/lessons.js';
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000);
-
-async function age(key: string, ms: number) {
-  const when = new Date(Date.now() - ms);
-  await fs.utimes(storage.localPath(key), when, when);
-}
 
 describe('stuck lessons', () => {
   it('fails lessons processing for too long and lets retention delete their audio', async () => {
@@ -73,6 +67,7 @@ describe('transcript retention', () => {
 });
 
 describe('orphaned storage objects', () => {
+  // Driver-agnostic (S3 objects can't be backdated): sweep "now", then as if a day had passed.
   it('deletes old files with no row, and keeps referenced or recent ones', async () => {
     const w = await createWorld();
     const [a] = await db
@@ -82,24 +77,23 @@ describe('orphaned storage objects', () => {
     const [sub] = await db.insert(assignmentSubmissions).values({ assignmentId: a!.id, studentId: w.student.id }).returning();
     const referenced = `submissions/${a!.id}/${w.student.id}/${randomUUID()}.pdf`;
     const orphan = `submissions/${a!.id}/${w.student.id}/${randomUUID()}.pdf`;
-    const fresh = `submissions/${a!.id}/${w.student.id}/${randomUUID()}.pdf`;
     const orphanAudio = `audio/${randomUUID()}/${randomUUID()}.wav`;
-    for (const key of [referenced, orphan, fresh, orphanAudio]) await storage.put(key, Buffer.from('data'));
-    await db.insert(submissionFiles).values({ submissionId: sub!.id, objectKey: referenced, originalName: 'a.pdf', mime: 'application/pdf', sizeBytes: 4 });
-    for (const key of [referenced, orphan, orphanAudio]) await age(key, ORPHAN_MIN_AGE_MS + 3600_000);
-    // Recording chunks of an unknown session, long ago.
+    // Recording chunks of an unknown session.
     const chunk = `recordings/${randomUUID()}/00000.pcm`;
+    for (const key of [referenced, orphan, orphanAudio]) await storage.put(key, Buffer.from('data'));
     await storage.put(chunk, Buffer.from('pcm'));
-    await age(chunk, ORPHAN_MIN_AGE_MS + 3600_000);
-    const chunkDir = storage.localPath(chunk).replace(/[\\/]00000\.pcm$/, '');
-    const old = new Date(Date.now() - ORPHAN_MIN_AGE_MS - 3600_000);
-    await fs.utimes(chunkDir, old, old);
+    await db.insert(submissionFiles).values({ submissionId: sub!.id, objectKey: referenced, originalName: 'a.pdf', mime: 'application/pdf', sizeBytes: 4 });
 
-    expect(await sweepOrphanedObjects()).toBeGreaterThanOrEqual(3);
+    // Fresh objects are never swept, even without a row.
+    await sweepOrphanedObjects();
+    for (const key of [referenced, orphan, orphanAudio, chunk]) expect(await storage.stat(key)).not.toBeNull();
+
+    const later = new Date(Date.now() + ORPHAN_MIN_AGE_MS + 3600_000);
+    expect(await sweepOrphanedObjects(later)).toBeGreaterThanOrEqual(3);
     expect(await storage.stat(referenced)).not.toBeNull();
-    expect(await storage.stat(fresh)).not.toBeNull();
     expect(await storage.stat(orphan)).toBeNull();
     expect(await storage.stat(orphanAudio)).toBeNull();
     expect(await storage.stat(chunk)).toBeNull();
+    expect(await storage.listPrefixes('recordings')).not.toContain(chunk.replace(/\/00000\.pcm$/, ''));
   });
 });

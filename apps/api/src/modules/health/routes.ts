@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { pingDb } from '../../db/client.js';
 import { queueHealthy } from '../../jobs/queue.js';
-import { storage } from '../../lib/storage.js';
+import { storageReady } from '../../lib/storage.js';
 
 export const healthRouter = Router();
 
@@ -19,7 +19,7 @@ healthRouter.get('/ready', async (_req, res) => {
       () => (checks.database = 'fail'),
     ),
     queueHealthy().then((ok) => (checks.redis = ok ? 'ok' : 'fail')),
-    storage.ensureWritable().then(
+    storageReady().then(
       () => (checks.storage = 'ok'),
       () => (checks.storage = 'fail'),
     ),

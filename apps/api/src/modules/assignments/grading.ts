@@ -58,7 +58,7 @@ export function safeFileName(name: string): string {
 
 async function readObject(key: string): Promise<Buffer> {
   const chunks: Buffer[] = [];
-  for await (const chunk of storage.read(key)) chunks.push(chunk as Buffer);
+  for await (const chunk of await storage.read(key)) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks);
 }
 

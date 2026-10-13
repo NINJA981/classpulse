@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ClassPulse database</title>
+<style>
+  :root {
+    --paper: #f6f6f3; --surface: #ffffff; --surface-2: #f1f1ee; --ink: #111111; --ink-2: #444444; --muted: #636363;
+    --line: #d7d7d2; --line-strong: #111111; --pulse: #fde047; --pulse-ink: #111111; --danger: #a3231a;
+    --edge: #9a9a94; --shadow: 6px 6px 0 #111111; --grid: #e6e6e1;
+    --g0: #2f6fb3; --g1: #b4602b; --g2: #8a3fa8; --g3: #2f8a5b; --g4: #a8336b; --g5: #6b6b1f; --g6: #23808a; --g7: #5b4bb3; --g8: #8a5a00; --g9: #555;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --paper: #121211; --surface: #1b1b19; --surface-2: #232320; --ink: #f1f1ec; --ink-2: #c9c9c3; --muted: #9a9a93;
+      --line: #34342f; --line-strong: #f1f1ec; --edge: #6d6d66; --shadow: 6px 6px 0 #000; --grid: #1c1c1a; --danger: #ff8a7a;
+      --g0: #7fb3ec; --g1: #f0a46a; --g2: #cf8be8; --g3: #6fd09c; --g4: #f08ab9; --g5: #cfcf6a; --g6: #6fd0da; --g7: #a99bf2; --g8: #e6b85c; --g9: #aaa;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --paper: #121211; --surface: #1b1b19; --surface-2: #232320; --ink: #f1f1ec; --ink-2: #c9c9c3; --muted: #9a9a93;
+    --line: #34342f; --line-strong: #f1f1ec; --edge: #6d6d66; --shadow: 6px 6px 0 #000; --grid: #1c1c1a; --danger: #ff8a7a;
+    --g0: #7fb3ec; --g1: #f0a46a; --g2: #cf8be8; --g3: #6fd09c; --g4: #f08ab9; --g5: #cfcf6a; --g6: #6fd0da; --g7: #a99bf2; --g8: #e6b85c; --g9: #aaa;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink);
+    font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .app { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
+  aside.side { border-right: 1px solid var(--line-strong); background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+  .brand { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+  .brand h1 i { width: 18px; height: 18px; background: var(--ink); border-radius: 4px; display: inline-grid; place-items: center; }
+  .brand h1 i::after { content: ''; width: 10px; height: 2px; background: var(--pulse); box-shadow: 0 -3px 0 -0.5px var(--pulse); }
+  .brand p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+  .stats div { padding: 10px 8px; text-align: center; border-right: 1px solid var(--line); }
+  .stats div:last-child { border-right: 0; }
+  .stats b { display: block; font-size: 18px; font-weight: 900; }
+  .stats span { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 700; }
+  .search { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .search input { width: 100%; height: 36px; border: 1px solid var(--line-strong); background: var(--paper); padding: 0 10px; border-radius: 0; }
+  .search small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
+  .scroll { overflow: auto; flex: 1; min-height: 0; }
+  .grp { border-bottom: 1px solid var(--line); }
+  .grp-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 14px; background: none; border: 0; cursor: pointer; text-align: left; font-weight: 800; font-size: 13px; }
+  .grp-h .sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .grp-h .n { margin-left: auto; color: var(--muted); font-weight: 600; font-size: 12px; }
+  .grp-h[aria-pressed='false'] { color: var(--muted); text-decoration: line-through; }
+  .grp ul { list-style: none; margin: 0; padding: 0 0 6px; }
+  .grp li button { width: 100%; text-align: left; background: none; border: 0; padding: 4px 14px 4px 32px; cursor: pointer; font-size: 12.5px; display: flex; gap: 6px; }
+  .grp li button:hover, .grp li button[aria-current='true'] { background: var(--surface-2); }
+  .grp li button[aria-current='true'] { box-shadow: inset 3px 0 0 var(--pulse); font-weight: 700; }
+  .grp li .c { margin-left: auto; color: var(--muted); }
+  .enums { padding: 10px 14px 16px; }
+  .enums h2, .panel h3 { font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin: 6px 0 8px; font-weight: 800; }
+  .enum { margin-bottom: 8px; font-size: 12px; }
+  .enum b { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px; }
+  .enum div { color: var(--muted); }
+
+  main { position: relative; overflow: hidden; background-color: var(--paper);
+    background-image: radial-gradient(var(--grid) 1px, transparent 1px); background-size: 22px 22px; }
+  .toolbar { position: absolute; top: 12px; left: 12px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; }
+  .toolbar button { height: 34px; padding: 0 12px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; font-weight: 700; font-size: 12.5px; }
+  .toolbar button:hover { box-shadow: 3px 3px 0 var(--line-strong); }
+  .toolbar button[aria-pressed='true'] { background: var(--pulse); color: var(--pulse-ink); }
+  .hint { position: absolute; bottom: 10px; left: 12px; z-index: 5; color: var(--muted); font-size: 11.5px; background: var(--surface); border: 1px solid var(--line); padding: 4px 8px; }
+  #stage { position: absolute; inset: 0; cursor: grab; touch-action: none; }
+  #stage.drag { cursor: grabbing; }
+  #world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  svg#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+  svg#edges path { fill: none; stroke: var(--edge); stroke-width: 1.4; opacity: .55; }
+  svg#edges path.cascade { stroke-dasharray: none; }
+  svg#edges path.setnull { stroke-dasharray: 5 4; }
+  svg#edges path.hot { stroke: var(--ink); opacity: 1; stroke-width: 2.2; }
+  svg#edges path.dim { opacity: .07; }
+  svg#edges circle { fill: var(--edge); opacity: .6; }
+  svg#edges circle.hot { fill: var(--ink); opacity: 1; }
+  svg#edges circle.dim { opacity: .07; }
+  .zone { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--gc) 55%, transparent); background: color-mix(in srgb, var(--gc) 5%, transparent); }
+  .zone > span { position: absolute; top: -12px; left: 12px; background: var(--paper); padding: 0 8px; color: var(--gc); font-weight: 900; font-size: 13px; letter-spacing: .02em; }
+  .card { position: absolute; width: 270px; background: var(--surface); border: 1.5px solid var(--line-strong); cursor: pointer; transition: opacity .15s, box-shadow .15s; }
+  .card:hover { box-shadow: 4px 4px 0 var(--gc); }
+  .card.sel { box-shadow: var(--shadow); outline: 3px solid var(--pulse); outline-offset: -1px; z-index: 3; }
+  .card.dim { opacity: .18; }
+  .card.match { outline: 3px solid var(--pulse); outline-offset: 2px; }
+  .card header { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; border-bottom: 1.5px solid var(--line-strong); background: color-mix(in srgb, var(--gc) 14%, var(--surface)); }
+  .card header .sw { width: 9px; height: 9px; border-radius: 2px; background: var(--gc); flex: none; }
+  .card header b { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card header .n { margin-left: auto; color: var(--muted); font-size: 11px; }
+  .row { display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 10px; font-size: 11.5px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .row:last-child { border-bottom: 0; }
+  .row .k { width: 18px; flex: none; font-size: 9.5px; font-weight: 800; letter-spacing: .02em; }
+  .row .k.pk { color: var(--ink); background: var(--pulse); text-align: center; color: var(--pulse-ink); border-radius: 2px; }
+  .row .k.fk { color: var(--gc); }
+  .row .nm { font-family: "JetBrains Mono", ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .nm.null::after { content: '?'; color: var(--muted); }
+  .row .ty { margin-left: auto; color: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10.5px; white-space: nowrap; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+  .row.hit { background: var(--pulse); color: var(--pulse-ink); }
+  .row.hit .ty { color: var(--pulse-ink); }
+  .more { height: 20px; padding: 0 10px; font-size: 11px; color: var(--muted); display: flex; align-items: center; }
+
+  .panel { position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(440px, calc(100% - 24px)); z-index: 6; background: var(--surface);
+    border: 1.5px solid var(--line-strong); box-shadow: var(--shadow); display: none; flex-direction: column; }
+  .panel.open { display: flex; }
+  .panel .ph { padding: 14px 16px 12px; border-bottom: 1.5px solid var(--line-strong); background: color-mix(in srgb, var(--gc) 14%, var(--surface)); }
+  .panel .ph .g { font-size: 11px; font-weight: 800; color: var(--gc); text-transform: uppercase; letter-spacing: .12em; }
+  .panel .ph h2 { margin: 2px 0 6px; font: 800 18px/1.2 "JetBrains Mono", ui-monospace, monospace; word-break: break-all; }
+  .panel .ph p { margin: 0; color: var(--ink-2); font-size: 13px; }
+  .panel .x { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1; }
+  .panel .pb { overflow: auto; padding: 4px 16px 16px; }
+  .panel table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .panel th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); border-bottom: 1.5px solid var(--line-strong); padding: 6px 4px; }
+  .panel td { border-bottom: 1px solid var(--line); padding: 5px 4px; vertical-align: top; }
+  .panel td.mono { font-size: 11.5px; word-break: break-word; }
+  .panel .tag { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 1px 4px; border-radius: 2px; margin-right: 3px; }
+  .panel .tag.pk { background: var(--pulse); color: var(--pulse-ink); }
+  .panel .tag.fk { border: 1px solid var(--ink); }
+  .panel .tag.nn { color: var(--muted); border: 1px solid var(--line); }
+  .panel .def { color: var(--muted); font-size: 11px; }
+  .panel ul { margin: 0; padding-left: 16px; font-size: 12.5px; }
+  .panel li { margin: 3px 0; }
+  .panel a { color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .panel .rule { font-size: 10.5px; font-weight: 800; padding: 0 4px; border: 1px solid var(--line); border-radius: 2px; margin-left: 4px; color: var(--muted); }
+  .panel .rule.cascade { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--line); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { width: 26px; height: 8px; }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    aside.side { max-height: 42vh; border-right: 0; border-bottom: 1px solid var(--line-strong); }
+    .stats, .enums, .legend { display: none; }
+    .panel { top: auto; height: 60%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Tables">
+    <div class="brand">
+      <h1><i aria-hidden="true"></i>ClassPulse database</h1>
+      <p id="sub"></p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="search">
+      <label for="q" class="mono" style="font-size:11px;color:var(--muted)">Find a table or column</label>
+      <input id="q" type="search" placeholder="e.g. lessons, institution_id, status" autocomplete="off" />
+      <small id="qinfo">Click a table to see its columns, keys and links.</small>
+    </div>
+    <div class="scroll">
+      <nav id="groups"></nav>
+      <div class="enums"><h2>Enums</h2><div id="enums"></div></div>
+    </div>
+    <div class="legend">
+      <span><svg viewBox="0 0 26 8"><path d="M1 4h24" stroke="currentColor" stroke-width="1.6"/></svg>on delete cascade</span>
+      <span><svg viewBox="0 0 26 8"><path d="M1 4h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4"/></svg>set null</span>
+      <span><b class="mono" style="background:var(--pulse);color:var(--pulse-ink);padding:0 3px;font-size:10px">PK</b> primary key</span>
+      <span><b class="mono" style="font-size:10px">FK</b> foreign key · <span class="mono">?</span> nullable</span>
+    </div>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <button id="fit" type="button">Fit</button>
+      <button id="zin" type="button" aria-label="Zoom in">+</button>
+      <button id="zout" type="button" aria-label="Zoom out">−</button>
+      <button id="keys" type="button" aria-pressed="false">Keys only</button>
+      <button id="theme" type="button">Theme</button>
+    </div>
+    <div id="stage" aria-label="Schema diagram">
+      <div id="world"><svg id="edges"></svg></div>
+    </div>
+    <div class="hint">Drag to move · scroll to zoom · click a table · Esc to clear</div>
+    <section class="panel" id="panel" aria-live="polite">
+      <button class="x" id="close" type="button" aria-label="Close details">×</button>
+      <div class="ph" id="ph"></div>
+      <div class="pb" id="pb"></div>
+    </section>
+  </main>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const byName = new Map(DATA.tables.map((t) => [t.name, t]));
+  const gIndex = new Map(DATA.groups.map((g, i) => [g, i]));
+  const color = (g) => `var(--g${Math.min(gIndex.get(g) ?? 9, 9)})`;
+  const shortType = (t) => t.replace('timestamp with time zone', 'timestamptz').replace('timestamp without time zone', 'timestamp')
+    .replace('character varying', 'varchar').replace('double precision', 'float8');
+
+  // Per table: FK columns and inbound references.
+  for (const t of DATA.tables) { t.fks ??= []; t.pk ??= []; t.uniques ??= []; t.checks ??= []; t.indexes ??= []; t.inbound = []; t.fkCols = new Set(t.fks.flatMap((f) => f.cols)); }
+  for (const t of DATA.tables) for (const f of t.fks) byName.get(f.ref)?.inbound.push({ from: t.name, cols: f.cols, onDelete: f.onDelete });
+
+  // ---- sidebar
+  const fkCount = DATA.tables.reduce((n, t) => n + t.fks.length, 0);
+  const colCount = DATA.tables.reduce((n, t) => n + t.columns.length, 0);
+  $('#sub').textContent = `${DATA.migrations} migrations applied · read from Postgres ${DATA.generated}`;
+  $('#stats').innerHTML = [[DATA.tables.length, 'tables'], [colCount, 'columns'], [fkCount, 'links'], [Object.keys(DATA.enums).length, 'enums']]
+    .map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+  const hidden = new Set();
+  $('#groups').innerHTML = DATA.groups.map((g) => {
+    const ts = DATA.tables.filter((t) => t.group === g);
+    if (!ts.length) return '';
+    return `<div class="grp" style="--gc:${color(g)}"><button class="grp-h" type="button" aria-pressed="true" data-group="${esc(g)}">
+      <span class="sw" style="background:${color(g)}"></span>${esc(g)}<span class="n">${ts.length}</span></button>
+      <ul>${ts.map((t) => `<li><button type="button" data-table="${t.name}"><span class="mono">${t.name}</span><span class="c">${t.columns.length}</span></button></li>`).join('')}</ul></div>`;
+  }).join('');
+  $('#enums').innerHTML = Object.entries(DATA.enums).sort().map(([k, v]) => `<div class="enum"><b>${esc(k)}</b><div>${v.map(esc).join(' · ')}</div></div>`).join('');
+
+  // ---- layout: one zone per group, tables masonry-packed in 1–3 columns
+  const CARD_W = 270, GAP = 26, HEAD = 34, ROW = 20, ZPAD = 26;
+  let keysOnly = false;
+  const visibleCols = (t) => keysOnly ? t.columns.filter((c) => t.pk.includes(c.name) || t.fkCols.has(c.name)) : t.columns;
+  const cardH = (t) => HEAD + Math.max(1, visibleCols(t).length) * ROW + 3;
+  const world = $('#world'), svg = $('#edges');
+  const cards = new Map(), pos = new Map();
+  function layout() {
+    world.querySelectorAll('.zone,.card').forEach((n) => n.remove());
+    cards.clear(); pos.clear();
+    const zones = [];
+    for (const g of DATA.groups) {
+      const ts = DATA.tables.filter((t) => t.group === g && !hidden.has(g));
+      if (!ts.length) continue;
+      const cols = ts.length > 6 ? 3 : ts.length > 2 ? 2 : 1;
+      const heights = Array(cols).fill(0);
+      const place = [];
+      // biggest first, into the shortest column
+      for (const t of [...ts].sort((a, b) => cardH(b) - cardH(a))) {
+        const c = heights.indexOf(Math.min(...heights));
+        place.push({ t, x: c * (CARD_W + GAP), y: heights[c] });
+        heights[c] += cardH(t) + GAP;
+      }
+      zones.push({ g, place, w: cols * CARD_W + (cols - 1) * GAP, h: Math.max(...heights) - GAP });
+    }
+    // flow zones into rows ~3200px wide
+    const MAXW = 3300; let x = 40, y = 40, rowH = 0;
+    for (const z of zones) {
+      const zw = z.w + ZPAD * 2, zh = z.h + ZPAD * 2;
+      if (x > 40 && x + zw > MAXW) { x = 40; y += rowH + 70; rowH = 0; }
+      const zone = document.createElement('div');
+      zone.className = 'zone'; zone.style.cssText = `left:${x}px;top:${y}px;width:${zw}px;height:${zh}px;--gc:${color(z.g)}`;
+      zone.innerHTML = `<span>${esc(z.g)}</span>`;
+      world.appendChild(zone);
+      for (const p of z.place) {
+        const px = x + ZPAD + p.x, py = y + ZPAD + p.y;
+        pos.set(p.t.name, { x: px, y: py, w: CARD_W, h: cardH(p.t) });
+        world.appendChild(makeCard(p.t, px, py));
+      }
+      x += zw + 70; rowH = Math.max(rowH, zh);
+    }
+    world.style.width = MAXW + 'px'; world.style.height = (y + rowH + 80) + 'px';
+    drawEdges();
+    applyFocus();
+  }
+  function makeCard(t, x, y) {
+    const el = document.createElement('div');
+    el.className = 'card'; el.dataset.table = t.name;
+    el.style.cssText = `left:${x}px;top:${y}px;--gc:${color(t.group)}`;
+    const cols = visibleCols(t);
+    el.innerHTML = `<header><span class="sw"></span><b>${t.name}</b><span class="n">${t.columns.length}</span></header>` +
+      (cols.length ? cols.map((c) => {
+        const k = t.pk.includes(c.name) ? '<span class="k pk">PK</span>' : t.fkCols.has(c.name) ? '<span class="k fk">FK</span>' : '<span class="k"></span>';
+        return `<div class="row" data-col="${esc(c.name)}">${k}<span class="nm${c.nullable ? ' null' : ''}">${esc(c.name)}</span><span class="ty">${esc(shortType(c.type))}</span></div>`;
+      }).join('') : `<div class="more">no key columns</div>`);
+    el.addEventListener('click', (e) => { e.stopPropagation(); select(t.name); });
+    el.addEventListener('mouseenter', () => hover(t.name));
+    el.addEventListener('mouseleave', () => hover(null));
+    cards.set(t.name, el);
+    return el;
+  }
+  function colY(t, col) {
+    const p = pos.get(t.name); const i = visibleCols(t).findIndex((c) => c.name === col);
+    return p.y + (i < 0 ? HEAD / 2 : HEAD + i * ROW + ROW / 2);
+  }
+  const edges = [];
+  function drawEdges() {
+    edges.length = 0; svg.innerHTML = '';
+    svg.setAttribute('width', world.style.width); svg.setAttribute('height', world.style.height);
+    for (const t of DATA.tables) for (const f of t.fks) {
+      const ref = byName.get(f.ref); if (!pos.has(t.name) || !ref || !pos.has(ref.name)) continue;
+      const a = pos.get(t.name), b = pos.get(ref.name);
+      const y1 = colY(t, f.cols[0]), y2 = colY(ref, f.refCols?.[0] ?? 'id');
+      let x1, x2, d;
+      if (t === ref) { x1 = a.x + a.w; d = `M${x1} ${y1} c 40 0 40 ${y2 - y1 - 30} 0 ${y2 - y1}`; x2 = x1; }
+      else {
+        const right = b.x > a.x + a.w / 2;
+        x1 = right ? a.x + a.w : a.x; x2 = right ? b.x : b.x + b.w;
+        if (Math.abs(b.x - a.x) < 10) { x1 = a.x + a.w; x2 = b.x + b.w; const k = 60; d = `M${x1} ${y1} C ${x1 + k} ${y1}, ${x2 + k} ${y2}, ${x2} ${y2}`; }
+        else { const k = Math.max(40, Math.abs(x2 - x1) * 0.45); d = `M${x1} ${y1} C ${x1 + (right ? k : -k)} ${y1}, ${x2 + (right ? -k : k)} ${y2}, ${x2} ${y2}`; }
+      }
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('class', f.onDelete === 'cascade' ? 'cascade' : f.onDelete === 'set null' ? 'setnull' : '');
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', x2); dot.setAttribute('cy', y2); dot.setAttribute('r', 3.2);
+      svg.append(path, dot);
+      edges.push({ from: t.name, to: ref.name, path, dot });
+    }
+  }
+
+  // ---- focus: selection / hover / search
+  let selected = null, hovered = null, query = '';
+  function neighbours(name) {
+    const s = new Set([name]);
+    for (const e of edges) { if (e.from === name) s.add(e.to); if (e.to === name) s.add(e.from); }
+    return s;
+  }
+  function applyFocus() {
+    const focus = hovered ?? selected;
+    const near = focus ? neighbours(focus) : null;
+    for (const [n, el] of cards) {
+      el.classList.toggle('sel', n === selected);
+      el.classList.toggle('dim', !!near && !near.has(n));
+    }
+    for (const e of edges) {
+      const hot = !!focus && (e.from === focus || e.to === focus);
+      for (const n of [e.path, e.dot]) { n.classList.toggle('hot', hot); n.classList.toggle('dim', !!focus && !hot); }
+    }
+    document.querySelectorAll('.grp li button').forEach((b) => b.setAttribute('aria-current', String(b.dataset.table === selected)));
+    // search highlighting
+    const q = query.trim().toLowerCase();
+    let hits = 0;
+    for (const [n, el] of cards) {
+      let m = false;
+      el.querySelectorAll('.row').forEach((r) => { const h = !!q && r.dataset.col.toLowerCase().includes(q); r.classList.toggle('hit', h); if (h) { m = true; hits++; } });
+      const tm = !!q && n.includes(q);
+      el.classList.toggle('match', tm || m);
+    }
+    $('#qinfo').textContent = q ? `${hits} matching column${hits === 1 ? '' : 's'} · Enter to jump to the first table` : 'Click a table to see its columns, keys and links.';
+  }
+  function hover(n) { hovered = n; applyFocus(); }
+  function select(n) {
+    selected = n; applyFocus();
+    if (!n) { $('#panel').classList.remove('open'); return; }
+    const t = byName.get(n);
+    const panel = $('#panel'); panel.style.setProperty('--gc', color(t.group));
+    $('#ph').innerHTML = `<div class="g">${esc(t.group)}</div><h2>${t.name}</h2><p>${esc(t.description || '—')}</p>`;
+    const fkOf = new Map(); for (const f of t.fks) f.cols.forEach((c, i) => fkOf.set(c, `${f.ref}.${f.refCols?.[i] ?? 'id'}`));
+    const cols = t.columns.map((c) => `<tr><td class="mono">${t.pk.includes(c.name) ? '<span class="tag pk">PK</span>' : ''}${fkOf.has(c.name) ? '<span class="tag fk">FK</span>' : ''}${esc(c.name)}${fkOf.has(c.name) ? `<div class="def">→ <a data-go="${fkOf.get(c.name).split('.')[0]}">${esc(fkOf.get(c.name))}</a></div>` : ''}</td>
+      <td class="mono">${esc(shortType(c.type))}${c.nullable ? '' : ' <span class="tag nn">not null</span>'}${c.default ? `<div class="def">default ${esc(c.default)}</div>` : ''}</td></tr>`).join('');
+    const list = (title, items) => items.length ? `<h3>${title}</h3><ul>${items.join('')}</ul>` : '';
+    $('#pb').innerHTML =
+      `<h3>Columns (${t.columns.length})</h3><table><thead><tr><th>Name</th><th>Type</th></tr></thead><tbody>${cols}</tbody></table>` +
+      list('References', t.fks.map((f) => `<li><span class="mono">${esc(f.cols.join(', '))}</span> → <a data-go="${f.ref}" class="mono">${f.ref}</a><span class="rule ${f.onDelete === 'cascade' ? 'cascade' : ''}">on delete ${f.onDelete}</span></li>`)) +
+      list('Referenced by', t.inbound.map((r) => `<li><a data-go="${r.from}" class="mono">${r.from}</a>.<span class="mono">${esc(r.cols.join(', '))}</span><span class="rule ${r.onDelete === 'cascade' ? 'cascade' : ''}">${r.onDelete}</span></li>`)) +
+      list('Unique', t.uniques.map((u) => `<li class="mono">(${esc(u.join(', '))})</li>`)) +
+      list('Checks', t.checks.map((c) => `<li class="mono">${esc(c)}</li>`)) +
+      list('Indexes', t.indexes.map((i) => `<li class="mono">${i.unique ? '<b>unique</b> ' : ''}${esc(i.def.replace(/^CREATE (UNIQUE )?INDEX /, '').replace(/ ON public\.\w+ USING btree/, ''))}</li>`));
+    panel.classList.add('open');
+  }
+  $('#pb').addEventListener('click', (e) => { const a = e.target.closest('[data-go]'); if (a) { select(a.dataset.go); centerOn(a.dataset.go); } });
+  $('#close').addEventListener('click', () => select(null));
+  $('#groups').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-group]');
+    if (g) { const k = g.dataset.group; hidden.has(k) ? hidden.delete(k) : hidden.add(k); g.setAttribute('aria-pressed', String(!hidden.has(k))); layout(); return; }
+    const b = e.target.closest('[data-table]');
+    if (b && cards.has(b.dataset.table)) { select(b.dataset.table); centerOn(b.dataset.table); }
+  });
+  $('#q').addEventListener('input', (e) => { query = e.target.value; applyFocus(); });
+  $('#q').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const first = [...cards.keys()].find((n) => cards.get(n).classList.contains('match'));
+    if (first) { select(first); centerOn(first); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { select(null); $('#q').value = ''; query = ''; applyFocus(); } });
+
+  // ---- pan & zoom
+  const stage = $('#stage');
+  let s = 0.6, tx = 0, ty = 0;
+  const apply = () => { world.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`; };
+  const zoomAt = (f, cx, cy) => { const ns = Math.min(2.2, Math.max(0.12, s * f)); tx = cx - (cx - tx) * (ns / s); ty = cy - (cy - ty) * (ns / s); s = ns; apply(); };
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  let drag = null;
+  stage.addEventListener('pointerdown', (e) => { if (e.target.closest('.card')) return; drag = { x: e.clientX, y: e.clientY, tx, ty, moved: false }; stage.setPointerCapture(e.pointerId); stage.classList.add('drag'); });
+  stage.addEventListener('pointermove', (e) => { if (!drag) return; tx = drag.tx + e.clientX - drag.x; ty = drag.ty + e.clientY - drag.y; if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true; apply(); });
+  stage.addEventListener('pointerup', () => { if (drag && !drag.moved) select(null); drag = null; stage.classList.remove('drag'); });
+  function fit() {
+    const r = stage.getBoundingClientRect(); const w = parseFloat(world.style.width), h = parseFloat(world.style.height);
+    s = Math.min(r.width / w, r.height / h) * 0.96; tx = (r.width - w * s) / 2; ty = Math.max(8, (r.height - h * s) / 2); apply();
+  }
+  function centerOn(n) {
+    const p = pos.get(n); if (!p) return; const r = stage.getBoundingClientRect();
+    s = Math.max(s, 0.85); tx = r.width * 0.4 - (p.x + p.w / 2) * s; ty = r.height / 2 - (p.y + Math.min(p.h, 300) / 2) * s; apply();
+  }
+  $('#fit').addEventListener('click', fit);
+  $('#zin').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(1.25, r.width / 2, r.height / 2); });
+  $('#zout').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(0.8, r.width / 2, r.height / 2); });
+  $('#keys').addEventListener('click', (e) => { keysOnly = !keysOnly; e.currentTarget.setAttribute('aria-pressed', String(keysOnly)); layout(); fit(); });
+  $('#theme').addEventListener('click', () => {
+    const root = document.documentElement; const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+  });
+  window.addEventListener('resize', () => fit());
+
+  layout(); fit();
+})();
+</script>
+</body>
+</html>

@@ -282,7 +282,12 @@ describe('school offboarding (platform console)', () => {
   it('hard-deletes a suspended school: rows, stored files and nothing of other schools', async () => {
     const seeded = await seedStudentRecords(w);
     const other = await createWorld();
-    await seedStudentRecords(other);
+    const otherSeeded = await seedStudentRecords(other);
+    // Objects no row names (an extra take under the lesson's audio folder, a material file) go by prefix.
+    const strayAudio = storageKeys.lessonAudio(seeded.lesson.id);
+    const material = `materials/${w.institution.id}/${crypto.randomUUID()}.pdf`;
+    const otherMaterial = `materials/${other.institution.id}/${crypto.randomUUID()}.pdf`;
+    for (const key of [strayAudio, material, otherMaterial]) await storage.put(key, Buffer.from('x'));
     await db.insert(auditLogs).values({ actorType: 'user', actorId: w.admin.id, institutionId: w.institution.id, action: 'auth.login' });
     await suspend();
 
@@ -300,6 +305,15 @@ describe('school offboarding (platform console)', () => {
     expect(await db.select().from(guardians).where(eq(guardians.studentId, w.student.id))).toHaveLength(0);
     expect(await storage.stat(seeded.audioKey)).toBeNull();
     expect(await storage.stat(seeded.fileKey)).toBeNull();
+    expect(await storage.stat(strayAudio)).toBeNull();
+    expect(await storage.stat(material)).toBeNull();
+    const left: string[] = [];
+    for (const prefix of [`audio/${seeded.lesson.id}`, `submissions/${seeded.assignment.id}`, `materials/${w.institution.id}`]) {
+      for await (const o of storage.list(prefix)) left.push(o.key);
+    }
+    expect(left).toEqual([]);
+    // The other school's files stay.
+    for (const key of [otherSeeded.audioKey, otherSeeded.fileKey, otherMaterial]) expect(await storage.stat(key)).not.toBeNull();
 
     // The other school is untouched.
     expect(await db.select().from(users).where(eq(users.institutionId, other.institution.id))).toHaveLength(5);
