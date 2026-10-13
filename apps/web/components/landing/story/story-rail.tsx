@@ -14,7 +14,6 @@ import {
   subscribeProgress,
   subscribeUi,
 } from './chapters';
-import { progressTimecode } from './timeline';
 import { useLandingCopy } from '../i18n/copy-context';
 
 /**
@@ -29,13 +28,11 @@ export function StoryRail() {
   const live = useSyncExternalStore(subscribeUi, getLive, () => false);
   const paused = useSyncExternalStore(subscribeUi, getPaused, () => false);
   const railRef = useRef<HTMLDivElement>(null);
-  const timeRef = useRef<HTMLSpanElement>(null);
 
   // Per-scroll-frame updates go straight to the DOM (no React re-render).
   useEffect(() => {
     const update = () => {
       railRef.current?.style.setProperty('--p', String(story.progress / LAST_CHAPTER));
-      if (timeRef.current) timeRef.current.textContent = progressTimecode(story.progress);
     };
     update();
     return subscribeProgress(update);
@@ -86,11 +83,6 @@ export function StoryRail() {
             ))}
           </ol>
         </div>
-        <p className="flex shrink-0 items-center gap-1.5 rounded-card bg-board/90 px-1.5 py-0.5 font-mono text-xs text-chalk tabular-nums">
-          <span aria-hidden className="size-1.5 rounded-full bg-pulse" />
-          <span className="sr-only">{copy.lessonTime}</span>
-          <span ref={timeRef}>00:00</span>
-        </p>
       </nav>
 
       {/* WCAG 2.2.2: the live room moves on its own (teacher, fans, sound rings), so it can be paused. */}
@@ -99,8 +91,11 @@ export function StoryRail() {
           type="button"
           onClick={() => setPaused(!paused)}
           aria-label={paused ? copy.playAnimation : copy.pauseAnimation}
-          className="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-card bg-board/90 px-2.5 text-xs font-semibold text-chalk ring-1 ring-chalk/35 transition-[box-shadow] duration-200 ease-snap hover:ring-chalk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pulse"
+          title={paused ? copy.playAnimation : copy.pauseAnimation}
+          // Why so quiet: required (WCAG 2.2.2) but secondary — a small icon under the rail, full 44px target.
+          className="group/pause grid size-11 shrink-0 place-items-center rounded-full text-chalk/75 transition-colors duration-200 ease-snap hover:text-chalk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pulse"
         >
+          <span aria-hidden className="grid size-7 place-items-center rounded-full bg-board/70 ring-1 ring-chalk/20 transition-[box-shadow] duration-200 ease-snap group-hover/pause:ring-chalk/50">
           {paused ? (
             <svg aria-hidden viewBox="0 0 12 12" className="size-3 fill-current">
               <path d="M3 1.5v9l7.5-4.5z" />
@@ -110,7 +105,7 @@ export function StoryRail() {
               <path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" />
             </svg>
           )}
-          <span className="hidden sm:inline">{paused ? copy.play : copy.pause}</span>
+          </span>
         </button>
       ) : null}
     </div>
