@@ -23,7 +23,21 @@ export async function resetDatabase(): Promise<void> {
     sql`select tablename from pg_tables where schemaname = 'public' and tablename <> '__drizzle_migrations'`,
   );
   const names = rows.rows.map((r) => `"${r.tablename}"`).join(', ');
-  if (names) await db.execute(sql.raw(`truncate ${names} restart identity cascade`));
+  if (!names) return;
+  // Work left over from the previous test (an in-process queue job, a periodic task) can still hold row locks, so the
+  // truncate occasionally deadlocks (40P01) or times out on a lock (55P03). Postgres has already aborted one side;
+  // retrying after a short pause is safe.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.execute(sql.raw(`truncate ${names} restart identity cascade`));
+      return;
+    } catch (e) {
+      const err = e as { code?: string; cause?: { code?: string } };
+      const code = err.code ?? err.cause?.code;
+      if (attempt >= 5 || (code !== '40P01' && code !== '55P03')) throw e;
+      await new Promise((r) => setTimeout(r, 100 * attempt));
+    }
+  }
 }
 
 export const TEST_PASSWORD = 'Passw0rd!123';
