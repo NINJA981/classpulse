@@ -1,8 +1,9 @@
-/** Platform-console maintenance: log/audit retention and the 5-minute health snapshot. */
+/** Platform-console maintenance: log/audit retention, the 5-minute health snapshot and the deploy watcher. */
 import { logger } from '../lib/logger.js';
 import { purgeOldAudit } from '../modules/platform/opsAudit.js';
 import { pruneHealthSnapshots, takeHealthSnapshot } from '../modules/platform/opsHealth.js';
 import { purgeOldLogs } from '../modules/platform/opsLogs.js';
+import { deployWatchTask } from '../modules/platform/deployWatcher.js';
 import type { PeriodicTask } from './periodic.js';
 
 export const LOG_RETENTION_DAYS = 14;
@@ -36,4 +37,4 @@ export const auditRetentionTask: PeriodicTask = {
   },
 };
 
-export const opsTasks: PeriodicTask[] = [logRetentionTask, healthSnapshotTask, auditRetentionTask];
+export const opsTasks: PeriodicTask[] = [logRetentionTask, healthSnapshotTask, auditRetentionTask, deployWatchTask];

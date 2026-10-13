@@ -4,7 +4,7 @@ ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in 
 
 **Live:** schools sign in at https://classpulse.benxsolutions.in (`/admin/login`, `/teacher/login`, `/student/login`); the super admin console is at https://ops.benxsolutions.in.
 
-**New here? Read [docs/HANDBOOK.md](docs/HANDBOOK.md)**: the complete guide to every feature, the architecture, the AI pipeline, the hardware, the deployment and operations, with an FAQ and a glossary.
+**New here? Read [docs/agents/HANDBOOK.md](docs/agents/HANDBOOK.md)**: the complete guide to every feature, the architecture, the AI pipeline, the hardware, the deployment and operations, with an FAQ and a glossary.
 
 | | |
 |---|---|
@@ -13,7 +13,7 @@ ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in 
 | `apps/classroom-agent` | Raspberry Pi 5 recorder agent (Python, standard library only) |
 | `packages/shared` | API contracts (zod + TypeScript) shared by the API and the web app |
 | `infra/` | Docker Compose (dev and prod), Caddy, backup and restore |
-| `docs/` | [Architecture](docs/architecture.md) · [API](docs/api.md) · [Database](docs/database.md) · [Deployment](docs/deployment.md) · [Raspberry Pi hardware](docs/hardware-raspberry-pi.md) · [Pilot runbook](docs/pilot-runbook.md) · [Conventions](docs/conventions.md) · Research: [local models](docs/research/local-models-rnd.md), [STT benchmark](docs/research/stt-benchmark-2026-10-12.md) |
+| `docs/` | [Index](docs/README.md): `agents/` (Markdown, source of truth) and `humans/` (interactive pages, decks and PDFs built from it, [start here](docs/humans/web/index.html)) · [Architecture](docs/agents/architecture.md) · [API](docs/agents/api.md) · [Database](docs/agents/database.md) · [Deployment](docs/agents/deployment.md) · [Raspberry Pi hardware](docs/agents/hardware-raspberry-pi.md) · [Pilot runbook](docs/agents/pilot-runbook.md) · [Conventions](docs/agents/conventions.md) · Research: [local models](docs/agents/research/local-models-rnd.md), [STT benchmark](docs/agents/research/stt-benchmark-2026-10-12.md) |
 
 ## Local development
 
@@ -53,4 +53,4 @@ The Playwright specs are `full-flow`, `accounts`, `exams`, `assignments`, `platf
 
 ## Production
 
-See [docs/deployment.md](docs/deployment.md). The pilot runs on Coolify on an Oracle Cloud ARM server (`infra/docker-compose.coolify.yml`): an internal Caddy router, web, api, worker, Postgres and Redis, with Coolify's proxy terminating TLS for both hosts. A plain single-VPS Compose stack (`infra/docker-compose.prod.yml`, Caddy with automatic TLS) is also supported. Deploys are manual (Coolify Redeploy or its API); pushing to `main` does not deploy.
+See [docs/agents/deployment.md](docs/agents/deployment.md). The pilot runs on Coolify on an Oracle Cloud ARM server (`infra/docker-compose.coolify.yml`): an internal Caddy router, web, api, worker, Postgres and Redis, with Coolify's proxy terminating TLS for both hosts. A plain single-VPS Compose stack (`infra/docker-compose.prod.yml`, Caddy with automatic TLS) is also supported. Deploys are manual (Coolify Redeploy or its API); pushing to `main` does not deploy.

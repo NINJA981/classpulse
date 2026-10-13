@@ -15,9 +15,11 @@ import {
 import {
   DEFAULT_INSTITUTION_FEATURES,
   DEFAULT_INSTITUTION_LIMITS,
+  DEFAULT_NOTIFICATION_PREFS,
   type InstitutionContact,
   type InstitutionFeatures,
   type InstitutionLimits,
+  type NotificationPrefs,
 } from '@classpulse/shared';
 import { dayOfWeek, emailStatus, institutionStatus, passwordTokenPurpose, recordStatus, userRole } from './enums.js';
 
@@ -67,6 +69,8 @@ export const users = pgTable(
     tokenVersion: integer('token_version').notNull().default(0),
     status: recordStatus('status').notNull().default('active'),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    /** Per-person notification channels (in-app is always on). */
+    notificationPrefs: jsonb('notification_prefs').$type<NotificationPrefs>().notNull().default(DEFAULT_NOTIFICATION_PREFS),
     ...timestamps,
   },
   (t) => [

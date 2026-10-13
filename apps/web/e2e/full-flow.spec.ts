@@ -6,7 +6,7 @@
  *   code and takes the quiz → teacher analytics → live quiz with 2 students.
  *
  * Requires: `npm run dev` (or the prod stack via E2E_BASE_URL), seeded DB, and a
- * lecture recording at .e2e-fixtures/lecture-150s.mp3 (see docs/pilot-runbook.md).
+ * lecture recording at .e2e-fixtures/lecture-150s.mp3 (see docs/agents/pilot-runbook.md).
  */
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';

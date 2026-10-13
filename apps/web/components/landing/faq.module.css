@@ -1,0 +1,42 @@
+/* FAQ disclosure: native <details>. The open/close animation is a progressive enhancement
+   (browsers with ::details-content + interpolate-size); everywhere else it simply opens. */
+
+.item {
+  interpolate-size: allow-keywords;
+}
+
+.item::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 280ms var(--ease-snap),
+    content-visibility 280ms allow-discrete;
+}
+
+.item[open]::details-content {
+  block-size: auto;
+}
+
+.summary {
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+/* + / − : the vertical bar folds flat when open. */
+.bar {
+  transition: transform 240ms var(--ease-snap);
+}
+
+.item[open] .barV {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item::details-content,
+  .bar {
+    transition: none;
+  }
+}

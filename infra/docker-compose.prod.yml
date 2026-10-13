@@ -31,6 +31,11 @@ x-api-env: &api-env
   SMTP_USER: ${SMTP_USER:-}
   SMTP_PASS: ${SMTP_PASS:-}
   MAIL_FROM: ${MAIL_FROM:-}
+  DEMO_REQUEST_TO: ${DEMO_REQUEST_TO:-}
+  # Web Push (phone/desktop notifications): off while the private key is empty. npx web-push generate-vapid-keys
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@benxsolutions.in}
   PLATFORM_ORIGIN: ${PLATFORM_HOST:+https://${PLATFORM_HOST}}
   PLATFORM_ENCRYPTION_KEY: ${PLATFORM_ENCRYPTION_KEY:?set PLATFORM_ENCRYPTION_KEY (openssl rand -base64 32)}
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { NotificationDto } from './notifications.js';
 import { Id, type IsoDate } from './common.js';
 import type { ErrorCode } from './errors.js';
 import type { LessonProgress } from './lessons.js';
@@ -174,6 +175,8 @@ export interface ServerToClientEvents {
   /** Teacher-only notifications (joined automatically to their user room on connect). */
   'lesson:progress': (progress: LessonProgress) => void;
   'recording:update': (session: RecordingSession) => void;
+  /** A background job this user started finished or failed (see notifications.ts). Sent to their user room. */
+  'notification:new': (notification: NotificationDto) => void;
 }
 
 /** Scoring: correct answers earn BASE + up to SPEED_BONUS scaled by time remaining. */

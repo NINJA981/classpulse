@@ -121,7 +121,7 @@ describe('processLessonJob', () => {
     expect(row!.summary).toBeNull();
     expect(llmCalls).toBe(0);
     expect(await db.select().from(questions).where(eq(questions.lessonId, lesson.id))).toHaveLength(0);
-    const statuses = events.filter((e) => e.userId === w.teacher.id).map((e) => (e.payload as { status: string }).status);
+    const statuses = events.filter((e) => e.event === 'lesson:progress' && e.userId === w.teacher.id).map((e) => (e.payload as { status: string }).status);
     expect(statuses).toEqual(['transcribing', 'transcribed']);
     const detail = await as(w.teacher).get(`/api/lessons/${lesson.id}`);
     expect(detail.body).toMatchObject({ status: 'transcribed', hasTranscript: true, defaultQuestionCount: 5, progress: null });

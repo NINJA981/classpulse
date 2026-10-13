@@ -6,6 +6,7 @@ import { assignmentReminderTask } from '../modules/assignments/reminders.js';
 import { opsTasks } from './opsTasks.js';
 import { storageSweepTask } from './storageSweep.js';
 import { tmpSweepTask } from './tmpSweep.js';
+import { notificationRetentionTask } from '../modules/notifications/retention.js';
 
 export const maintenanceTasks: PeriodicTask[] = [
   retentionTask,
@@ -15,4 +16,5 @@ export const maintenanceTasks: PeriodicTask[] = [
   ...opsTasks,
   storageSweepTask,
   tmpSweepTask,
+  notificationRetentionTask,
 ];

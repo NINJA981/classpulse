@@ -1,5 +1,6 @@
 /**
- * Cross-process user notifications (lesson progress, recording updates).
+ * Cross-process user notifications (lesson progress, recording updates, `notification:new`).
+ * School users only: platform admins have no sockets and are never addressed here.
  *
  * The API process owns the Socket.IO server and registers an emitter with
  * `setLocalEmitter`. The worker process has no sockets, so it publishes to a
@@ -10,12 +11,12 @@ import type { ServerToClientEvents } from '@classpulse/shared';
 import { getRedis, newRedisConnection } from '../lib/redis.js';
 import { logger } from '../lib/logger.js';
 
-type UserEvent = 'lesson:progress' | 'recording:update';
-type Payload<E extends UserEvent> = Parameters<ServerToClientEvents[E]>[0];
+export type UserEvent = 'lesson:progress' | 'recording:update' | 'notification:new';
+export type Payload<E extends UserEvent> = Parameters<ServerToClientEvents[E]>[0];
 
 const CHANNEL = 'cp:notify';
 
-type Emitter = <E extends UserEvent>(userId: string, event: E, payload: Payload<E>) => void;
+export type Emitter = <E extends UserEvent>(userId: string, event: E, payload: Payload<E>) => void;
 let localEmitter: Emitter | null = null;
 
 export function setLocalEmitter(emitter: Emitter): void {

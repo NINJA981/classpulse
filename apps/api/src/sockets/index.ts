@@ -1,7 +1,7 @@
 /**
  * Socket.IO server. Authenticates every connection from the `cp_session`
  * cookie (never from client-supplied ids), joins each socket to `user:<id>`
- * for personal notifications (lesson progress, recording updates) and
+ * for personal notifications (lesson progress, recording updates, `notification:new`) and
  * `school:<id>`, and wires the live-quiz engine.
  *
  * Sessions stay revocable: every connected socket is re-validated every minute (and at once
@@ -12,13 +12,13 @@
 import type { Server as HttpServer } from 'node:http';
 import { parse as parseCookie } from 'cookie';
 import { Server } from 'socket.io';
-import { SESSION_COOKIE, type Ack, type ServerToClientEvents, type SessionUser } from '@classpulse/shared';
+import { SESSION_COOKIE, type Ack, type SessionUser } from '@classpulse/shared';
 import { allowedOrigins, isProd } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { isOwnOrigin } from '../lib/origins.js';
 import { onPlatformStateChange } from '../lib/platformState.js';
 import { resolveSession } from '../lib/session.js';
-import { setLocalEmitter, subscribeToWorkerNotifications } from '../realtime/notify.js';
+import { setLocalEmitter, subscribeToWorkerNotifications, type Emitter } from '../realtime/notify.js';
 import { LiveQuizEngine } from './liveQuiz.js';
 import { MAX_SOCKETS_PER_USER, SOCKET_ABUSE_LIMIT, SOCKET_EVENT_LIMIT, SOCKET_REVALIDATE_MS, TokenBucket } from './rateLimit.js';
 import { schoolRoom, setSocketServer, userRoom } from './sessions.js';
@@ -156,11 +156,7 @@ export function attachSockets(server: HttpServer): SocketHandle {
   });
 
   let active = true;
-  const emit = <E extends 'lesson:progress' | 'recording:update'>(
-    userId: string,
-    event: E,
-    payload: Parameters<ServerToClientEvents[E]>[0],
-  ) => {
+  const emit: Emitter = (userId, event, payload) => {
     if (!active) return;
     // The generic event/payload pair is checked by notifyUser's signature.
     (io.to(userRoom(userId)).emit as (ev: string, data: unknown) => boolean)(event, payload);

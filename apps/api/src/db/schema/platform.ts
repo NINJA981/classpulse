@@ -18,6 +18,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from '@classpulse/shared';
 import { emailStatus, recordStatus } from './enums.js';
 import { institutions, timestamps } from './org.js';
 
@@ -39,6 +40,8 @@ export const platformAdmins = pgTable('platform_admins', {
   /** bcrypt hashes of unused recovery codes. */
   recoveryCodeHashes: jsonb('recovery_code_hashes').$type<string[]>().notNull().default([]),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  /** Per-person notification channels (in-app is always on). */
+  notificationPrefs: jsonb('notification_prefs').$type<NotificationPrefs>().notNull().default(DEFAULT_NOTIFICATION_PREFS),
   ...timestamps,
 });
 

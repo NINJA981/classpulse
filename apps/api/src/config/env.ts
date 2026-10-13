@@ -79,6 +79,8 @@ const EnvSchema = z
      * per-account limits. Generous because a whole school can share one NAT address.
      */
     AUTH_IP_RATE_LIMIT: z.coerce.number().int().min(1).default(1500),
+    /** "Book a demo" requests (POST /api/public/demo-requests) allowed per IP per hour. */
+    DEMO_REQUEST_RATE_LIMIT: z.coerce.number().int().min(1).default(5),
     DEVICE_OFFLINE_AFTER_SEC: z.coerce.number().int().min(30).default(90),
 
     /** Outgoing email (Gmail/Workspace SMTP with an app password). Email is off unless all are set. */
@@ -88,6 +90,11 @@ const EnvSchema = z
     SMTP_PASS: z.string().optional().default(''),
     /** e.g. "ClassPulse <noreply@benxsolutions.in>". */
     MAIL_FROM: z.string().optional().default(''),
+    /**
+     * Fixed internal inbox for "Book a demo" requests from /about (POST /api/public/demo-requests).
+     * Empty = the address in MAIL_FROM. Requests are never emailed to the address a visitor types.
+     */
+    DEMO_REQUEST_TO: z.string().trim().pipe(z.union([z.literal(''), z.email()])).optional().default(''),
 
     /** Platform (super admin) console. Its own origin (e.g. https://ops.example.org); empty = same origin. */
     PLATFORM_ORIGIN: z.string().optional().default(''),
@@ -99,10 +106,33 @@ const EnvSchema = z
     COOLIFY_APP_UUID: z.string().optional().default(''),
     /** Where the host's encrypted backups are mounted read-only (for the health page). */
     BACKUP_DIR: z.string().default('/backups'),
+    /**
+     * Web Push (phone/desktop notifications). Generate a pair with `npx web-push generate-vapid-keys`.
+     * Push is off while VAPID_PRIVATE_KEY (or the public key) is empty; in-app notifications always work.
+     */
+    VAPID_PUBLIC_KEY: z.string().trim().optional().default(''),
+    VAPID_PRIVATE_KEY: z.string().trim().optional().default(''),
+    /** Contact the push services can reach (mailto: or https:). */
+    VAPID_SUBJECT: z
+      .string()
+      .optional()
+      .transform((v) => v?.trim() || 'mailto:admin@benxsolutions.in')
+      .pipe(z.string().regex(/^(mailto:|https:\/\/)/, 'must start with mailto: or https://')),
     /** End-to-end tests only: capture outgoing email instead of sending it and expose GET /api/test/emails. */
     E2E_MAIL_CAPTURE: bool,
   })
   .superRefine((e, ctx) => {
+    // A half-configured or malformed VAPID pair would fail every push (and wear out subscriptions): refuse it.
+    // Never echo the keys themselves.
+    if (e.VAPID_PRIVATE_KEY || e.VAPID_PUBLIC_KEY) {
+      const bytes = (v: string) => (/^[A-Za-z0-9_-]+$/.test(v) ? Buffer.from(v, 'base64url').length : -1);
+      if (bytes(e.VAPID_PUBLIC_KEY) !== 65) {
+        ctx.addIssue({ code: 'custom', path: ['VAPID_PUBLIC_KEY'], message: 'must be a base64url P-256 public key (npx web-push generate-vapid-keys)' });
+      }
+      if (bytes(e.VAPID_PRIVATE_KEY) !== 32) {
+        ctx.addIssue({ code: 'custom', path: ['VAPID_PRIVATE_KEY'], message: 'must be a base64url 32-byte private key (npx web-push generate-vapid-keys)' });
+      }
+    }
     if (e.NODE_ENV !== 'production') return;
     const fail = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
     if (e.JWT_SECRET.length < 32 || e.JWT_SECRET.startsWith('dev-only') || KNOWN_EXAMPLE_SECRETS.has(e.JWT_SECRET)) {
@@ -131,6 +161,8 @@ export const isProd = env.NODE_ENV === 'production';
 export const isTest = env.NODE_ENV === 'test';
 /** Whether outgoing email is configured (otherwise admins hand over one-time passwords). */
 export const mailEnabled = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS && env.MAIL_FROM);
+/** Whether Web Push is configured (read on every call: tests switch it on and off). */
+export const pushEnabled = (): boolean => Boolean(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
 
 export const allowedOrigins = [
   env.PUBLIC_ORIGIN,

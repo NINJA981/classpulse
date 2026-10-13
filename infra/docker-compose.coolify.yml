@@ -1,4 +1,4 @@
-# ClassPulse on Coolify (Docker Compose build pack). See docs/deployment.md → "Deploying on Coolify".
+# ClassPulse on Coolify (Docker Compose build pack). See docs/agents/deployment.md → "Deploying on Coolify".
 # Coolify's Traefik terminates TLS for the domain assigned to `router`; nothing else is exposed.
 # Coolify runs compose with the repo root as the project directory, so build contexts are `.`; locally use
 #   docker compose --project-directory . -f infra/docker-compose.coolify.yml ...
@@ -6,10 +6,13 @@
 #   PUBLIC_ORIGIN, POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET, SARVAM_API_KEY, OPENAI_API_KEY
 #   (REDIS_PASSWORD goes into a URL and a redis.conf line: use hex or base64, e.g. openssl rand -hex 32)
 #   optional: AUDIO_RETENTION_DAYS, GENERATION_CONCURRENCY, LOG_LEVEL,
-#             SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM (email invites, resets, reminders)
+#             SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM (email invites, resets, reminders),
+#             DEMO_REQUEST_TO (inbox for /about "Book a demo" requests; default: MAIL_FROM's address)
 #   platform console: PLATFORM_ENCRYPTION_KEY (required: openssl rand -base64 32), PLATFORM_ORIGIN
 #             (e.g. https://ops.example.org) + PLATFORM_HOST (ops.example.org; also add that domain to `router`),
 #             COOLIFY_API_URL, COOLIFY_API_TOKEN, COOLIFY_APP_UUID (deployments page; read + deploy token)
+#   push notifications (optional): VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY (npx web-push generate-vapid-keys),
+#             VAPID_SUBJECT (default mailto:admin@benxsolutions.in)
 #
 # Hardening (every service): no-new-privileges, all Linux capabilities dropped (Postgres and Redis get back
 # only what their entrypoints need to chown the data directory and drop to their own user), and memory/CPU
@@ -60,6 +63,11 @@ x-api-env: &api-env
   COOLIFY_API_URL: ${COOLIFY_API_URL:-}
   COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN:-}
   COOLIFY_APP_UUID: ${COOLIFY_APP_UUID:-}
+  DEMO_REQUEST_TO: ${DEMO_REQUEST_TO:-}
+  # Web Push (phone/desktop notifications): off while the private key is empty. npx web-push generate-vapid-keys
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@benxsolutions.in}
 
 services:
   postgres:

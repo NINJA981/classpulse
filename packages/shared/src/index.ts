@@ -15,3 +15,5 @@ export * from './platform-admin.js';
 export * from './platform-ops.js';
 export * from './platform-stats.js';
 export * from './teacher-tools.js';
+export * from './demo-requests.js';
+export * from './notifications.js';

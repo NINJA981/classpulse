@@ -25,6 +25,11 @@ export default defineConfig({
       LOG_LEVEL: 'silent',
       // Never inherit a developer's local .env e2e switches.
       E2E_MAIL_CAPTURE: 'false',
+      // Web Push off unless a test installs a key pair (test/notifications*.test.ts).
+      VAPID_PUBLIC_KEY: '',
+      VAPID_PRIVATE_KEY: '',
+      // Fixed inbox for "Book a demo" requests (test/demo-requests.test.ts).
+      DEMO_REQUEST_TO: 'demo-inbox@benx.test',
     },
   },
 });

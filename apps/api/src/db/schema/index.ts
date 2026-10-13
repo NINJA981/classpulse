@@ -6,3 +6,4 @@ export * from './devices.js';
 export * from './exams.js';
 export * from './platform.js';
 export * from './teacherTools.js';
+export * from './notifications.js';

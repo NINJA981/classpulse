@@ -1,0 +1,159 @@
+/* Finale: the chalkboard at dusk. Colours come from the landing tokens only. */
+
+.board {
+  background-color: var(--cp-board);
+  background-image:
+    /* Eraser smudges: wide, faint chalk haze left after the board was wiped. */
+    radial-gradient(60% 22% at 30% 22%, color-mix(in oklab, var(--cp-chalk) 7%, transparent), transparent 70%),
+    radial-gradient(45% 18% at 72% 58%, color-mix(in oklab, var(--cp-chalk) 5%, transparent), transparent 70%),
+    radial-gradient(70% 30% at 50% 100%, color-mix(in oklab, var(--cp-board-2) 90%, transparent), transparent 70%),
+    /* Chalk dust: fine fractal noise, white speckle at low alpha. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- Poster stage -----------------------------------------------------------
+   The dusk poster, zoomed and cropped to its chalkboard. `.frame` has the poster's own aspect ratio, so
+   percentages inside it are poster coordinates: `.onBoard` puts the chalk writing on the board's face.
+   These numbers are tied to the poster's camera (the board's face sits at about x 21–44 %, y 22–43 % of the wide
+   render and x 16–62 %, y 27–36 % of the tall one). Re-check them if the poster is re-framed.
+   --fw: frame width as a fraction of the stage; --fx / --fy: frame offset (both in stage widths). */
+
+.stage {
+  --fw: 1.4;
+  --fx: -5.5%;
+  --fy: -12.25%;
+  --crop: 0.3325; /* visible height / stage width */
+  position: relative;
+  overflow: hidden;
+  max-width: 100rem;
+  margin-inline: auto;
+  aspect-ratio: 1 / var(--crop);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 58%, transparent 100%);
+}
+
+/* Past 100rem the stage stops growing; feather its sides into the board too. */
+@media (min-width: 100rem) {
+  .stage {
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0, #000 14%, #000 58%, transparent 100%),
+      linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to bottom, transparent 0, #000 14%, #000 58%, transparent 100%),
+      linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+    mask-composite: intersect;
+  }
+}
+
+.frame {
+  position: absolute;
+  top: 0;
+  left: var(--fx);
+  width: calc(var(--fw) * 100%);
+  margin-top: var(--fy);
+  aspect-ratio: 16 / 10;
+}
+
+/* The board in the wide render leans away from the camera: its rulings drop about 10° to the left. */
+.onBoard {
+  position: absolute;
+  left: 24.4%;
+  top: 28.9%;
+  width: 16.4%;
+  height: auto;
+  transform: skewY(-10deg);
+  transform-origin: 50% 50%;
+}
+
+@media (orientation: portrait) {
+  .stage {
+    --fw: 1.25;
+    --fx: 0.4%;
+    --fy: -42.2%; /* crop from 19 % of the poster, below the sky */
+    --crop: 0.6667;
+  }
+  .frame {
+    aspect-ratio: 9 / 16;
+  }
+  .onBoard {
+    left: 22.9%;
+    top: 29.1%;
+    width: 33%;
+    transform: skewY(-3deg);
+  }
+}
+
+/* The section's text starts over the stage's faded lower edge. */
+.overlap {
+  margin-top: -3rem;
+}
+
+@media (min-width: 64rem) {
+  .overlap {
+    margin-top: -6rem;
+  }
+}
+
+/* --- Handwriting reveal ----------------------------------------------------
+   Each stroke has pathLength="1", so a dash of 1 hides or shows the whole stroke.
+   SSR / no-JS / reduced motion: fully drawn. JS arms it (hidden) and plays it once on entry. */
+
+.stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.writing[data-state='armed'] .stroke {
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+
+.writing[data-state='play'] .stroke {
+  animation: draw var(--dur, 400ms) cubic-bezier(0.55, 0.1, 0.35, 1) var(--delay, 0ms) both;
+}
+
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* A framed chalkboard outside the finale (behind the sample question's phone). Use with .board for the
+   dust and smudges. */
+.slate {
+  border: 6px solid var(--cp-wood);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--cp-wood-2) 60%, transparent),
+    inset 0 18px 40px -24px color-mix(in oklab, #000 45%, transparent);
+}
+
+/* The wooden ledge at the foot of a board, where the chalk lies. */
+.tray {
+  background-image: linear-gradient(
+    to bottom,
+    var(--cp-wood-2) 0,
+    var(--cp-wood-2) 2px,
+    var(--cp-wood) 3px,
+    color-mix(in oklab, var(--cp-wood) 70%, #000) 100%
+  );
+  box-shadow: 0 -1px 0 color-mix(in oklab, #000 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing .stroke,
+  .writing[data-state] .stroke {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

@@ -13,6 +13,7 @@ import { lessons, recordingSessions } from '../db/schema/index.js';
 import { logger } from '../lib/logger.js';
 import { storage } from '../lib/storage.js';
 import { ACTIVE_RECORDING_STATUSES, failRecordingSession } from '../modules/recordings/service.js';
+import { notifyLessonFailed } from './lessonNotify.js';
 import type { PeriodicTask } from './periodic.js';
 
 const BATCH = 100;
@@ -94,7 +95,16 @@ export async function failStuckLessons(now = new Date()): Promise<number> {
       audioExpiresAt: sql`case when ${lessons.audioObjectKey} is null then ${lessons.audioExpiresAt} else coalesce(${lessons.audioExpiresAt}, ${expiry}) end`,
     })
     .where(and(inArray(lessons.id, ids), or(inArray(lessons.status, [...BUSY_STATUSES]), eq(lessons.status, 'failed'))))
-    .returning({ id: lessons.id });
+    .returning({
+      id: lessons.id,
+      title: lessons.title,
+      teacherId: lessons.teacherId,
+      institutionId: lessons.institutionId,
+      generationAttempt: lessons.generationAttempt,
+    });
+  // Tell each teacher (rows failed just above by their recording session are included; the notification
+  // de-duplicates per lesson attempt, so a lesson the pipeline failed in the meantime is not reported twice).
+  for (const lesson of failed) notifyLessonFailed(lesson, STUCK_REASON);
   logger.warn({ lessons: failed.length }, 'Stuck lessons marked failed');
   return failed.length;
 }

@@ -2,16 +2,11 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, GraduationCap, School, UserRound, type LucideIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { ROLE_HOME, ROLE_LOGIN, ROLES, type Role } from '@classpulse/shared';
 import { LoginNotice } from '@/components/auth/platform-notice';
+import { ROLE_CARDS } from '@/components/auth/role-cards';
 import { ROLE_LOGIN_COPY } from '@/components/auth/role-login';
-
-const CARDS: Record<Role, { icon: LucideIcon; description: string }> = {
-  admin: { icon: School, description: 'Manage teachers, students, classes and devices.' },
-  teacher: { icon: GraduationCap, description: 'Record lessons, review quizzes, exams and assignments.' },
-  student: { icon: UserRound, description: 'Take quizzes, exams and hand in assignments.' },
-};
 
 /** "Who are you?" — links to each role's own sign-in page, forwarding ?next= (and any notice). */
 function Chooser() {
@@ -35,7 +30,7 @@ function Chooser() {
       <LoginNotice className="mt-5" />
       <ul className="mt-6 grid gap-4 sm:grid-cols-3">
         {ROLES.map((role) => {
-          const { icon: Icon, description } = CARDS[role];
+          const { icon: Icon, description } = ROLE_CARDS[role];
           return (
             <li key={role}>
               <Link
@@ -56,6 +51,12 @@ function Chooser() {
       <p className="mt-6 text-sm">
         <Link href="/forgot-password" className="inline-block py-1 font-semibold underline underline-offset-4">
           Forgot password?
+        </Link>
+      </p>
+      <p className="mt-2 text-sm text-muted">
+        New to ClassPulse?{' '}
+        <Link href="/about" className="inline-block py-1 font-semibold text-ink underline underline-offset-4">
+          See what it does
         </Link>
       </p>
     </div>

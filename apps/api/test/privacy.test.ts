@@ -2,7 +2,7 @@
  * DPDP data rights: per-student export (right of access) and school offboarding (export + hard delete).
  */
 import { eq } from 'drizzle-orm';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../src/db/client.js';
 import {
   assignmentSubmissions,
@@ -249,7 +249,12 @@ describe('school offboarding (platform console)', () => {
     for (const secret of ['passwordHash', 'apiKeyHash', 'deviceTokenHash', 'objectKey', 'audioObjectKey', 'SECRET1', 'private platform note']) {
       expect(text).not.toContain(secret);
     }
-    const [entry] = await db.select().from(auditLogs).where(eq(auditLogs.action, 'platform.school.export'));
+    // The route writes the audit entry after the download has been sent: wait for it.
+    const entry = await vi.waitFor(async () => {
+      const [row] = await db.select().from(auditLogs).where(eq(auditLogs.action, 'platform.school.export'));
+      if (!row) throw new Error('export not audited yet');
+      return row;
+    });
     expect(entry).toMatchObject({ actorType: 'platform', institutionId: w.institution.id, targetId: w.institution.id });
     expect((entry!.metadata as { counts: Record<string, number> }).counts.users).toBe(5);
   });

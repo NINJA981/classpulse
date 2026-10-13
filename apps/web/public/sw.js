@@ -59,3 +59,58 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/*
+ * Web Push: "your background job is done" (see packages/shared/src/notifications.ts, PushPayload).
+ * Icons are same-origin; links are same-origin paths only (exactly one leading '/').
+ */
+const ICON = '/icons/icon-192.png';
+
+/** A same-origin path, or null. Rejects '//host', schemes, backslashes and control characters. */
+function safePath(link) {
+  if (typeof link !== 'string' || link.length > 2048) return null;
+  if (!link.startsWith('/') || link.startsWith('//')) return null;
+  for (let i = 0; i < link.length; i += 1) {
+    const c = link.charCodeAt(i);
+    if (c < 0x20 || c === 0x7f || c === 0x5c) return null; // control characters, backslash
+  }
+  const url = new URL(link, self.location.origin);
+  return url.origin === self.location.origin ? url.pathname + url.search + url.hash : null;
+}
+
+self.addEventListener('push', (event) => {
+  let data;
+  try {
+    data = event.data ? event.data.json() : null;
+  } catch {
+    data = null;
+  }
+  const title = data && typeof data.title === 'string' && data.title ? data.title : 'ClassPulse';
+  const options = {
+    body: data && typeof data.body === 'string' ? data.body : undefined,
+    icon: ICON,
+    badge: ICON,
+    tag: data && typeof data.id === 'string' ? data.id : undefined,
+    data: { link: safePath(data && data.link) },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(safePath(event.notification.data && event.notification.data.link) || '/', self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
+      const same = windows.filter((w) => new URL(w.url).origin === self.location.origin);
+      const client = same.find((w) => w.focused) || same[0];
+      if (client) {
+        await client.focus().catch(() => undefined);
+        if (client.url === target) return;
+        // navigate() only works for windows this worker controls; otherwise open a new one.
+        const moved = 'navigate' in client ? await client.navigate(target).then(() => true, () => false) : false;
+        if (moved) return;
+      }
+      await self.clients.openWindow(target);
+    }),
+  );
+});

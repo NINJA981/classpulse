@@ -17,6 +17,8 @@ export const ERROR_CODES = [
   'SCHOOL_SUSPENDED',
   /** Platform maintenance with sign-ins blocked (503). */
   'MAINTENANCE',
+  /** Outgoing email is not configured here, so the request can't be delivered (503). */
+  'EMAIL_UNAVAILABLE',
   /** The feature is switched off for this school (403). */
   'FEATURE_DISABLED',
   'INTERNAL',

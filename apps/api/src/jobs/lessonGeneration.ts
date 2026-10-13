@@ -28,6 +28,7 @@ import { queueLessonGeneration } from '../modules/lessons/audio.js';
 import { GENERIC_FAILURE_MESSAGE, PipelineError, isPipelineError } from '../pipeline/errors.js';
 import { providers } from '../pipeline/providers.js';
 import { notifyUser } from '../realtime/notify.js';
+import { notifyLessonFailed, notifyLessonReady, notifyLessonTranscribed } from './lessonNotify.js';
 import { isLessonJobLive, type LessonJobData } from './queue.js';
 
 export interface LessonJobContext {
@@ -247,6 +248,7 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
     return;
   }
   pushProgress(lesson, data, 'ready_for_review', 100, 'Ready for review');
+  notifyLessonReady(lesson, gen.questions.length, keep.length > 0);
   log.info(
     { questions: gen.questions.length, kept: keep.length, mode: request.mode, timings, demo: finalMeta.demoFallback },
     'Lesson generation complete',
@@ -261,7 +263,9 @@ async function finishTranscribed(lesson: LessonRow, data: LessonJobData, extra: 
     .set({ status: 'transcribed', progressPct: 100, progressMessage: message, failureReason: null, quizRequest: null, ...extra })
     .where(and(guard(data), inArray(lessons.status, [...LESSON_PROCESSING_STATUSES])))
     .returning({ id: lessons.id });
-  if (rows.length) pushProgress(lesson, data, 'transcribed', 100, message);
+  if (!rows.length) return;
+  pushProgress(lesson, data, 'transcribed', 100, message);
+  notifyLessonTranscribed(lesson);
 }
 
 /** Called once after the final attempt fails: mark the lesson `failed` with a sanitized reason. */
@@ -273,8 +277,19 @@ export async function markLessonJobFailed(data: LessonJobData, err: Error): Prom
       .update(lessons)
       .set({ status: 'failed', failureReason: reason.slice(0, 500), progressMessage: null, quizRequest: null })
       .where(and(guard(data), inArray(lessons.status, [...LESSON_PROCESSING_STATUSES])))
-      .returning({ id: lessons.id, teacherId: lessons.teacherId, progressPct: lessons.progressPct });
-    if (row) pushProgress(row, data, 'failed', row.progressPct, reason);
+      .returning({
+        id: lessons.id,
+        title: lessons.title,
+        teacherId: lessons.teacherId,
+        institutionId: lessons.institutionId,
+        generationAttempt: lessons.generationAttempt,
+        progressPct: lessons.progressPct,
+      });
+    if (row) {
+      pushProgress(row, data, 'failed', row.progressPct, reason);
+      // Only the call that actually moved the lesson to `failed` notifies: a stale or repeated call updates nothing.
+      notifyLessonFailed(row, reason);
+    }
   } catch (dbErr) {
     logger.error({ err: dbErr, lessonId: data.lessonId }, 'Could not mark lesson as failed');
   }

@@ -32,6 +32,8 @@ import {
   liveParticipants,
   liveSessions,
   modelSettings,
+  notifications,
+  pushSubscriptions,
   questions,
   quizAttemptAnswers,
   quizAttempts,
@@ -176,6 +178,14 @@ const EXPORT_TABLES: ExportTable[] = [
   { name: 'teacherMaterials', table: teacherMaterials, where: (id) => eq(teacherMaterials.institutionId, id), order: [teacherMaterials.id] },
   { name: 'teachingResources', table: teachingResources, where: (id) => eq(teachingResources.institutionId, id), order: [teachingResources.id] },
   { name: 'simulationLinks', table: simulationLinks, where: (id) => eq(simulationLinks.institutionId, id), order: [simulationLinks.id] },
+  // In-app notifications of the school's people. Push subscriptions are not exported: their endpoints and
+  // keys are device credentials, not school records.
+  {
+    name: 'notifications',
+    table: notifications,
+    where: (id) => eq(notifications.institutionId, id),
+    order: [notifications.id],
+  },
   { name: 'auditLogs', table: auditLogs, where: (id) => eq(auditLogs.institutionId, id), order: [auditLogs.id] },
 ];
 
@@ -290,6 +300,11 @@ export async function deleteSchool(id: string, confirmCode: string): Promise<Sch
     );
     counts.teachingResources = await count(
       tx.delete(teachingResources).where(eq(teachingResources.institutionId, id)).returning({ id: teachingResources.id }),
+    );
+    // Notifications and push subscriptions would cascade from users too; deleted explicitly for the counts.
+    counts.notifications = await count(tx.delete(notifications).where(eq(notifications.institutionId, id)).returning({ id: notifications.id }));
+    counts.pushSubscriptions = await count(
+      tx.delete(pushSubscriptions).where(eq(pushSubscriptions.institutionId, id)).returning({ id: pushSubscriptions.id }),
     );
     // enrolments, guardians, password links and section membership cascade from users.
     await tx.delete(users).where(eq(users.institutionId, id));

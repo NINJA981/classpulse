@@ -23,7 +23,9 @@ import {
   liveAnswers,
   liveParticipants,
   liveSessions,
+  notifications,
   passwordTokens,
+  pushSubscriptions,
   questions,
   quizAttemptAnswers,
   quizAttempts,
@@ -53,6 +55,7 @@ export async function exportStudentData(institutionId: string, studentId: string
       status: users.status,
       mustChangePassword: users.mustChangePassword,
       lastLoginAt: users.lastLoginAt,
+      notificationPrefs: users.notificationPrefs,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })
@@ -71,6 +74,8 @@ export async function exportStudentData(institutionId: string, studentId: string
     reminderRows,
     liveRows,
     auditRows,
+    notificationRows,
+    pushRows,
   ] = await Promise.all([
     db.select({ id: institutions.id, name: institutions.name, code: institutions.code }).from(institutions).where(eq(institutions.id, institutionId)),
     db
@@ -128,6 +133,17 @@ export async function exportStudentData(institutionId: string, studentId: string
       .from(auditLogs)
       .where(and(eq(auditLogs.institutionId, institutionId), or(eq(auditLogs.actorId, studentId), eq(auditLogs.targetId, studentId))))
       .orderBy(asc(auditLogs.at)),
+    db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.institutionId, institutionId), eq(notifications.userId, studentId)))
+      .orderBy(asc(notifications.createdAt)),
+    // Devices only (browser and dates): endpoints and keys are device credentials.
+    db
+      .select({ userAgent: pushSubscriptions.userAgent, createdAt: pushSubscriptions.createdAt, lastSuccessAt: pushSubscriptions.lastSuccessAt })
+      .from(pushSubscriptions)
+      .where(and(eq(pushSubscriptions.institutionId, institutionId), eq(pushSubscriptions.userId, studentId)))
+      .orderBy(asc(pushSubscriptions.createdAt)),
   ]);
 
   const quizIds = quizRows.map((r) => r.attempt.id);
@@ -298,6 +314,16 @@ export async function exportStudentData(institutionId: string, studentId: string
         ...(own && { ip: a.ip, userAgent: a.userAgent }),
       };
     }),
+    // Operational "your job finished" messages (kept 90 days once read, 180 days at most).
+    notifications: notificationRows.map((n) => ({
+      kind: n.kind,
+      title: n.title,
+      body: n.body,
+      link: n.link,
+      createdAt: iso(n.createdAt),
+      readAt: iso(n.readAt),
+    })),
+    pushDevices: pushRows.map((d) => ({ userAgent: d.userAgent, subscribedAt: iso(d.createdAt), lastDeliveredAt: iso(d.lastSuccessAt) })),
     notes: [
       'Classroom audio and transcripts belong to lessons, not to individual students, and are not part of this export.',
       'Operational logs (kept 14 days) and encrypted backups (kept about 5 weeks) are not included.',

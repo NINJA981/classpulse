@@ -15,6 +15,7 @@ import { getRedis, newRedisConnection } from '../../lib/redis.js';
 import { GENERIC_FAILURE_MESSAGE, isPipelineError } from '../../pipeline/errors.js';
 import { generators } from './generators/index.js';
 import { buildGenerationContext } from './grounding.js';
+import { notifyResourceFailed, notifyResourceReady } from './notify.js';
 
 export const RESOURCE_QUEUE = 'resources';
 export const RESOURCE_JOB_ATTEMPTS = 2;
@@ -99,16 +100,31 @@ export async function processResourceJob(data: ResourceJobData, attemptNumber: n
     .where(and(guard(data), eq(teachingResources.status, 'generating')))
     .returning({ id: teachingResources.id });
   log.info({ saved: saved.length > 0, ms: Date.now() - started }, 'Resource generated');
+  // Only when this run's result was stored (a superseded or deleted resource gets no notification).
+  if (saved.length) notifyResourceReady(resource);
 }
 
 /** Called once, after the final attempt failed. */
 export async function markResourceJobFailed(data: ResourceJobData, err: unknown): Promise<void> {
   const reason = (isPipelineError(err) ? err.userMessage : GENERIC_FAILURE_MESSAGE).slice(0, 500);
-  await db
-    .update(teachingResources)
-    .set({ status: 'failed', failureReason: reason })
-    .where(and(guard(data), inArray(teachingResources.status, ['queued', 'generating'])))
-    .catch((e: Error) => logger.error({ err: e.message }, 'Could not mark resource failed'));
+  try {
+    const [row] = await db
+      .update(teachingResources)
+      .set({ status: 'failed', failureReason: reason })
+      .where(and(guard(data), inArray(teachingResources.status, ['queued', 'generating'])))
+      .returning({
+        id: teachingResources.id,
+        type: teachingResources.type,
+        title: teachingResources.title,
+        teacherId: teachingResources.teacherId,
+        institutionId: teachingResources.institutionId,
+        generationAttempt: teachingResources.generationAttempt,
+      });
+    // Only the call that actually moved the resource to `failed` notifies.
+    if (row) notifyResourceFailed(row, reason);
+  } catch (e) {
+    logger.error({ err: (e as Error).message }, 'Could not mark resource failed');
+  }
 }
 
 /* ------------------------------------------ workers ------------------------------------------ */

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { PlatformAdmin } from '@classpulse/shared';
 import { LegalLinks } from '@/components/legal/legal-links';
+import { NotificationBell, NotificationsProvider } from '@/components/notifications';
 import { api } from '@/lib/api';
 
 interface PlatformNavItem {
@@ -91,8 +92,13 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
         })}
       </ul>
       <div className="border-t border-line p-4">
-        <p className="truncate text-sm font-bold">{admin.name}</p>
-        <p className="truncate text-xs text-muted">{admin.email}</p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold">{admin.name}</p>
+            <p className="truncate text-xs text-muted">{admin.email}</p>
+          </div>
+          <NotificationBell onNavigate={() => setOpen(false)} />
+        </div>
         <button type="button" onClick={logout} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-muted hover:text-ink">
           <LogOut className="size-3.5" aria-hidden /> Sign out
         </button>
@@ -102,36 +108,41 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
 
   return (
     <PlatformAdminContext.Provider value={admin}>
-      <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
-        <aside className="hidden border-r border-line bg-surface lg:sticky lg:top-0 lg:block lg:h-dvh">{sidebar}</aside>
+      <NotificationsProvider scope="platform">
+        <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
+          <aside className="hidden border-r border-line bg-surface lg:sticky lg:top-0 lg:z-40 lg:block lg:h-dvh">{sidebar}</aside>
 
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
-          <span className="font-display text-lg font-black">ClassPulse platform</span>
-          <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="p-1.5">
-            <Menu className="size-5" />
-          </button>
-        </header>
-        {open && (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-            <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] bg-surface shadow-pop">
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 p-1">
-                <X className="size-5" />
+          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
+            <span className="font-display text-lg font-black">ClassPulse platform</span>
+            <div className="flex items-center gap-1">
+              <NotificationBell />
+              <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="p-1.5">
+                <Menu className="size-5" />
               </button>
-              {sidebar}
             </div>
-          </div>
-        )}
+          </header>
+          {open && (
+            <div className="fixed inset-0 z-40 lg:hidden">
+              <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+              <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] bg-surface shadow-pop">
+                <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 p-1">
+                  <X className="size-5" />
+                </button>
+                {sidebar}
+              </div>
+            </div>
+          )}
 
-        <main id="main" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
-          <div className="mx-auto max-w-6xl">
-            {children}
-            <footer className="mt-12 border-t border-line pt-4">
-              <LegalLinks />
-            </footer>
-          </div>
-        </main>
-      </div>
+          <main id="main" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
+            <div className="mx-auto max-w-6xl">
+              {children}
+              <footer className="mt-12 border-t border-line pt-4">
+                <LegalLinks />
+              </footer>
+            </div>
+          </main>
+        </div>
+      </NotificationsProvider>
     </PlatformAdminContext.Provider>
   );
 }

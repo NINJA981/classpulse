@@ -12,6 +12,8 @@ export interface MailMessage {
   subject: string;
   html: string;
   text: string;
+  /** Validated address only (it becomes a header). */
+  replyTo?: string;
 }
 
 type Sender = (msg: MailMessage) => Promise<void>;
@@ -29,7 +31,14 @@ const smtpSender: Sender = async (msg) => {
     tls: { minVersion: 'TLSv1.2' },
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   });
-  await transport.sendMail({ from: env.MAIL_FROM, to: msg.to, subject: msg.subject, html: msg.html, text: msg.text });
+  await transport.sendMail({
+    from: env.MAIL_FROM,
+    to: msg.to,
+    subject: msg.subject,
+    html: msg.html,
+    text: msg.text,
+    ...(msg.replyTo && { replyTo: msg.replyTo }),
+  });
 };
 
 let sender: Sender = smtpSender;

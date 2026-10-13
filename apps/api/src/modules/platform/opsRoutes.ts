@@ -15,7 +15,9 @@ import {
 } from '@classpulse/shared';
 import { z } from 'zod';
 import { audit } from '../../lib/audit.js';
+import { currentPlatformAdmin } from '../../middleware/platformAuth.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';
+import { watchDeployment } from './deployWatcher.js';
 import { auditRouter, sendAuditCsv } from './opsAudit.js';
 import { csvFilename } from './opsCsv.js';
 import * as deployments from './opsDeployments.js';
@@ -122,6 +124,8 @@ opsRouter.post('/redeploy', async (req, res) => {
   const result = await deployments.redeploy();
   if (result.configured) {
     await audit(req, { action: 'platform.deploy.redeploy', targetType: 'deployment', targetId: result.deploymentId ?? undefined });
+    // Notify this admin when Coolify finishes (deployWatcher; never throws).
+    await watchDeployment({ deploymentId: result.deploymentId, platformAdminId: currentPlatformAdmin(req).id, action: 'redeploy' });
   }
   res.json(result);
 });
@@ -131,6 +135,7 @@ opsRouter.post('/restart', async (req, res) => {
   const result = await deployments.restart();
   if (result.configured) {
     await audit(req, { action: 'platform.deploy.restart', targetType: 'deployment', targetId: result.deploymentId ?? undefined });
+    await watchDeployment({ deploymentId: result.deploymentId, platformAdminId: currentPlatformAdmin(req).id, action: 'restart' });
   }
   res.json(result);
 });
