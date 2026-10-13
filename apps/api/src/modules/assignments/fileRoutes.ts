@@ -42,7 +42,7 @@ assignmentFilesRouter.get('/:id', async (req, res) => {
   res.setHeader('Content-Security-Policy', FILE_CSP);
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   try {
-    await pipeline(storage.read(file.objectKey), res);
+    await pipeline(await storage.read(file.objectKey), res);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ERR_STREAM_PREMATURE_CLOSE') req.log.warn({ err }, 'File download failed');
     if (!res.headersSent) throw err;

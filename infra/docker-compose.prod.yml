@@ -21,7 +21,17 @@ x-api-env: &api-env
   REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
   JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (>=32 random chars)}
   PUBLIC_ORIGIN: https://${DOMAIN:?set DOMAIN}
+  # Stored files: `local` = the storage_data volume under STORAGE_DIR; `s3` = the Garage bucket below. Flip to
+  # s3 only after the migration in docs/agents/deployment.md → "Object storage (Garage)".
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
   STORAGE_DIR: /data/storage
+  # Uploads in progress, transcodes and S3 downloads; always local disk (its own volume, swept hourly).
+  TMP_DIR: /data/tmp
+  S3_ENDPOINT: http://storage:3900
+  S3_BUCKET: ${S3_BUCKET:-classpulse}
+  S3_REGION: garage
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
   AUDIO_RETENTION_DAYS: ${AUDIO_RETENTION_DAYS:-30}
   SARVAM_API_KEY: ${SARVAM_API_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -114,7 +124,9 @@ services:
     restart: unless-stopped
     environment: *api-env
     volumes:
+      # storage_data stays mounted while files are migrated to Garage (and for a week after the switch).
       - storage_data:/data/storage
+      - tmp_data:/data/tmp
       # Host backups (infra/backup.sh), read-only, for the platform health page's backup age check.
       - ${BACKUP_DIR:-/var/backups/classpulse}:/backups:ro
     networks: [internal]
@@ -123,6 +135,8 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
     mem_limit: 1536m
     cpus: 2
     security_opt: ['no-new-privileges:true']
@@ -136,17 +150,85 @@ services:
     environment: *api-env
     volumes:
       - storage_data:/data/storage
+      - tmp_data:/data/tmp
     networks: [internal]
     depends_on:
       migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
     healthcheck:
       disable: true
     # ffmpeg (audio normalisation) runs here.
     mem_limit: 2g
     cpus: 2
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    logging: *logging
+
+  # Garage: S3-compatible object storage for stored files. Internal only (no ports); the API is the only client
+  # and still serves every file itself. Config baked into the image (infra/garage/garage.toml): other containers
+  # can reach only the S3 API (:3900); the admin API and RPC listen on the container's loopback.
+  # GARAGE_* secrets go to this service and storage-init only, never to api/worker/web.
+  storage:
+    image: classpulse-storage:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: infra/garage/Dockerfile
+    restart: unless-stopped
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?set GARAGE_RPC_SECRET (openssl rand -hex 32)}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:?set GARAGE_ADMIN_TOKEN (openssl rand -base64 32)}
+      # The health check's `garage status` logs a connection every 15 s at INFO; keep those quiet.
+      RUST_LOG: garage=info,garage_net=warn,garage_api_admin=warn
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    networks: [internal]
+    healthcheck:
+      # The image is FROM scratch (no shell): the garage CLI checks the daemon answers on RPC.
+      test: ['CMD', '/garage', 'status']
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    read_only: true
+    mem_limit: 512m
+    cpus: 1
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    logging: *logging
+
+  # One-shot, idempotent setup through Garage's admin API: cluster layout, bucket, application key and its
+  # read/write grant (infra/garage/init.sh). api and worker start after it exits 0. Garage's admin API and RPC
+  # listen on its loopback only, so this service shares Garage's network namespace to reach the admin API.
+  storage-init:
+    image: classpulse-storage-init:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: infra/garage/init.Dockerfile
+    restart: 'no'
+    network_mode: 'service:storage'
+    environment:
+      GARAGE_ADMIN_URL: http://127.0.0.1:3903
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:?set GARAGE_ADMIN_TOKEN (openssl rand -base64 32)}
+      # Only validated here (64 hex characters), so a bad value fails with a readable message.
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?set GARAGE_RPC_SECRET (openssl rand -hex 32)}
+      GARAGE_CAPACITY: ${GARAGE_CAPACITY:-50G}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_BUCKET: ${S3_BUCKET:-classpulse}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+    depends_on:
+      storage:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=1m
+    mem_limit: 32m
+    cpus: 0.25
     security_opt: ['no-new-privileges:true']
     cap_drop: [ALL]
     logging: *logging
@@ -202,6 +284,9 @@ volumes:
   pg_data:
   redis_data:
   storage_data:
+  tmp_data:
+  garage_meta:
+  garage_data:
   caddy_data:
   caddy_config:
 

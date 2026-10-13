@@ -107,14 +107,18 @@ export async function processLessonJob(data: LessonJobData, ctx: LessonJobContex
       });
     }
     const started = Date.now();
-    const stt = await providers.transcribe({
-      provider: settings.sttProvider === 'openai' ? 'openai' : 'sarvam',
-      audioPath: storage.localPath(lesson.audioObjectKey),
-      language,
-      durationSec: lesson.durationSec ?? 0,
-      model: settings.sttModel,
-      usage: { institutionId: lesson.institutionId, lessonId: lesson.id, kind: 'stt' },
-    });
+    // The STT clients need a file path: the stored file itself (local) or a temp download (S3).
+    const audioKey = lesson.audioObjectKey;
+    const stt = await storage.withLocalFile(audioKey, (audioPath) =>
+      providers.transcribe({
+        provider: settings.sttProvider === 'openai' ? 'openai' : 'sarvam',
+        audioPath,
+        language,
+        durationSec: lesson.durationSec ?? 0,
+        model: settings.sttModel,
+        usage: { institutionId: lesson.institutionId, lessonId: lesson.id, kind: 'stt' },
+      }),
+    );
     timings.sttMs = Date.now() - started;
     segments = stt.segments;
     Object.assign(meta, {

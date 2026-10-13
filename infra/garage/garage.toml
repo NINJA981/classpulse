@@ -1,0 +1,46 @@
+# Garage (S3-compatible object storage) for ClassPulse: one node, baked into infra/garage/Dockerfile.
+# Reference: https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/ (v2.x)
+#
+# No secrets in this file. Garage reads them from the environment:
+#   GARAGE_RPC_SECRET   32 bytes hex (openssl rand -hex 32); signs node-to-node RPC
+#   GARAGE_ADMIN_TOKEN  bearer token for the admin API on :3903 (openssl rand -base64 32)
+#
+# Adding a second node later (off-site replica): raise replication_factor to 2 on every node, set
+# rpc_public_addr to an address the other node can reach, connect the nodes, and assign the new one a zone.
+# See docs/agents/deployment.md → "Object storage (Garage)".
+
+replication_factor = 1
+# With one copy, Garage cannot repair a block from a peer: flush metadata and data to disk before a write is
+# acknowledged, so a power cut loses at most the upload in flight.
+metadata_fsync = true
+data_fsync = true
+
+db_engine = "lmdb"
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+# Consistent copies of the metadata database under meta/snapshots, for recovery after a crash corrupts LMDB.
+metadata_auto_snapshot_interval = "6h"
+
+# Uploads are buffered in RAM up to this much before back-pressure; stays well under the container cap.
+block_ram_buffer_max = "128MiB"
+# zstd level 1 (the default): cheap on ARM cores, and WAV audio still shrinks a little.
+compression_level = 1
+
+# RPC between Garage nodes (and the `garage` CLI of the health check). Bound to the container's loopback,
+# so no other container on the stack network can reach it (api, worker and web included); every connection
+# must also prove knowledge of the RPC secret. A second node later needs this on a private address instead.
+rpc_bind_addr = "127.0.0.1:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+# The only port other containers can reach: the API's S3 client (http://storage:3900).
+api_bind_addr = "[::]:3900"
+s3_region = "garage"
+# No root_domain: the API uses path-style URLs (http://storage:3900/<bucket>/<key>).
+
+[admin]
+# Loopback only: reachable just from inside this container's network namespace, which storage-init shares
+# (network_mode: "service:storage"). /health is unauthenticated; every /v2/* call needs GARAGE_ADMIN_TOKEN.
+api_bind_addr = "127.0.0.1:3903"
+
+# No [s3_web] (static website hosting) and no K2V: files are only ever served through the API.

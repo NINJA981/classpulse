@@ -29,6 +29,7 @@ import { env, isProd } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { healthSnapshots } from '../../db/schema/index.js';
 import { emailEnabled } from '../../lib/mailer.js';
+import { storage } from '../../lib/storage.js';
 import { getRedis } from '../../lib/redis.js';
 import { queueCounts } from './opsQueues.js';
 import { clientIpWarning } from '../../lib/clientIp.js';
@@ -215,8 +216,20 @@ export async function checkStorage(): Promise<OpsStorageHealth> {
   let totalBytes: number | null = null;
   let freeBytes: number | null = null;
   let usedPercent: number | null = null;
+  // S3 (Garage): the bucket must answer. Its data sits on this host's disk, so the disk figures below
+  // come from TMP_DIR (same disk); with the local driver they come from STORAGE_DIR.
+  let bucket: { ok: true; latencyMs: number } | { ok: false; error: string } | null = null;
+  if (storage.driver === 's3') {
+    const started = Date.now();
+    try {
+      await withTimeout(storage.checkReady());
+      bucket = { ok: true, latencyMs: Date.now() - started };
+    } catch (err) {
+      bucket = { ok: false, error: reason(err) };
+    }
+  }
   try {
-    const st = await withTimeout(fs.statfs(path.resolve(env.STORAGE_DIR)));
+    const st = await withTimeout(fs.statfs(storage.driver === 's3' ? env.TMP_DIR : path.resolve(env.STORAGE_DIR)));
     totalBytes = st.blocks * st.bsize;
     freeBytes = st.bavail * st.bsize;
     usedPercent = totalBytes > 0 ? Math.round(((totalBytes - freeBytes) / totalBytes) * 1000) / 10 : null;
@@ -236,14 +249,23 @@ export async function checkStorage(): Promise<OpsStorageHealth> {
   } catch {
     /* the database check reports database problems */
   }
-  const status: OpsStatus =
+  const diskStatus: OpsStatus =
     usedPercent === null ? 'unknown' : usedPercent > 95 ? 'down' : usedPercent > DISK_ALERT_PERCENT ? 'degraded' : 'ok';
+  const disk =
+    usedPercent === null
+      ? 'Disk usage unavailable'
+      : `${usedPercent}% used · ${formatBytes(freeBytes)} free of ${formatBytes(totalBytes)}`;
+  let status = diskStatus;
+  let detail = disk;
+  if (bucket && !bucket.ok) {
+    status = 'down';
+    detail = `Object storage unreachable: ${bucket.error}`;
+  } else if (bucket?.ok) {
+    detail = `Object storage OK (${bucket.latencyMs} ms) · ${disk}`;
+  }
   return {
     status,
-    detail:
-      usedPercent === null
-        ? 'Disk usage unavailable'
-        : `${usedPercent}% used · ${formatBytes(freeBytes)} free of ${formatBytes(totalBytes)}`,
+    detail,
     totalBytes,
     freeBytes,
     usedPercent,

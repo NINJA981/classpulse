@@ -6,8 +6,8 @@
  * Used instead of lib/ffmpeg.ts#pcmChunksToWav, whose argument order makes
  * ffmpeg reject the concat list (`-f s16le` overrides `-f concat`).
  */
-import { createReadStream, createWriteStream } from 'node:fs';
-import fs from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { Transform, type Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { DEVICE_AUDIO_FORMAT } from '@classpulse/shared';
 
@@ -32,14 +32,33 @@ export function wavHeader(dataBytes: number, sampleRate: number = DEVICE_AUDIO_F
   return h;
 }
 
-/** Returns the PCM duration in seconds. */
-export async function assemblePcmToWav(chunkPaths: string[], outPath: string): Promise<number> {
-  let dataBytes = 0;
-  for (const p of chunkPaths) dataBytes += (await fs.stat(p)).size;
+/** One raw PCM chunk: its size in bytes (from the database) and how to stream it (from storage). */
+export interface PcmChunkSource {
+  size: number;
+  open: () => Promise<Readable>;
+}
+
+/**
+ * Write the WAV header for the chunks' total size, then stream each chunk in order. A chunk whose
+ * streamed length differs from its recorded size fails the assembly (the header would be wrong).
+ * Returns the PCM duration in seconds.
+ */
+export async function assemblePcmToWav(chunks: PcmChunkSource[], outPath: string): Promise<number> {
+  const dataBytes = chunks.reduce((sum, c) => sum + c.size, 0);
   const out = createWriteStream(outPath);
   try {
     await new Promise<void>((resolve, reject) => out.write(wavHeader(dataBytes), (err) => (err ? reject(err) : resolve())));
-    for (const p of chunkPaths) await pipeline(createReadStream(p), out, { end: false });
+    for (const [i, chunk] of chunks.entries()) {
+      let streamed = 0;
+      const counter = new Transform({
+        transform(data: Buffer, _enc, cb) {
+          streamed += data.length;
+          cb(null, data);
+        },
+      });
+      await pipeline(await chunk.open(), counter, out, { end: false });
+      if (streamed !== chunk.size) throw new Error(`Chunk ${i} is ${streamed} bytes, expected ${chunk.size}`);
+    }
   } finally {
     await new Promise<void>((resolve) => out.end(() => resolve()));
   }

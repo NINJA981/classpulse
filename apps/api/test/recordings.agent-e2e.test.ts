@@ -124,9 +124,13 @@ describe.skipIf(!python)('classroom agent ↔ API end-to-end', () => {
       'finalized',
     );
     expect(final).toMatchObject({ chunksReceived: 3, expectedChunks: 3 });
-    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, start.body.lessonId));
-    expect(lesson!.status).toBe('queued');
-    expect(lesson!.durationSec).toBeCloseTo(2.5, 1);
+    // The lesson is queued right after the session commits (chunk cleanup may still be running).
+    const lesson = await until(
+      async () => (await db.select().from(lessons).where(eq(lessons.id, start.body.lessonId))).find((l) => l.status === 'queued'),
+      10_000,
+      'lesson queued',
+    );
+    expect(lesson.durationSec).toBeCloseTo(2.5, 1);
     expect(runJob).toHaveBeenCalledWith(expect.objectContaining({ lessonId: start.body.lessonId }));
     // The server may finish before the agent logs the finalize response.
     await until(async () => agentLog.includes('Recording finalized'), 10_000, 'agent finalize log');

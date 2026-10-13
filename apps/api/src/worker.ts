@@ -9,7 +9,7 @@ if (!env.REDIS_URL) {
   const { closeDb, pingDb } = await import('./db/client.js');
   const { closeRedis, getRedis } = await import('./lib/redis.js');
   const { flushLogSink } = await import('./lib/logSink.js');
-  const { storage } = await import('./lib/storage.js');
+  const { storage, storageReady } = await import('./lib/storage.js');
   const { startLessonWorker } = await import('./jobs/lessonWorker.js');
   const { startPeriodicTasks } = await import('./jobs/periodic.js');
   const { maintenanceTasks } = await import('./jobs/tasks.js');
@@ -20,7 +20,10 @@ if (!env.REDIS_URL) {
   const { closeResourceQueue, startResourceWorker } = await import('./modules/resources/queue.js');
 
   await pingDb();
-  await storage.ensureWritable();
+  await storageReady().catch((err: Error) => {
+    logger.fatal({ err: err.message, driver: storage.driver }, 'Storage is not ready — check STORAGE_DIR/TMP_DIR, or the S3_* settings');
+    process.exit(1);
+  });
   if (env.E2E_MAIL_CAPTURE) (await import('./modules/testing/mailCapture.js')).installMailCapture();
   const worker = startLessonWorker();
   const emailWorker = startEmailWorker();

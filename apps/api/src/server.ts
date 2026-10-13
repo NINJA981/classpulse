@@ -3,7 +3,7 @@ import { env } from './config/env.js';
 import { closeDb, pingDb } from './db/client.js';
 import { logger } from './lib/logger.js';
 import { closeRedis } from './lib/redis.js';
-import { storage } from './lib/storage.js';
+import { storage, storageReady } from './lib/storage.js';
 import { createApp } from './app.js';
 import { attachSockets } from './sockets/index.js';
 import { closeQueue } from './jobs/queue.js';
@@ -21,7 +21,10 @@ await pingDb().catch((err: Error) => {
   logger.fatal({ err: err.message }, 'Cannot reach PostgreSQL — is DATABASE_URL correct and the database running?');
   process.exit(1);
 });
-await storage.ensureWritable();
+await storageReady().catch((err: Error) => {
+  logger.fatal({ err: err.message, driver: storage.driver }, 'Storage is not ready — check STORAGE_DIR/TMP_DIR, or the S3_* settings and that the bucket exists');
+  process.exit(1);
+});
 
 const app = createApp();
 const server = createServer(app);

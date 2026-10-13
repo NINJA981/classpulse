@@ -1,20 +1,16 @@
 /**
  * Orphan sweep: storage objects that no database row refers to any more (a crash between the file
  * write and the insert, a failed delete after a cascade, rows removed by hand). Objects are
- * deleted only when they are older than ORPHAN_MIN_AGE_MS, so an upload in progress (file written,
- * row not yet committed) is never touched. Only the known key prefixes are swept; `tmp/` and
+ * deleted only when their modification time is older than ORPHAN_MIN_AGE_MS, so an upload in
+ * progress (file written, row not yet committed) is never touched. Only the known key prefixes are swept; `tmp/` and
  * anything else under the storage root are left alone.
  *
  * Raw recording chunks (`recordings/<sessionId>/`) are needed only until the recording is
  * assembled: the folder of a recording that ended (finalized, failed or cancelled) more than
- * ORPHAN_MIN_AGE_MS ago, or that has no session row, is deleted.
+ * ORPHAN_MIN_AGE_MS ago, or that has no session row and no chunk newer than that, is deleted.
  */
-import type { Dirent } from 'node:fs';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { inArray } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import { env } from '../config/env.js';
 import { db } from '../db/client.js';
 import { lessons, recordingSessions, submissionFiles, teacherMaterials } from '../db/schema/index.js';
 import { logger } from '../lib/logger.js';
@@ -35,13 +31,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ENDED_RECORDING = new Set(['finalized', 'failed', 'cancelled']);
 
 /** Delete the chunk folders of recordings that ended long ago (or are unknown). Returns folders deleted. */
-async function sweepRecordingChunks(root: string, before: number): Promise<number> {
-  const dirs = (await fs.readdir(path.join(root, 'recordings'), { withFileTypes: true }).catch(() => []))
-    .filter((d) => d.isDirectory() && UUID.test(d.name))
-    .map((d) => d.name);
+async function sweepRecordingChunks(before: number): Promise<number> {
+  const ids = (await storage.listPrefixes('recordings')).map((p) => p.slice('recordings/'.length)).filter((id) => UUID.test(id));
   let deleted = 0;
-  for (let i = 0; i < dirs.length; i += LOOKUP_BATCH) {
-    const batch = dirs.slice(i, i + LOOKUP_BATCH);
+  for (let i = 0; i < ids.length; i += LOOKUP_BATCH) {
+    const batch = ids.slice(i, i + LOOKUP_BATCH);
     const sessions = await db
       .select({ id: recordingSessions.id, status: recordingSessions.status, updatedAt: recordingSessions.updatedAt })
       .from(recordingSessions)
@@ -52,9 +46,10 @@ async function sweepRecordingChunks(root: string, before: number): Promise<numbe
       if (session) {
         if (!ENDED_RECORDING.has(session.status) || session.updatedAt.getTime() >= before) continue;
       } else {
-        // No row: only once the folder itself is old (the session row may still be committing).
-        const stat = await fs.stat(path.join(root, 'recordings', id)).catch(() => null);
-        if (!stat || stat.mtimeMs >= before) continue;
+        // No row: only once the newest chunk is old (the session row may still be committing).
+        let newest = 0;
+        for await (const o of storage.list(`recordings/${id}`)) newest = Math.max(newest, o.modifiedAt.getTime());
+        if (newest >= before) continue;
       }
       try {
         await storage.deletePrefix(`recordings/${id}`);
@@ -67,36 +62,19 @@ async function sweepRecordingChunks(root: string, before: number): Promise<numbe
   return deleted;
 }
 
-/** Keys of the files under `prefix` last modified before `before` (depth-first, symlinks ignored). */
-async function oldKeys(root: string, prefix: string, before: number): Promise<string[]> {
+/** Keys of the objects under `prefix/` last modified before `before`. */
+async function oldKeys(prefix: string, before: number): Promise<string[]> {
   const keys: string[] = [];
-  const walk = async (dir: string): Promise<void> => {
-    let entries: Dirent[];
-    try {
-      entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
-      return; // the prefix doesn't exist yet, or vanished meanwhile
-    }
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) await walk(full);
-      else if (entry.isFile()) {
-        const stat = await fs.stat(full).catch(() => null);
-        if (stat && stat.mtimeMs < before) keys.push(path.relative(root, full).split(path.sep).join('/'));
-      }
-    }
-  };
-  await walk(path.join(root, prefix));
+  for await (const o of storage.list(prefix)) if (o.modifiedAt.getTime() < before) keys.push(o.key);
   return keys;
 }
 
 /** Delete old storage objects with no database row. Returns the number deleted. */
 export async function sweepOrphanedObjects(now = new Date()): Promise<number> {
-  const root = path.resolve(env.STORAGE_DIR); // the local storage driver's root (keys are relative to it)
   const before = now.getTime() - ORPHAN_MIN_AGE_MS;
   let deleted = 0;
   for (const { prefix, column } of PREFIXES) {
-    const keys = await oldKeys(root, prefix, before);
+    const keys = await oldKeys(prefix, before);
     for (let i = 0; i < keys.length; i += LOOKUP_BATCH) {
       const batch = keys.slice(i, i + LOOKUP_BATCH);
       const rows = await db.select({ key: column }).from(column.table).where(inArray(column, batch));
@@ -112,7 +90,7 @@ export async function sweepOrphanedObjects(now = new Date()): Promise<number> {
       }
     }
   }
-  const recordings = await sweepRecordingChunks(root, before);
+  const recordings = await sweepRecordingChunks(before);
   if (deleted || recordings) logger.info({ deleted, recordings }, 'Orphaned storage objects deleted');
   return deleted + recordings;
 }

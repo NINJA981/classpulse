@@ -17,7 +17,7 @@ flowchart LR
     Worker["worker<br/>BullMQ consumer"]
     PG[("PostgreSQL 16")]
     Redis[("Redis 7")]
-    Store[("storage volume<br/>lecture audio")]
+    Store[("storage (Garage S3)<br/>audio, recordings, files")]
   end
   Sarvam["Sarvam AI STT<br/>(or OpenAI Whisper)"]
   OpenAI["OpenAI LLM"]
@@ -53,6 +53,7 @@ Two public hosts reach the same router. The school host (e.g. `classpulse.benxso
 | API | `apps/api` | Handles REST and Socket.IO, authentication and RBAC, per-school feature switches, suspension and maintenance checks, validation, the device contract, the live-quiz and exam engines, the platform console API (`/api/platform/*`), the audit log and the database log sink. It is the only security boundary. |
 | Worker | `apps/api/src/worker.ts` | Consumes three BullMQ queues: `lesson-generation` (ffmpeg, then Sarvam STT, then the OpenAI quiz; 3 attempts with backoff), `email` (invites, resets and reminders over SMTP) and `resources` (lesson plans, worksheets, question papers, presentations). It writes a heartbeat for the health page and runs the maintenance tasks: audio retention, device-offline sweep, exam auto-submit sweep, assignment reminders, log and audit retention, and health snapshots. Without Redis (development) the API process runs all of this in-process. |
 | Shared contracts | `packages/shared` | zod schemas and TypeScript types used by both the API and the web app, so the two cannot drift apart. |
+| Object storage | `apps/api/src/lib/storage.ts`, `infra/garage/` | One interface for stored files (lecture audio, Pi recording chunks, submissions, materials) with two drivers chosen by `STORAGE_DRIVER`: `local` (a folder on the `storage_data` volume) and `s3` (a bucket on Garage, a single-node S3-compatible store in the same compose stack, internal only). Keys are opaque and identical in both. Temporary files (uploads in progress, transcodes, S3 downloads) always stay on local disk in `TMP_DIR`. Files are never served by the store directly: the API streams them, range requests included. |
 | Classroom agent | `apps/classroom-agent` | Python standard-library service on the Raspberry Pi. It records with `arecord`, buffers to disk, and uploads resumable chunks. |
 
 ## Key flows
@@ -109,7 +110,8 @@ The owner signs in on the ops host with a password plus an authenticator code (T
   - Every query is scoped to the user's institution.
 - **Input and storage.**
   - All inputs are validated with zod, which also strips unknown keys.
-  - Files are addressed only by opaque storage keys; request data never becomes a filesystem path.
+  - Files are addressed only by opaque storage keys; request data never becomes a filesystem path or object key.
+  - The object store (Garage) publishes no ports and gives no presigned URLs. Other containers can reach only its S3 API; its admin API and RPC listen on the container's loopback, used only by `storage-init`, which shares its network namespace. Garage's own secrets go only to those two services. The application key can read and write one bucket and nothing else, and cannot create buckets.
   - Audio is served only through authenticated, range-capable endpoints. Nothing is served statically.
 - **Devices.**
   - A device can register only with an admin-issued enrollment token, which is single-use and expires after 24 hours.
@@ -127,4 +129,4 @@ The pilot runs as a single instance of each service.
 - **More API replicas:** add `@socket.io/redis-adapter` and move the live-room timers to a Redis-backed scheduler.
 - **More worker throughput:** scale the `worker` service. BullMQ concurrency is set by `GENERATION_CONCURRENCY` (lessons); the `resources` queue runs 2 jobs at a time.
 - **Zero-downtime deploys:** today every Coolify deploy recreates all containers (about 30–60 s of 503). Rolling updates need health-checked replicas behind the router.
-- **Object storage:** implement the S3/R2 driver behind `lib/storage.ts`.
+- **Object storage:** stored files go to Garage (`STORAGE_DRIVER=s3`), so API and worker replicas, or a second server, share them over S3 instead of a host volume. One Garage node keeps one copy on the same disk, and the nightly backup is the only second copy. For redundancy, add a Garage node on another site with `replication_factor = 2` (see deployment.md → "Adding a second Garage node"). The driver speaks plain S3 (path-style), so moving to a managed store such as R2 or OCI Object Storage means changing the endpoint, region and key, not the code.

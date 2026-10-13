@@ -55,7 +55,7 @@ router.get('/:id/export/files/:fileId', ...adminOnly, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   try {
-    await pipeline(storage.read(file.objectKey), res);
+    await pipeline(await storage.read(file.objectKey), res);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ERR_STREAM_PREMATURE_CLOSE') req.log.warn({ err }, 'Export file download failed');
     if (!res.headersSent) throw err;

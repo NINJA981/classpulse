@@ -9,9 +9,17 @@
 #
 # Archive format (v2): classpulse-<stamp>.tar.age is a plain tar holding two age-encrypted members,
 #   db.dump.age         pg_dump -Fc, encrypted as it streams out of the database container
-#   storage.tar.gz.age  the audio folder, encrypted as it streams out of the storage volume
-# Nothing is ever written to disk unencrypted. restore.sh reads this and the older v1 format (one age stream
-# around a tar of db.dump + storage.tar.gz).
+#   storage.tar.gz.age  the stored files (audio, recordings, submissions, materials) as a tar of storage/<key>,
+#                       encrypted as it streams out
+# Where the stored files come from follows the API's STORAGE_DRIVER (or BACKUP_STORAGE_MODE):
+#   local  the storage_data volume, streamed straight out of it.
+#   s3     the Garage bucket: a throwaway rclone container copies it into a temporary Docker volume, which is
+#          tarred, encrypted and deleted. That copy is the only unencrypted data written, and it sits on the
+#          same disk as Garage's own (unencrypted) copy; allow free space for one more copy of the bucket.
+#          rclone runs digest-pinned, read-only, with no capabilities, on the stack network (S3 API only).
+# The member layout is the same in both modes, so either kind of archive restores into either mode.
+# Nothing else is ever written to disk unencrypted. restore.sh reads this and the older v1 format (one age
+# stream around a tar of db.dump + storage.tar.gz).
 #
 # Settings (ENV_FILE):
 #   BACKUP_DIR            required. Local archive folder (the API mounts it read-only for its health check).
@@ -25,6 +33,14 @@
 #   BACKUP_S3_KEEP_DAYS   optional. Delete off-site copies older than this many days (0 or unset = never; use
 #                         this or a bucket lifecycle rule, not both). A write-only credential can't delete:
 #                         with one, leave this unset and rely on the bucket's retention/lifecycle policy.
+#   BACKUP_STORAGE_MODE   optional: local | s3. Default: the api container's STORAGE_DRIVER.
+#   RCLONE_CONFIG_GARAGE_ACCESS_KEY_ID, RCLONE_CONFIG_GARAGE_SECRET_ACCESS_KEY
+#                         s3 mode: the application's Garage key (the values of S3_ACCESS_KEY_ID /
+#                         S3_SECRET_ACCESS_KEY, which are also accepted under those names). Required in s3 mode.
+#   S3_BUCKET             s3 mode, optional: default classpulse.
+#   BACKUP_S3_CREDS_FROM_CONTAINER
+#                         optional, off by default: 1 = take the key and bucket from the api container's
+#                         environment (docker inspect) when the env file lacks them.
 set -euo pipefail
 # Every file this script creates (work files, archives, weekly copies) is owner-only.
 umask 077
@@ -54,11 +70,24 @@ mkdir -p "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
 # through a read-only mount. Listing reveals only names and times: each archive is 0600 and age-encrypted.
 chmod 755 "$BACKUP_DIR" "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
 
+# Settle where the stored files are (and the Garage key) before writing anything.
+STORAGE_MODE="$(storage_mode)"
+if [ "$STORAGE_MODE" = s3 ]; then s3_prepare; fi
+
 log "Dumping PostgreSQL (encrypted while streaming)…"
 pg_exec pg_dump -U classpulse -d classpulse -Fc --no-owner | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/db.dump.age"
 
-log "Archiving stored audio (encrypted while streaming)…"
-storage_sh 'tar -C /data -czf - --exclude=storage/tmp storage' | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/storage.tar.gz.age"
+if [ "$STORAGE_MODE" = s3 ]; then
+  log "Archiving stored files from Garage bucket $S3_BUCKET (encrypted while streaming)…"
+  # tmp/ never holds anything worth keeping (the API keeps temporary files on local disk anyway).
+  # shellcheck disable=SC2016 # expanded inside the rclone container
+  s3_sh 'set -e; mkdir -p /stage/storage
+    rclone copy "garage:$S3_BUCKET" /stage/storage --exclude "tmp/**" --transfers 4 -q
+    tar -C /stage -czf - storage' | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/storage.tar.gz.age"
+else
+  log "Archiving stored files from the storage volume (encrypted while streaming)…"
+  storage_sh 'tar -C /data -czf - --exclude=storage/tmp storage' | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/storage.tar.gz.age"
+fi
 
 # Bundle the two encrypted parts. Written under a temporary name and renamed only when complete, so the
 # health check and rotation never see a half-written archive.

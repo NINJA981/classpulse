@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 // test/setup.ts loads the app graph before any vi.mock here could apply, so instead of
@@ -205,7 +204,7 @@ describe('chunk upload and finalize', () => {
     expect(list.status).toBe(200);
     expect(list.body.received).toEqual([0, 2]);
     expect(list.body.status).toBe('recording');
-    expect(existsSync(storage.localPath(storageKeys.recordingChunk(sessionId, 0)))).toBe(true);
+    expect(await storage.stat(storageKeys.recordingChunk(sessionId, 0))).not.toBeNull();
   });
 
   it("rejects another device's session", async () => {
@@ -242,10 +241,10 @@ describe('chunk upload and finalize', () => {
     expect({ status: lesson!.status, reason: lesson!.failureReason }).toEqual({ status: 'queued', reason: null });
     expect(lesson!.durationSec).toBeGreaterThan(1.9);
     expect(lesson!.durationSec).toBeLessThan(2.1);
-    expect(existsSync(storage.localPath(lesson!.audioObjectKey!))).toBe(true);
+    expect((await storage.stat(lesson!.audioObjectKey!))?.size).toBe(44 + c0.length + c1.length);
     expect(runJob).toHaveBeenCalledTimes(1);
     expect(runJob).toHaveBeenCalledWith(expect.objectContaining({ lessonId }));
-    expect(existsSync(storage.localPath(storageKeys.recordingChunk(sessionId, 0)))).toBe(false);
+    expect(await storage.stat(storageKeys.recordingChunk(sessionId, 0))).toBeNull();
     const [session] = await db.select().from(recordingSessions).where(eq(recordingSessions.id, sessionId));
     expect(session!.durationSec).toBe(2);
     const [dev] = await db.select().from(devices).where(eq(devices.id, d.id));

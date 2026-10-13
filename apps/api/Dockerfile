@@ -40,7 +40,9 @@ COPY --from=build /repo/packages/shared/package.json ./node_modules/@classpulse/
 COPY --from=build /repo/packages/shared/dist ./node_modules/@classpulse/shared/dist
 COPY --from=build /repo/apps/api/package.json ./package.json
 COPY --from=build /repo/apps/api/dist ./dist
-RUN mkdir -p /data/storage && chown -R node:node /data
+# /data/tmp is TMP_DIR in the compose files (its own volume). Both exist here owned by `node`, so Docker
+# initialises the empty named volumes with that owner.
+RUN mkdir -p /data/storage /data/tmp && chown -R node:node /data
 USER node
 EXPOSE 5000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
