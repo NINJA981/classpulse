@@ -11,6 +11,8 @@
 #   platform console: PLATFORM_ENCRYPTION_KEY (required: openssl rand -base64 32), PLATFORM_ORIGIN
 #             (e.g. https://ops.example.org) + PLATFORM_HOST (ops.example.org; also add that domain to `router`),
 #             COOLIFY_API_URL, COOLIFY_API_TOKEN, COOLIFY_APP_UUID (deployments page; read + deploy token)
+#   old school address (optional): LEGACY_HOST (e.g. old.example.org; keep that domain on `router`): its pages
+#             redirect to PUBLIC_ORIGIN, /api stays served for devices still pointing there
 #   push notifications (optional): VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY (npx web-push generate-vapid-keys),
 #             VAPID_SUBJECT (default mailto:admin@benxsolutions.in)
 #   object storage (Garage, the `storage` service): GARAGE_RPC_SECRET (required: openssl rand -hex 32),
@@ -298,6 +300,9 @@ services:
       SERVICE_FQDN_ROUTER_80: ''
       # The platform console's host name; /platform is 404 on every other host.
       PLATFORM_HOST: ${PLATFORM_HOST:-platform.invalid}
+      # A previous school host name: pages redirect to PUBLIC_ORIGIN, /api and /socket.io are still served.
+      LEGACY_HOST: ${LEGACY_HOST:-legacy.invalid}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN, e.g. https://classiq.example.org}
     depends_on:
       - web
       - api

@@ -1,5 +1,5 @@
 {
-  "server_url": "https://classpulse.benxsolutions.in",
+  "server_url": "https://classiq.benxsolutions.in",
   "device_id": "rpi5-room-101",
   "enrollment_token": "PASTE-THE-TOKEN-FROM-ADMIN-DEVICES",
   "alsa_device": "plughw:CARD=Device,DEV=0",

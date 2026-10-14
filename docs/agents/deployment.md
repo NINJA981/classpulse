@@ -359,18 +359,20 @@ The compose file mounts `/var/backups/classpulse` into the `api` service read-on
 
 ### Pilot domains
 
-All three are live, with Let's Encrypt certificates issued automatically by Traefik:
+All of them are live, with Let's Encrypt certificates issued automatically by Traefik:
 
 | Address | Purpose |
 |---|---|
-| `https://classpulse.benxsolutions.in` | The school app (`PUBLIC_ORIGIN`). `/platform` answers `404` |
+| `https://classiq.benxsolutions.in` | The school app (`PUBLIC_ORIGIN`). `/platform` answers `404` |
+| `https://classpulse.benxsolutions.in` | The old school address (`LEGACY_HOST`, until 15 Oct 2026). Pages redirect `301` to the same path on `PUBLIC_ORIGIN`; `/api` and `/socket.io` are still served so classroom devices with the old `server_url` keep working |
 | `https://ops.benxsolutions.in` | The platform console (`PLATFORM_HOST`, `PLATFORM_ORIGIN`). `/` redirects to `/platform`; school pages answer `404` |
 | `https://coolify.benxsolutions.in` | The Coolify dashboard, and its API at `https://coolify.benxsolutions.in/api/v1` for deploys from an admin's machine |
 
 They are A records to `129.159.227.74` at GoDaddy, the DNS host for `benxsolutions.in`. The Coolify values that go with them:
 
-- `router` domains: `https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`
-- `PUBLIC_ORIGIN=https://classpulse.benxsolutions.in`
+- `router` domains: `https://classiq.benxsolutions.in,https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`
+- `PUBLIC_ORIGIN=https://classiq.benxsolutions.in`
+- `LEGACY_HOST=classpulse.benxsolutions.in` (drop it, and the old domain from `router`, once every device's `server_url` is switched)
 - `PLATFORM_ORIGIN=https://ops.benxsolutions.in`
 - `PLATFORM_HOST=ops.benxsolutions.in`
 - `COOLIFY_API_URL=http://10.0.0.112:8000/api/v1` (the server's private address)

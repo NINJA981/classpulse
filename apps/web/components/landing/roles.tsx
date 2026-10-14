@@ -152,7 +152,7 @@ function BrowserFrame({ role, alt }: { role: 'admin' | 'teacher'; alt: string })
           ))}
         </span>
         <span className="min-w-0 flex-1 truncate border border-line bg-surface-2 px-3 py-0.5 text-center font-mono text-[11px] text-muted">
-          classpulse.benxsolutions.in/{role}
+          classiq.benxsolutions.in/{role}
         </span>
       </div>
       {SCREENS.available ? (

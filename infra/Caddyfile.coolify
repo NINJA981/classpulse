@@ -78,6 +78,18 @@
 		max_size 25MB
 	}
 
+	# A previous school address (LEGACY_HOST, e.g. classpulse.benxsolutions.in before the move to
+	# classiq.benxsolutions.in): pages redirect to the same path on PUBLIC_ORIGIN; /api and /socket.io are still
+	# served so classroom devices whose server_url is the old address keep uploading. Browser API calls from the
+	# old address fail the API's origin check, which is fine: no page is served there any more.
+	@legacyPages {
+		host {$LEGACY_HOST:legacy.invalid}
+		not path /api/* /socket.io/*
+	}
+	handle @legacyPages {
+		redir * {$PUBLIC_ORIGIN}{uri} 301
+	}
+
 	# Platform console (super admin) lives only on PLATFORM_HOST (e.g. ops.example.org): invisible on school
 	# addresses, and the platform address serves nothing but the console. Named-matcher `handle` blocks keep
 	# the order written here, so these run before the general routes below.

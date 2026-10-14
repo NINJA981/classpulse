@@ -1,6 +1,6 @@
 # ClassIQ
 
-AI classroom platform: a Raspberry Pi records lectures → transcription (Sarvam) → bilingual quizzes, exams, assignments and teacher tools. Formerly ClassPulse. The remaining `classpulse` identifiers (domain, DB names, bucket, host paths, systemd units, salt, export ids, storage keys) are intentional; don't rename them (list in HANDBOOK §1.4).
+AI classroom platform: a Raspberry Pi records lectures → transcription (Sarvam) → bilingual quizzes, exams, assignments and teacher tools. Formerly ClassPulse. The school site is `classiq.benxsolutions.in` (the old `classpulse.benxsolutions.in` redirects pages and still serves `/api` for devices). The remaining `classpulse` identifiers (DB names, bucket, host paths, systemd units, salt, export ids, storage keys) are intentional; don't rename them (list in HANDBOOK §1.4).
 
 ## Where to start
 

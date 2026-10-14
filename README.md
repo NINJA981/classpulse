@@ -2,7 +2,7 @@
 
 ClassIQ records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones. Teachers also get secure timed exams, assignments with file uploads and AI-suggested grading, and AI teaching tools (lesson plans, worksheets, question papers, presentations) grounded in their own courses and materials. A separate super admin console runs every school on the installation.
 
-**Live:** schools sign in at https://classpulse.benxsolutions.in (`/admin/login`, `/teacher/login`, `/student/login`); the super admin console is at https://ops.benxsolutions.in.
+**Live:** schools sign in at https://classiq.benxsolutions.in (`/admin/login`, `/teacher/login`, `/student/login`); the super admin console is at https://ops.benxsolutions.in.
 
 **New here? Read [docs/agents/HANDBOOK.md](docs/agents/HANDBOOK.md)**: the complete guide to every feature, the architecture, the AI pipeline, the hardware, the deployment and operations, with an FAQ and a glossary.
 

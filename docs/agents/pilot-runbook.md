@@ -1,6 +1,6 @@
 # Pilot runbook
 
-The pilot runs at `https://classpulse.benxsolutions.in` (schools) and `https://ops.benxsolutions.in` (super admin console).
+The pilot runs at `https://classiq.benxsolutions.in` (schools) and `https://ops.benxsolutions.in` (super admin console).
 
 ## Before the pilot (T-2 weeks)
 
@@ -63,7 +63,7 @@ The **Onboarding** page lists these steps:
 
 ```bash
 # from a machine near the server (not the server itself)
-node apps/api/scripts/loadtest-live.mjs --base https://classpulse.benxsolutions.in \
+node apps/api/scripts/loadtest-live.mjs --base https://classiq.benxsolutions.in \
   --admin 'admin@school.org:<password>' --teacher 'teacher@school.org:<password>' \
   --lesson <publishedLessonId> --students 100
 ```
