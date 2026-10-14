@@ -1,7 +1,7 @@
 /** AI usage recording, the email log, the monthly transcription limit and the platform statistics API. */
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AI_COST_NOTE, type PlatformOverviewStats, type PlatformStats } from '@classpulse/shared';
+import { AI_COST_NOTE, type PlatformOverviewStats, type PlatformStats } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { aiUsage, auditLogs, emailLog, institutions, lessons, platformSettings, users } from '../src/db/schema/index.js';
@@ -357,7 +357,7 @@ describe('statistics API', () => {
     const res = await asPlatform(owner).get('/api/platform/stats/export.csv?section=schools');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv');
-    expect(res.headers['content-disposition']).toMatch(/attachment; filename="classpulse-schools-/);
+    expect(res.headers['content-disposition']).toMatch(/attachment; filename="classiq-schools-/);
     expect(res.text).toContain(`"'=HYPERLINK(""http://evil"",""x"")"`);
     expect(res.text).not.toMatch(/(^|,)=HYPERLINK/m);
     const activity = await asPlatform(owner).get('/api/platform/stats/export.csv');

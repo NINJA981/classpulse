@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Upload } from 'lucide-react';
-import type { LessonDetail } from '@classpulse/shared';
+import type { LessonDetail } from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, InlineError, useToast } from '@/components/ui';
 import { AudioFileField, useAudioUpload } from '@/components/teacher/audio-upload';
 import { lessonKey } from './use-lesson';

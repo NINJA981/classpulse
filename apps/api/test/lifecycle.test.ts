@@ -6,7 +6,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_INSTITUTION_FEATURES, DEFAULT_INSTITUTION_LIMITS, type ExamDetail, type InstitutionFeature, type StudentExamResult } from '@classpulse/shared';
+import { DEFAULT_INSTITUTION_FEATURES, DEFAULT_INSTITUTION_LIMITS, type ExamDetail, type InstitutionFeature, type StudentExamResult } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import {
   assignments,

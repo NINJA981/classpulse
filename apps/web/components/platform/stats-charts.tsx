@@ -1,6 +1,6 @@
 'use client';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { StatsBucket } from '@classpulse/shared';
+import type { StatsBucket } from '@classiq/shared';
 import { Card, CardBody, CardHeader } from '@/components/ui';
 import { bucketLabel } from './stats-common';
 

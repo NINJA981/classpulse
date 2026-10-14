@@ -1,6 +1,6 @@
 'use client';
 import { Copy, MonitorPlay, Trash2 } from 'lucide-react';
-import type { Simulation } from '@classpulse/shared';
+import type { Simulation } from '@classiq/shared';
 import { Badge, Button, Card } from '@/components/ui';
 import { SubjectIcon } from './subject-icon';
 

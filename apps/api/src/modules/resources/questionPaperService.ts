@@ -6,7 +6,7 @@ import {
   type PublishPaperExamInput,
   type PublishPaperExamResult,
   type SessionUser,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { teachingResources } from '../../db/schema/index.js';
 import { badRequest, invalidState, notFound } from '../../lib/errors.js';

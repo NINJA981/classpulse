@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import clsx from 'clsx';
 import { Mic, MicOff } from 'lucide-react';
-import type { Device } from '@classpulse/shared';
+import type { Device } from '@classiq/shared';
 import { DeviceStatusDot, heartbeatLabel } from '@/components/teacher/status';
 
 /** Classroom devices for the chosen section, with health. Online devices are selectable. */

@@ -17,7 +17,7 @@ import type {
   FinalizeRecordingInput,
   CreateEnrollmentTokenInput,
   RecordingSession,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   deviceCommands,
@@ -192,7 +192,7 @@ export async function deviceBlock(device: Pick<DeviceRow, 'institutionId'>): Pro
     case 'disabled':
       return new AppError('FEATURE_DISABLED', 'Classroom devices are switched off for this school.');
     case 'maintenance':
-      return new AppError('MAINTENANCE', 'ClassPulse is undergoing maintenance. Try again later.');
+      return new AppError('MAINTENANCE', 'ClassIQ is undergoing maintenance. Try again later.');
   }
 }
 

@@ -12,7 +12,7 @@ import path from 'node:path';
 import type { RequestHandler } from 'express';
 import { eq } from 'drizzle-orm';
 import multer from 'multer';
-import { DEFAULT_MODEL_SETTINGS, type SessionUser, type VoicePromptResult } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS, type SessionUser, type VoicePromptResult } from '@classiq/shared';
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { modelSettings } from '../../db/schema/index.js';

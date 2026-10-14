@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import QRCode from 'qrcode';
-import type { CreateEnrollmentTokenInput, EnrollmentToken } from '@classpulse/shared';
+import type { CreateEnrollmentTokenInput, EnrollmentToken } from '@classiq/shared';
 import { Button, ButtonLink, Dialog, Field, InlineError, Input, Select, Skeleton, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

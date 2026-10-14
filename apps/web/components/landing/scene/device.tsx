@@ -9,7 +9,7 @@ import { palette } from './palette';
 import { chapterWeight, cps, smooth } from './timeline';
 
 /**
- * The ClassPulse recorder: a small board in a dark case with one pulse LED, and a USB mic on a
+ * The ClassIQ recorder: a small board in a dark case with one pulse LED, and a USB mic on a
  * tiny stand. It is scaled up ~1.6× against the furniture. Why: at diorama scale a true-size Pi
  * would vanish; miniatures always exaggerate the hero prop.
  */

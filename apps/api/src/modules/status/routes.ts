@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { PlatformStatus } from '@classpulse/shared';
+import type { PlatformStatus } from '@classiq/shared';
 import { platformNotice } from '../../lib/platformState.js';
 
 /** Public platform status for the login pages: banner and maintenance message. Never blocked by maintenance. */

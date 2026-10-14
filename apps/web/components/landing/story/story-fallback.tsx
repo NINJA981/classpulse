@@ -4,7 +4,7 @@ import { CODEMIX_TRANSLATION, DEMO_QUESTION } from './chapters';
 
 /**
  * The stage before (or instead of) the 3D room: a chalkboard with the teacher's notes for each chapter,
- * drawn in chalk. The yellow pulse marks only what ClassPulse adds. Decorative — captions carry the content.
+ * drawn in chalk. The yellow pulse marks only what ClassIQ adds. Decorative — captions carry the content.
  */
 export function StoryFallback({ active }: { active: number }) {
   return (

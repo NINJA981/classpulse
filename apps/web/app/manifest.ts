@@ -4,8 +4,8 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'ClassPulse',
-    short_name: 'ClassPulse',
+    name: 'ClassIQ',
+    short_name: 'ClassIQ',
     description: 'AI-assisted lectures, quizzes and live classroom engagement.',
     start_url: '/',
     scope: '/',

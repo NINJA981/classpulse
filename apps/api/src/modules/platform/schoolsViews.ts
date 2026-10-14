@@ -6,7 +6,7 @@
 import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Request } from 'express';
-import type { Paginated, PlatformSchoolView, PlatformViewQuery, PlatformViewRow } from '@classpulse/shared';
+import type { Paginated, PlatformSchoolView, PlatformViewQuery, PlatformViewRow } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { audit } from '../../lib/audit.js';
 import {

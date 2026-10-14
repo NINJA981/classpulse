@@ -13,7 +13,7 @@ import { AudioTranscript } from '@/components/teacher/lesson/transcript-panel';
 import { useLesson } from '@/components/teacher/lesson/use-lesson';
 import { LessonStatusBadge, isProcessing } from '@/components/teacher/status';
 import { formatDate, formatDuration, languageLabel } from '@/lib/format';
-import type { LessonDetail } from '@classpulse/shared';
+import type { LessonDetail } from '@classiq/shared';
 
 export default function LessonWorkspacePage() {
   const { id } = useParams<{ id: string }>();

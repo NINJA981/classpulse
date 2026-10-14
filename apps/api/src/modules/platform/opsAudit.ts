@@ -4,7 +4,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { and, count, desc, eq, gte, ilike, lte, or, sql, type SQL } from 'drizzle-orm';
-import { AuditQuery, type AuditLogEntry, type AuditLogPage } from '@classpulse/shared';
+import { AuditQuery, type AuditLogEntry, type AuditLogPage } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { audit } from '../../lib/audit.js';
 import { auditLogs, institutions } from '../../db/schema/index.js';

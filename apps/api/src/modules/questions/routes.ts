@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Difficulty, IdParams, QuestionInput } from '@classpulse/shared';
+import { Difficulty, IdParams, QuestionInput } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';
 import * as service from './service.js';

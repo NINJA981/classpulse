@@ -10,7 +10,7 @@ import {
   type RecordingSession,
   type Section,
   type StartRecordingInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import {
   Button,
   Card,

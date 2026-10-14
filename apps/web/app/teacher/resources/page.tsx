@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Plus, Sparkles } from 'lucide-react';
-import { RESOURCE_TYPES, type ResourceSummary, type ResourceType } from '@classpulse/shared';
+import { RESOURCE_TYPES, type ResourceSummary, type ResourceType } from '@classiq/shared';
 import {
   ButtonLink,
   Card,

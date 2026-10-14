@@ -2,7 +2,7 @@
  * Contract between the resources framework (queue, grounding, persistence) and the per-type generators.
  * Each generator turns the teacher's request + grounding text into validated structured content.
  */
-import type { Language, ResourceContent, ResourceOptions, ResourceType } from '@classpulse/shared';
+import type { Language, ResourceContent, ResourceOptions, ResourceType } from '@classiq/shared';
 
 export interface GenerationContext {
   resourceId: string;

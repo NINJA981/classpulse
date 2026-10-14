@@ -9,7 +9,7 @@ import {
   type PlatformLoginResponse,
   type PlatformSessionResponse,
   type RecoveryCodesResponse,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { authenticatePlatform, currentPlatformAdmin } from '../../middleware/platformAuth.js';
 import { authIpLimiter, platformCodeLimiter, platformLoginLimiter } from '../../middleware/rateLimit.js';
 import { parseBody } from '../../middleware/validate.js';

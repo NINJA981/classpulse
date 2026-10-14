@@ -99,7 +99,7 @@ export function headerBlock(input: ExportInput, subtitle?: string): Paragraph[] 
 export async function toDocxBuffer(title: string, blocks: Block[]): Promise<Buffer> {
   const doc = new Document({
     title,
-    creator: 'ClassPulse',
+    creator: 'ClassIQ',
     styles: { default: { document: { run: { font: FONT, size: 22 } } } },
     sections: [{ properties: { page: { margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 } } }, children: blocks }],
   });

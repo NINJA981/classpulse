@@ -9,7 +9,7 @@ import type {
   SendLinkResult,
   Teacher,
   UpdateTeacherInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { institutions, lessons, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashInitialPassword, hashPassword } from '../../lib/crypto.js';

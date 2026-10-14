@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CatalogEntry, CourseDetail } from '@classpulse/shared';
+import type { CatalogEntry, CourseDetail } from '@classiq/shared';
 import { Button, Dialog, EmptyState, ErrorState, Field, InlineError, Input, LoadingBlock, Select } from '@/components/ui';
 import { api } from '@/lib/api';
 

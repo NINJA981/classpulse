@@ -94,7 +94,7 @@ async function newPage(browser: Browser): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe.serial('ClassPulse pilot flow', () => {
+test.describe.serial('ClassIQ pilot flow', () => {
   test('1. admin onboards a room, teacher, section and students', async ({ browser }) => {
     const page = await newPage(browser);
     await staffLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD, 'admin');

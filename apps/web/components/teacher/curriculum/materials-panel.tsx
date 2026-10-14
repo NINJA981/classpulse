@@ -2,7 +2,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Trash2, Upload } from 'lucide-react';
-import { MATERIAL_MAX_MB, type CourseDetail, type Material, type UpdateMaterialInput } from '@classpulse/shared';
+import { MATERIAL_MAX_MB, type CourseDetail, type Material, type UpdateMaterialInput } from '@classiq/shared';
 import { Badge, Button, EmptyState, ErrorState, Field, InlineError, Input, LoadingBlock, Select, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { api, errorMessage } from '@/lib/api';

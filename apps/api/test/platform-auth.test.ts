@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { and, eq } from 'drizzle-orm';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { SESSION_COOKIE } from '@classpulse/shared';
+import { SESSION_COOKIE } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { auditLogs, platformAdmins } from '../src/db/schema/index.js';
@@ -56,8 +56,8 @@ describe('platform sign-in', () => {
     expect(login.status).toBe(200);
     expect(login.headers['set-cookie']).toBeUndefined();
     expect(login.body.enrolment.secret).toMatch(/^[A-Z2-7]{32}$/);
-    expect(login.body.enrolment.otpauthUri).toContain(`otpauth://totp/ClassPulse:${encodeURIComponent(admin.email)}?secret=`);
-    expect(login.body.enrolment.otpauthUri).toContain('issuer=ClassPulse');
+    expect(login.body.enrolment.otpauthUri).toContain(`otpauth://totp/ClassIQ:${encodeURIComponent(admin.email)}?secret=`);
+    expect(login.body.enrolment.otpauthUri).toContain('issuer=ClassIQ');
 
     // The pending secret is stored sealed, never in plain text.
     const pending = await db.query.platformAdmins.findFirst({ where: eq(platformAdmins.id, admin.id) });

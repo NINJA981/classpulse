@@ -4,7 +4,7 @@
  * in a request body or path), so one person can never read or change another person's rows.
  */
 import { and, eq, type SQL } from 'drizzle-orm';
-import { DEFAULT_NOTIFICATION_PREFS, NotificationPrefs, type NotificationDto } from '@classpulse/shared';
+import { DEFAULT_NOTIFICATION_PREFS, NotificationPrefs, type NotificationDto } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { notifications, platformAdmins, pushSubscriptions, users } from '../../db/schema/index.js';
 

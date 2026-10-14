@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import type { StudentQuizListItem } from '@classpulse/shared';
+import type { StudentQuizListItem } from '@classiq/shared';
 import { Badge, Card } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { ScoreBadge } from '../common';

@@ -2,14 +2,14 @@
 
 > **Draft — needs legal review.** Prepared 12 October 2026. Every legal deadline below is marked **(verify with counsel)**. Fill in the contacts table before you need it.
 
-A **personal data breach** is any unauthorised processing, or accidental disclosure, access, sharing, change, loss or destruction of personal data that affects its confidentiality, integrity or availability (DPDP Act 2023, section 2(u)). Examples for ClassPulse:
+A **personal data breach** is any unauthorised processing, or accidental disclosure, access, sharing, change, loss or destruction of personal data that affects its confidentiality, integrity or availability (DPDP Act 2023, section 2(u)). Examples for ClassIQ:
 - one school can see another school's data;
 - a leaked database dump, backup archive or log export;
 - a stolen admin, platform or server credential that was used;
 - students' work or recordings sent to the wrong people;
 - ransomware, or loss of the server **and** its backups.
 
-ClassPulse holds **children's data**. Treat every suspected breach as serious until it is ruled out.
+ClassIQ holds **children's data**. Treat every suspected breach as serious until it is ruled out.
 
 ## Roles
 
@@ -92,9 +92,9 @@ Useful queries: the audit log filtered by actor, IP or action; `app_logs` by req
 ### To each affected school (always; without delay)
 Send to the school contact and the school admin(s). Template:
 
-> **Subject: ClassPulse security incident affecting [School name] — [date]**
+> **Subject: ClassIQ security incident affecting [School name] — [date]**
 >
-> We are writing to tell you about a security incident that affects personal data your school holds in ClassPulse.
+> We are writing to tell you about a security incident that affects personal data your school holds in ClassIQ.
 > **What happened:** [plain description] on [date/time], noticed on [date/time].
 > **Data involved:** [categories], for about [number] people ([number] students).
 > **What we have done:** [containment steps].

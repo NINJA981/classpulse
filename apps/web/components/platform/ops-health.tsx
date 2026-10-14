@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, PlugZap, RefreshCw } from 'lucide-react';
-import type { OpsComponentBase, OpsProviderHealth, PlatformHealth, ProviderTestResult } from '@classpulse/shared';
+import type { OpsComponentBase, OpsProviderHealth, PlatformHealth, ProviderTestResult } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, CardHeader, ErrorState, LoadingBlock, PageHeader, useToast } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { formatDateTime, formatRelative } from '@/lib/format';

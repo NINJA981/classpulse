@@ -27,7 +27,7 @@ export default function RecordPage() {
       <PageHeader
         eyebrow="Teacher studio"
         title="Record a class"
-        description="Record with the classroom device or upload an audio file. ClassPulse transcribes it and drafts a quiz for you to review."
+        description="Record with the classroom device or upload an audio file. ClassIQ transcribes it and drafts a quiz for you to review."
         back={{ href: '/teacher/lessons', label: 'Lessons' }}
       />
       <Suspense fallback={<LoadingBlock />}>

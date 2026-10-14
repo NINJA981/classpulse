@@ -1,5 +1,5 @@
 /** Transcript segment helpers shared by the STT providers and the LLM prompt builder. */
-import type { TranscriptSegment } from '@classpulse/shared';
+import type { TranscriptSegment } from '@classiq/shared';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

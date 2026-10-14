@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { KeyRound, Mail } from 'lucide-react';
-import type { PasswordResetResult, SendLinkResult } from '@classpulse/shared';
+import type { PasswordResetResult, SendLinkResult } from '@classiq/shared';
 import { Button, Dialog, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { OneTimePasswordDialog } from './common';

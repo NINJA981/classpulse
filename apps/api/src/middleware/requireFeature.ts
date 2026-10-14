@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import type { InstitutionFeature } from '@classpulse/shared';
+import type { InstitutionFeature } from '@classiq/shared';
 import { AppError } from '../lib/errors.js';
 import { institutionState } from '../lib/platformState.js';
 import { authenticate } from './auth.js';

@@ -1,4 +1,4 @@
-import type { InviteStatus } from '@classpulse/shared';
+import type { InviteStatus } from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 
 const LABELS: Record<InviteStatus, { label: string; tone: BadgeTone }> = {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Role } from '@classpulse/shared';
+import type { Role } from '@classiq/shared';
 import { anon, as, createWorld } from './helpers.js';
 
 type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';

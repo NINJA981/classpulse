@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList } from 'lucide-react';
-import type { StudentAssignment, StudentAssignmentState } from '@classpulse/shared';
+import type { StudentAssignment, StudentAssignmentState } from '@classiq/shared';
 import { ButtonLink, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { AssignmentCard } from '@/components/student/assignments/assignment-card';
 import { api } from '@/lib/api';

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restore a ClassPulse backup produced by backup.sh.
+# Restore a ClassIQ backup produced by backup.sh.
 #   sudo ./infra/restore.sh /var/backups/classpulse/daily/classpulse-<stamp>.tar.age ~/.config/age/classpulse.key
 # This REPLACES the current database and stored files. The api/worker are stopped during restore.
 # Reads both archive formats (see backup.sh); decrypted data is streamed straight into the containers and is

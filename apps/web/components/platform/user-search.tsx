@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
-import type { PlatformUserHit, Role } from '@classpulse/shared';
+import type { PlatformUserHit, Role } from '@classiq/shared';
 import {
   Badge,
   Card,

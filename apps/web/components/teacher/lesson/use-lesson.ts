@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LESSON_PROCESSING_STATUSES, type LessonDetail, type LessonStatus } from '@classpulse/shared';
+import { LESSON_PROCESSING_STATUSES, type LessonDetail, type LessonStatus } from '@classiq/shared';
 import { api } from '@/lib/api';
 import { useLessonProgressEvents } from '@/components/teacher/hooks';
 

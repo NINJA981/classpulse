@@ -17,7 +17,7 @@ import {
   type QuestionPaperOptions,
   type PaperQuestion,
   type QuestionPaperContent,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { logger } from '../../../lib/logger.js';
 import { PipelineError } from '../../../pipeline/errors.js';
 import {

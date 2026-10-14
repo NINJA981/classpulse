@@ -1,4 +1,4 @@
-# ClassPulse documentation
+# ClassIQ documentation
 
 The docs are in two parts. They hold the same facts, written for different readers.
 

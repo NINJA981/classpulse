@@ -1,4 +1,4 @@
-# ClassPulse retention schedule
+# ClassIQ retention schedule
 
 > **Draft — needs legal review.** Prepared 12 October 2026 from the code. Counsel should confirm each period, especially the log periods (see "Open legal questions").
 
@@ -11,10 +11,10 @@ How long each kind of data is kept, and what deletes it. "Automatic" means a tim
 | **Transcripts** (text and timestamped segments) | **365 days** after the lesson was created | Automatic: `jobs/retention.ts` (`purgeOldTranscripts`). The lesson, summary and quiz remain | `TRANSCRIPT_RETENTION_DAYS` (default 365) |
 | Raw recording chunks from classroom devices | Until the recording is assembled into one file (minutes); leftovers after 24 h | Automatic: on finalise, and the orphan sweep (`jobs/storageSweep.ts`) | — |
 | Orphaned stored files (no database row) | 24 hours | Automatic: `jobs/storageSweep.ts` | `ORPHAN_MIN_AGE_MS` (code constant) |
-| **Accounts** (admins, teachers, students) | While the school uses ClassPulse | The school admin deletes them (students: **Delete permanently**), or school offboarding | — |
+| **Accounts** (admins, teachers, students) | While the school uses ClassIQ | The school admin deletes them (students: **Delete permanently**), or school offboarding | — |
 | Guardians, enrolments, quiz/exam/live results, submissions and files | With the student's account | Deleted with the student (database cascade, and files removed from storage) | — |
 | Exam integrity events | With the exam attempt | Deleted with the exam or the student | — |
-| Teacher materials, teaching resources, courses | While the school uses ClassPulse | Deleted by the teacher, or with the teacher or school | — |
+| Teacher materials, teaching resources, courses | While the school uses ClassIQ | Deleted by the teacher, or with the teacher or school | — |
 | Password-set links (hash only) | Until used or expired (72 h); rows stay with the account | Deleted with the account | — |
 | **Application logs** (`app_logs`) | **14 days** | Automatic: `jobs/opsTasks.ts` | `LOG_RETENTION_DAYS` = 14 (code constant) |
 | **Audit log** (`audit_logs`) | **365 days** | Automatic: `jobs/opsTasks.ts` | `AUDIT_RETENTION_DAYS` = 365 (code constant) |
@@ -36,4 +36,4 @@ How long each kind of data is kept, and what deletes it. "Automatic" means a tim
 2. **CERT-In Directions (28 April 2022)** require ICT system logs to be kept for **180 days**, within India. Application and router logs are kept for much less, and the OCI region is not yet confirmed as India.
 3. Should transcripts be kept for a shorter time (for example the academic year), given they may contain children's voices turned into text?
 4. Should backups be kept for longer, or shorter, given that erased data survives in them for up to 5 weeks?
-5. Is any record (for example grades) subject to a school-side legal retention period (board or state rules), which the school rather than ClassPulse should manage?
+5. Is any record (for example grades) subject to a school-side legal retention period (board or state rules), which the school rather than ClassIQ should manage?

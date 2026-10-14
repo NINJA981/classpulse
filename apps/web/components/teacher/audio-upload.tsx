@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { LessonDetail } from '@classpulse/shared';
+import type { LessonDetail } from '@classiq/shared';
 import { Field, Input } from '@/components/ui';
 import { ProgressBar } from './common';
 import { uploadFile, type UploadHandle } from './upload';

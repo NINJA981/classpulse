@@ -1,7 +1,7 @@
 /**
  * Every material colour in the classroom scene lives here (hex is fine in this file only).
  * Why: the room is deliberately muted — the brand pulse yellow is the ONLY bright colour, so it
- * always reads as "this is what ClassPulse does". Red pen marks only the students who need help.
+ * always reads as "this is what ClassIQ does". Red pen marks only the students who need help.
  */
 export const palette = {
   // Brand tokens (mirrors [data-theme='landing'] in app/globals.css)
@@ -88,7 +88,7 @@ export const palette = {
   plant: '#4E7D52',
   pot: '#B0603E',
 
-  // Mastery (chapter 5). Why: yellow means "ClassPulse acting", so understood desks stay plain wood and
+  // Mastery (chapter 5). Why: yellow means "ClassIQ acting", so understood desks stay plain wood and
   // the students who need help get the teacher's red pen: a tinted desk top and a chalk-red circle.
   masteryHigh: '#B98758',
   masteryLow: '#C0574A',

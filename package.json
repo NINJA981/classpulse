@@ -1,7 +1,7 @@
 {
-  "name": "classpulse",
+  "name": "classiq",
   "private": true,
-  "description": "ClassPulse — AI classroom platform (API, unified web app, Raspberry Pi classroom agent)",
+  "description": "ClassIQ — AI classroom platform (API, unified web app, Raspberry Pi classroom agent)",
   "type": "module",
   "workspaces": [
     "packages/*",
@@ -12,22 +12,22 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "concurrently -k -n shared,api,worker,web -c gray,blue,magenta,green \"npm run dev -w @classpulse/shared\" \"npm run dev -w @classpulse/api\" \"npm run dev:worker -w @classpulse/api\" \"npm run dev -w @classpulse/web\"",
+    "dev": "concurrently -k -n shared,api,worker,web -c gray,blue,magenta,green \"npm run dev -w @classiq/shared\" \"npm run dev -w @classiq/api\" \"npm run dev:worker -w @classiq/api\" \"npm run dev -w @classiq/web\"",
     "dev:infra": "docker compose -f infra/docker-compose.dev.yml up -d",
-    "build": "npm run build -w @classpulse/shared && npm run build -w @classpulse/api && npm run build -w @classpulse/web",
+    "build": "npm run build -w @classiq/shared && npm run build -w @classiq/api && npm run build -w @classiq/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
     "test:agent": "python -m pytest apps/classroom-agent/tests -q",
-    "test:e2e": "npm run test:e2e -w @classpulse/web",
-    "db:generate": "npm run db:generate -w @classpulse/api",
-    "db:migrate": "npm run db:migrate -w @classpulse/api",
-    "db:seed": "npm run db:seed -w @classpulse/api",
-    "create-admin": "npm run create-admin -w @classpulse/api --",
-    "create-superadmin": "npm run create-superadmin -w @classpulse/api --",
-    "create-superadmin:prod": "npm run create-superadmin:prod -w @classpulse/api --"
+    "test:e2e": "npm run test:e2e -w @classiq/web",
+    "db:generate": "npm run db:generate -w @classiq/api",
+    "db:migrate": "npm run db:migrate -w @classiq/api",
+    "db:seed": "npm run db:seed -w @classiq/api",
+    "create-admin": "npm run create-admin -w @classiq/api --",
+    "create-superadmin": "npm run create-superadmin -w @classiq/api --",
+    "create-superadmin:prod": "npm run create-superadmin:prod -w @classiq/api --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

@@ -5,7 +5,7 @@ import express from 'express';
 import request from 'supertest';
 import webpush from 'web-push';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_PUSH_SUBSCRIPTIONS, type NotificationDto } from '@classpulse/shared';
+import { MAX_PUSH_SUBSCRIPTIONS, type NotificationDto } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { institutions, notifications, platformAdmins, pushSubscriptions, users } from '../src/db/schema/index.js';

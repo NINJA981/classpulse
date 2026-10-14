@@ -1,6 +1,6 @@
 /** Lesson queries shared by the lessons, questions and job code. */
 import { and, asc, count, desc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
-import { LESSON_PROCESSING_STATUSES, type LessonStatus, type Paginated, type SessionUser } from '@classpulse/shared';
+import { LESSON_PROCESSING_STATUSES, type LessonStatus, type Paginated, type SessionUser } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { assignments, lessons, questions, sections, users } from '../../db/schema/index.js';
 import { forbidden, invalidState, notFound } from '../../lib/errors.js';

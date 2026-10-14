@@ -1,11 +1,11 @@
 import { CONTACT_EMAIL, SITE_URL } from './contact';
 import { LOCALE_INFO, type LandingCopy, type Locale } from './i18n';
 
-/** The 11 languages ClassPulse understands, as BCP-47 tags (English as spoken in India first). */
+/** The 11 languages ClassIQ understands, as BCP-47 tags (English as spoken in India first). */
 const LANGUAGES = ['en-IN', 'hi', 'ta', 'te', 'kn', 'ml', 'mr', 'bn', 'gu', 'pa', 'or'] as const;
 
 const ORG_ID = `${SITE_URL}/#organization`;
-const APP_ID = `${SITE_URL}/#classpulse`;
+const APP_ID = `${SITE_URL}/#classiq`;
 
 /**
  * schema.org description of the product page, per language: the WebPage carries the language the page is
@@ -39,14 +39,14 @@ function graph(locale: Locale, meta: LandingCopy['meta']) {
       {
         '@type': 'SoftwareApplication',
         '@id': APP_ID,
-        name: 'ClassPulse',
+        name: 'ClassIQ',
         url: `${SITE_URL}/about`,
         image: `${SITE_URL}/icons/icon-512.png`,
         applicationCategory: 'EducationalApplication',
         // Runs in the browser and installs as a PWA on phones.
         operatingSystem: 'Web, Android, iOS',
         description:
-          'ClassPulse records classroom lectures, understands mixed-language speech in 11 Indian languages, writes quiz questions linked to the moment in the lecture, and lets students answer on their phones while teachers see what to re-teach.',
+          'ClassIQ records classroom lectures, understands mixed-language speech in 11 Indian languages, writes quiz questions linked to the moment in the lecture, and lets students answer on their phones while teachers see what to re-teach.',
         inLanguage: LANGUAGES,
         audience: { '@type': 'EducationalAudience', educationalRole: 'teacher' },
         publisher: { '@id': ORG_ID },

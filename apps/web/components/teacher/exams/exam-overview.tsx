@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, MonitorPlay, Square } from 'lucide-react';
-import type { ExamDetail } from '@classpulse/shared';
+import type { ExamDetail } from '@classiq/shared';
 import { Button, ButtonLink, Card, CardBody, CardHeader, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { optionLetter } from '@/components/teacher/status';

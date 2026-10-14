@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { CompetencyInsightRow, SectionInsights } from '@classpulse/shared';
+import type { CompetencyInsightRow, SectionInsights } from '@classiq/shared';
 import { Table, TBody, TD, TH, THead, TR, Tabs } from '@/components/ui';
 import { BLOOM_LABEL, Legend, MasteryCell, levelsWithData } from './common';
 

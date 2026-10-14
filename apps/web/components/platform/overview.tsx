@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { AlertTriangle, BellRing, Building2, GraduationCap, UserRound } from 'lucide-react';
-import type { PlatformHealth, PlatformSchool } from '@classpulse/shared';
+import type { PlatformHealth, PlatformSchool } from '@classiq/shared';
 import {
   Badge,
   ButtonLink,

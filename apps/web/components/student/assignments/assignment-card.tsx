@@ -2,7 +2,7 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, Clock, FileText, Paperclip, Send, X } from 'lucide-react';
-import { SUBMISSION_FILE_MAX_MB, type StudentAssignment, type StudentAssignmentState } from '@classpulse/shared';
+import { SUBMISSION_FILE_MAX_MB, type StudentAssignment, type StudentAssignmentState } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, Field, InlineError, Textarea, useToast, type BadgeTone } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

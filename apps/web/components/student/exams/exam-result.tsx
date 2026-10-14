@@ -2,7 +2,7 @@
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock, EyeOff, XCircle } from 'lucide-react';
-import type { StudentExamResult } from '@classpulse/shared';
+import type { StudentExamResult } from '@classiq/shared';
 import { Badge, ButtonLink, Card, CardBody, ErrorState, LoadingBlock } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPct } from '@/lib/format';

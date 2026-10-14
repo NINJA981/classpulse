@@ -4,7 +4,7 @@ import {
   type LessonStatus,
   type QuestionStatus,
   type RecordingStatus,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Badge, StatusDot, type BadgeTone } from '@/components/ui';
 import { formatRelative } from '@/lib/format';
 

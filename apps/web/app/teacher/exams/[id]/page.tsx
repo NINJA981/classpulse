@@ -1,7 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import type { ExamDetail } from '@classpulse/shared';
+import type { ExamDetail } from '@classiq/shared';
 import { ErrorState, LoadingBlock, PageHeader } from '@/components/ui';
 import { ExamEditor } from '@/components/teacher/exams/exam-editor';
 import { ExamStatusBadge } from '@/components/teacher/exams/exam-ui';

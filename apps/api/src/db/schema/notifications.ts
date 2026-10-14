@@ -6,7 +6,7 @@
  */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, pgEnum, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
-import { NOTIFICATION_KINDS, NOTIFICATION_TONES } from '@classpulse/shared';
+import { NOTIFICATION_KINDS, NOTIFICATION_TONES } from '@classiq/shared';
 import { institutions, users } from './org.js';
 import { platformAdmins } from './platform.js';
 

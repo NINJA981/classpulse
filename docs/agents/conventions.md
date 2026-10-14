@@ -17,7 +17,7 @@ docs/                 Handbook, architecture, API, database, deployment, hardwar
   - `routes.ts`: thin handlers. Each one parses input, calls the service and sends the response. Each router applies its own `authenticate()` and `requireRole()`.
   - `service.ts`: business rules, authorization and ownership checks, and transactions.
   - `repo.ts` (optional): Drizzle queries reused by several services.
-- **Input validation.** Parse every input with `parseBody`, `parseParams` or `parseQuery` from `middleware/validate.ts`, using schemas from `@classpulse/shared` or schemas local to the module. Never read `req.body` or `req.query` fields directly.
+- **Input validation.** Parse every input with `parseBody`, `parseParams` or `parseQuery` from `middleware/validate.ts`, using schemas from `@classiq/shared` or schemas local to the module. Never read `req.body` or `req.query` fields directly.
 - **Errors.** Throw `AppError` and its helpers (`notFound`, `forbidden`, `conflict`, `invalidState`, `badRequest`) from `lib/errors.ts`. Never send `err.message` from an unknown error. Express 5 forwards rejected promises to `errorHandler`, so you don't need `try/catch` just to forward errors.
 - **Database.** Use `db` from `db/client.ts`. Wrap any write that touches more than one table in `db.transaction(async (tx) => …)`. Use `.returning()` instead of re-reading rows. Do joins and aggregates in SQL, not JavaScript loops, and avoid N+1 queries.
 - **Responses.** Map database rows to the shared DTO types in a `toXxx()` function. Never send raw rows, password hashes or key hashes.
@@ -42,7 +42,7 @@ docs/                 Handbook, architecture, API, database, deployment, hardwar
 
 - **Calling the API.** Use only `api` from `@/lib/api` together with TanStack Query: `useQuery` for reads and `useMutation` for writes, then invalidate the affected query keys.
 - **Query keys** are arrays that start with the resource name, e.g. `['lessons', id]` or `['admin', 'sections']`.
-- **Types** come from `@classpulse/shared`. Never redefine a DTO type locally.
+- **Types** come from `@classiq/shared`. Never redefine a DTO type locally.
 - **UI building blocks.**
   - Use the primitives in `@/components/ui`: Button, ButtonLink, Field, Input, Select, Textarea, Checkbox, Card, CardHeader, CardBody, StatCard, Badge, StatusDot, Table/THead/TBody/TR/TH/TD, Dialog, Tabs, useToast, LoadingBlock, Skeleton, EmptyState, ErrorState, InlineError, Spinner and PageHeader.
   - Put components shared by one area in `components/<area>/`.
@@ -55,7 +55,7 @@ docs/                 Handbook, architecture, API, database, deployment, hardwar
   - Icon-only buttons have an `aria-label`.
   - Quiz options are real `<button>`s or radio inputs and can be used from the keyboard.
 - **Route segments.** Pages are client components (`'use client'`) unless they are purely static. Area layouts already enforce the role and provide `useSessionUser()`.
-- **Live features.** Use `connectSocket()` and `emitWithAck()` from `@/lib/socket`, with the event names and types from `@classpulse/shared` (`ClientToServerEvents` and `ServerToClientEvents`).
+- **Live features.** Use `connectSocket()` and `emitWithAck()` from `@/lib/socket`, with the event names and types from `@classiq/shared` (`ClientToServerEvents` and `ServerToClientEvents`).
 - **Sign-in pages.** Each role has its own page (`/admin/login`, `/teacher/login`, `/student/login`, served from `app/login/{role}` through `proxy.ts`), and the console has `/platform/login`. All of them share the same card design (`components/auth/role-login.tsx`).
 - **Teaching-resource types.** Each type plugs into two registries: the API generator and exporter (`modules/resources/generators`, `modules/resources/exporters`) and the web viewer and options form (`components/teacher/resources/types`, exporting `Viewer` and `OptionsFields`).
 - **Guided tours.** Use the reusable module in `components/tour` and anchor steps with `data-tour="..."` attributes. Nav links already carry `data-tour="nav-<path>"`.

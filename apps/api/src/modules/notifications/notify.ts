@@ -11,8 +11,8 @@
  * API process and the worker (DB + Redis). It resolves once delivery settled (push is bounded by a 5 s
  * timeout per device); producers that must not wait use `sendNotification()` (jobs/sendNotification.ts).
  */
-import type { NotificationKind, NotificationTone } from '@classpulse/shared';
-import { NOTIFICATION_KINDS, NOTIFICATION_TONES } from '@classpulse/shared';
+import type { NotificationKind, NotificationTone } from '@classiq/shared';
+import { NOTIFICATION_KINDS, NOTIFICATION_TONES } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { notifications } from '../../db/schema/index.js';
 import { logger } from '../../lib/logger.js';

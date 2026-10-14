@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw, Trash2 } from 'lucide-react';
-import type { FailedJob, OpsQueueHealth, OpsQueueName } from '@classpulse/shared';
+import type { FailedJob, OpsQueueHealth, OpsQueueName } from '@classiq/shared';
 import {
   Button,
   Card,

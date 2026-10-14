@@ -3,7 +3,7 @@
  * credentials. Refuses to run in production and is a no-op if the DEMO school exists.
  */
 import { eq } from 'drizzle-orm';
-import { DEFAULT_MODEL_SETTINGS, type Day } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS, type Day } from '@classiq/shared';
 import { env } from '../config/env.js';
 import { generateJoinCode, hashPassword } from '../lib/crypto.js';
 import { addDays } from '../lib/time.js';

@@ -1,7 +1,7 @@
 /** Competency insights (Bloom level × topic mastery per student), mounted at /api/insights. Teachers only. */
 import { Router } from 'express';
 import { z } from 'zod';
-import { Id } from '@classpulse/shared';
+import { Id } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseParams } from '../../middleware/validate.js';
 import { sectionInsights } from './insights.js';

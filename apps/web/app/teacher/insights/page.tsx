@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Users } from 'lucide-react';
-import { masteryBand, type CompetencyInsightRow, type SectionInsights } from '@classpulse/shared';
+import { masteryBand, type CompetencyInsightRow, type SectionInsights } from '@classiq/shared';
 import {
   Card,
   CardBody,

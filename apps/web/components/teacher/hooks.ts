@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import type { LessonProgress, RecordingSession } from '@classpulse/shared';
+import type { LessonProgress, RecordingSession } from '@classiq/shared';
 import { connectSocket } from '@/lib/socket';
 
 /** Current time in ms, re-rendering every `intervalMs` while `active`. */

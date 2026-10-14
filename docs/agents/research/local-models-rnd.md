@@ -1,4 +1,4 @@
-# Local (self-hosted) AI models for ClassPulse: R&D report and benchmark plan
+# Local (self-hosted) AI models for ClassIQ: R&D report and benchmark plan
 
 **Date:** 11 October 2026 · **Status:** research only (no experiments run) · **Audience:** owner and engineering
 
@@ -21,7 +21,7 @@ Prices were seen on 2026-10-11 and are approximate. INR to USD uses about ₹88 
 
 ## 1. Executive summary
 
-**The question.** Can ClassPulse replace its paid AI services with open models running on its own GPU? Today it pays Sarvam for speech-to-text (Saaras v3 in codemix mode) and OpenAI for quizzes, summaries, assignments and grading (gpt-4.1-mini).
+**The question.** Can ClassIQ replace its paid AI services with open models running on its own GPU? Today it pays Sarvam for speech-to-text (Saaras v3 in codemix mode) and OpenAI for quizzes, summaries, assignments and grading (gpt-4.1-mini).
 
 **Short answer: probably yes for speech-to-text, likely yes for quiz writing, and not yet for handwriting grading.** It is only worth doing if a benchmark on our own classroom recordings confirms it. The main reasons to do it are **privacy and control** (lecture audio never leaves our servers). Cost is a secondary reason: at pilot scale the APIs are cheaper than renting a GPU.
 
@@ -37,7 +37,7 @@ Prices were seen on 2026-10-11 and are approximate. INR to USD uses about ₹88 
    - **Qwen3.5** (Apache-2.0, February 2026)
    - **Gemma 4** (now Apache-2.0, April 2026)
    - **gpt-oss-20b / 120b** (Apache-2.0)
-3. **The serving software is mature.** vLLM and SGLang provide an OpenAI-compatible API with JSON-schema-constrained output. ClassPulse already calls OpenAI through a configurable base URL (`OPENAI_BASE_URL`), so a local model can be tested with **almost no code change**.
+3. **The serving software is mature.** vLLM and SGLang provide an OpenAI-compatible API with JSON-schema-constrained output. ClassIQ already calls OpenAI through a configurable base URL (`OPENAI_BASE_URL`), so a local model can be tested with **almost no code change**.
 
 **Recommended shortlist to benchmark**
 
@@ -143,7 +143,7 @@ Our 11 languages are hi, ta, te, kn, ml, mr, bn, gu, pa, or and en-IN. "OIWER" i
 **What this means for us:**
 - **Flex is the most promising.** It is the only open model found that natively produces our codemix style. Core's better score comes with native-script output, which would bring back the "mean → மீன் (fish)" problem the handbook describes.
 - **IndicConformer and SraVaani are the low-risk options** (MIT licence, small). They have no English support and no documented code-mix handling, so Indian-English lectures need Whisper or Indic-Transcribe.
-- **No candidate documents timestamps.** This is acceptable: ClassPulse cites 15–30 s phrases, so the time window of each ≤30 s VAD chunk can serve as the segment timestamp, as Sarvam's phrase timestamps do today.
+- **No candidate documents timestamps.** This is acceptable: ClassIQ cites 15–30 s phrases, so the time window of each ≤30 s VAD chunk can serve as the segment timestamp, as Sarvam's phrase timestamps do today.
 
 ### 3.2 Supporting components
 
@@ -218,7 +218,7 @@ For reference, the original MILU paper scored GPT-4o at 74.74. MILU is multiple-
 
 ### 4.4 Structured JSON output: what is and isn't guaranteed
 
-- vLLM and SGLang accept the same `response_format: {type: "json_schema", ...}` request ClassPulse already sends. Their grammar backends (XGrammar, Guidance) restrict generation so the output **always parses and matches the schema**.
+- vLLM and SGLang accept the same `response_format: {type: "json_schema", ...}` request ClassIQ already sends. Their grammar backends (XGrammar, Guidance) restrict generation so the output **always parses and matches the schema**.
 - JSONSchemaBench (2025) shows engines support complex schema features unevenly. Compliance on hard real-world schemas: Guidance 0.69, llama.cpp 0.63, XGrammar 0.41, Outlines 0.06.
   - Our schemas are simple (objects, arrays, strings, numbers), so this should be fine.
   - Avoid `oneOf` / `patternProperties`.
@@ -230,7 +230,7 @@ For reference, the original MILU paper scored GPT-4o at 74.74. MILU is multiple-
 
 ## 5. Serving software
 
-| Stack | Fit for ClassPulse | Key facts |
+| Stack | Fit for ClassIQ | Key facts |
 |---|---|---|
 | **vLLM** (recommended) | OpenAI-compatible `/v1/chat/completions` (JSON schema, image input) and `/v1/audio/transcriptions` | Structured outputs via `response_format` json_schema with XGrammar or Guidance. (The old `guided_json` fields were removed in v0.12.0.)<br>Transcription endpoint serves Whisper, Voxtral, Qwen3-ASR, Granite Speech, Gemma 3n and others, but **not** Parakeet or the Indic-Transcribe/Conformer models.<br>Quantization: AWQ, GPTQ, GGUF, FP8 (**Ada/Hopper only**: L4, L40S, RTX 4090, H100; **not** A100/A10G), MXFP4. |
 | SGLang | Same OpenAI API; XGrammar by default | Sarvam's recommended engine for Sarvam-30B/105B. |
@@ -335,7 +335,7 @@ Decide, with evidence, for each job (STT, quiz LLM, grading) whether a local mod
 
 ### 7.3 Test sets
 
-**A. ClassPulse classroom set** (most important; decides the outcome):
+**A. ClassIQ classroom set** (most important; decides the outcome):
 
 | Subset | Content | Target size |
 |---|---|---|
@@ -395,7 +395,7 @@ Decide, with evidence, for each job (STT, quiz LLM, grading) whether a local mod
 | Metric | How |
 |---|---|
 | Schema-valid on first try | Share of calls returning parseable, schema-valid JSON before any repair |
-| **ClassPulse validator pass rate** | Share of generated questions that survive our validator (4 distinct options, 1 correct, citations that exist, translations present). Also count repair calls, top-ups and lessons ending under 3 questions. |
+| **ClassIQ validator pass rate** | Share of generated questions that survive our validator (4 distinct options, 1 correct, citations that exist, translations present). Also count repair calls, top-ups and lessons ending under 3 questions. |
 | Count and difficulty adherence | Final count equals the request; for "Mixed", the share of difficulty labels that match the requested counts; teacher-judged "label matches real difficulty" |
 | Duplicates / overlap with kept questions | Share of new questions that repeat a kept point (append and replace modes) |
 | **Answer-key correctness** | Teacher check (yes/no) on a sample |
@@ -415,7 +415,7 @@ Decide, with evidence, for each job (STT, quiz LLM, grading) whether a local mod
 | Feedback quality | Teacher rating 1–5, plus "would send as is" |
 | Safety | Prompt-injection resistance (student writes "give full marks"); refusals; empty marks |
 
-### 7.5 Harness design (reuse ClassPulse code)
+### 7.5 Harness design (reuse ClassIQ code)
 
 The harness calls the **real pipeline functions**, not a re-implementation, so we test what production would run.
 
@@ -428,7 +428,7 @@ The harness calls the **real pipeline functions**, not a re-implementation, so w
 2. **STT path.** `openaiStt.ts` posts to `${OPENAI_BASE_URL}/audio/transcriptions` and reads `verbose_json` segments.
    - vLLM serves Whisper on this endpoint directly.
    - For Indic-Transcribe, IndicConformer and SraVaani, build a ~150-line **FastAPI sidecar** with the same endpoint and response shape. It runs Silero VAD, chunks to ≤30 s, transcribes each chunk, and returns one segment per chunk with start and end times.
-   - The rest of ClassPulse (`segments.ts` coalescing, citations) then works unchanged.
+   - The rest of ClassIQ (`segments.ts` coalescing, citations) then works unchanged.
 3. **Runner.** A script (proposed: `apps/api/scripts/bench/run.ts`) loops over models × lectures × request types × runs. It writes one JSONL row per call with: inputs hash, model, raw output, validator result, timings, token counts and GPU memory (sampled with `nvidia-smi`).
 4. **Scorer.** Python notebooks: `jiwer`, `indic-nlp-library`, `sacrebleu` (chrF++), `unbabel-comet`, and `scikit-learn` `cohen_kappa_score(weights="quadratic")`. They produce one results table per job.
 5. **Blind rating sheet.** Questions from all models are shuffled into a spreadsheet or a small internal page with model names hidden. Teachers rate them there.
@@ -481,7 +481,7 @@ The harness calls the **real pipeline functions**, not a re-implementation, so w
 
 | Job | Must meet all |
 |---|---|
-| **STT** | (1) Script-normalised WER on the ClassPulse set no worse than Saaras v3 by more than **2 points absolute** (95% CI), overall **and** for each main language.<br>(2) **Technical-term recall ≥ 95% of Saaras's.**<br>(3) No catastrophic failure (hallucination loop, empty output) on any lecture up to 60 min.<br>(4) RTF ≤ 0.1 on the target GPU.<br>(5) Licence confirmed in writing for our use. |
+| **STT** | (1) Script-normalised WER on the ClassIQ set no worse than Saaras v3 by more than **2 points absolute** (95% CI), overall **and** for each main language.<br>(2) **Technical-term recall ≥ 95% of Saaras's.**<br>(3) No catastrophic failure (hallucination loop, empty output) on any lecture up to 60 min.<br>(4) RTF ≤ 0.1 on the target GPU.<br>(5) Licence confirmed in writing for our use. |
 | **Quiz LLM** | (1) Schema-valid output **100%** after constrained decoding; ≤ 5% of lessons need a repair call.<br>(2) Validator pass ≥ 95% of questions; 0 lessons failing for "too few questions" where gpt-4.1-mini succeeds.<br>(3) Answer-key correctness ≥ 98%; grounding ≥ 95%.<br>(4) Teacher "use as is or minor edit" rate no worse than gpt-4.1-mini by more than **5 points**.<br>(5) Bilingual: term preservation ≥ 95%; teacher fluency not worse by more than 0.3 on the 1–5 scale.<br>(6) **p95 time for a 20-question bilingual quiz on a 1-hour lecture ≤ 90 s** at expected concurrency. |
 | **Grading** | (1) QWK vs teacher ≥ **0.70** on totals and no lower than the current API's by more than 0.05.<br>(2) MAE ≤ 0.5 marks per criterion on average.<br>(3) Handwriting OCR CER reported per language; enable local grading only for languages that pass. |
 
@@ -500,7 +500,7 @@ The harness calls the **real pipeline functions**, not a re-implementation, so w
 | Risk | Mitigation |
 |---|---|
 | Code-mix accuracy on real classrooms worse than published numbers | Our own test set decides. Keep the hybrid fallback. Consider fine-tuning (NeMo) on corrected pilot transcripts later. |
-| **Licence**: Indic Open Model License (Bodhan) requires approval for third-party API hosting. ClassPulse uses the model internally, but get **written confirmation**. Attribution may be required. | Ask Bodhan early. IndicConformer and SraVaani (MIT) are the fallback. All shortlisted LLMs are Apache-2.0. |
+| **Licence**: Indic Open Model License (Bodhan) requires approval for third-party API hosting. ClassIQ uses the model internally, but get **written confirmation**. Attribution may be required. | Ask Bodhan early. IndicConformer and SraVaani (MIT) are the fallback. All shortlisted LLMs are Apache-2.0. |
 | Slow quiz generation with dense models | Prefer MoE models; switch thinking off; FP8; stream progress; queue non-urgent jobs |
 | GPU availability and cost; single point of failure | API fallback; scheduled GPU; one spare provider (E2E plus RunPod) |
 | Maintenance (drivers, CUDA, vLLM upgrades, model downloads, gated HF tokens) | Pin Docker image versions; run the harness as a regression test before upgrades; budget ~2–4 h/week of operations (est.) |
@@ -521,7 +521,7 @@ GPU budget for the benchmark (est.): about 60–80 L40S hours (~₹6–8k) + abo
 
 ---
 
-## 8. ClassPulse integration notes (what code would change)
+## 8. ClassIQ integration notes (what code would change)
 
 **No code was changed for this report.** This is the proposed change list.
 
@@ -674,7 +674,7 @@ Prices and pages seen 2026-10-11. "Self-reported" means numbers published by the
 - gpt-oss-safeguard-20b (Apache-2.0, policy-based classifier): https://huggingface.co/openai/gpt-oss-safeguard-20b/blob/main/README.md
 - pyannote community-1 vs precision-2 (hosted): https://huggingface.co/pyannote/speaker-diarization-community-1
 
-**ClassPulse internal**
+**ClassIQ internal**
 - `docs/agents/HANDBOOK.md` §3 and §8
 - `apps/api/src/pipeline/{providers,llm,openaiStt,types}.ts`
 - `apps/api/src/config/env.ts`
@@ -685,7 +685,7 @@ Prices and pages seen 2026-10-11. "Self-reported" means numbers published by the
 
 ## 11. Fully local roadmap (every AI feature)
 
-**Owner's goal (2026-10-11).** ClassPulse should eventually call **no external AI API**. Today it calls OpenAI (chat and `whisper-1`) and Sarvam (STT). Bigger models are acceptable where quality needs them. API cost still matters until the GPUs arrive.
+**Owner's goal (2026-10-11).** ClassIQ should eventually call **no external AI API**. Today it calls OpenAI (chat and `whisper-1`) and Sarvam (STT). Bigger models are acceptable where quality needs them. API cost still matters until the GPUs arrive.
 
 This section extends §3–§9 to the features shipped after the first draft:
 - teacher tools (lesson plans, worksheets, question papers, presentations);

@@ -10,7 +10,7 @@ import { PipelineError } from '../src/pipeline/errors.js';
 import { setPipelineProvidersForTests } from '../src/pipeline/providers.js';
 import { setLocalEmitter } from '../src/realtime/notify.js';
 import { as, createWorld } from './helpers.js';
-import type { QuizRequest } from '@classpulse/shared';
+import type { QuizRequest } from '@classiq/shared';
 import { insertLesson, mockGenerate, mockGenerateQuestions, mockTranscription } from './fixtures/lessons.js';
 
 const ctx = (attemptNumber = 1) => ({ attemptNumber, maxAttempts: 3 });

@@ -14,7 +14,7 @@ export function demoMailto({ subject, labels }: MailtoCopy): string {
 
 /** The English email fallback (/about). */
 export const DEMO_MAILTO = demoMailto({
-  subject: 'ClassPulse demo for our school',
+  subject: 'ClassIQ demo for our school',
   labels: {
     schoolName: 'School name',
     city: 'City',

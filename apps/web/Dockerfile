@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# ClassPulse web image (Next.js standalone). Build from the repository root:
-#   docker build -f apps/web/Dockerfile -t classpulse-web .
+# ClassIQ web image (Next.js standalone). Build from the repository root:
+#   docker build -f apps/web/Dockerfile -t classiq-web .
 
 # Base image pinned by tag + digest (multi-arch index: linux/amd64 + linux/arm64); Dependabot (docker)
 # proposes updates. Keep every stage on the same reference.
@@ -11,10 +11,10 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --ignore-scripts --no-audit --no-fund --include-workspace-root -w @classpulse/shared -w @classpulse/web
+RUN npm ci --ignore-scripts --no-audit --no-fund --include-workspace-root -w @classiq/shared -w @classiq/web
 COPY packages/shared packages/shared
 COPY apps/web apps/web
-RUN npm run build -w @classpulse/shared && npm run build -w @classpulse/web
+RUN npm run build -w @classiq/shared && npm run build -w @classiq/web
 
 FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
 RUN apk add --no-cache tini

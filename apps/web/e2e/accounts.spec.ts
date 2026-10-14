@@ -87,7 +87,7 @@ test.describe.serial('account emails', () => {
     await expect(dialog).toBeVisible();
 
     const [download] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: 'Download template' }).click()]);
-    expect(download.suggestedFilename()).toBe('classpulse-teachers-template.csv');
+    expect(download.suggestedFilename()).toBe('classiq-teachers-template.csv');
 
     const csv = ['name,email,department', ...TEACHERS.map((t) => `${t.name},${t.email},${t.department}`)].join('\n');
     await dialog.getByLabel('CSV file').setInputFiles({ name: 'teachers.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
@@ -105,7 +105,7 @@ test.describe.serial('account emails', () => {
 
   test('an invited teacher sets a password from the email and lands on /teacher', async ({ browser, request }) => {
     const [teacher] = TEACHERS;
-    const path = await linkFromEmail(request, teacher!.email, 'Welcome to ClassPulse — set your password');
+    const path = await linkFromEmail(request, teacher!.email, 'Welcome to ClassIQ — set your password');
     await setPasswordFromLink(browser, path, teacher!.name, FIRST_PASSWORD);
   });
 
@@ -122,7 +122,7 @@ test.describe.serial('account emails', () => {
     await expect(page.getByText("If an account matches, we've emailed a reset link.")).toBeVisible();
     await ctx.close();
 
-    const path = await linkFromEmail(request, teacher!.email, 'Reset your ClassPulse password');
+    const path = await linkFromEmail(request, teacher!.email, 'Reset your ClassIQ password');
     await setPasswordFromLink(browser, path, teacher!.name, RESET_PASSWORD);
 
     // The new password works for a normal sign-in.

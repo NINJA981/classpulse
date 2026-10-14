@@ -1,5 +1,5 @@
 /** Word export for lesson plans. */
-import { LessonPlanContent } from '@classpulse/shared';
+import { LessonPlanContent } from '@classiq/shared';
 import { invalidState } from '../../../lib/errors.js';
 import { bullets, headerBlock, heading, para, table, toDocxBuffer, type Block } from './docx.js';
 import { DOCX_CONTENT_TYPE, safeFilename, type ExportInput, type ExportedFile } from './types.js';

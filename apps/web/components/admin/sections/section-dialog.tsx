@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Section, SectionInput } from '@classpulse/shared';
+import type { Section, SectionInput } from '@classiq/shared';
 import { Button, Checkbox, Dialog, Field, InlineError, Input, Select, Skeleton, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, fieldErrorsOf, formLevelError, optional, useRooms, useTeachers } from '../queries';

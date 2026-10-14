@@ -1,7 +1,7 @@
 'use client';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
-import type { Section } from '@classpulse/shared';
+import type { Section } from '@classiq/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Dialog, InlineError } from '@/components/ui';
 import { api } from '@/lib/api';

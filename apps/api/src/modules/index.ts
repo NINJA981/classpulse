@@ -34,7 +34,7 @@ import { statsRouter } from './platform/stats.js';
 import { opsRouter } from './platform/opsRoutes.js';
 import { auditRouter } from './platform/opsAudit.js';
 import { requireFeature } from '../middleware/requireFeature.js';
-import type { InstitutionFeature } from '@classpulse/shared';
+import type { InstitutionFeature } from '@classiq/shared';
 import { authenticatePlatform } from '../middleware/platformAuth.js';
 import { statusRouter } from './status/routes.js';
 import { simulationsRouter } from './resources/simulations.js';

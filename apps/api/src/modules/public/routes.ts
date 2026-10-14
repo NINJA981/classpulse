@@ -4,7 +4,7 @@
  * the same-origin guard: the product page posts JSON to its own origin.
  */
 import { Router } from 'express';
-import { DemoRequestInput } from '@classpulse/shared';
+import { DemoRequestInput } from '@classiq/shared';
 import { demoRequestLimiters } from '../../middleware/rateLimit.js';
 import { parseBody } from '../../middleware/validate.js';
 import { isHoneypotFilled, sendDemoRequest } from './demoRequests.js';

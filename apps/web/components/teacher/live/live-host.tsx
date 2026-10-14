@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MonitorUp, Play, SkipForward, Square, Users } from 'lucide-react';
-import type { LeaderboardEntry, LiveSessionInfo, LiveSessionResults } from '@classpulse/shared';
+import type { LeaderboardEntry, LiveSessionInfo, LiveSessionResults } from '@classiq/shared';
 import {
   Badge,
   Button,

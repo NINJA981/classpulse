@@ -8,10 +8,10 @@ import type { LandingCopy } from './types';
 export const en: LandingCopy = {
   locale: 'en',
   meta: {
-    title: 'ClassPulse: every lecture, turned into learning',
+    title: 'ClassIQ: every lecture, turned into learning',
     description:
-      'ClassPulse records the class, writes a quiz in the teacher’s language, and runs it on every student’s phone. Built for Indian schools.',
-    ogImageAlt: 'ClassPulse: every lecture, turned into learning. For Indian schools.',
+      'ClassIQ records the class, writes a quiz in the teacher’s language, and runs it on every student’s phone. Built for Indian schools.',
+    ogImageAlt: 'ClassIQ: every lecture, turned into learning. For Indian schools.',
   },
 
   header: {
@@ -24,17 +24,17 @@ export const en: LandingCopy = {
     menu: 'Menu',
     menuDialogLabel: 'Menu',
     close: 'Close',
-    wordmarkLabel: 'ClassPulse, back to top',
+    wordmarkLabel: 'ClassIQ, back to top',
     notDecider: 'Not the one who decides?',
     shareToManagement: 'Send this page to your management',
   },
 
   story: {
-    sectionLabel: 'How ClassPulse works',
+    sectionLabel: 'How ClassIQ works',
     chapters: {
       hero: {
         title: 'Every lecture, turned into learning.',
-        body: 'ClassPulse listens to the lesson in Tamil, Hindi or English, mixed the way your teachers really speak. It writes a quiz from what was said and puts it on every student’s phone.',
+        body: 'ClassIQ listens to the lesson in Tamil, Hindi or English, mixed the way your teachers really speak. It writes a quiz from what was said and puts it on every student’s phone.',
       },
       record: {
         title: 'It starts with the lesson you already teach.',
@@ -81,7 +81,7 @@ export const en: LandingCopy = {
     saidLabel: 'What the teacher said',
     codemixTranslation: 'In photosynthesis, it’s chlorophyll that absorbs sunlight.',
     wroteNote:
-      'ClassPulse wrote the question from this line. The teacher approved it before any student saw it.',
+      'ClassIQ wrote the question from this line. The teacher approved it before any student saw it.',
     appBar: 'Class 8B science',
     questionCount: 'Q 1/1',
     topic: 'Photosynthesis',
@@ -116,7 +116,7 @@ export const en: LandingCopy = {
 
   languageWall: {
     title: 'Eleven ways to say learning.',
-    lede: 'ClassPulse understands lessons in ten Indian languages and English, including the mix of both that real classrooms run on.',
+    lede: 'ClassIQ understands lessons in ten Indian languages and English, including the mix of both that real classrooms run on.',
     hint: 'Point at a word, or tap it, to see the language. Subject terms stay in English, the way teachers say them.',
     names: {
       en: 'English',
@@ -156,8 +156,8 @@ export const en: LandingCopy = {
 
   roles: {
     title: 'One school, three views.',
-    lede: 'The school buys ClassPulse once. Admins, teachers and students each sign in to their own part of it.',
-    tablistLabel: 'ClassPulse views',
+    lede: 'The school buys ClassIQ once. Admins, teachers and students each sign in to their own part of it.',
+    tablistLabel: 'ClassIQ views',
     views: {
       admin: {
         tab: 'Admin',
@@ -214,11 +214,11 @@ export const en: LandingCopy = {
       },
       {
         q: 'What does a classroom need, and what if the internet drops?',
-        a: 'One small recorder on the teacher’s desk, a plug point and the school’s Wi‑Fi. If the connection drops, the recording carries on: the device saves the class in 60‑second pieces and uploads each one once it can. A classroom without a recorder can still use ClassPulse, because teachers can upload a recording from their phone instead.',
+        a: 'One small recorder on the teacher’s desk, a plug point and the school’s Wi‑Fi. If the connection drops, the recording carries on: the device saves the class in 60‑second pieces and uploads each one once it can. A classroom without a recorder can still use ClassIQ, because teachers can upload a recording from their phone instead.',
       },
       {
         q: 'Do students need to install an app?',
-        a: 'No. ClassPulse runs in the browser on any phone. Students can add it to their home screen if they like, and it then opens like an app.',
+        a: 'No. ClassIQ runs in the browser on any phone. Students can add it to their home screen if they like, and it then opens like an app.',
       },
       {
         q: 'Who can hear the recordings?',
@@ -226,11 +226,11 @@ export const en: LandingCopy = {
       },
       {
         q: 'Where is our data kept, and for how long?',
-        a: 'On ClassPulse’s servers, hosted by Oracle Cloud Infrastructure. Lesson audio is deleted automatically after 30 days, and transcripts after 365 days by default. Accounts, quizzes, exams and grades stay while your school uses ClassPulse. Encrypted backups are overwritten after about five weeks. If your school leaves, we give you an export of your data on request and then delete it.',
+        a: 'On ClassIQ’s servers, hosted by Oracle Cloud Infrastructure. Lesson audio is deleted automatically after 30 days, and transcripts after 365 days by default. Accounts, quizzes, exams and grades stay while your school uses ClassIQ. Encrypted backups are overwritten after about five weeks. If your school leaves, we give you an export of your data on request and then delete it.',
       },
       {
         q: 'Do we need parents’ consent?',
-        a: 'Yes, for students under 18. Under the DPDP Act your school decides how the data is used, and we handle it on your behalf. Before a child uses ClassPulse, the school gets a parent’s or guardian’s consent and tells families that classes may be recorded. A parent can withdraw consent through the school.',
+        a: 'Yes, for students under 18. Under the DPDP Act your school decides how the data is used, and we handle it on your behalf. Before a child uses ClassIQ, the school gets a parent’s or guardian’s consent and tells families that classes may be recorded. A parent can withdraw consent through the school.',
         link: { href: '/privacy', label: 'Read the privacy notice', after: '.' },
       },
     ],
@@ -238,7 +238,7 @@ export const en: LandingCopy = {
 
   finale: {
     title: 'Run a pilot at your school.',
-    lede: 'Tell us about your school. We’ll show you ClassPulse working, then set it up with you in a few classrooms.',
+    lede: 'Tell us about your school. We’ll show you ClassIQ working, then set it up with you in a few classrooms.',
     stepsLabel: 'How a pilot runs',
     steps: [
       {
@@ -262,7 +262,7 @@ export const en: LandingCopy = {
     preferEmail: 'Prefer email?',
     emailHint: 'Tell us your school’s name, city, how many classrooms, and a good time to call.',
     notDecider: 'Not the one who decides?',
-    notDeciderBody: 'Send this page to your management, with a short note on what ClassPulse does.',
+    notDeciderBody: 'Send this page to your management, with a short note on what ClassIQ does.',
   },
 
   demoForm: {
@@ -299,7 +299,7 @@ export const en: LandingCopy = {
         body: 'Please email us instead. It reaches the same team, and your details are already filled in.',
       },
       network: {
-        title: 'We couldn’t reach ClassPulse.',
+        title: 'We couldn’t reach ClassIQ.',
         body: 'Check your connection and try again, or email us. Your details are already filled in.',
       },
       other: {
@@ -310,7 +310,7 @@ export const en: LandingCopy = {
     sent: {
       titleNamed: 'Thank you, {name}. Your request is in.',
       title: 'Thank you. Your request is in.',
-      body: 'We’ll call or WhatsApp you on {phone} to set up a time. In the demo we’ll show you ClassPulse working and plan a pilot around your classrooms.',
+      body: 'We’ll call or WhatsApp you on {phone} to set up a time. In the demo we’ll show you ClassIQ working and plan a pilot around your classrooms.',
       share: 'Share with your management',
       addSomething: 'Want to add something? Email {email}',
     },
@@ -319,7 +319,7 @@ export const en: LandingCopy = {
   },
 
   mailto: {
-    subject: 'ClassPulse demo for our school',
+    subject: 'ClassIQ demo for our school',
     labels: {
       schoolName: 'School name',
       name: 'Name',
@@ -334,7 +334,7 @@ export const en: LandingCopy = {
 
   share: {
     brief:
-      'ClassPulse records the class, writes a quiz in the teacher’s language and runs it on every student’s phone. Worth a look for our school:',
+      'ClassIQ records the class, writes a quiz in the teacher’s language and runs it on every student’s phone. Worth a look for our school:',
     label: 'Send to your management',
     copyLink: 'Copy link',
     copied: 'Link copied',
@@ -342,7 +342,7 @@ export const en: LandingCopy = {
   },
 
   footer: {
-    madeBy: 'ClassPulse is made by BenX Solutions for schools in India.',
+    madeBy: 'ClassIQ is made by BenX Solutions for schools in India.',
     navLabel: 'Footer',
     signIn: 'Sign in',
     privacy: 'Privacy',

@@ -1,7 +1,7 @@
 'use client';
 import clsx from 'clsx';
 import { Trash2 } from 'lucide-react';
-import { LessonPlanContent, LessonPlanOptions, type ResourceOptions } from '@classpulse/shared';
+import { LessonPlanContent, LessonPlanOptions, type ResourceOptions } from '@classiq/shared';
 import { Button, Field, Input } from '@/components/ui';
 import { EditableList, EditableNumber, EditableText, ViewerSection } from '../editable';
 import type { OptionsFieldsProps, ViewerProps } from './index';

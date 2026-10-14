@@ -12,7 +12,7 @@ import type { RequestHandler } from 'express';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import multer from 'multer';
 import { z } from 'zod';
-import { Id, MATERIAL_MAX_MB, type Material, type SessionUser, type UpdateMaterialInput } from '@classpulse/shared';
+import { Id, MATERIAL_MAX_MB, type Material, type SessionUser, type UpdateMaterialInput } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { courses, teacherMaterials, units } from '../../db/schema/index.js';
 import { badRequest, notFound } from '../../lib/errors.js';

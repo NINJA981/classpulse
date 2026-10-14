@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import type { Assignment, AssignmentInput, AssignmentSummary, LessonDetail } from '@classpulse/shared';
+import type { Assignment, AssignmentInput, AssignmentSummary, LessonDetail } from '@classiq/shared';
 import { Button, ButtonLink, Card, CardBody, CardHeader, Dialog, useToast } from '@/components/ui';
 import { AssignmentForm } from '@/components/teacher/assignments/assignment-form';
 import { AssignmentStatusBadge } from '@/components/teacher/assignments/status';

@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, type ReactNode } from 'react';
-import type { SessionUser } from '@classpulse/shared';
+import type { SessionUser } from '@classiq/shared';
 
 const SessionContext = createContext<SessionUser | null>(null);
 

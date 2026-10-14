@@ -1,4 +1,4 @@
-import type { InstitutionFeature, Role } from '@classpulse/shared';
+import type { InstitutionFeature, Role } from '@classiq/shared';
 import {
   Atom,
   ChartColumn,

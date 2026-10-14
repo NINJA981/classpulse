@@ -1,5 +1,5 @@
 import { Users } from 'lucide-react';
-import type { ResourceSummary } from '@classpulse/shared';
+import type { ResourceSummary } from '@classiq/shared';
 import { Badge } from '@/components/ui';
 
 /**

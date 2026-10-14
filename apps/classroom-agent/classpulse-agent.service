@@ -1,5 +1,5 @@
 [Unit]
-Description=ClassPulse classroom recording agent
+Description=ClassIQ classroom recording agent
 Documentation=file:///opt/classpulse-agent/README.md
 After=network-online.target sound.target
 Wants=network-online.target

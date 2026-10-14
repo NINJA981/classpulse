@@ -7,7 +7,7 @@ import {
   type NotificationPrefs,
   type PushKeyResponse,
   type PushSubscriptionInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { ApiError, api } from '@/lib/api';
 import { notificationBase, notificationKeys, type NotificationScope } from './shared';
 
@@ -128,7 +128,7 @@ export function PushToggle({ scope }: { scope: NotificationScope }) {
 
   const BLOCKER_COPY: Record<Exclude<Blocker, null>, string> = {
     'ios-install':
-      'On iPhone or iPad, add ClassPulse to your Home Screen first: tap Share, then Add to Home Screen. Open it from there and turn this on.',
+      'On iPhone or iPad, add ClassIQ to your Home Screen first: tap Share, then Add to Home Screen. Open it from there and turn this on.',
     unsupported: "This browser can't show notifications. Try Chrome, Edge, Firefox or Safari.",
     'server-off': "Phone and desktop alerts aren't set up on this server yet.",
     'no-worker': "Alerts can't start on this page. Reload the page and try again.",
@@ -237,8 +237,8 @@ export function PushToggle({ scope }: { scope: NotificationScope }) {
     (blocker
       ? BLOCKER_COPY[blocker]
       : on
-        ? "On for this device. You'll get an alert here when a job finishes, even with ClassPulse closed."
-        : 'Get an alert on this phone or computer when a job finishes, even with ClassPulse closed. Your other devices have their own setting.');
+        ? "On for this device. You'll get an alert here when a job finishes, even with ClassIQ closed."
+        : 'Get an alert on this phone or computer when a job finishes, even with ClassIQ closed. Your other devices have their own setting.');
 
   return (
     <PushRow

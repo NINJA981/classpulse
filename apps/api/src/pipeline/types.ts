@@ -8,7 +8,7 @@ import type {
   RubricItem,
   RubricMark,
   TranscriptSegment,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import type { AiUsageContext } from '../lib/aiUsage.js';
 
 export interface TranscribeInput {

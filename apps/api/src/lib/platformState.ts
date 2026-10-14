@@ -18,7 +18,7 @@ import {
   type InstitutionStatus,
   type PlatformNotice,
   type PlatformSettings,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../db/client.js';
 import { institutions, platformSettings, users } from '../db/schema/index.js';
 import { AppError, conflict } from './errors.js';
@@ -122,7 +122,7 @@ export async function platformNotice(): Promise<PlatformNotice> {
   return {
     banner: banner.enabled && banner.message ? { message: banner.message, level: banner.level } : null,
     maintenance: maintenance.enabled
-      ? { message: maintenance.message || 'ClassPulse is undergoing maintenance.', blockLogins: maintenance.blockLogins }
+      ? { message: maintenance.message || 'ClassIQ is undergoing maintenance.', blockLogins: maintenance.blockLogins }
       : null,
   };
 }

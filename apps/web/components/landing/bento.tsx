@@ -10,7 +10,7 @@ type BentoCopy = LandingCopy['bento'];
  * their own chapters in the story, so they aren't repeated here.)
  * One skin for every card: chalk-white paper with a navy rule, each holding a small vignette of the real UI
  * built in HTML. Cards differ in size, not costume: a 7/5 then 5/7 grid. Pulse yellow appears only where
- * ClassPulse itself is acting: the mic listening, the AI's suggestions, the install prompt.
+ * ClassIQ itself is acting: the mic listening, the AI's suggestions, the install prompt.
  */
 export function Bento({ copy }: { copy: BentoCopy }) {
   return (
@@ -337,7 +337,7 @@ function MiniPhone({
             <span className="grid size-6 shrink-0 place-items-center bg-pulse font-display text-xs font-black text-uniform">
               C
             </span>
-            <span className="min-w-0 truncate text-[10px] leading-tight font-semibold">ClassPulse</span>
+            <span className="min-w-0 truncate text-[10px] leading-tight font-semibold">ClassIQ</span>
           </span>
           <span className="mt-2 block bg-uniform py-1 text-center text-[10px] font-semibold text-chalk">
             Install

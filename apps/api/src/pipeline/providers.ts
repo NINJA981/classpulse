@@ -7,7 +7,7 @@
  * production) AND the provider key is missing — it is labelled, logged and
  * recorded in pipelineMeta, never silent. Provider *failures* always surface.
  */
-import type { RemedialPlan } from '@classpulse/shared';
+import type { RemedialPlan } from '@classiq/shared';
 import { env } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { demoGenerate, demoGenerateQuestions, demoGrade, demoRemedial, demoTranscribe } from './demo.js';

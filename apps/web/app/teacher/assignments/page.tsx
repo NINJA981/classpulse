@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ClipboardList, Plus } from 'lucide-react';
-import type { AssignmentStatus, AssignmentSummary } from '@classpulse/shared';
+import type { AssignmentStatus, AssignmentSummary } from '@classiq/shared';
 import {
   Button,
   Card,

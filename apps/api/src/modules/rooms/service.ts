@@ -1,5 +1,5 @@
 import { and, asc, count, eq, sql, type SQL } from 'drizzle-orm';
-import type { Room, RoomInput } from '@classpulse/shared';
+import type { Room, RoomInput } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { devices, rooms } from '../../db/schema/index.js';
 import { conflict, isUniqueViolation, notFound } from '../../lib/errors.js';

@@ -5,7 +5,7 @@
  * PDF is produced by the browser print page (the web Viewer prints one slide per page).
  */
 import pptxgenModule from 'pptxgenjs';
-import { PresentationContent } from '@classpulse/shared';
+import { PresentationContent } from '@classiq/shared';
 import { badRequest } from '../../../lib/errors.js';
 import { PPTX_CONTENT_TYPE, safeFilename, type ExportedFile, type ExportInput } from './types.js';
 
@@ -333,7 +333,7 @@ export async function exportFile(resource: PresentationExportInput): Promise<Exp
   pptx.layout = 'LAYOUT_16x9';
   pptx.title = resource.title;
   pptx.subject = courseTitle ?? '';
-  pptx.company = 'ClassPulse';
+  pptx.company = 'ClassIQ';
 
   for (const slide of content.slides) {
     const s = pptx.addSlide();

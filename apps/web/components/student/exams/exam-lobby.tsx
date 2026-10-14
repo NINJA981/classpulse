@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, Eye, ListChecks, Maximize, MonitorSmartphone, Timer } from 'lucide-react';
-import type { StartExamResponse, StudentExamListItem } from '@classpulse/shared';
+import type { StartExamResponse, StudentExamListItem } from '@classiq/shared';
 import { Button, Card, CardBody, Field, Input } from '@/components/ui';
 import { ApiError, errorMessage } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

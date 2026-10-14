@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SESSION_COOKIE } from '@classpulse/shared';
+import { SESSION_COOKIE } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { auditLogs, users } from '../src/db/schema/index.js';

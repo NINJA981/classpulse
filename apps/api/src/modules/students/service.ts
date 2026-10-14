@@ -13,7 +13,7 @@ import {
   type SendLinkResult,
   type Student,
   type UpdateStudentInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { enrollments, institutions, sections, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashInitialPassword, hashPassword } from '../../lib/crypto.js';

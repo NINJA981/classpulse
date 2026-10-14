@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install / upgrade the ClassPulse classroom agent on Raspberry Pi OS (Bookworm).
+# Install / upgrade the ClassIQ classroom agent on Raspberry Pi OS (Bookworm).
 # Usage: sudo ./install.sh
 set -euo pipefail
 
@@ -54,11 +54,11 @@ systemctl daemon-reload
 systemctl enable classpulse-agent.service >/dev/null
 
 echo
-echo "ClassPulse agent installed to $APP_DIR."
+echo "ClassIQ agent installed to $APP_DIR."
 echo
 echo "Next steps:"
 if [[ "${CONFIG_CREATED:-0}" == 1 ]]; then
-  echo "  1. In ClassPulse: Admin > Devices > Add device, pick the room and copy the enrollment token."
+  echo "  1. In ClassIQ: Admin > Devices > Add device, pick the room and copy the enrollment token."
   echo "  2. Edit $CONF_DIR/agent.json: set server_url, device_id, enrollment_token and alsa_device"
   echo "     (list microphones with: arecord -l)."
 else

@@ -3,7 +3,7 @@ import express, { Router } from 'express';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { SESSION_COOKIE } from '@classpulse/shared';
+import { SESSION_COOKIE } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import { auditLogs, institutions, modelSettings, passwordTokens, users } from '../src/db/schema/index.js';
 import { setMailerForTests, type MailMessage } from '../src/lib/mailer.js';

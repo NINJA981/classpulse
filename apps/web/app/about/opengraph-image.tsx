@@ -6,7 +6,7 @@ import { ImageResponse } from 'next/og';
 // poster (POSTERS.chapter(0, 'wide')) as a dimmed background behind the headline. Satori needs it as a
 // data URL or absolute URL — read the .webp from public/ and convert, or render a PNG copy of it.
 
-export const alt = 'ClassPulse: every lecture, turned into learning. For Indian schools.';
+export const alt = 'ClassIQ: every lecture, turned into learning. For Indian schools.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -67,7 +67,7 @@ export default function Image() {
               />
             </svg>
             <div style={{ display: 'flex', fontSize: 30, letterSpacing: -0.3, opacity: 0.85 }}>
-              ClassPulse · for Indian schools
+              ClassIQ · for Indian schools
             </div>
           </div>
 

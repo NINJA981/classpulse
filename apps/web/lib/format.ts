@@ -1,4 +1,4 @@
-import { LANGUAGE_LABELS, type Language } from '@classpulse/shared';
+import { LANGUAGE_LABELS, type Language } from '@classiq/shared';
 
 export function formatDate(iso: string | null | undefined, opts: Intl.DateTimeFormatOptions = { dateStyle: 'medium' }): string {
   if (!iso) return '—';

@@ -14,7 +14,7 @@ import {
   type PasswordTokenPreview,
   type PasswordTokenPurpose,
   type Role,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { institutions, passwordTokens, users } from '../../db/schema/index.js';
 import { enqueueEmail } from '../../jobs/emailQueue.js';
@@ -85,11 +85,11 @@ function composeEmail(t: TokenTarget & { email: string }, purpose: PasswordToken
   if (purpose === 'invite') {
     return renderEmail({
       to: t.email,
-      subject: 'Welcome to ClassPulse — set your password',
+      subject: 'Welcome to ClassIQ — set your password',
       schoolName: t.schoolName,
-      heading: `Welcome to ClassPulse, ${t.name}`,
+      heading: `Welcome to ClassIQ, ${t.name}`,
       paragraphs: [
-        `${t.schoolName} has created a ClassPulse ${ROLE_LABEL[t.role]} account for you.`,
+        `${t.schoolName} has created a ClassIQ ${ROLE_LABEL[t.role]} account for you.`,
         loginLine(t),
         'Choose your own password with the button below to finish setting up your account.',
       ],
@@ -99,11 +99,11 @@ function composeEmail(t: TokenTarget & { email: string }, purpose: PasswordToken
   }
   return renderEmail({
     to: t.email,
-    subject: 'Reset your ClassPulse password',
+    subject: 'Reset your ClassIQ password',
     schoolName: t.schoolName,
     heading: 'Reset your password',
     paragraphs: [
-      `Hi ${t.name}, a password reset was requested for your ClassPulse account at ${t.schoolName}.`,
+      `Hi ${t.name}, a password reset was requested for your ClassIQ account at ${t.schoolName}.`,
       loginLine(t),
       'Choose a new password with the button below. Your current password keeps working until you do.',
     ],

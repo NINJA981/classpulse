@@ -1,7 +1,7 @@
 /** Global user search across every school (name, email or roll number). */
 import { and, asc, eq, ilike, or } from 'drizzle-orm';
 import type { Request } from 'express';
-import type { PlatformUserHit, PlatformUserSearchQuery } from '@classpulse/shared';
+import type { PlatformUserHit, PlatformUserSearchQuery } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { audit } from '../../lib/audit.js';
 import { institutions, users } from '../../db/schema/index.js';

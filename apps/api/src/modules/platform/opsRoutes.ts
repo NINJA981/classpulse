@@ -12,7 +12,7 @@ import {
   QueueParams,
   RedeployInput,
   RestartInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { z } from 'zod';
 import { audit } from '../../lib/audit.js';
 import { currentPlatformAdmin } from '../../middleware/platformAuth.js';

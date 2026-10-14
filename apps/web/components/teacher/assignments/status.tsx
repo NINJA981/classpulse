@@ -1,4 +1,4 @@
-import type { AssignmentStatus, TrackerStatus } from '@classpulse/shared';
+import type { AssignmentStatus, TrackerStatus } from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 
 const ASSIGNMENT_STATUS: Record<AssignmentStatus, { label: string; tone: BadgeTone }> = {

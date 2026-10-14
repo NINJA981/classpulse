@@ -287,7 +287,7 @@ function Wordmark({ onClick, label }: { onClick?: () => void; label: string }) {
         lang="en"
         className="font-display text-[1.3125rem] font-bold tracking-[-0.02em] [font-variation-settings:'wdth'_88]"
       >
-        ClassPulse
+        ClassIQ
       </span>
     </a>
   );

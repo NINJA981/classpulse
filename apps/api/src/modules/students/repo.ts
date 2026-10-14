@@ -1,6 +1,6 @@
 /** Student DTO queries shared by the admin students and sections modules. */
 import { asc, sql, type SQL } from 'drizzle-orm';
-import type { Student } from '@classpulse/shared';
+import type { Student } from '@classiq/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { enrollments, sections, users } from '../../db/schema/index.js';
 import { inviteStatusSql } from '../auth/passwordTokens.js';

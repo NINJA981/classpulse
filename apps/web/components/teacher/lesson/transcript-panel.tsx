@@ -3,7 +3,7 @@ import { useEffect, useState, type RefObject } from 'react';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { FileText } from 'lucide-react';
-import type { LessonDetail, LessonTranscript } from '@classpulse/shared';
+import type { LessonDetail, LessonTranscript } from '@classiq/shared';
 import { Card, CardBody, CardHeader, EmptyState, ErrorState, Skeleton } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDate, formatDuration } from '@/lib/format';

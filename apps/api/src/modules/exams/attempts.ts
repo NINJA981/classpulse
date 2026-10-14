@@ -25,7 +25,7 @@ import {
   type StudentExamPaper,
   type StudentExamResult,
   type StudentExamState,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db, type DbOrTx, type Tx } from '../../db/client.js';
 import type { ExamPaperItem } from '../../db/schema/exams.js';
 import {

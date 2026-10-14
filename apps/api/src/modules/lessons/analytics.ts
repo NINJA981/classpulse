@@ -9,7 +9,7 @@ import {
   type QuestionAnalytics,
   type RemedialPlan,
   type SessionUser,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { enrollments, lessons, modelSettings, questions, quizAttemptAnswers, quizAttempts, users } from '../../db/schema/index.js';
 import { AppError, invalidState } from '../../lib/errors.js';

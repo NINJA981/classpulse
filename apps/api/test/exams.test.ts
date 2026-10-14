@@ -7,7 +7,7 @@ import type {
   StartExamResponse,
   StudentExamListItem,
   StudentExamResult,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import {
   enrollments,

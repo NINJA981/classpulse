@@ -1,5 +1,5 @@
 import { count, desc, eq, sql } from 'drizzle-orm';
-import type { AdminOverview } from '@classpulse/shared';
+import type { AdminOverview } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { devices, institutions, lessons, quizAttempts, rooms, sections, users } from '../../db/schema/index.js';
 

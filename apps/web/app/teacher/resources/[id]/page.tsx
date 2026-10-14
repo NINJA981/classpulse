@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Copy, Download, Pencil, Printer, RefreshCw, Save, Share2, Trash2, Undo2 } from 'lucide-react';
-import type { ResourceContent, ResourceDetail } from '@classpulse/shared';
+import type { ResourceContent, ResourceDetail } from '@classiq/shared';
 import {
   Badge,
   Button,

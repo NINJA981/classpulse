@@ -54,7 +54,7 @@ test('student tour: first visit, stepping, no repeat after reload, replay from p
   await resetTour(page);
 
   const tour = page.getByRole('dialog');
-  await expect(page.getByRole('dialog', { name: 'Welcome to ClassPulse' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Welcome to ClassIQ' })).toBeVisible();
   await expect(tour).toBeFocused();
   const total = await stepCount(tour);
   // Welcome, Home, Join, Quizzes, Profile, Install, Finish always; Live/Assignments/Exams per school switches.
@@ -94,7 +94,7 @@ test('student tour: first visit, stepping, no repeat after reload, replay from p
   await page.goto('/student/profile');
   const replay = page.getByRole('button', { name: 'Take the tour again' });
   await replay.click();
-  await expect(page.getByRole('dialog', { name: 'Welcome to ClassPulse' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Welcome to ClassIQ' })).toBeVisible();
   await page.keyboard.press('ArrowRight');
   await expect(tour.getByText(`Step 2 of ${total}`)).toBeVisible();
   await page.keyboard.press('ArrowLeft');
@@ -122,7 +122,7 @@ test.describe('on a phone', () => {
     await resetTour(page);
 
     const tour = page.getByRole('dialog');
-    await expect(page.getByRole('dialog', { name: 'Welcome to ClassPulse' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Welcome to ClassIQ' })).toBeVisible();
     const total = await stepCount(tour);
     const menu = page.getByRole('button', { name: 'Open menu' });
 

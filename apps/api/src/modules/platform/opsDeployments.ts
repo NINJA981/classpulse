@@ -5,7 +5,7 @@ import type {
   DeployedApp,
   DeploymentList,
   DeploymentLogs,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import * as coolify from '../../lib/coolify.js';
 
 const notConfigured = (): CoolifyNotConfigured => ({ configured: false, instructions: coolify.COOLIFY_SETUP_INSTRUCTIONS });

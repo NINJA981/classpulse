@@ -19,7 +19,7 @@ import {
   type RemedialPlan,
   type RubricMark,
   type TranscriptSegment,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { env } from '../config/env.js';
 import { trackAiCall, type AiUsageContext } from '../lib/aiUsage.js';
 import { logger } from '../lib/logger.js';

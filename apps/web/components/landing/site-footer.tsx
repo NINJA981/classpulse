@@ -46,7 +46,7 @@ export function SiteFooter({ copy, draft = false }: { copy: LandingCopy['footer'
 
         <div aria-hidden lang="en" className="relative mt-16 select-none sm:mt-20">
           <p className="font-display text-[calc((100vw-2rem)/4.6)] leading-[0.78] font-extrabold tracking-[-0.05em] whitespace-nowrap [font-variation-settings:'wdth'_100] sm:text-[calc((100vw-3rem)/4.6)] lg:text-[min(calc((100vw-5rem)/4.6),16rem)]">
-            ClassPulse
+            ClassIQ
           </p>
           <PulseLine />
         </div>

@@ -5,7 +5,7 @@
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import type { LessonPlanContent, ResourceDetail, ResourceSummary, VoicePromptResult, WorksheetContent } from '@classpulse/shared';
+import type { LessonPlanContent, ResourceDetail, ResourceSummary, VoicePromptResult, WorksheetContent } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { lessons, modelSettings } from '../src/db/schema/index.js';

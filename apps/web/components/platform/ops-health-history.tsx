@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { HealthHistory, HealthHistoryPoint } from '@classpulse/shared';
+import type { HealthHistory, HealthHistoryPoint } from '@classiq/shared';
 import { Badge, Card, CardBody, CardHeader, EmptyState, ErrorState, Field, Select, Skeleton } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

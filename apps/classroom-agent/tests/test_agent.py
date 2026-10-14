@@ -24,7 +24,7 @@ import agent as A  # noqa: E402
 
 
 class StubServer:
-    """Minimal fake of the ClassPulse device API."""
+    """Minimal fake of the ClassIQ device API."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()

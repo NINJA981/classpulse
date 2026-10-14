@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Download } from 'lucide-react';
-import type { InstitutionFeatures } from '@classpulse/shared';
+import type { InstitutionFeatures } from '@classiq/shared';
 import { Button } from '@/components/ui';
 import { useInstallPrompt } from '@/components/pwa/use-install-prompt';
 import type { TourStep } from '@/components/tour';
@@ -25,7 +25,7 @@ function InstallAppAction() {
   const { canPrompt, installed, promptInstall } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(false);
 
-  if (installed) return <p className="text-sm font-semibold text-success">ClassPulse is installed on this device.</p>;
+  if (installed) return <p className="text-sm font-semibold text-success">ClassIQ is installed on this device.</p>;
   if (!canPrompt) return null;
   return (
     <div className="flex flex-col gap-2">
@@ -60,8 +60,8 @@ export function studentTourSteps(features: StudentTourFeatures): TourStep[] {
   const steps: (TourStep | false)[] = [
     {
       id: 'welcome',
-      title: 'Welcome to ClassPulse',
-      body: `ClassPulse is where your classes continue after the bell: ${listJoin(offers)}. This quick tour shows you where everything is.`,
+      title: 'Welcome to ClassIQ',
+      body: `ClassIQ is where your classes continue after the bell: ${listJoin(offers)}. This quick tour shows you where everything is.`,
     },
     {
       id: 'home',
@@ -110,7 +110,7 @@ export function studentTourSteps(features: StudentTourFeatures): TourStep[] {
       title: 'Install the app',
       body: (
         <>
-          <p>Add ClassPulse to your home screen to open it like an app.</p>
+          <p>Add ClassIQ to your home screen to open it like an app.</p>
           <ul className="flex list-disc flex-col gap-1 pl-5">
             <li>
               <strong className="text-ink">Android (Chrome):</strong> tap the ⋮ menu, then “Install app” or “Add to Home

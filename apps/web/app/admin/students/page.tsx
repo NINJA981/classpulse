@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileUp, KeyRound, Mail, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
-import type { CreatedWithPassword, Paginated, Student } from '@classpulse/shared';
+import type { CreatedWithPassword, Paginated, Student } from '@classiq/shared';
 import {
   Badge,
   Button,
@@ -64,7 +64,7 @@ export default function StudentsPage() {
   async function downloadData(s: Student) {
     setExportingId(s.id);
     try {
-      await downloadFromApi('GET', `/admin/students/${s.id}/export`, { fallbackName: `classpulse-student-${s.rollNumber}.json` });
+      await downloadFromApi('GET', `/admin/students/${s.id}/export`, { fallbackName: `classiq-student-${s.rollNumber}.json` });
       toast(`Data for “${s.name}” downloaded`);
     } catch (err) {
       toast(errorMessage(err), 'error');

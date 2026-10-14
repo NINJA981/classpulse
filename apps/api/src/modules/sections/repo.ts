@@ -4,7 +4,7 @@
  * unqualified in single-table selects, which would bind to the inner alias instead.
  */
 import { asc, eq, getTableColumns, inArray, sql, type SQL } from 'drizzle-orm';
-import type { Section } from '@classpulse/shared';
+import type { Section } from '@classiq/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { enrollments, rooms, sections, sectionTeachers, users } from '../../db/schema/index.js';
 

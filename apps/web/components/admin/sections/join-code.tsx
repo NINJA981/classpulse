@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
-import type { Section } from '@classpulse/shared';
+import type { Section } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, CardHeader, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

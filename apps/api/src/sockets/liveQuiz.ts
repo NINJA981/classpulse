@@ -1,6 +1,6 @@
 /**
  * Live quiz engine (Socket.IO). Implements ClientToServerEvents /
- * ServerToClientEvents from @classpulse/shared.
+ * ServerToClientEvents from @classiq/shared.
  *
  * - Identity only from socket.data.user (the session cookie). Payloads never carry a studentId.
  * - State machine: lobby → question_open → question_closed → … → ended.
@@ -33,7 +33,7 @@ import {
   type PlayerResultPayload,
   type PublicQuestion,
   type QuestionClosedPayload,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { AppError, forbidden, invalidState, notFound } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { assertNotInMaintenance, assertSchoolActive } from '../lib/platformState.js';

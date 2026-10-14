@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import { SESSION_COOKIE, type Role, type SessionUser } from '@classpulse/shared';
+import { SESSION_COOKIE, type Role, type SessionUser } from '@classiq/shared';
 import { AppError, forbidden, unauthenticated } from '../lib/errors.js';
 import { loadSessionUser, sessionBlock } from '../lib/session.js';
 

@@ -1,6 +1,6 @@
 /** Question review: edit, approve, reject, delete. Ownership comes from the parent lesson. */
 import { and, eq, gt, sql } from 'drizzle-orm';
-import { QUESTION_OPTION_COUNT, type Question, type SessionUser, type UpdateQuestionInput } from '@classpulse/shared';
+import { QUESTION_OPTION_COUNT, type Question, type SessionUser, type UpdateQuestionInput } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { lessons, questions } from '../../db/schema/index.js';
 import { badRequest, notFound } from '../../lib/errors.js';

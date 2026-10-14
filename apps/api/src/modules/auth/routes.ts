@@ -12,7 +12,7 @@ import {
   type ErrorCode,
   type MeResponse,
   type SessionResponse,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import type { users } from '../../db/schema/index.js';
 import { authenticate, currentUser, extractToken } from '../../middleware/auth.js';
 import { authIpLimiter, staffLoginLimiter, studentLoginLimiter, tokenLimiter } from '../../middleware/rateLimit.js';

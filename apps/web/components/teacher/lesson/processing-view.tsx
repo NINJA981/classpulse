@@ -1,7 +1,7 @@
 'use client';
 import clsx from 'clsx';
 import { AlertTriangle, Check, Loader2, Radio } from 'lucide-react';
-import type { LessonDetail, LessonStatus } from '@classpulse/shared';
+import type { LessonDetail, LessonStatus } from '@classiq/shared';
 import { Button, Card, CardBody, InlineError } from '@/components/ui';
 import { ProgressBar } from '@/components/teacher/common';
 

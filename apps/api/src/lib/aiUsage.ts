@@ -7,7 +7,7 @@
  * recorded. Cost is NOT stored — it is estimated at read time from the platform's price rates.
  */
 import { and, eq, gte, sql } from 'drizzle-orm';
-import type { AiUsageKind } from '@classpulse/shared';
+import type { AiUsageKind } from '@classiq/shared';
 import { env } from '../config/env.js';
 import { db } from '../db/client.js';
 import { aiUsage, institutions } from '../db/schema/index.js';

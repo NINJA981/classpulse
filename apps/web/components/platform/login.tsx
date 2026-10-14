@@ -14,7 +14,7 @@ import {
   type PlatformLoginResponse,
   type PlatformSessionResponse,
   type TotpEnrolment,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Checkbox, Field, InlineError, Input, Skeleton } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 
@@ -30,7 +30,7 @@ type Step =
 const enterConsole = () => window.location.assign('/platform');
 
 /** Same card as the school sign-in pages (components/auth/role-login.tsx), so every sign-in looks alike. */
-function Panel({ eyebrow = 'ClassPulse', title, description, children }: { eyebrow?: string; title: string; description?: ReactNode; children: ReactNode }) {
+function Panel({ eyebrow = 'ClassIQ', title, description, children }: { eyebrow?: string; title: string; description?: ReactNode; children: ReactNode }) {
   return (
     <div className="w-full max-w-md border border-line-strong bg-surface p-6 shadow-hard rounded-card sm:p-8">
       <p className="eyebrow">{eyebrow}</p>
@@ -85,7 +85,7 @@ function PasswordStep({ onNext }: { onNext: (res: PlatformLoginResponse) => void
     void run(async () => onNext(await api.post<PlatformLoginResponse>('/platform/auth/login', { email, password })));
   };
   return (
-    <Panel title="Super admin sign in" description="For ClassPulse operators only. School staff and students sign in on their school’s address.">
+    <Panel title="Super admin sign in" description="For ClassIQ operators only. School staff and students sign in on their school’s address.">
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Email" required>
           {(p) => <Input {...p} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />}
@@ -174,7 +174,7 @@ function CodeStep({
       description={
         step.recovery
           ? 'Each recovery code works once. Generate new ones in Settings afterwards.'
-          : 'Open your authenticator app and enter the 6-digit code for ClassPulse.'
+          : 'Open your authenticator app and enter the 6-digit code for ClassIQ.'
       }
     >
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>

@@ -13,7 +13,7 @@ import {
   DEVICE_MAX_CHUNKS_PER_SESSION,
   MATERIAL_MAX_MB,
   SUBMISSION_FILE_MAX_MB,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { env } from '../config/env.js';
 import { AppError, badRequest } from './errors.js';
 

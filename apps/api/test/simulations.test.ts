@@ -1,6 +1,6 @@
 /** /api/simulations: built-in catalog search, school links (allowlist, ownership, school isolation) and RBAC. */
 import { describe, expect, it } from 'vitest';
-import type { Simulation } from '@classpulse/shared';
+import type { Simulation } from '@classiq/shared';
 import { SIMULATION_CATALOG } from '../src/modules/resources/simulationCatalog.js';
 import { simulationUrlProblem } from '../src/modules/resources/simulations.js';
 import { anon, as, createInstitution, createUser, createWorld } from './helpers.js';

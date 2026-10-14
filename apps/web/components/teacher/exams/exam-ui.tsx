@@ -5,7 +5,7 @@ import type {
   ExamMonitorStatus,
   ExamResultsVisibility,
   ExamStatus,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 import { formatDateTime, formatDuration } from '@/lib/format';
 

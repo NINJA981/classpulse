@@ -14,7 +14,7 @@ import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
-import type { Assignment, SessionUser } from '@classpulse/shared';
+import type { Assignment, SessionUser } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { institutions, lessons } from '../src/db/schema/index.js';

@@ -1,5 +1,5 @@
 /**
- * Right of access (DPDP Act 2023): everything ClassPulse holds about one student, as a JSON document the
+ * Right of access (DPDP Act 2023): everything ClassIQ holds about one student, as a JSON document the
  * school admin can hand to the student or their parent. Password hashes, session versions and device-token
  * fingerprints are never included. Submission files are listed with an admin download path (see
  * exportRoutes.ts) instead of being embedded.

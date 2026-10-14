@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ClassPulse backup: PostgreSQL (pg_dump custom format) + stored lecture audio, encrypted with `age` and
+# ClassIQ backup: PostgreSQL (pg_dump custom format) + stored lecture audio, encrypted with `age` and
 # rotated (7 daily + 4 weekly), optionally copied off-site.
 #
 #   sudo ./infra/backup.sh                # uses infra/.env next to this script

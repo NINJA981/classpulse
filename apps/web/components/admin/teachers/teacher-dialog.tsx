@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CreatedWithPassword, CreateTeacherInput, Teacher, UpdateTeacherInput } from '@classpulse/shared';
+import type { CreatedWithPassword, CreateTeacherInput, Teacher, UpdateTeacherInput } from '@classiq/shared';
 import { Button, Dialog, Field, InlineError, Input, Select, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, fieldErrorsOf, formLevelError, optional } from '../queries';

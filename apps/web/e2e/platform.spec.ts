@@ -5,7 +5,7 @@
  * refused), reactivate it, show a banner to school users, and open the ops pages.
  *
  * Requires the dev stack with a fresh platform admin created by
- *   npm run create-superadmin -w @classpulse/api -- --email <E2E_PLATFORM_EMAIL> --name "E2E Platform"
+ *   npm run create-superadmin -w @classiq/api -- --email <E2E_PLATFORM_EMAIL> --name "E2E Platform"
  * and E2E_PLATFORM_EMAIL / E2E_PLATFORM_PASSWORD (the printed initial password) in the environment.
  * The API needs PLATFORM_ENCRYPTION_KEY set. When the console has its own host (production), run with
  * E2E_BASE_URL=<console origin> and E2E_SCHOOL_URL=<school origin>.

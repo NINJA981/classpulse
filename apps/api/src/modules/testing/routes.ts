@@ -4,7 +4,7 @@
  */
 import { Router } from 'express';
 import { z } from 'zod';
-import { NOTIFICATION_TONES, NotificationKind } from '@classpulse/shared';
+import { NOTIFICATION_TONES, NotificationKind } from '@classiq/shared';
 import { isProd } from '../../config/env.js';
 import { notFound } from '../../lib/errors.js';
 import { authenticate, currentUser } from '../../middleware/auth.js';

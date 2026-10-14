@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Cpu, Plus, ShieldOff } from 'lucide-react';
-import type { Device, DeviceStatus } from '@classpulse/shared';
+import type { Device, DeviceStatus } from '@classiq/shared';
 import {
   Badge,
   Button,
@@ -85,7 +85,7 @@ export default function DevicesPage() {
           <EmptyState
             icon={<Cpu className="size-8" aria-hidden />}
             title="No classroom devices yet"
-            description="Add a device to get an enrollment token, then install the ClassPulse agent on the Raspberry Pi in that room."
+            description="Add a device to get an enrollment token, then install the ClassIQ agent on the Raspberry Pi in that room."
             action={addButton}
           />
         ) : (

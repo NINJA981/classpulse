@@ -24,7 +24,7 @@ import {
   type OpsWorkerHealth,
   type PlatformHealth,
   type ProviderTestResult,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { env, isProd } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { healthSnapshots } from '../../db/schema/index.js';

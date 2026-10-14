@@ -1,6 +1,6 @@
 /** Querying and exporting the app_logs table (filled by lib/logSink.ts). */
 import { and, asc, desc, eq, gt, gte, ilike, lt, lte, max, sql, type SQL } from 'drizzle-orm';
-import { LOG_LEVELS, type AppLogLine, type AppLogPage, type LogsQuery } from '@classpulse/shared';
+import { LOG_LEVELS, type AppLogLine, type AppLogPage, type LogsQuery } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { appLogs, institutions } from '../../db/schema/index.js';
 import { toCsv } from './opsCsv.js';

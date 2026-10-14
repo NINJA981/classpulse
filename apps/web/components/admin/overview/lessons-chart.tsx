@@ -1,6 +1,6 @@
 'use client';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LESSON_STATUSES } from '@classpulse/shared';
+import { LESSON_STATUSES } from '@classiq/shared';
 import { EmptyState } from '@/components/ui';
 import { lessonStatusLabel } from './status';
 

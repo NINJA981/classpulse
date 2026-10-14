@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ClipboardList, GraduationCap, KeyRound, ListChecks, Radio, Trophy } from 'lucide-react';
-import type { StudentDashboard } from '@classpulse/shared';
+import type { StudentDashboard } from '@classiq/shared';
 import { Badge, ButtonLink, Card, CardBody, CardHeader, ErrorState, Skeleton, StatCard } from '@/components/ui';
 import { dueInfo, firstName, ScoreBadge, SectionsList } from '@/components/student/common';
 import { QuizCard } from '@/components/student/quiz/quiz-card';

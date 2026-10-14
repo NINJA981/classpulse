@@ -1,5 +1,5 @@
 import { Router, type Request } from 'express';
-import { CreateTeacherInput, IdParams, ImportTeachersInput, UpdateTeacherInput } from '@classpulse/shared';
+import { CreateTeacherInput, IdParams, ImportTeachersInput, UpdateTeacherInput } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

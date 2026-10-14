@@ -3,7 +3,7 @@
  * is modules/notifications). Sent once per (re)generation: the entity carries `generation_attempt`, and only
  * the job run that actually moved the resource to `ready` / `failed` calls these.
  */
-import type { ResourceType } from '@classpulse/shared';
+import type { ResourceType } from '@classiq/shared';
 import { quoteTitle } from '../../jobs/lessonNotify.js';
 import { sendNotification } from '../../jobs/sendNotification.js';
 import { GENERIC_FAILURE_MESSAGE } from '../../pipeline/errors.js';

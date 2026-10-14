@@ -1,7 +1,7 @@
 /** Question paper generator (stubbed fetch), Word export, publish-as-exam and Bloom tags on lesson quizzes. */
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ExamDetail, QuestionPaperContent, ResourceOptions } from '@classpulse/shared';
+import type { ExamDetail, QuestionPaperContent, ResourceOptions } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { examQuestions, teachingResources } from '../src/db/schema/index.js';

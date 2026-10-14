@@ -3,7 +3,7 @@
  */
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
-import type { PasswordResetResult, PasswordTokenPurpose, Role, SendLinkResult } from '@classpulse/shared';
+import type { PasswordResetResult, PasswordTokenPurpose, Role, SendLinkResult } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { passwordTokens, users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashPassword } from '../../lib/crypto.js';

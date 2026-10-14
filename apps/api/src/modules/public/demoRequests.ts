@@ -5,7 +5,7 @@
  */
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { toSingleLine, type DemoRequestInput } from '@classpulse/shared';
+import { toSingleLine, type DemoRequestInput } from '@classiq/shared';
 import { env } from '../../config/env.js';
 import { enqueueEmail } from '../../jobs/emailQueue.js';
 import { renderEmail } from '../../lib/emailTemplates.js';
@@ -15,7 +15,7 @@ import { getRedis } from '../../lib/redis.js';
 
 export const DEMO_REQUEST_EMAIL_KIND = 'demo-request';
 /** Inbox used only when E2E_MAIL_CAPTURE is on (never in production) and no inbox is configured. */
-export const CAPTURE_INBOX = 'demo-requests@classpulse.test';
+export const CAPTURE_INBOX = 'demo-requests@classiq.test';
 /** The same request sent again within this window is accepted (204) but not emailed twice. */
 const DUPLICATE_WINDOW_SEC = 24 * 3600;
 
@@ -25,7 +25,7 @@ const emailUnavailable = () =>
     'Demo requests can’t be sent from here right now. Please email us instead.',
   );
 
-/** "ClassPulse <noreply@x.in>" or "noreply@x.in" -> "noreply@x.in"; null when there is no valid address. */
+/** "ClassIQ <noreply@x.in>" or "noreply@x.in" -> "noreply@x.in"; null when there is no valid address. */
 export function addressOf(mailbox: string): string | null {
   const candidate = (/<([^<>\s]+)>/.exec(mailbox)?.[1] ?? mailbox).trim();
   return candidate && z.email().safeParse(candidate).success ? candidate : null;
@@ -72,7 +72,7 @@ export function buildDemoRequestEmail(to: string, r: DemoRequestInput): MailMess
         : 'Call or WhatsApp them on the number above.',
     ],
     footer:
-      'Sent by the "Book a demo" form on the ClassPulse product page (/about). The requester was not sent a copy.',
+      'Sent by the "Book a demo" form on the ClassIQ product page (/about). The requester was not sent a copy.',
     ...(r.email && { replyTo: r.email }),
   });
 }

@@ -25,7 +25,7 @@ import {
   type PlatformLoginInput,
   type PlatformLoginResponse,
   type PlatformVerifyInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { platformAdmins } from '../../db/schema/index.js';
 import { audit } from '../../lib/audit.js';

@@ -11,7 +11,7 @@ export default function OfflinePage() {
       <div className="w-full max-w-md border border-line-strong bg-surface p-8 text-center shadow-hard rounded-card">
         <WifiOff className="mx-auto size-8 text-muted" aria-hidden />
         <h1 className="mt-3 font-display text-2xl font-black">You’re offline</h1>
-        <p className="mt-2 text-sm text-muted">ClassPulse needs an internet connection. Check your Wi-Fi or mobile data, then try again.</p>
+        <p className="mt-2 text-sm text-muted">ClassIQ needs an internet connection. Check your Wi-Fi or mobile data, then try again.</p>
         <div className="mt-6">
           <OfflineRetry />
         </div>

@@ -15,7 +15,7 @@ import {
   type PlatformSchoolView,
   type PlatformViewRow,
   type SendLinkResult,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import {
   Badge,
   Button,

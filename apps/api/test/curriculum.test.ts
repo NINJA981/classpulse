@@ -1,7 +1,7 @@
 /** Curriculum: courses, units, the syllabus catalog, AI unit drafts and teacher materials. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
-import type { CatalogEntry, Course, CourseDetail, Material, Unit, UnitDraft } from '@classpulse/shared';
+import type { CatalogEntry, Course, CourseDetail, Material, Unit, UnitDraft } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { CATALOG } from '../src/modules/curriculum/catalog.js';
 import { normalizeText } from '../src/modules/curriculum/extract.js';

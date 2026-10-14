@@ -17,7 +17,7 @@ import {
   DeviceRegisterInput,
   FinalizeRecordingInput,
   Id,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { AppError, badRequest, unauthenticated } from '../../lib/errors.js';
 import { deviceRegisterLimiter } from '../../middleware/rateLimit.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';

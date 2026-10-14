@@ -1,7 +1,7 @@
 'use client';
 import clsx from 'clsx';
 import { CheckCircle2, Clapperboard, ListChecks, RotateCcw, XCircle } from 'lucide-react';
-import type { GradedAnswer, QuizAttemptResult } from '@classpulse/shared';
+import type { GradedAnswer, QuizAttemptResult } from '@classiq/shared';
 import { Button, ButtonLink, Card, CardBody } from '@/components/ui';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { OPTION_LETTERS } from './option-button';

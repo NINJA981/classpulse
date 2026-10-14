@@ -62,7 +62,7 @@ export function ShareBrief({
   const onShare = async (e: MouseEvent<HTMLAnchorElement>) => {
     // No share sheet (most desktops): follow the link to WhatsApp in a new tab.
     if (typeof navigator.share !== 'function') return;
-    const data = { title: 'ClassPulse', text: brief, url: pageUrl };
+    const data = { title: 'ClassIQ', text: brief, url: pageUrl };
     if (navigator.canShare && !navigator.canShare(data)) return;
     e.preventDefault();
     try {

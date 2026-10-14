@@ -4,7 +4,7 @@
  * - DELETE /:id         hard-deletes a suspended school (body: { confirmCode } = the school code).
  */
 import { Router } from 'express';
-import { PlatformIdParams } from '@classpulse/shared';
+import { PlatformIdParams } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticatePlatform } from '../../middleware/platformAuth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';
@@ -18,7 +18,7 @@ offboardingRouter.post('/:id/export', authenticatePlatform(), async (req, res) =
   const day = new Date().toISOString().slice(0, 10);
   const code = school.code.replace(/[^A-Za-z0-9_-]/g, '_');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="classpulse-school-${code}-${day}.json"`);
+  res.setHeader('Content-Disposition', `attachment; filename="classiq-school-${code}-${day}.json"`);
   res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   try {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Sparkles, Trash2 } from 'lucide-react';
-import type { CourseDetail } from '@classpulse/shared';
+import type { CourseDetail } from '@classiq/shared';
 import { Badge, Button, ButtonLink, Card, CardBody, CardHeader, ErrorState, LoadingBlock, PageHeader, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { CourseDialog } from '@/components/teacher/curriculum/course-dialog';

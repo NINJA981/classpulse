@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, GraduationCap, SearchX } from 'lucide-react';
-import { JOIN_CODE_PATTERN, type SectionPreview, type StudentSection } from '@classpulse/shared';
+import { JOIN_CODE_PATTERN, type SectionPreview, type StudentSection } from '@classiq/shared';
 import { Button, ButtonLink, Card, CardBody, Field, InlineError, Input, Spinner, useToast } from '@/components/ui';
 import { ApiError, api, errorMessage } from '@/lib/api';
 import { Note } from '../common';

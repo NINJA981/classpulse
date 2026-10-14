@@ -1,12 +1,12 @@
-# ClassPulse sub-processors
+# ClassIQ sub-processors
 
 > **Draft — needs legal review.** Prepared 12 October 2026 by engineering from the code and the handbook. Items marked **TODO** need the owner's input. Counsel must review before this list is given to schools.
 
-BenX Solutions runs ClassPulse as a **Data Processor** for each school (the **Data Fiduciary** under the DPDP Act 2023). The providers below process personal data on our behalf. Each receives only what its task needs.
+BenX Solutions runs ClassIQ as a **Data Processor** for each school (the **Data Fiduciary** under the DPDP Act 2023). The providers below process personal data on our behalf. Each receives only what its task needs.
 
-| Provider | What it does for ClassPulse | Personal data it receives | Where | When it is used |
+| Provider | What it does for ClassIQ | Personal data it receives | Where | When it is used |
 |---|---|---|---|---|
-| **Oracle Cloud Infrastructure** (Oracle) | Hosts the server: database, stored files (lesson audio, submission files, teacher materials), backups and logs | Everything ClassPulse stores | **TODO: confirm the OCI region** (tenancy "benxsolutions", instance `benx`) | Always |
+| **Oracle Cloud Infrastructure** (Oracle) | Hosts the server: database, stored files (lesson audio, submission files, teacher materials), backups and logs | Everything ClassIQ stores | **TODO: confirm the OCI region** (tenancy "benxsolutions", instance `benx`) | Always |
 | **Sarvam AI** | Speech-to-text (default provider, `saaras:v3` / `saarika:v2.5`) | Lesson audio (which may contain students' voices) and teachers' voice requests (up to 60 s) | India | Every transcription while Sarvam is the school's provider |
 | **OpenAI** | Quiz, summary and assignment drafting; teaching tools (lesson plans, worksheets, question papers, presentations); remedial plans; AI grading suggestions; speech-to-text when a school picks Whisper | Transcript text, lesson title and subject, teacher requests, course and material text, aggregated class accuracy. **For grading suggestions only:** the student's typed answer and attached JPEG/PNG photos and their file names (never the student's name). **For Whisper only:** lesson audio | United States (**cross-border transfer**) | When a teacher generates content or asks for a grading suggestion; transcription only if the school chose Whisper |
 | **GoDaddy** (email, mailbox `admin@benxsolutions.in` via SMTP) | Sends invitations, password-reset links and assignment reminders | Recipient email address and name, school name, the message | **TODO: confirm GoDaddy's mail data location** | When email is configured and an email is sent |

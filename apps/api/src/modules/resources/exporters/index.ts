@@ -2,7 +2,7 @@
  * Exporter registry: one downloadable format per resource type. Each exporter module exports
  * `exportFile(input: ExportInput): Promise<ExportedFile>` (see types.ts).
  */
-import type { ResourceType } from '@classpulse/shared';
+import type { ResourceType } from '@classiq/shared';
 import type { ExportFormat, ResourceExporter } from './types.js';
 import { exportFile as lessonPlan } from './lessonPlan.js';
 import { exportFile as worksheet } from './worksheet.js';

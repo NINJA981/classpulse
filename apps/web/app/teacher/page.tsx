@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, CalendarDays, ClipboardCheck, Mic, Sparkles, Users } from 'lucide-react';
-import { LESSON_STATUSES, type TeacherDashboard } from '@classpulse/shared';
+import { LESSON_STATUSES, type TeacherDashboard } from '@classiq/shared';
 import {
   ButtonLink,
   Card,

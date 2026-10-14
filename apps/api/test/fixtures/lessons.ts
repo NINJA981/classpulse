@@ -2,7 +2,7 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
-import type { QuizRequest, TranscriptSegment } from '@classpulse/shared';
+import type { QuizRequest, TranscriptSegment } from '@classiq/shared';
 import { db } from '../../src/db/client.js';
 import { lessons, questions, quizAttemptAnswers, quizAttempts } from '../../src/db/schema/index.js';
 import { storage, storageKeys } from '../../src/lib/storage.js';

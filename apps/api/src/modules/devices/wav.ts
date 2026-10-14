@@ -9,7 +9,7 @@
 import { createWriteStream } from 'node:fs';
 import { Transform, type Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { DEVICE_AUDIO_FORMAT } from '@classpulse/shared';
+import { DEVICE_AUDIO_FORMAT } from '@classiq/shared';
 
 const BITS = 16;
 

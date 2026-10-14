@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Assignment, AssignmentInput } from '@classpulse/shared';
+import type { Assignment, AssignmentInput } from '@classiq/shared';
 import { Button, Card, CardBody, ErrorState, InlineError, LoadingBlock, PageHeader, Tabs, useToast } from '@/components/ui';
 import { AssignmentForm, LATE_POLICY_LABEL } from '@/components/teacher/assignments/assignment-form';
 import { AssignmentStatusBadge } from '@/components/teacher/assignments/status';

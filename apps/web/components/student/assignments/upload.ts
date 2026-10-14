@@ -1,4 +1,4 @@
-import { SUBMISSION_FILE_MAX_MB, SUBMISSION_FILE_TYPES, type ApiErrorBody, type StudentAssignment } from '@classpulse/shared';
+import { SUBMISSION_FILE_MAX_MB, SUBMISSION_FILE_TYPES, type ApiErrorBody, type StudentAssignment } from '@classiq/shared';
 import { ApiError, isSafeApiPath } from '@/lib/api';
 
 /** `accept` attribute for the file picker (MIME types and extensions). */

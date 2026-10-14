@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { AlertTriangle, Info, Wrench } from 'lucide-react';
-import type { PlatformNotice, PlatformStatus } from '@classpulse/shared';
+import type { PlatformNotice, PlatformStatus } from '@classiq/shared';
 import { api } from '@/lib/api';
 
 const BANNER_TONE = {

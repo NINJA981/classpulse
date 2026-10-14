@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { Id, IdParams, StartRecordingInput } from '@classpulse/shared';
+import { Id, IdParams, StartRecordingInput } from '@classiq/shared';
 import { devices } from '../../db/schema/index.js';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';

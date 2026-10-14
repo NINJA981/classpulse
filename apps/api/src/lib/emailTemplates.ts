@@ -21,7 +21,7 @@ export interface EmailContent {
   button?: { label: string; url: string };
   /** Optional small print under the button (e.g. "This link expires in 72 hours"). */
   footnote?: string;
-  /** Replaces the standard "your school uses ClassPulse" footer (e.g. for internal notifications). */
+  /** Replaces the standard "your school uses ClassIQ" footer (e.g. for internal notifications). */
   footer?: string;
   /** Reply-To header: a validated address only. */
   replyTo?: string;
@@ -32,7 +32,7 @@ export function appUrl(path: string): string {
   return `${env.PUBLIC_ORIGIN.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-const SCHOOL_FOOTER = "You received this email because your school uses ClassPulse. If you weren't expecting it, you can ignore it.";
+const SCHOOL_FOOTER = "You received this email because your school uses ClassIQ. If you weren't expecting it, you can ignore it.";
 
 export function renderEmail(c: EmailContent): MailMessage {
   const footer = c.footer ?? SCHOOL_FOOTER;
@@ -45,12 +45,12 @@ export function renderEmail(c: EmailContent): MailMessage {
   const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f4f1;font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border:1px solid #e2e2dc">
-<tr><td style="padding:28px 28px 8px"><p style="margin:0;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#666;font-weight:700">${escapeHtml(c.schoolName)} · ClassPulse</p>
+<tr><td style="padding:28px 28px 8px"><p style="margin:0;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#666;font-weight:700">${escapeHtml(c.schoolName)} · ClassIQ</p>
 <h1 style="margin:8px 0 18px;font-size:22px;color:#111">${escapeHtml(c.heading)}</h1>${paras}${button}${foot}</td></tr>
 <tr><td style="padding:16px 28px 24px;border-top:1px solid #eee;font-size:12px;color:#888">${escapeHtml(footer)}</td></tr>
 </table></td></tr></table></body></html>`;
   const text = [
-    `${c.schoolName} · ClassPulse`,
+    `${c.schoolName} · ClassIQ`,
     '',
     c.heading,
     '',

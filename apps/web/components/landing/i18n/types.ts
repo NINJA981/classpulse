@@ -1,4 +1,4 @@
-import type { Role } from '@classpulse/shared';
+import type { Role } from '@classiq/shared';
 
 /** The languages the product page is published in. English (/about) is the canonical page. */
 export type Locale = 'en' | 'hi' | 'ta';
@@ -28,7 +28,7 @@ interface Titled {
 
 /**
  * Validation messages for the demo form, keyed by what went wrong. The shared zod schema
- * (DemoRequestInput in @classpulse/shared) speaks English; demo-form.tsx maps each of its messages here.
+ * (DemoRequestInput in @classiq/shared) speaks English; demo-form.tsx maps each of its messages here.
  */
 export interface DemoFormErrors {
   required: { name: string; school: string; city: string };

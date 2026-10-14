@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Id, ReplaceTimetableInput } from '@classpulse/shared';
+import { Id, ReplaceTimetableInput } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';

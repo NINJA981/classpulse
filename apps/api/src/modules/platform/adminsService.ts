@@ -4,7 +4,7 @@
  * Links issued here have no `createdBy` (platform admins are not `users` rows).
  */
 import { and, asc, eq } from 'drizzle-orm';
-import type { CreatedSchoolAdmin, PasswordResetResult, PlatformSchoolAdmin, SchoolAdminInput, SendLinkResult } from '@classpulse/shared';
+import type { CreatedSchoolAdmin, PasswordResetResult, PlatformSchoolAdmin, SchoolAdminInput, SendLinkResult } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { users } from '../../db/schema/index.js';
 import { generateInitialPassword, hashPassword } from '../../lib/crypto.js';

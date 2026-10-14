@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Check } from 'lucide-react';
 import clsx from 'clsx';
-import type { AdminOverview, Institution, TimetableSlot } from '@classpulse/shared';
+import type { AdminOverview, Institution, TimetableSlot } from '@classiq/shared';
 import { Badge, ButtonLink, Card, CardBody, CardHeader, ErrorState, LoadingBlock, PageHeader, Skeleton } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { adminKeys } from '@/components/admin/queries';

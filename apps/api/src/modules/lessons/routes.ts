@@ -9,7 +9,7 @@ import {
   QuestionInput,
   UpdateLessonInput,
   type ApiErrorBody,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { storage } from '../../lib/storage.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { aiLimiter } from '../../middleware/rateLimit.js';

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
-import type { Assignment, ReturnSubmissionsResult, SubmissionTrackerRow } from '@classpulse/shared';
+import type { Assignment, ReturnSubmissionsResult, SubmissionTrackerRow } from '@classiq/shared';
 import { Button, EmptyState, ErrorState, LoadingBlock, Table, TBody, TD, TH, THead, TR, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { api } from '@/lib/api';

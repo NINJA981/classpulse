@@ -15,7 +15,7 @@ import {
   type PlatformSchool,
   type PlatformSchoolDetail,
   type UpdateSchoolInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   assignments,

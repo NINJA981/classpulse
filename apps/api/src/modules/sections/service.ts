@@ -1,5 +1,5 @@
 import { and, count, eq, inArray, notInArray } from 'drizzle-orm';
-import type { Section, SectionInput, SetSectionStudentsInput, Student, UpdateSectionInput } from '@classpulse/shared';
+import type { Section, SectionInput, SetSectionStudentsInput, Student, UpdateSectionInput } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { enrollments, lessons, rooms, sections, sectionTeachers, users } from '../../db/schema/index.js';
 import { generateJoinCode } from '../../lib/crypto.js';

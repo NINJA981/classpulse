@@ -1,6 +1,6 @@
-# ClassPulse API reference
+# ClassIQ API reference
 
-All endpoints live under `/api`. Request and response types are defined in `packages/shared` (`@classpulse/shared`). Type names in this document refer to that package.
+All endpoints live under `/api`. Request and response types are defined in `packages/shared` (`@classiq/shared`). Type names in this document refer to that package.
 
 ## Conventions
 
@@ -45,7 +45,7 @@ No session. Served on the school address only (the console host answers 404). Th
 - **Honeypot.** `website` must be empty. When it is filled, the answer is still `204` and nothing is sent.
 - **Email.** One email per request through the `email` queue (kind `demo-request`), built with `renderEmail()`, to the fixed inbox `DEMO_REQUEST_TO` (default: the address in `MAIL_FROM`). It is never sent to the visitor's address, which is only the `Reply-To`. The subject is `Demo request: <school>, <city>` on one line.
 - **Answers.** `204` for a sent request, a duplicate (the identical request again within 24 hours is not emailed twice) and a tripped honeypot alike. `400 VALIDATION_FAILED` with field `details`. `429 RATE_LIMITED`: `DEMO_REQUEST_RATE_LIMIT` (default 5) requests per IP per hour, and at most 50 emailed requests per 24 hours across all visitors. `503 EMAIL_UNAVAILABLE` when email (or the inbox) isn't configured; the form then offers the email fallback.
-- **Privacy.** Nothing is stored and the body is never logged. With `E2E_MAIL_CAPTURE` on (never in production) and no inbox configured, requests go to `demo-requests@classpulse.test` in the capture.
+- **Privacy.** Nothing is stored and the body is never logged. With `E2E_MAIL_CAPTURE` on (never in production) and no inbox configured, requests go to `demo-requests@classiq.test` in the capture.
 
 ## Auth: `/api/auth`
 
@@ -402,7 +402,7 @@ The device contract (headers, endpoints and audio format) is documented at the t
 
 ## Platform console (super admin): `/api/platform`
 
-The console API for ClassPulse operators. In production it is reachable only on `PLATFORM_HOST`: the router answers `404` for `/platform` and `/api/platform` on every school address. Every route except the sign-in steps needs a platform session: the `cp_platform` cookie (httpOnly, `SameSite=Strict`, 2 hours) or, for scripts, `Authorization: Platform <token>`. Platform accounts live in `platform_admins`, not in `users`, and are created only with `npm run create-superadmin` (see `docs/agents/deployment.md`).
+The console API for ClassIQ operators. In production it is reachable only on `PLATFORM_HOST`: the router answers `404` for `/platform` and `/api/platform` on every school address. Every route except the sign-in steps needs a platform session: the `cp_platform` cookie (httpOnly, `SameSite=Strict`, 2 hours) or, for scripts, `Authorization: Platform <token>`. Platform accounts live in `platform_admins`, not in `users`, and are created only with `npm run create-superadmin` (see `docs/agents/deployment.md`).
 
 Most changes are written to the audit log (`audit_logs`, kept 365 days). Codes and passwords are never logged or audited.
 

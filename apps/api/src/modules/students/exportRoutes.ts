@@ -5,7 +5,7 @@
 import { Router } from 'express';
 import { pipeline } from 'node:stream/promises';
 import { z } from 'zod';
-import { Id, IdParams } from '@classpulse/shared';
+import { Id, IdParams } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { notFound } from '../../lib/errors.js';
 import { storage } from '../../lib/storage.js';
@@ -38,7 +38,7 @@ router.get('/:id/export', ...adminOnly, async (req, res) => {
     },
   });
   const roll = (data.student.rollNumber ?? 'student').replace(/[^A-Za-z0-9_-]/g, '_');
-  res.setHeader('Content-Disposition', attachment(`classpulse-student-${roll}-${data.generatedAt.slice(0, 10)}.json`));
+  res.setHeader('Content-Disposition', attachment(`classiq-student-${roll}-${data.generatedAt.slice(0, 10)}.json`));
   res.setHeader('Cache-Control', 'private, no-store');
   res.json(data);
 });

@@ -1,7 +1,7 @@
 'use client';
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { OpsStatus, PlatformSchool } from '@classpulse/shared';
+import type { OpsStatus, PlatformSchool } from '@classiq/shared';
 import { Badge, Button, Dialog, Field, InlineError, Input, StatusDot } from '@/components/ui';
 import { api } from '@/lib/api';
 

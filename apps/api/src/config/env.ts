@@ -44,7 +44,7 @@ const EnvSchema = z
 
     JWT_SECRET: z.string().min(16).default('dev-only-insecure-jwt-secret-change-me'),
     SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 30).default(12),
-    /** Public origin of the web app, e.g. https://app.classpulse.in. Used for CORS + cookie security. */
+    /** Public origin of the web app, e.g. https://app.classiq.in. Used for CORS + cookie security. */
     PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
     /** Reverse proxies in front of the API (Caddy = 1; Coolify's Traefik + Caddy = 2). Used for client IPs. */
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
@@ -101,7 +101,7 @@ const EnvSchema = z
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
     SMTP_USER: z.string().optional().default(''),
     SMTP_PASS: z.string().optional().default(''),
-    /** e.g. "ClassPulse <noreply@benxsolutions.in>". */
+    /** e.g. "ClassIQ <noreply@benxsolutions.in>". */
     MAIL_FROM: z.string().optional().default(''),
     /**
      * Fixed internal inbox for "Book a demo" requests from /about (POST /api/public/demo-requests).

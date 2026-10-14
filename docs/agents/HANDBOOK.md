@@ -1,6 +1,6 @@
-# ClassPulse — The Complete Handbook
+# ClassIQ — The Complete Handbook
 
-> **Who this is for:** the owner of ClassPulse, who needs to understand and explain every part of the product: what it does, how it is built, how it is deployed, and why it was built that way. It assumes no prior technical knowledge. Each technical term is explained the first time it appears, and there is a [Glossary](#21-glossary) at the end.
+> **Who this is for:** the owner of ClassIQ, who needs to understand and explain every part of the product: what it does, how it is built, how it is deployed, and why it was built that way. It assumes no prior technical knowledge. Each technical term is explained the first time it appears, and there is a [Glossary](#21-glossary) at the end.
 >
 > **How to use it:**
 > - **Specific question:** jump to the [FAQ](#20-faq--questions-you-may-be-asked) first, then to the section it points to.
@@ -15,7 +15,7 @@
 
 ## Table of contents
 
-1. [What ClassPulse is](#1-what-classpulse-is)
+1. [What ClassIQ is](#1-what-classiq-is)
 2. [The big picture: how the pieces fit together](#2-the-big-picture-how-the-pieces-fit-together)
 3. [Technology stack (and why each piece was chosen)](#3-technology-stack-and-why-each-piece-was-chosen)
 4. [A tour of the code repository](#4-a-tour-of-the-code-repository)
@@ -40,13 +40,13 @@
 
 ---
 
-## 1. What ClassPulse is
+## 1. What ClassIQ is
 
 ### 1.1 One-sentence pitch
-ClassPulse records a classroom lecture, uses AI to turn it into a quiz in the teacher's language, lets the teacher review and publish it, and lets students take it on their phones, either self-paced or as a live, game-show-style quiz in class.
+ClassIQ records a classroom lecture, uses AI to turn it into a quiz in the teacher's language, lets the teacher review and publish it, and lets students take it on their phones, either self-paced or as a live, game-show-style quiz in class.
 
 ### 1.2 The problem it solves
-After a lecture, teachers rarely have time to write good questions that check whether students understood. Many Indian classrooms also mix languages: a teacher may explain in Tamil while using English technical terms. ClassPulse:
+After a lecture, teachers rarely have time to write good questions that check whether students understood. Many Indian classrooms also mix languages: a teacher may explain in Tamil while using English technical terms. ClassIQ:
 - **captures the lecture automatically** with a small Raspberry Pi recorder in the classroom (or the teacher uploads a phone recording),
 - **transcribes the speech** into text, including mixed Tamil–English, Hindi–English and other "code-mixed" speech,
 - **writes multiple-choice questions** from what was actually said, each linked to the moment in the recording it came from,
@@ -60,11 +60,12 @@ After a lecture, teachers rarely have time to write good questions that check wh
 | **Admin** | School office / principal / IT person | `/admin` ("Admin console"); signs in at `/admin/login` | Sets up the school: rooms, classes ("sections"), teachers, students, timetable, classroom devices, AI settings |
 | **Teacher** | Subject teachers | `/teacher` ("Teacher studio"); signs in at `/teacher/login` | Records or uploads lectures, generates and reviews quizzes, runs live quizzes, sets secure exams and assignments, uses the AI teaching tools (lesson plans, worksheets, question papers, presentations), views analytics |
 | **Student** | Students (mostly on phones) | `/student` ("Student portal"); signs in at `/student/login` | Joins classes with a code, takes quizzes and exams, plays live quizzes, hands in assignments (text, photos, files), manages guardian contacts |
-| **Super admin** (platform operator) | The owner of ClassPulse (you), not a school | `/platform` ("Platform console"), on its own address | Adds schools and their admins, suspends schools, switches features off per school, sets limits, watches health, logs, costs and deployments (section 15.5) |
+| **Super admin** (platform operator) | The owner of ClassIQ (you), not a school | `/platform` ("Platform console"), on its own address | Adds schools and their admins, suspends schools, switches features off per school, sets limits, watches health, logs, costs and deployments (section 15.5) |
 
 One installation can serve **many schools** ("multi-tenant"). Each school's data is completely separate. Super admins sit above all schools and are not part of any school.
 
 ### 1.4 Current status (October 2026)
+- **Name:** the product was called **ClassPulse** until 14 Oct 2026, when it was renamed **ClassIQ**. Every page, email, document and package (`@classiq/*`) uses the new name. Some technical names keep `classpulse` on purpose, because changing them would break the running system or data people already have: the address `classpulse.benxsolutions.in`, the GitHub repo `NINJA981/classpulse`, the database user and names (`classpulse`, `classpulse_test`), the Garage bucket `classpulse`, the server paths (`/etc/classpulse`, `/var/lib/classpulse`, `/opt/classpulse`, `/var/backups/classpulse`), the systemd units (`classpulse-agent`, `classpulse-backup`), the backup file names and key, the encryption salt in `apps/api/src/lib/keys.ts`, the export format ids (`classpulse.school-export`, `classpulse.student-export`) and the browser storage keys for quiz attempts and exam tokens. Rename any of these only together with a migration.
 - **Stage:** ready for a **pilot**, meaning a first real-world trial with about 100 users at one school.
 - **Live at:** `https://classpulse.benxsolutions.in` (the school site for admins, teachers and students).
 - **Platform console:** `https://ops.benxsolutions.in` (it opens `/platform`).
@@ -157,7 +158,7 @@ Example: a teacher clicks **Approve** on a question.
 | Word / PowerPoint export | **docx**, **pptxgenjs** | 9 / 4 | Build the `.docx` and `.pptx` files teachers download from the AI teaching tools. |
 | Reading uploads | **unpdf**, **mammoth** | 1 / 1 | Pull the text out of teachers' PDF and Word materials so the AI can use them. |
 | Two-factor sign-in | Built-in TOTP (the standard behind authenticator apps) | — | Super admins confirm each sign-in with a 6-digit code from an authenticator app. No extra service is needed. |
-| Installable app | Web app manifest + a small service worker | — | Lets phones and computers install ClassPulse like an app, with an offline page. |
+| Installable app | Web app manifest + a small service worker | — | Lets phones and computers install ClassIQ like an app, with an offline page. |
 | Speech-to-text | **Sarvam AI** (`saaras:v3`, `saarika:v2.5`) or **OpenAI Whisper** | API | Sarvam is built for Indian languages and handles code-mixed speech; Whisper is the alternative. |
 | Quiz writing (LLM) | **OpenAI** (`gpt-4.1-mini` default; `gpt-4o-mini`, `gpt-4.1`, `gpt-4o`, `gpt-5-mini`) | API | Strong at following a strict output format ("structured outputs"). |
 | Device software | **Python 3** (standard library only) | 3.11+ | Runs on the Raspberry Pi with nothing extra to install. |
@@ -336,7 +337,7 @@ The limits count per **IP address** (the internet connection), so everyone on th
 | Page | What it does |
 |---|---|
 | `/` | Sends you to your area if signed in, otherwise to `/login`. |
-| `/about` | The public product page: what ClassPulse does, a sample question to try, and **Book a demo**: a short form (name, school, city, phone; email, role, classrooms and a message optional) that emails the request to the BenX inbox (`DEMO_REQUEST_TO`), with an email link to admin@benxsolutions.in as the fallback. No sign-in needed. |
+| `/about` | The public product page: what ClassIQ does, a sample question to try, and **Book a demo**: a short form (name, school, city, phone; email, role, classrooms and a message optional) that emails the request to the BenX inbox (`DEMO_REQUEST_TO`), with an email link to admin@benxsolutions.in as the fallback. No sign-in needed. |
 | `/hi/about`, `/ta/about` | The same product page in Hindi and Tamil (`app/[locale]/about`, prerendered; any other language is a 404). Copy is one typed dictionary per language in `apps/web/components/landing/i18n` (`en.ts` is the source). Both translations are **drafts awaiting native review**: until `TRANSLATION_STATUS` in `i18n/locales.ts` says `reviewed`, the page is `noindex`, stays out of the sitemap and of `/about`'s hreflang links, and its footer says the translation is being reviewed. Review checklist: `i18n/index.ts`. A language switch (English · हिन्दी · தமிழ்) sits in the header and the phone menu. |
 | `/robots.txt`, `/sitemap.xml` | For search engines: only `/about` (and each reviewed translation) and `/login` are listed; the signed-in areas, the console and the API are marked "do not index". |
 | `/login` | A chooser with three cards: School admin, Teacher, Student. Each leads to its own sign-in page. |
@@ -349,7 +350,7 @@ The limits count per **IP address** (the internet connection), so everyone on th
 
 All signed-in pages share a **sidebar** (a hamburger menu on phones) with the user's name and **Sign out**. Menu items for a feature the console has switched off for the school are hidden.
 
-**Notifications (the bell).** A bell sits next to the user's name in the sidebar (and in the phone header), in every area including the platform console. It tells people when a background job they started has finished: a lesson transcribed, quiz questions ready to review, a teaching resource (lesson plan, worksheet, question paper, presentation) ready, a job that failed and why, and, for super admins, a redeploy or restart that finished. The number on the bell is how many are unread. Opening it lists them newest first; clicking one marks it read and opens the lesson, resource or deployment. **Mark all as read** clears the count. While the app is open, a new one also pops up in the corner with an **Open** button, and the page it's about refreshes itself. At the bottom of the list, **Notify me on this device** turns on phone/desktop push for that device only, so it arrives even when the app is closed (on iPhone/iPad, add ClassPulse to the Home Screen first). The browser asks for permission only when the switch is pressed.
+**Notifications (the bell).** A bell sits next to the user's name in the sidebar (and in the phone header), in every area including the platform console. It tells people when a background job they started has finished: a lesson transcribed, quiz questions ready to review, a teaching resource (lesson plan, worksheet, question paper, presentation) ready, a job that failed and why, and, for super admins, a redeploy or restart that finished. The number on the bell is how many are unread. Opening it lists them newest first; clicking one marks it read and opens the lesson, resource or deployment. **Mark all as read** clears the count. While the app is open, a new one also pops up in the corner with an **Open** button, and the page it's about refreshes itself. At the bottom of the list, **Notify me on this device** turns on phone/desktop push for that device only, so it arrives even when the app is closed (on iPhone/iPad, add ClassIQ to the Home Screen first). The browser asks for permission only when the switch is pressed.
 
 ### 6.2 Admin console (`/admin`)
 | Page | Features |
@@ -483,8 +484,8 @@ The owner's control room for the whole installation. It lives on its **own addre
 | **Deployments** | The running version and recent deployments from Coolify, deployment logs, and **Redeploy** / **Restart** buttons (each needs typed confirmation). Connected to Coolify in production (section 14.5). Build logs show only if the Coolify token has the "read:sensitive" permission; otherwise the page says so and the log can be read in Coolify itself. |
 | **Settings** | **Maintenance mode** and a **banner** for every school; **default AI models** for new schools; **AI price rates** used for the cost estimates; **My account** (change password, generate new recovery codes). |
 
-### 6.6 Installing ClassPulse as an app (PWA)
-ClassPulse is a **Progressive Web App**: a website that can be installed like an app, with its own icon and window.
+### 6.6 Installing ClassIQ as an app (PWA)
+ClassIQ is a **Progressive Web App**: a website that can be installed like an app, with its own icon and window.
 - **Android (Chrome):** open the site, then menu (⋮) → **Add to Home screen** or **Install app**.
 - **Computer (Chrome or Edge):** the **Install app** icon at the right of the address bar, or the install option in the browser menu.
 - **iPhone/iPad (Safari):** Share → **Add to Home Screen**.
@@ -630,7 +631,7 @@ On the analytics page the teacher clicks **Generate remedial plan**. The AI rece
 - **Notifications:** finished and failed jobs notify the person who started them (lessons and teaching resources: the teacher; redeploys and restarts: the super admin, via a `deploy-watch` task that polls Coolify every 20 s and keeps its watches in Redis, so it survives the restart the deploy causes). A notification problem never changes a job's result or its retries.
 
 ### 8.7 What the AI providers receive (privacy)
-- **Sarvam:** the lecture audio, and teachers' voice prompts (up to 60 seconds; not stored by ClassPulse).
+- **Sarvam:** the lecture audio, and teachers' voice prompts (up to 60 seconds; not stored by ClassIQ).
 - **OpenAI:**
   - the transcript text, lesson title and subject, and (for remedial plans) aggregated accuracy statistics;
   - for the AI teaching tools: the teacher's request, the course and unit details, and text from the lessons and materials the teacher chose;
@@ -644,18 +645,18 @@ On the analytics page the teacher clicks **Generate remedial plan**. The AI rece
 
 ### 8.9 The AI teaching tools pipeline
 1. The teacher asks for a lesson plan, worksheet, question paper or presentation (section 6.3.4).
-2. ClassPulse gathers the **grounding**: the units' summaries and objectives, the transcripts of the chosen lessons, and the text of the chosen materials. They are fitted into about 60,000 characters, with each source given a fair share.
+2. ClassIQ gathers the **grounding**: the units' summaries and objectives, the transcripts of the chosen lessons, and the text of the chosen materials. They are fitted into about 60,000 characters, with each source given a fair share.
 3. A job goes on the `resources` queue. The worker asks the school's quiz model for the result in a strict format (the same "structured outputs" as for quizzes), checks it, and saves it. The item shows **Ready**, or **Failed** with a reason and a retry.
 4. Downloads are built on the server: Word files for plans, worksheets and papers, PowerPoint for presentations.
 
 ### 8.10 Research: running the AI on our own machines
 The long-term goal is to stop depending on outside AI services and run our own ("self-hosted" or "local") models for every feature. **For now, production stays on the Sarvam and OpenAI APIs; local models are research only.** Two reports in `docs/agents/research/` cover the work:
-- **`docs/agents/research/local-models-rnd.md`:** the research plan and the roadmap to a fully local ClassPulse: candidate models for speech-to-text, quiz writing, grading and teaching tools, the hardware they need, rough costs, and how they will be tested.
+- **`docs/agents/research/local-models-rnd.md`:** the research plan and the roadmap to a fully local ClassIQ: candidate models for speech-to-text, quiz writing, grading and teaching tools, the hardware they need, rough costs, and how they will be tested.
 - **`docs/agents/research/stt-benchmark-2026-10-12.md`:** a real test of local speech-to-text models against Sarvam on Indian-language audio and our own classroom recordings. In short:
   - **Sarvam Saaras v3 is still the best.** Across 9 Indian languages it gets 13.9% of words wrong (the "word error rate", WER; lower is better).
   - **The best model we could run ourselves is AI4Bharat IndicConformer 600M** (free, MIT licence) at 16.5%, and it runs on an ordinary processor without a graphics card. But on real, noisy classroom audio that mixes Tamil and English, it writes English terms in Tamil script and drops much of the speech.
   - **Whisper large-v3** handles mixed Tamil–English best of the local models, but is weak on purely Indian-language speech. Having an AI language model correct the transcript afterwards helps only slightly.
-  - **Next step:** record and hand-check 3–5 hours of real ClassPulse classroom audio, to measure accuracy properly, then use more labelled audio to train ("fine-tune") a local model on it.
+  - **Next step:** record and hand-check 3–5 hours of real ClassIQ classroom audio, to measure accuracy properly, then use more labelled audio to train ("fine-tune") a local model on it.
 
 IndicConformer is also the planned option for a better **fallback** when Sarvam is unavailable, instead of OpenAI Whisper (section 19).
 
@@ -735,7 +736,7 @@ The server-side states are: `lobby → question_open → question_closed → …
 ### 10.3 Setting up a new Pi (provisioning)
 1. Install **Raspberry Pi OS Lite (64-bit, Bookworm)** with Raspberry Pi Imager: set the hostname, Wi-Fi and SSH.
 2. Plug in the USB mic and find its name with `arecord -l`, for example `plughw:2,0`.
-3. In ClassPulse, go to **Admin → Classroom devices → Add classroom device**: choose the room and a name. You get an **enrollment token**, which is single-use and **expires in 24 hours**.
+3. In ClassIQ, go to **Admin → Classroom devices → Add classroom device**: choose the room and a name. You get an **enrollment token**, which is single-use and **expires in 24 hours**.
 4. On the Pi: install the agent (`sudo ./install.sh`), then edit `/etc/classpulse/agent.json`:
    ```json
    { "server_url": "https://classpulse.benxsolutions.in", "device_id": "rpi5-room-101",
@@ -963,7 +964,7 @@ The demo passwords are listed in the README. The seed **refuses to run in produc
   - runs them,
   - manages HTTPS certificates (via its **Traefik** proxy) and environment variables,
   - keeps a deployment history.
-- **Project:** "ClassPulse" → environment "production" → application **classpulse** (internal ID `bmbcqf7x63jjpirzhi8tzsby`).
+- **Project:** "ClassIQ" → environment "production" → application **classpulse** (internal ID `bmbcqf7x63jjpirzhi8tzsby`).
 - **Source:** the private GitHub repo `NINJA981/classpulse`, branch `main`, compose file `/infra/docker-compose.coolify.yml`. Coolify pulls with a **read-only deploy key** (an SSH key that can only read this one repository).
 - **Build pack:** Docker Compose.
 - **The Coolify API:** Coolify can also be controlled by programs through its API, using an **API token** (a long secret that works like a password with limited permissions). Two things use it:
@@ -1008,7 +1009,7 @@ The services, all built from this repository (`infra/docker-compose.coolify.yml`
 **Traffic path:** Internet → Traefik (HTTPS, port 443) → `router:80` → `api:5000` or `web:3000`. Traefik's timeouts were raised to **600 seconds** so long lecture uploads aren't cut off (the default was 60 s).
 
 ### 14.5 Environment variables (production settings in Coolify)
-> **Watch out:** Coolify's Environment Variables page has two sections, **Production** and **Preview Deployments**. ClassPulse reads only the **Production** ones. A value put under "Preview Deployments" is silently ignored. This happened once with the email settings, and email stayed off until they were moved. After changing any variable, **redeploy** so the containers pick it up.
+> **Watch out:** Coolify's Environment Variables page has two sections, **Production** and **Preview Deployments**. ClassIQ reads only the **Production** ones. A value put under "Preview Deployments" is silently ignored. This happened once with the email settings, and email stayed off until they were moved. After changing any variable, **redeploy** so the containers pick it up.
 
 | Variable | Purpose |
 |---|---|
@@ -1022,7 +1023,7 @@ The services, all built from this repository (`infra/docker-compose.coolify.yml`
 | `PLATFORM_HOST` | The console's host name, `ops.benxsolutions.in` (no `https://`). Used by the router. The same domain must also be added to the `router` service's domains in Coolify. If it is missing, the console is hidden everywhere |
 | `PLATFORM_ORIGIN` | The console's full address, `https://ops.benxsolutions.in`. Used by the API's security checks |
 | `COOLIFY_API_URL`, `COOLIFY_API_TOKEN`, `COOLIFY_APP_UUID` | For the console's **Deployments** page (all set in production):<br>• `COOLIFY_API_URL` is the server's **private** address, `http://10.0.0.112:8000/api/v1`, so the traffic stays inside the server's private network. This keeps working after public port 8000 is closed.<br>• `COOLIFY_API_TOKEN` is a token named **classpulse-console** with only the **read** and **deploy** permissions (the least it needs).<br>• `COOLIFY_APP_UUID` is the app's ID (section 14.2).<br>Coolify must also allow API calls from `10.0.0.0/16` (section 14.2). Coolify only shares **build logs** with tokens that also have **read:sensitive**; without it, the Deployments page says the log is hidden and you read it in Coolify. Adding read:sensitive is optional and gives the token slightly more access. **Restart** should work with the deploy permission; if it answers with a permission error, add **write** to the token. Without these variables the page shows setup instructions |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Email for invitations, password resets and reminders. **Set up in production** with the GoDaddy mailbox `admin@benxsolutions.in`: `smtpout.secureserver.net`, port `465` (SSL), that mailbox and its password, and `MAIL_FROM` = `ClassPulse <admin@benxsolutions.in>`. A test email was accepted. **When the mailbox password changes, update `SMTP_PASS` (in Production) and redeploy**, or email stops.<br>**Daily cap:** GoDaddy mailboxes send at most roughly 250–300 emails a day (check your plan). Importing a large class with emailed invitations can hit this; the rest then fail and can be retried the next day from the console (Health → `email` queue). If that becomes a problem, switch to a sending service such as Amazon SES or Brevo.<br>The other working choice is **Gmail**: `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Email for invitations, password resets and reminders. **Set up in production** with the GoDaddy mailbox `admin@benxsolutions.in`: `smtpout.secureserver.net`, port `465` (SSL), that mailbox and its password, and `MAIL_FROM` = `ClassIQ <admin@benxsolutions.in>`. A test email was accepted. **When the mailbox password changes, update `SMTP_PASS` (in Production) and redeploy**, or email stops.<br>**Daily cap:** GoDaddy mailboxes send at most roughly 250–300 emails a day (check your plan). Importing a large class with emailed invitations can hit this; the rest then fail and can be retried the next day from the console (Health → `email` queue). If that becomes a problem, switch to a sending service such as Amazon SES or Brevo.<br>The other working choice is **Gmail**: `smtp.gmail.com`, port `465`, the Gmail address, and a Gmail **App password** (needs 2-Step Verification); send from that Gmail address.<br>**Do not** send as `@benxsolutions.in` through Gmail: the domain's SPF record (the list of servers allowed to send its mail) only allows GoDaddy, so those emails would fail the check and go to spam or be rejected |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | **Optional:** phone/desktop push notifications ("your lesson is ready"). Make the pair once with `npx web-push generate-vapid-keys` and set both keys in Coolify (Production); `VAPID_SUBJECT` defaults to `mailto:admin@benxsolutions.in`. While `VAPID_PRIVATE_KEY` is empty, push is off and only the in-app bell and pop-ups work. **Keep the same pair:** a new pair stops push on every device that had it turned on until each person turns it on again. A half-set or malformed pair stops the API from starting |
 | `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN` | **Required** (the deploy fails without them). Garage's own secrets: `openssl rand -hex 32` and `openssl rand -base64 32`. Keep a copy in the password manager |
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | The API's key for the Garage file store. Garage wants a particular shape: the id is `GK` plus 24 hex characters (`echo "GK$(openssl rand -hex 12)"`), the secret 64 hex characters (`openssl rand -hex 32`). Keep a copy in the password manager |
@@ -1255,7 +1256,7 @@ npm install                          # download libraries
 npm run dev:infra                    # start local PostgreSQL, Redis and Garage (file store) in Docker
 cp apps/api/.env.example apps/api/.env          # then add SARVAM/OPENAI keys
 cp apps/web/.env.example apps/web/.env.local
-npm run build -w @classpulse/shared  # build shared definitions
+npm run build -w @classiq/shared  # build shared definitions
 npm run db:migrate                   # create tables
 npm run db:seed                      # demo school + logins
 npm run dev                          # API :5000, worker, web :3000
@@ -1268,7 +1269,7 @@ Open http://localhost:3000.
 | `npm run lint` | Code style / error checks |
 | `npm run typecheck` | TypeScript checks |
 | `npm test` | API tests (needs the local database) |
-| `npm run test:s3 -w @classpulse/api` | The storage tests again against the local Garage (S3 on `127.0.0.1:3900`, started by `npm run dev:infra`). To run the whole app on Garage, uncomment the S3 lines in `apps/api/.env` (see `apps/api/.env.example`) |
+| `npm run test:s3 -w @classiq/api` | The storage tests again against the local Garage (S3 on `127.0.0.1:3900`, started by `npm run dev:infra`). To run the whole app on Garage, uncomment the S3 lines in `apps/api/.env` (see `apps/api/.env.example`) |
 | `npm run test:agent` | Pi agent tests |
 | `npm run test:e2e` | Full browser test (needs `npm run dev` running) |
 | `npm run db:generate` | Create a new migration after changing the schema |
@@ -1345,6 +1346,7 @@ The browser test is run manually, since it needs real AI keys.
 | 11 Oct 2026 | Second school and admin (`admin2@benxsolutions.in`, BenX School 2) created. This handbook written. |
 | 11 Oct 2026 | **Platform and teaching release** (commit `ceb780c`): the super admin **platform console** on its own address (authenticator sign-in, schools and admins, suspension, feature switches and limits, maintenance and banner, health, logs, audit, usage and AI cost, deployments); **separate sign-in pages** for admins, teachers and students; **teacher AI tools** (courses and materials, lesson plans, worksheets, question papers, presentations, voice prompts, Word/PowerPoint export, sharing, simulations, class insights, Bloom and competency tags); **secure exams**; **better assignments** (files, rubrics, AI-suggested grading, reminders, late policy); **emailed invitations and password resets**; CSV templates and teacher import; AI usage recording and a monthly AI audio limit per school; the **installable app**. |
 | 12 Oct 2026 | Follow-ups since the 11 Oct release, all live and verified on 12 Oct. **Live on the real domains:** `classpulse.benxsolutions.in` (schools), `ops.benxsolutions.in` (console) and `coolify.benxsolutions.in` (Coolify), with Let's Encrypt certificates; the sslip.io addresses retired. The owner's super admin account created. **Email switched on** (GoDaddy mailbox `admin@benxsolutions.in`). The console's **Deployments** page connected to Coolify with a least-privilege token over the private network. Console sign-in and the whole console moved to the same light design as the school panels ("Super admin sign in"). The "Email invitations" switch is now enforced. Backup status fixed in the console. **Student first-login guided tour.** Coolify registration off and SSH key-only. A local speech-to-text benchmark (section 8.10). |
+| 14 Oct 2026 | **Renamed ClassPulse → ClassIQ** across the site (all three languages), emails, PWA name, documents and package names. Technical names that live on servers or in saved data keep `classpulse` (section 1.4). |
 
 **Key decisions and why:**
 - **Drizzle (not Prisma):** lighter and closer to SQL.
@@ -1391,7 +1393,7 @@ The browser test is run manually, since it needs real AI keys.
 ## 20. FAQ: questions you may be asked
 
 ### About the product
-**Q: What does ClassPulse do, in one line?**
+**Q: What does ClassIQ do, in one line?**
 It turns a recorded lecture into a reviewed, bilingual multiple-choice quiz and an in-class live quiz game, with analytics for the teacher.
 
 **Q: Does the AI publish quizzes by itself?**
@@ -1490,7 +1492,7 @@ Yes. Every page was audited at phone width (390 px) with no horizontal scrolling
 **Q: Is it accessible?**
 Pages were audited with axe-core (an automated accessibility checker): labels, landmarks, contrast, keyboard access and tap-target sizes.
 
-**Q: Could ClassPulse run its AI on its own servers instead of OpenAI and Sarvam?**
+**Q: Could ClassIQ run its AI on its own servers instead of OpenAI and Sarvam?**
 That is the long-term goal, and it is being researched; production stays on the outside services for now. The plan is in `docs/agents/research/local-models-rnd.md`. A first real test of self-hosted speech-to-text (`docs/agents/research/stt-benchmark-2026-10-12.md`) found that Sarvam is still the most accurate. The best free model, AI4Bharat IndicConformer, comes close on clean Indian-language speech and needs no graphics card, but struggles with noisy classroom audio that mixes in English. The next step is to collect 3–5 hours of hand-checked classroom recordings to measure and train on (section 8.10).
 
 **Q: What happens if Sarvam (the speech-to-text service) is down?**
@@ -1526,7 +1528,7 @@ On an Oracle Cloud ARM server (2 CPUs, 12 GB RAM) in the benxsolutions tenancy, 
 Push the code to GitHub, then click Redeploy in Coolify (or in the console's Deployments page); pushing alone doesn't deploy. It builds and restarts in a few minutes, and database changes apply automatically. The site is down for about 30–60 seconds while the containers restart, so deploy outside class hours.
 
 **Q: What does it cost to run?**
-The server is an Oracle Cloud instance. Ongoing variable costs are the **AI API usage**: Sarvam per minute of audio, and OpenAI per quiz, teaching resource or grading suggestion. ClassPulse now records every AI call, and the console's **Usage & costs** page shows an **estimate** per school and per model, in US dollars, from the price rates in console Settings (section 15.5.5). The providers' invoices are the real bill; keep the rates in Settings up to date.
+The server is an Oracle Cloud instance. Ongoing variable costs are the **AI API usage**: Sarvam per minute of audio, and OpenAI per quiz, teaching resource or grading suggestion. ClassIQ now records every AI call, and the console's **Usage & costs** page shows an **estimate** per school and per model, in US dollars, from the price rates in console Settings (section 15.5.5). The providers' invoices are the real bill; keep the rates in Settings up to date.
 
 **Q: Can one school's AI use be capped?**
 Yes. Console → the school → Features & limits → **AI audio minutes per month**. Once used up, new transcriptions are refused until the next month (section 8.8).
@@ -1596,10 +1598,10 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 | **SMTP** | The standard way programs send email through a mailbox provider (Gmail, GoDaddy) |
 | **Socket.IO / WebSocket** | A persistent two-way connection for real-time features |
 | **SPF** | A DNS record listing which mail servers may send email for a domain; mail from other servers is treated as suspicious |
-| **sslip.io** | A free service turning an IP into a hostname (e.g. classpulse.129.159.227.74.sslip.io). ClassPulse used it before the real `benxsolutions.in` addresses; those old addresses no longer work |
+| **sslip.io** | A free service turning an IP into a hostname (e.g. classpulse.129.159.227.74.sslip.io). ClassIQ used it before the real `benxsolutions.in` addresses; those old addresses no longer work |
 | **STT** | Speech-to-text (transcription) |
 | **Structured outputs** | Forcing the AI to reply in an exact data format |
-| **Super admin** | A ClassPulse operator account for the platform console, above all schools |
+| **Super admin** | A ClassIQ operator account for the platform console, above all schools |
 | **systemd / timer** | Linux's service manager / its scheduler (used instead of cron) |
 | **TLS / HTTPS** | Encryption for web traffic |
 | **TOTP** | Time-based one-time password: the 6-digit codes an authenticator app shows |
@@ -1623,9 +1625,9 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 | Owner's super admin | `saicharan312008@gmail.com` |
 | Create a super admin | `sudo docker exec -it $API node dist/scripts/createSuperAdmin.js --email … --name …` (section 15.5.1) |
 | Health check | `/api/health/ready` (or console → Health) |
-| Coolify | https://coolify.benxsolutions.in → Project ClassPulse → production → classpulse (env vars go in the **Production** section) |
+| Coolify | https://coolify.benxsolutions.in → Project ClassIQ → production → classpulse (env vars go in the **Production** section) |
 | Deploying | By hand only (Coolify or console → Redeploy); 30–60 s of downtime, so outside class hours |
-| Email sender | `ClassPulse <admin@benxsolutions.in>` via GoDaddy (`smtpout.secureserver.net:465`); about 250–300 emails a day |
+| Email sender | `ClassIQ <admin@benxsolutions.in>` via GoDaddy (`smtpout.secureserver.net:465`); about 250–300 emails a day |
 | DNS | GoDaddy, A records `classpulse`, `ops`, `coolify` → 129.159.227.74 |
 | GitHub | `NINJA981/classpulse` (private), branch `main` |
 | Server | Oracle Cloud `benx`, 129.159.227.74, Ubuntu 24.04, ARM64, 2 OCPU / 12 GB |

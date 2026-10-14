@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { ROLE_LOGIN, ROLES, SESSION_COOKIE } from '@classpulse/shared';
+import { ROLE_LOGIN, ROLES, SESSION_COOKIE } from '@classiq/shared';
 
 const PLATFORM_COOKIE = 'cp_platform';
 

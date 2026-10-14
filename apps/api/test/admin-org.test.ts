@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_MODEL_SETTINGS } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import { devices, lessons, quizAttempts } from '../src/db/schema/index.js';
 import { as, createInstitution, createRoom, createUser, createWorld } from './helpers.js';

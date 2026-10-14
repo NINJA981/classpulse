@@ -4,7 +4,7 @@
  * mounted separately (/api/platform/ops, /api/platform/stats).
  */
 import { Router } from 'express';
-import { PlatformUserSearchQuery, UpdatePlatformSettingsInput } from '@classpulse/shared';
+import { PlatformUserSearchQuery, UpdatePlatformSettingsInput } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticatePlatform, currentPlatformAdmin } from '../../middleware/platformAuth.js';
 import { parseBody, parseQuery } from '../../middleware/validate.js';

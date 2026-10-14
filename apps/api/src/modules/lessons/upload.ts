@@ -11,7 +11,7 @@ import { mkdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { RequestHandler } from 'express';
 import multer from 'multer';
-import type { LessonDetail, SessionUser } from '@classpulse/shared';
+import type { LessonDetail, SessionUser } from '@classiq/shared';
 import { env } from '../../config/env.js';
 import { AppError, badRequest } from '../../lib/errors.js';
 import { assertAudioContainer, normalizedWavDurationSec, normalizeToWav, probeAudioDurationSec } from '../../lib/ffmpeg.js';

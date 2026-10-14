@@ -7,7 +7,7 @@
  * either by the heuristics below or by the model; the teacher sees a warning and the marks are not prefilled.
  */
 import { eq } from 'drizzle-orm';
-import { DEFAULT_MODEL_SETTINGS, type AiGradeSuggestion, type SessionUser } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS, type AiGradeSuggestion, type SessionUser } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { assignmentSubmissions, modelSettings, sections } from '../../db/schema/index.js';
 import { AppError, invalidState } from '../../lib/errors.js';

@@ -89,7 +89,7 @@ export function landingMetadata(locale: Locale): Metadata {
       title: meta.title,
       description: meta.description,
       url: info.path,
-      siteName: 'ClassPulse',
+      siteName: 'ClassIQ',
       locale: info.ogLocale,
       ...(alternateLocale.length ? { alternateLocale } : {}),
       ...(images ? { images } : {}),

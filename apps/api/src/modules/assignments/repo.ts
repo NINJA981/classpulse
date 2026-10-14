@@ -1,6 +1,6 @@
 /** Assignment queries and mappers shared by the teacher routes, the student portal and the file download route. */
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import type { RubricItem, RubricMark, SessionUser, SubmissionFile } from '@classpulse/shared';
+import type { RubricItem, RubricMark, SessionUser, SubmissionFile } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { assignments, sectionTeachers, submissionFiles, type assignmentSubmissions } from '../../db/schema/index.js';
 import { badRequest, notFound } from '../../lib/errors.js';

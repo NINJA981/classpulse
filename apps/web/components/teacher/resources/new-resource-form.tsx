@@ -18,7 +18,7 @@ import {
   type ResourceDetail,
   type ResourceOptions,
   type ResourceType,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, Field, InlineError, Input, Select, Textarea } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/format';

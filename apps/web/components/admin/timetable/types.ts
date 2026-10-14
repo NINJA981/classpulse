@@ -1,4 +1,4 @@
-import { DAYS, type Day, type TimetableSlot, type TimetableSlotInput } from '@classpulse/shared';
+import { DAYS, type Day, type TimetableSlot, type TimetableSlotInput } from '@classiq/shared';
 
 export const DAY_LABELS: Record<Day, string> = {
   mon: 'Monday',

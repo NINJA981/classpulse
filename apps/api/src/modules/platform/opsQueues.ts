@@ -3,7 +3,7 @@
  * (OPS_QUEUE_NAMES) are reachable, and job data is summarised without message bodies.
  */
 import { Queue, type Job } from 'bullmq';
-import type { FailedJob, OpsQueueCounts, OpsQueueName } from '@classpulse/shared';
+import type { FailedJob, OpsQueueCounts, OpsQueueName } from '@classiq/shared';
 import { invalidState, notFound } from '../../lib/errors.js';
 import { getRedis } from '../../lib/redis.js';
 

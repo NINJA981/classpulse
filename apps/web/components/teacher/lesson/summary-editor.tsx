@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { LessonDetail, UpdateLessonInput } from '@classpulse/shared';
+import type { LessonDetail, UpdateLessonInput } from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, Field, InlineError, Input, Textarea, useToast } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { lessonKey } from './use-lesson';

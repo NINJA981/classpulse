@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { ROLE_HOME, ROLE_LOGIN, ROLES, type Role } from '@classpulse/shared';
+import { ROLE_HOME, ROLE_LOGIN, ROLES, type Role } from '@classiq/shared';
 import { LoginNotice } from '@/components/auth/platform-notice';
 import { ROLE_CARDS } from '@/components/auth/role-cards';
 import { ROLE_LOGIN_COPY } from '@/components/auth/role-login';
@@ -25,7 +25,7 @@ function Chooser() {
   return (
     <div className="w-full max-w-3xl">
       <p className="eyebrow">Welcome to</p>
-      <h1 className="font-display text-3xl font-black sm:text-4xl">ClassPulse</h1>
+      <h1 className="font-display text-3xl font-black sm:text-4xl">ClassIQ</h1>
       <p className="mt-1 text-sm text-muted">Choose how you sign in.</p>
       <LoginNotice className="mt-5" />
       <ul className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -54,7 +54,7 @@ function Chooser() {
         </Link>
       </p>
       <p className="mt-2 text-sm text-muted">
-        New to ClassPulse?{' '}
+        New to ClassIQ?{' '}
         <Link href="/about" className="inline-block py-1 font-semibold text-ink underline underline-offset-4">
           See what it does
         </Link>

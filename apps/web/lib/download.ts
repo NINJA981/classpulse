@@ -2,7 +2,7 @@
  * Download a file the API sends as an attachment (data exports) and save it in the browser.
  * Same-origin `/api` with the session cookie, like `api`; failures throw the API's `ApiError`.
  */
-import type { ApiErrorBody } from '@classpulse/shared';
+import type { ApiErrorBody } from '@classiq/shared';
 import { ApiError } from './api';
 
 function filenameFrom(header: string | null, fallback: string): string {

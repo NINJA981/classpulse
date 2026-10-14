@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState, useSyncExternalStore, type FormEvent } f
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { PASSWORD_MIN_LENGTH, ROLE_HOME, type PasswordTokenPreview, type SessionResponse } from '@classpulse/shared';
+import { PASSWORD_MIN_LENGTH, ROLE_HOME, type PasswordTokenPreview, type SessionResponse } from '@classiq/shared';
 import { Button, ButtonLink, Field, InlineError, Input, LoadingBlock } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 
@@ -111,7 +111,7 @@ function SetPasswordForm() {
       <p className="eyebrow">{p.schoolName}</p>
       <h1 className="font-display text-2xl font-black">Hi {p.name}</h1>
       <p className="mt-1 text-sm text-muted">
-        {invite ? 'Choose a password to finish setting up your ClassPulse account.' : 'Choose a new password for your ClassPulse account.'}
+        {invite ? 'Choose a password to finish setting up your ClassIQ account.' : 'Choose a new password for your ClassIQ account.'}
       </p>
       <dl className="mt-4 border border-line bg-surface-2 px-3 py-2 text-sm rounded-control">
         <dt className="eyebrow">{p.role === 'student' ? 'Your roll number' : 'Your email'}</dt>

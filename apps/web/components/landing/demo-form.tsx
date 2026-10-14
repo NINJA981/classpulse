@@ -7,7 +7,7 @@ import {
   DemoRequestInput,
   type ApiErrorBody,
   type DemoRequestBody,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { CONTACT_EMAIL, demoMailto } from './contact';
 import { useLandingCopy } from './i18n/copy-context';
 import { fill, fillNodes } from './i18n/format';
@@ -17,7 +17,7 @@ import { ShareBrief } from './share-brief';
 
 /**
  * "Book a demo" request form (/about, inside the finale's `#book`). Validates with the same zod schema as
- * the API (DemoRequestInput in @classpulse/shared) and posts JSON to its own origin. The API emails the
+ * the API (DemoRequestInput in @classiq/shared) and posts JSON to its own origin. The API emails the
  * request to the BenX inbox; nothing is sent to the visitor. If it can't be sent (rate limit, email not
  * configured here, network), the visitor gets an email link with what they typed already filled in.
  *

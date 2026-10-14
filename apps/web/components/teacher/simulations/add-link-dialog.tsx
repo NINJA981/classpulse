@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Simulation, SimulationLinkInput } from '@classpulse/shared';
+import type { Simulation, SimulationLinkInput } from '@classiq/shared';
 import { Button, Dialog, Field, InlineError, Input, Select, Textarea, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { SIMULATION_SUBJECTS } from './subject-icon';

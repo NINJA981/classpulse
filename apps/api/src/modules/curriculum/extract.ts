@@ -9,7 +9,7 @@
  * 422 UNPROCESSABLE "This file couldn't be read".
  */
 import { Worker } from 'node:worker_threads';
-import type { MaterialKind } from '@classpulse/shared';
+import type { MaterialKind } from '@classiq/shared';
 import { AppError, badRequest } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import type { ExtractJob, ExtractReply } from './extractWorker.js';

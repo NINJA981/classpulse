@@ -6,7 +6,7 @@ import { PlatformShell } from '@/components/platform/shell';
 import { getPlatformAdmin } from '@/lib/platform-session';
 
 export const metadata: Metadata = {
-  title: { default: 'Platform console', template: '%s · ClassPulse platform' },
+  title: { default: 'Platform console', template: '%s · ClassIQ platform' },
   robots: { index: false, follow: false },
 };
 

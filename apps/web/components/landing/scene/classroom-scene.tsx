@@ -31,7 +31,7 @@ export interface ClassroomSceneProps {
   fixedProgress?: number;
   /**
    * Clip capture (with fixedProgress): render a seamless loop of this many seconds, one frame per call to
-   * `window.__classpulseClip.step(frame)` (see scripts/capture-landing-assets.ts, `video` mode).
+   * `window.__classiqClip.step(frame)` (see scripts/capture-landing-assets.ts, `video` mode).
    */
   clipSeconds?: number;
 }
@@ -196,10 +196,10 @@ function ClipDriver({ seconds }: { seconds: number }) {
           invalidate();
         }),
     };
-    const w = window as Window & { __classpulseClip?: ClipApi };
-    w.__classpulseClip = api;
+    const w = window as Window & { __classiqClip?: ClipApi };
+    w.__classiqClip = api;
     return () => {
-      delete w.__classpulseClip;
+      delete w.__classiqClip;
     };
   }, [fs, invalidate, seconds]);
   return null;

@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { PASSWORD_MIN_LENGTH, ROLE_HOME, type SessionResponse } from '@classpulse/shared';
+import { PASSWORD_MIN_LENGTH, ROLE_HOME, type SessionResponse } from '@classiq/shared';
 import { Button, Field, InlineError, Input } from '@/components/ui';
 import { api } from '@/lib/api';
 

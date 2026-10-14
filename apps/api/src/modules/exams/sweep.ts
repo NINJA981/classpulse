@@ -6,7 +6,7 @@
  *    still have teacher-granted extra time keep running until their own deadline.
  */
 import { and, eq, lt, lte } from 'drizzle-orm';
-import { EXAM_SAVE_GRACE_SEC } from '@classpulse/shared';
+import { EXAM_SAVE_GRACE_SEC } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { examAttempts, exams } from '../../db/schema/index.js';
 import type { PeriodicTask } from '../../jobs/periodic.js';

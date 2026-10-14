@@ -8,10 +8,10 @@ import {
   type LivePinLookup,
   type LiveStateSnapshot,
   type PublicQuestion,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, ButtonLink, Card, CardBody, Field, InlineError, Input, Spinner } from '@/components/ui';
 import { ApiError, api, errorMessage } from '@/lib/api';
-import { connectSocket, emitWithAck, type ClassPulseSocket } from '@/lib/socket';
+import { connectSocket, emitWithAck, type ClassIQSocket } from '@/lib/socket';
 import { useSessionUser } from '@/lib/session-context';
 import { LanguageToggle, Note } from '../common';
 import { OPTION_LETTERS, OptionButton, OptionGroup } from '../quiz/option-button';
@@ -375,7 +375,7 @@ export function LivePlayer({ initialPin }: { initialPin: string }) {
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [local, setLocal] = useState(false);
 
-  const socketRef = useRef<ClassPulseSocket | null>(null);
+  const socketRef = useRef<ClassIQSocket | null>(null);
   const answerSeq = useRef(0);
   const endedRef = useRef(false);
   useEffect(() => {

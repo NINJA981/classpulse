@@ -1,6 +1,6 @@
 /** Presentation generator (stubbed OpenAI fetch) and PPTX export. Nothing touches the network. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PresentationContent } from '@classpulse/shared';
+import type { PresentationContent } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { PipelineError } from '../src/pipeline/errors.js';
 import { llmRetryPolicy } from '../src/pipeline/llm.js';

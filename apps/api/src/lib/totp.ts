@@ -10,7 +10,7 @@ const DIGITS = 6;
 /** Steps accepted either side of "now". */
 const WINDOW = 1;
 const SECRET_BYTES = 20;
-const ISSUER = 'ClassPulse';
+const ISSUER = 'ClassIQ';
 
 const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -78,7 +78,7 @@ export function verifyTotp(secret: string, code: string, lastStep: number | null
   return null;
 }
 
-/** otpauth://totp/ClassPulse:{email}?secret=…&issuer=ClassPulse (rendered as a QR code). */
+/** otpauth://totp/ClassIQ:{email}?secret=…&issuer=ClassIQ (rendered as a QR code). */
 export function otpauthUri(email: string, secret: string): string {
   const label = `${encodeURIComponent(ISSUER)}:${encodeURIComponent(email)}`;
   return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(ISSUER)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_SECONDS}`;

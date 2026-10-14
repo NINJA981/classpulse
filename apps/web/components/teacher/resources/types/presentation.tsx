@@ -13,7 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { PresentationContent, PresentationOptions } from '@classpulse/shared';
+import { PresentationContent, PresentationOptions } from '@classiq/shared';
 import { Button, Card, Checkbox, EmptyState, Field, Input, Select, Textarea } from '@/components/ui';
 import type { OptionsFieldsProps, ViewerProps } from '.';
 

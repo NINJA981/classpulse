@@ -1,8 +1,8 @@
-# ClassPulse classroom agent
+# ClassIQ classroom agent
 
 A small Python service for a **Raspberry Pi 5 with a USB microphone**, one per classroom.
-When a teacher presses **Start class** in ClassPulse, the agent records the lecture,
-buffers it on the SD card in 60-second chunks and uploads it to the ClassPulse server.
+When a teacher presses **Start class** in ClassIQ, the agent records the lecture,
+buffers it on the SD card in 60-second chunks and uploads it to the ClassIQ server.
 When the teacher presses **Stop**, the agent finishes uploading and the server turns the
 recording into a lesson (transcript, summary, quiz).
 
@@ -18,7 +18,7 @@ recording into a lesson (transcript, summary, quiz).
 | USB microphone or USB audio interface | Any class-compliant device that `arecord -l` lists. A boundary/conference mic near the teacher works best. |
 | 32 GB+ microSD (A2) or USB SSD | About 115 MB of buffer space per recorded hour |
 | Official 27 W USB-C PSU, case with a fan | Long recordings keep the CPU warm. Temperature is reported to the admin console. |
-| Wired Ethernet (preferred) or Wi-Fi | Outbound TCP 443 to the ClassPulse server only |
+| Wired Ethernet (preferred) or Wi-Fi | Outbound TCP 443 to the ClassIQ server only |
 
 ## Install
 
@@ -37,7 +37,7 @@ sudo ./install.sh
 
 ## Provisioning
 
-1. In ClassPulse, an admin opens **Admin › Devices › Add device**, picks the room and copies
+1. In ClassIQ, an admin opens **Admin › Devices › Add device**, picks the room and copies
    the **enrollment token**. Tokens are single-use, are shown only once and expire after 24 hours.
 2. Choose the microphone. On the Pi, run:
    ```bash
@@ -53,7 +53,7 @@ sudo ./install.sh
 
    | Key | Default | Meaning |
    |---|---|---|
-   | `server_url` | (required) | e.g. `https://app.classpulse.example`. Must be `https://`, and the exact address: the agent never follows HTTP redirects (they would carry the device key elsewhere), so a redirecting URL shows as a network error in the log. |
+   | `server_url` | (required) | e.g. `https://app.classiq.example`. Must be `https://`, and the exact address: the agent never follows HTTP redirects (they would carry the device key elsewhere), so a redirecting URL shows as a network error in the log. |
    | `device_id` | (required) | Unique name: 3–64 characters of lowercase letters, digits and dashes, e.g. `rpi5-room-101` |
    | `enrollment_token` | (required the first time) | Token from step 1 |
    | `alsa_device` | `default` | ALSA capture device from `arecord -l` |

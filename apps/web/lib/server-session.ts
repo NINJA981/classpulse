@@ -9,7 +9,7 @@ import {
   type MeResponse,
   type Role,
   type SessionUser,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 
 const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://localhost:5000';
 

@@ -1,8 +1,8 @@
 import { GraduationCap, School, UserRound, type LucideIcon } from 'lucide-react';
-import type { Role } from '@classpulse/shared';
+import type { Role } from '@classiq/shared';
 
 /**
- * One line per role describing what that person does in ClassPulse.
+ * One line per role describing what that person does in ClassIQ.
  * Shared by the sign-in chooser (/login) and the landing page's "three views" section so the copy can't drift.
  */
 export const ROLE_CARDS: Record<Role, { icon: LucideIcon; description: string }> = {

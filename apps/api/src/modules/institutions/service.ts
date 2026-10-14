@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { Institution, InstitutionInput } from '@classpulse/shared';
+import type { Institution, InstitutionInput } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { institutions } from '../../db/schema/index.js';
 import { AppError, conflict, isUniqueViolation, notFound } from '../../lib/errors.js';

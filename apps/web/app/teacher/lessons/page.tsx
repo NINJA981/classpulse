@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { BookOpen, ChevronLeft, ChevronRight, Mic } from 'lucide-react';
-import { LESSON_STATUSES, type LessonStatus, type LessonSummary, type Paginated } from '@classpulse/shared';
+import { LESSON_STATUSES, type LessonStatus, type LessonSummary, type Paginated } from '@classiq/shared';
 import {
   Button,
   ButtonLink,

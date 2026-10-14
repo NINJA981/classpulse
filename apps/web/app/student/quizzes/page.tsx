@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ListChecks } from 'lucide-react';
-import type { StudentQuizListItem } from '@classpulse/shared';
+import type { StudentQuizListItem } from '@classiq/shared';
 import { ButtonLink, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { QuizCard } from '@/components/student/quiz/quiz-card';
 import { api } from '@/lib/api';

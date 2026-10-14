@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { ipKeyGenerator, rateLimit, type Options } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { ZodType } from 'zod';
-import { PlatformLoginInput, StaffLoginInput, StudentLoginInput, type ApiErrorBody } from '@classpulse/shared';
+import { PlatformLoginInput, StaffLoginInput, StudentLoginInput, type ApiErrorBody } from '@classiq/shared';
 import { env, isTest } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { getRedis } from '../lib/redis.js';

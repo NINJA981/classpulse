@@ -7,7 +7,7 @@
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import type { PlatformOverviewStats } from '@classpulse/shared';
+import type { PlatformOverviewStats } from '@classiq/shared';
 import { Card, CardBody, CardHeader, EmptyState, ErrorState, Skeleton, StatCard } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatInt, formatUsd, statsKeys } from './stats-common';

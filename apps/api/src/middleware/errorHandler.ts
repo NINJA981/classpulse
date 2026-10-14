@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import multer from 'multer';
 import { ZodError } from 'zod';
-import type { ApiErrorBody } from '@classpulse/shared';
+import type { ApiErrorBody } from '@classiq/shared';
 import { AppError } from '../lib/errors.js';
 
 export const notFoundHandler: RequestHandler = (req, res) => {

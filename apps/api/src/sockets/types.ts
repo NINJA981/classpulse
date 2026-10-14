@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { ClientToServerEvents, ServerToClientEvents, SessionUser } from '@classpulse/shared';
+import type { ClientToServerEvents, ServerToClientEvents, SessionUser } from '@classiq/shared';
 
 export interface LiveMembership {
   sessionId: string;

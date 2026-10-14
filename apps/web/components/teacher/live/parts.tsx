@@ -1,7 +1,7 @@
 'use client';
 import clsx from 'clsx';
 import { Crown, Timer, WifiOff } from 'lucide-react';
-import type { LeaderboardEntry } from '@classpulse/shared';
+import type { LeaderboardEntry } from '@classiq/shared';
 import { useNow } from '@/components/teacher/hooks';
 import { optionLetter } from '@/components/teacher/status';
 import { secondsLeft, type Connection } from './use-live-host';

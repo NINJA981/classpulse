@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
-import type { QuizRequest, ResourceDetail } from '@classpulse/shared';
+import type { QuizRequest, ResourceDetail } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { lessons, platformAdmins } from '../src/db/schema/index.js';

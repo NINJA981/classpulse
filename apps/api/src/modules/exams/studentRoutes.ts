@@ -8,7 +8,7 @@ import {
   IdParams,
   SaveExamAnswerInput,
   StartExamInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { pinLimiter } from '../../middleware/rateLimit.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

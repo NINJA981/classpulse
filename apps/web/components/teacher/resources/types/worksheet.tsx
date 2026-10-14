@@ -1,6 +1,6 @@
 'use client';
 import { Trash2 } from 'lucide-react';
-import { WorksheetContent, WorksheetOptions, type ResourceOptions } from '@classpulse/shared';
+import { WorksheetContent, WorksheetOptions, type ResourceOptions } from '@classiq/shared';
 import { Badge, Button, Checkbox, Field, Input, Select } from '@/components/ui';
 import { EditableList, EditableNumber, EditableText } from '../editable';
 import type { OptionsFieldsProps, ViewerProps } from './index';

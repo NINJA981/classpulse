@@ -2,7 +2,7 @@
 import { eq } from 'drizzle-orm';
 import webpush from 'web-push';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NotificationDto, PushPayload } from '@classpulse/shared';
+import type { NotificationDto, PushPayload } from '@classiq/shared';
 import { env } from '../src/config/env.js';
 import { db } from '../src/db/client.js';
 import { notifications, pushSubscriptions, users } from '../src/db/schema/index.js';

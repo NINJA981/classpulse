@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, EyeOff, Radio, Send, Trash2 } from 'lucide-react';
-import type { LessonDetail } from '@classpulse/shared';
+import type { LessonDetail } from '@classiq/shared';
 import { Button, ButtonLink, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/teacher/common';

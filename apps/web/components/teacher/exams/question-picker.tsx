@@ -4,7 +4,7 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
-import type { Difficulty, ExamDetail, ExamPoolCandidate } from '@classpulse/shared';
+import type { Difficulty, ExamDetail, ExamPoolCandidate } from '@classiq/shared';
 import {
   Badge,
   Button,

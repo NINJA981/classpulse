@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
-import type { Simulation } from '@classpulse/shared';
+import type { Simulation } from '@classiq/shared';
 import { Button } from '@/components/ui';
 import { SubjectIcon } from './subject-icon';
 

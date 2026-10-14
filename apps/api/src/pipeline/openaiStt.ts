@@ -5,7 +5,7 @@
  * There is NO fallback transcript: any failure throws a PipelineError.
  */
 import { readFile, rm } from 'node:fs/promises';
-import type { Language, TranscriptSegment } from '@classpulse/shared';
+import type { Language, TranscriptSegment } from '@classiq/shared';
 import { env } from '../config/env.js';
 import { trackAiCall } from '../lib/aiUsage.js';
 import { sliceWav } from '../lib/ffmpeg.js';

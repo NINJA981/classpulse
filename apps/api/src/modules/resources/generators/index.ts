@@ -1,4 +1,4 @@
-import type { ResourceType } from '@classpulse/shared';
+import type { ResourceType } from '@classiq/shared';
 import type { ResourceGenerator } from './types.js';
 import { generate as lessonPlan } from './lessonPlan.js';
 import { generate as worksheet } from './worksheet.js';

@@ -1,4 +1,4 @@
-# Garage (S3-compatible object storage) for ClassPulse: one node, baked into infra/garage/Dockerfile.
+# Garage (S3-compatible object storage) for ClassIQ: one node, baked into infra/garage/Dockerfile.
 # Reference: https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/ (v2.x)
 #
 # No secrets in this file. Garage reads them from the environment:

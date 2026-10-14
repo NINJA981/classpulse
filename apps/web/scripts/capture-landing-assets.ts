@@ -314,15 +314,15 @@ async function captureVideo(browser: Browser, only?: string) {
     await page.evaluate(() => document.fonts.ready);
     await hideDevChrome(page);
     const { frames, fps } = await page.evaluate(() => {
-      const clip = (window as Window & { __classpulseClip?: { frames: number; fps: number } }).__classpulseClip;
+      const clip = (window as Window & { __classiqClip?: { frames: number; fps: number } }).__classiqClip;
       if (!clip) throw new Error('clip capture API missing (is ?clip= handled by the scene?)');
       return { frames: clip.frames, fps: clip.fps };
     });
-    const dir = await mkdtemp(join(tmpdir(), `classpulse-hero-${shape}-`));
+    const dir = await mkdtemp(join(tmpdir(), `classiq-hero-${shape}-`));
     try {
       for (let i = 0; i < frames; i++) {
         await page.evaluate(
-          (n) => (window as unknown as Window & { __classpulseClip: { step: (f: number) => Promise<void> } }).__classpulseClip.step(n),
+          (n) => (window as unknown as Window & { __classiqClip: { step: (f: number) => Promise<void> } }).__classiqClip.step(n),
           i,
         );
         await writeFile(join(dir, `f${String(i).padStart(4, '0')}.png`), await page.screenshot({ timeout: 120_000 }));
