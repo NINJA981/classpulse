@@ -13,6 +13,7 @@ export default tseslint.config(
       'legacy/**',
       'SIH-*/**',
       'classroom-agent/**',
+      'workspace/**',
       'scripts/**',
       '.agents/**',
       'apps/api/src/db/migrations/**',

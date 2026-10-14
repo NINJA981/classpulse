@@ -19,6 +19,7 @@ nginx
 .agents
 docs
 apps/classroom-agent
+workspace
 # Credentials, database dumps, backups and recordings never go into a build context (or an image layer).
 **/*.key
 **/*.pem
