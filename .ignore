@@ -1,0 +1,24 @@
+# Search-only ignores (ripgrep, so Claude Code's Grep/Glob and VS Code search). Git is unaffected.
+# These are generated or huge and only waste tokens in a search. Open them by explicit path when a task needs one.
+/package-lock.json
+/apps/api/src/db/migrations/meta/
+/docs/agents/database-schema.html
+/.agents/
+
+# docs/humans build output (HTML with inlined images, PDFs, PPTX, QA renders, screenshots)
+/docs/humans/web/
+/docs/humans/pdf/
+/docs/humans/pitch/
+/docs/humans/slides/
+/docs/humans/qa/
+/docs/humans/fonts/
+/docs/humans/_build/screens/
+/docs/humans/_cache/
+/docs/humans/_sample/
+
+# Landing media and local test leftovers
+/apps/web/public/landing/
+/apps/web/playwright-report/
+/apps/web/test-results/
+/.e2e-fixtures/
+/.test-storage/
