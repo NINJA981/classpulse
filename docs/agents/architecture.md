@@ -43,7 +43,7 @@ flowchart LR
   API --> Coolify
 ```
 
-Two public hosts reach the same router. The school host (e.g. `classpulse.benxsolutions.in`) serves `/admin`, `/teacher`, `/student`, `/api` and `/socket.io`, and returns 404 for `/platform`. The ops host (e.g. `ops.benxsolutions.in`) serves only `/platform`, `/api/platform/*` and `/api/status` (`infra/Caddyfile*`, `PLATFORM_HOST`).
+Two public hosts reach the same router. The school host (e.g. `classiq.benxsolutions.in`) serves `/admin`, `/teacher`, `/student`, `/api` and `/socket.io`, and returns 404 for `/platform`. The ops host (e.g. `ops.benxsolutions.in`) serves only `/platform`, `/api/platform/*` and `/api/status` (`infra/Caddyfile*`, `PLATFORM_HOST`).
 
 ## Components
 

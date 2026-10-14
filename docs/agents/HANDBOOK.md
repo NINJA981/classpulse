@@ -65,9 +65,9 @@ After a lecture, teachers rarely have time to write good questions that check wh
 One installation can serve **many schools** ("multi-tenant"). Each school's data is completely separate. Super admins sit above all schools and are not part of any school.
 
 ### 1.4 Current status (October 2026)
-- **Name:** the product was called **ClassPulse** until 14 Oct 2026, when it was renamed **ClassIQ**. Every page, email, document and package (`@classiq/*`) uses the new name. Some technical names keep `classpulse` on purpose, because changing them would break the running system or data people already have: the address `classpulse.benxsolutions.in`, the GitHub repo `NINJA981/classpulse`, the database user and names (`classpulse`, `classpulse_test`), the Garage bucket `classpulse`, the server paths (`/etc/classpulse`, `/var/lib/classpulse`, `/opt/classpulse`, `/var/backups/classpulse`), the systemd units (`classpulse-agent`, `classpulse-backup`), the backup file names and key, the encryption salt in `apps/api/src/lib/keys.ts`, the export format ids (`classpulse.school-export`, `classpulse.student-export`) and the browser storage keys for quiz attempts and exam tokens. Rename any of these only together with a migration.
+- **Name:** the product was called **ClassPulse** until 14 Oct 2026, when it was renamed **ClassIQ**. Every page, email, document and package (`@classiq/*`) uses the new name. Some technical names keep `classpulse` on purpose, because changing them would break the running system or data people already have: the GitHub repo `NINJA981/classpulse`, the database user and names (`classpulse`, `classpulse_test`), the Garage bucket `classpulse`, the server paths (`/etc/classpulse`, `/var/lib/classpulse`, `/opt/classpulse`, `/var/backups/classpulse`), the systemd units (`classpulse-agent`, `classpulse-backup`), the backup file names and key, the encryption salt in `apps/api/src/lib/keys.ts`, the export format ids (`classpulse.school-export`, `classpulse.student-export`) and the browser storage keys for quiz attempts and exam tokens. Rename any of these only together with a migration.
 - **Stage:** ready for a **pilot**, meaning a first real-world trial with about 100 users at one school.
-- **Live at:** `https://classpulse.benxsolutions.in` (the school site for admins, teachers and students).
+- **Live at:** `https://classiq.benxsolutions.in` (the school site for admins, teachers and students). The first address, `https://classpulse.benxsolutions.in`, still works: its pages redirect to the new address, and its `/api` keeps answering so classroom devices set up with the old `server_url` keep uploading (section 14.3).
 - **Platform console:** `https://ops.benxsolutions.in` (it opens `/platform`).
 - **Coolify dashboard:** `https://coolify.benxsolutions.in`.
 - The old temporary `…sslip.io` addresses are retired and no longer work (section 14.3).
@@ -739,7 +739,7 @@ The server-side states are: `lobby → question_open → question_closed → …
 3. In ClassIQ, go to **Admin → Classroom devices → Add classroom device**: choose the room and a name. You get an **enrollment token**, which is single-use and **expires in 24 hours**.
 4. On the Pi: install the agent (`sudo ./install.sh`), then edit `/etc/classpulse/agent.json`:
    ```json
-   { "server_url": "https://classpulse.benxsolutions.in", "device_id": "rpi5-room-101",
+   { "server_url": "https://classiq.benxsolutions.in", "device_id": "rpi5-room-101",
      "enrollment_token": "<token>", "alsa_device": "plughw:2,0" }
    ```
 5. `sudo systemctl enable --now classpulse-agent`. The device registers and shows **Online** in the admin console.
@@ -980,12 +980,13 @@ All three addresses are **live**:
 
 | Address | What it is |
 |---|---|
-| `https://classpulse.benxsolutions.in` | The school site (admins, teachers, students). `/platform` answers "Not found" here |
+| `https://classiq.benxsolutions.in` | The school site (admins, teachers, students). `/platform` answers "Not found" here |
 | `https://ops.benxsolutions.in` | The platform console (super admins only). `/` goes straight to `/platform`; school pages answer "Not found" here |
 | `https://coolify.benxsolutions.in` | The Coolify dashboard |
 
-- **DNS:** at **GoDaddy** (the DNS provider for `benxsolutions.in`) there are three **A records**, `classpulse`, `ops` and `coolify`, each pointing to the server, `129.159.227.74`.
-- **Coolify settings that go with them:** the **router** service has both app domains (`https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`); `PUBLIC_ORIGIN` is `https://classpulse.benxsolutions.in`, `PLATFORM_ORIGIN` is `https://ops.benxsolutions.in` and `PLATFORM_HOST` is `ops.benxsolutions.in`. If a domain ever changes, change all of these together and redeploy.
+- **DNS:** at **GoDaddy** (the DNS provider for `benxsolutions.in`) there are four **A records**, `classiq`, `classpulse` (the old address), `ops` and `coolify`, each pointing to the server, `129.159.227.74`.
+- **Coolify settings that go with them:** the **router** service has all three app domains (`https://classiq.benxsolutions.in,https://classpulse.benxsolutions.in,https://ops.benxsolutions.in`); `PUBLIC_ORIGIN` is `https://classiq.benxsolutions.in`, `LEGACY_HOST` is `classpulse.benxsolutions.in`, `PLATFORM_ORIGIN` is `https://ops.benxsolutions.in` and `PLATFORM_HOST` is `ops.benxsolutions.in`. If a domain ever changes, change all of these together and redeploy.
+- **The old school address** `classpulse.benxsolutions.in` (until 15 Oct 2026) stays attached to the router as `LEGACY_HOST`. Its pages answer with a permanent redirect to the same path on `PUBLIC_ORIGIN`; `/api` and `/socket.io` are still served there so devices whose `server_url` is the old address keep working. Browsers sign in again on the new address (sessions belong to one address). Once every device's `server_url` is switched, the old domain can be removed from the router and `LEGACY_HOST` unset.
 - **The old addresses are retired:** the temporary `classpulse.129.159.227.74.sslip.io` and `ops.129.159.227.74.sslip.io` addresses (**sslip.io** is a free service that turns an IP address into a hostname) now answer with an error (503). Update any old bookmarks or printed links.
 - **Why the console has its own address:** on the school address, `/platform` simply answers "Not found", so nobody browsing a school can even find the console. On the console address, nothing except the console is served.
 - **Certificates:** free Let's Encrypt certificates, issued and renewed automatically by Traefik for all three addresses. It needs port 80 open; that's why opening port 80 in the OCI Security List was required.
@@ -1013,7 +1014,7 @@ The services, all built from this repository (`infra/docker-compose.coolify.yml`
 
 | Variable | Purpose |
 |---|---|
-| `PUBLIC_ORIGIN` | The site's public address (used for security checks): `https://classpulse.benxsolutions.in` |
+| `PUBLIC_ORIGIN` | The site's public address (used for security checks): `https://classiq.benxsolutions.in` |
 | `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET` | Randomly generated secrets |
 | `SARVAM_API_KEY`, `OPENAI_API_KEY` | AI provider keys |
 | `AUDIO_RETENTION_DAYS` | 30 |
@@ -1038,7 +1039,7 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 1. A developer commits code and pushes to `main` on GitHub. From this computer that uses the **write deploy key**, because the GitHub CLI login lacks the "workflow" permission.
 2. A deploy is started **by hand**, in one of three ways: **Coolify → classpulse → Deploy/Redeploy**, the console's **Deployments → Redeploy**, or the Coolify API (`POST /api/v1/deploy`, through `https://coolify.benxsolutions.in/api/v1` from the owner's computer). **Pushing to GitHub does not deploy anything** (no webhook is set up).
 3. Coolify clones the repo, builds the images (about 1.5–3 minutes once cached; the first build took about 3 minutes), and starts the new containers. The API applies any new migrations on start.
-4. Check: `https://classpulse.benxsolutions.in/api/health/ready` should return `{"status":"ok"}`.
+4. Check: `https://classiq.benxsolutions.in/api/health/ready` should return `{"status":"ok"}`.
 
 **Expect a short outage on every deploy.** Coolify replaces **all** the containers each time, so the site answers with an error (503) for about **30–60 seconds** while they restart. Deploy **outside class hours**, never during a live quiz or an exam.
 
@@ -1144,7 +1145,7 @@ The full list of variables the API understands (with defaults) is in `apps/api/s
 The platform console is where you, as the owner, run the whole service: add schools, switch features off, pause a school, and watch health, logs and costs. Section 6.5 lists every page; this section walks through the common jobs.
 
 - **Address:** `https://ops.benxsolutions.in`. It opens the sign-in page, headed **"Super admin sign in"**, at `/platform/login`.
-- **It is not on the school address.** `https://classpulse.benxsolutions.in/platform` answers "Not found" on purpose, and the console address doesn't serve school pages.
+- **It is not on the school address.** `https://classiq.benxsolutions.in/platform` answers "Not found" on purpose, and the console address doesn't serve school pages.
 - **Who can use it:** only super admin accounts. School admins, teachers and students cannot sign in here. The owner's account is `saicharan312008@gmail.com`.
 - **Look:** the console uses the same light design as the admin and teacher panels.
 
@@ -1196,7 +1197,7 @@ On your own computer (development) the command is `npm run create-superadmin -- 
    - optionally a contact name, email and phone, and private notes.
 3. Click **Create school**. The school is created with the default AI models from Settings and its first admin account.
 4. A box shows the admin's **one-time password, once**. Copy it and send it to the admin securely. If email is set up, the admin also receives a **set-password link** by email (valid 72 hours), so they can choose their own password without the one-time one.
-5. Tell the admin to sign in at `https://classpulse.benxsolutions.in/admin/login`. From there they add teachers, students and classes themselves (section 6.2).
+5. Tell the admin to sign in at `https://classiq.benxsolutions.in/admin/login`. From there they add teachers, students and classes themselves (section 6.2).
 
 **More admins later:** open the school → **Admins** → **Add admin**. The same tab lets you **reset** an admin's password, **resend** their invitation, or **disable** and re-enable them.
 
@@ -1347,6 +1348,7 @@ The browser test is run manually, since it needs real AI keys.
 | 11 Oct 2026 | **Platform and teaching release** (commit `ceb780c`): the super admin **platform console** on its own address (authenticator sign-in, schools and admins, suspension, feature switches and limits, maintenance and banner, health, logs, audit, usage and AI cost, deployments); **separate sign-in pages** for admins, teachers and students; **teacher AI tools** (courses and materials, lesson plans, worksheets, question papers, presentations, voice prompts, Word/PowerPoint export, sharing, simulations, class insights, Bloom and competency tags); **secure exams**; **better assignments** (files, rubrics, AI-suggested grading, reminders, late policy); **emailed invitations and password resets**; CSV templates and teacher import; AI usage recording and a monthly AI audio limit per school; the **installable app**. |
 | 12 Oct 2026 | Follow-ups since the 11 Oct release, all live and verified on 12 Oct. **Live on the real domains:** `classpulse.benxsolutions.in` (schools), `ops.benxsolutions.in` (console) and `coolify.benxsolutions.in` (Coolify), with Let's Encrypt certificates; the sslip.io addresses retired. The owner's super admin account created. **Email switched on** (GoDaddy mailbox `admin@benxsolutions.in`). The console's **Deployments** page connected to Coolify with a least-privilege token over the private network. Console sign-in and the whole console moved to the same light design as the school panels ("Super admin sign in"). The "Email invitations" switch is now enforced. Backup status fixed in the console. **Student first-login guided tour.** Coolify registration off and SSH key-only. A local speech-to-text benchmark (section 8.10). |
 | 14 Oct 2026 | **Renamed ClassPulse → ClassIQ** across the site (all three languages), emails, PWA name, documents and package names. Technical names that live on servers or in saved data keep `classpulse` (section 1.4). |
+| 15 Oct 2026 | **School address moved to `classiq.benxsolutions.in`.** The old `classpulse.benxsolutions.in` redirects its pages there and keeps serving `/api` for classroom devices (section 14.3). The console stays at `ops.benxsolutions.in`. |
 
 **Key decisions and why:**
 - **Drizzle (not Prisma):** lighter and closer to SQL.
@@ -1562,7 +1564,7 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 | **Cookie (httpOnly)** | A small value the browser stores and sends back; httpOnly means page scripts can't read it |
 | **CRUD** | Create, Read, Update, Delete |
 | **Deploy key** | An SSH key that grants access to one GitHub repository only |
-| **DNS / A record** | The internet's phone book; an A record maps a name (classpulse.benxsolutions.in) to an IP address |
+| **DNS / A record** | The internet's phone book; an A record maps a name (classiq.benxsolutions.in) to an IP address |
 | **Drizzle ORM** | A library for talking to the database from TypeScript safely |
 | **E2E test** | End-to-end test: a robot browser clicks through the real app like a user |
 | **Enrollment token** | A one-time code used to register a Raspberry Pi |
@@ -1619,7 +1621,7 @@ Whoever has the SSH key file (`ubuntu` user) or the Coolify admin login. The pla
 ## 22. Quick reference card
 | Thing | Value |
 |---|---|
-| Live site | https://classpulse.benxsolutions.in |
+| Live site | https://classiq.benxsolutions.in |
 | Sign-in pages | `/admin/login`, `/teacher/login`, `/student/login` (`/login` is a chooser) |
 | Platform console | https://ops.benxsolutions.in ("Super admin sign in"); password + authenticator code; 5 attempts per 15 minutes |
 | Owner's super admin | `saicharan312008@gmail.com` |

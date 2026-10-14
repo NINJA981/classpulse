@@ -45,12 +45,13 @@ This is the single source of truth for the classroom device. It replaces older n
    Set the following in `/etc/classpulse/agent.json`:
    ```json
    {
-     "server_url": "https://classpulse.benxsolutions.in",
+     "server_url": "https://classiq.benxsolutions.in",
      "device_id": "rpi5-room-101",
      "enrollment_token": "<token from step 3>",
      "alsa_device": "plughw:2,0"
    }
    ```
+   Devices set up before 15 Oct 2026 use `https://classpulse.benxsolutions.in`. It still works (the old address keeps serving `/api`), but switch them to the new address when you next visit: edit `server_url`, then `sudo systemctl restart classpulse-agent`.
    If the campus network inspects TLS with its own certificate authority, also set `"ca_file": "/etc/classpulse/campus-ca.pem"`. TLS verification is never disabled.
 5. `sudo systemctl enable --now classpulse-agent && journalctl -u classpulse-agent -f`. The device registers and then shows as **online** in the admin console. The enrollment token is consumed, and the device key is stored in `/var/lib/classpulse/credentials.json` (mode 0600).
 

@@ -26,4 +26,4 @@ export const DEMO_MAILTO = demoMailto({
 /** Every "Book a demo" button on /about jumps to the demo request form (in the finale, `id="book"`). */
 export const DEMO_HREF = '#book';
 
-export const SITE_URL = 'https://classpulse.benxsolutions.in';
+export const SITE_URL = 'https://classiq.benxsolutions.in';
