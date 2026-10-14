@@ -66,3 +66,6 @@ id_ed25519*
 *.3gp
 *.mov
 *.mkv
+
+# Owner-only ClassIQ workspace on the dev machine (brand, legal, ops, research, marketing video)
+/workspace/
