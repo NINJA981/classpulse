@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays } from 'lucide-react';
-import type { TimetableSlot } from '@classpulse/shared';
+import type { TimetableSlot } from '@classiq/shared';
 import { ButtonLink, Card, EmptyState, ErrorState, Field, LoadingBlock, PageHeader, Select } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, useRooms, useSections, useTeachers } from '@/components/admin/queries';

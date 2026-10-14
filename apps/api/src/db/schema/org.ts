@@ -20,7 +20,7 @@ import {
   type InstitutionFeatures,
   type InstitutionLimits,
   type NotificationPrefs,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { dayOfWeek, emailStatus, institutionStatus, passwordTokenPurpose, recordStatus, userRole } from './enums.js';
 
 const timestamps = {

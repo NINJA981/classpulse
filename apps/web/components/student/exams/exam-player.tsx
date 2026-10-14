@@ -17,7 +17,7 @@ import {
   type ExamEventResponse,
   type ExamEventType,
   type StudentExamPaper,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Card, CardBody, InlineError } from '@/components/ui';
 import { useCountdown } from '@/components/student/live/countdown';
 import { ApiError, errorMessage } from '@/lib/api';

@@ -8,8 +8,8 @@ import type {
   ParticipantInfo,
   PublicQuestion,
   QuestionClosedPayload,
-} from '@classpulse/shared';
-import { connectSocket, emitWithAck, type ClassPulseSocket } from '@/lib/socket';
+} from '@classiq/shared';
+import { connectSocket, emitWithAck, type ClassIQSocket } from '@/lib/socket';
 
 /** The host sees the answer key; after a reconnect mid-question the snapshot only carries the public projection. */
 export type HostViewQuestion = PublicQuestion & Partial<Pick<HostQuestion, 'correctIndex' | 'explanation'>>;
@@ -108,7 +108,7 @@ function reducer(state: LiveHostState, action: Action): LiveHostState {
  */
 export function useLiveHost(sessionId: string | null) {
   const [state, dispatch] = useReducer(reducer, initial);
-  const socketRef = useRef<ClassPulseSocket | null>(null);
+  const socketRef = useRef<ClassIQSocket | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;

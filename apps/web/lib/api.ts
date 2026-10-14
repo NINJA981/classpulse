@@ -2,7 +2,7 @@
  * The single browser API client. Always same-origin `/api` with the httpOnly
  * session cookie — no tokens in JS, no per-app base URLs.
  */
-import { ROLE_LOGIN, ROLES, type ApiErrorBody, type ErrorCode } from '@classpulse/shared';
+import { ROLE_LOGIN, ROLES, type ApiErrorBody, type ErrorCode } from '@classiq/shared';
 
 export class ApiError extends Error {
   constructor(

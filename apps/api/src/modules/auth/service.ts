@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { ChangePasswordInput, ForgotPasswordInput, StaffLoginInput, StudentLoginInput } from '@classpulse/shared';
+import type { ChangePasswordInput, ForgotPasswordInput, StaffLoginInput, StudentLoginInput } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { institutions, users } from '../../db/schema/index.js';
 import { hashPassword, verifyPassword } from '../../lib/crypto.js';

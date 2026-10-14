@@ -1,4 +1,4 @@
-# ClassPulse production stack for a single VPS.
+# ClassIQ production stack for a single VPS.
 #   cp infra/.env.example infra/.env   # fill in every value
 #   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build
 # Only Caddy publishes ports (80/443). Everything else is on the private network.
@@ -104,7 +104,7 @@ services:
     logging: *logging
 
   migrate:
-    image: classpulse-api:${IMAGE_TAG:-latest}
+    image: classiq-api:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
@@ -120,7 +120,7 @@ services:
     logging: *logging
 
   api:
-    image: classpulse-api:${IMAGE_TAG:-latest}
+    image: classiq-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment: *api-env
     volumes:
@@ -144,7 +144,7 @@ services:
     logging: *logging
 
   worker:
-    image: classpulse-api:${IMAGE_TAG:-latest}
+    image: classiq-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     command: ['node', 'dist/worker.js']
     environment: *api-env
@@ -173,7 +173,7 @@ services:
   # can reach only the S3 API (:3900); the admin API and RPC listen on the container's loopback.
   # GARAGE_* secrets go to this service and storage-init only, never to api/worker/web.
   storage:
-    image: classpulse-storage:${IMAGE_TAG:-latest}
+    image: classiq-storage:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: infra/garage/Dockerfile
@@ -205,7 +205,7 @@ services:
   # read/write grant (infra/garage/init.sh). api and worker start after it exits 0. Garage's admin API and RPC
   # listen on its loopback only, so this service shares Garage's network namespace to reach the admin API.
   storage-init:
-    image: classpulse-storage-init:${IMAGE_TAG:-latest}
+    image: classiq-storage-init:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: infra/garage/init.Dockerfile
@@ -234,7 +234,7 @@ services:
     logging: *logging
 
   web:
-    image: classpulse-web:${IMAGE_TAG:-latest}
+    image: classiq-web:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: apps/web/Dockerfile

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileUp, GraduationCap, KeyRound, Mail, Pencil, Plus, Trash2 } from 'lucide-react';
-import type { CreatedWithPassword, Teacher } from '@classpulse/shared';
+import type { CreatedWithPassword, Teacher } from '@classiq/shared';
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Table, TBody, TD, TH, THead, TR, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, useTeachers } from '@/components/admin/queries';

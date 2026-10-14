@@ -1,5 +1,5 @@
 import { and, count, desc, eq, inArray, or } from 'drizzle-orm';
-import { DAYS, type Day, type Section, type TeacherDashboard, type TimetableSlot } from '@classpulse/shared';
+import { DAYS, type Day, type Section, type TeacherDashboard, type TimetableSlot } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { institutions, lessons, sections, sectionTeachers, timetableSlots } from '../../db/schema/index.js';
 import { findSections, sectionStudentCountSql, sectionsTaughtBy } from '../sections/repo.js';

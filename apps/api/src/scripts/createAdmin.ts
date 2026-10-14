@@ -10,7 +10,7 @@
 import { parseArgs } from 'node:util';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { InstitutionInput } from '@classpulse/shared';
+import { InstitutionInput } from '@classiq/shared';
 import { closeDb, db } from '../db/client.js';
 import { institutions, users } from '../db/schema/index.js';
 import { generateInitialPassword, hashPassword } from '../lib/crypto.js';

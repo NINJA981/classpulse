@@ -5,7 +5,7 @@
 import { sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { Express } from 'express';
-import { SESSION_COOKIE, type Role } from '@classpulse/shared';
+import { SESSION_COOKIE, type Role } from '@classiq/shared';
 import { createApp } from '../src/app.js';
 import { db } from '../src/db/client.js';
 import { enrollments, institutions, rooms, sections, sectionTeachers, users } from '../src/db/schema/index.js';

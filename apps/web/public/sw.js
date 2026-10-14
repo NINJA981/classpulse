@@ -1,5 +1,5 @@
 /*
- * ClassPulse service worker — kept deliberately small:
+ * ClassIQ service worker — kept deliberately small:
  *  - page navigations: network first; when the network fails, the /offline page;
  *  - static assets (/_next/static, /icons, fonts): cache first (they are content-hashed or versioned);
  *  - /api/* and /socket.io/* are never cached or intercepted (live data and sessions).
@@ -85,7 +85,7 @@ self.addEventListener('push', (event) => {
   } catch {
     data = null;
   }
-  const title = data && typeof data.title === 'string' && data.title ? data.title : 'ClassPulse';
+  const title = data && typeof data.title === 'string' && data.title ? data.title : 'ClassIQ';
   const options = {
     body: data && typeof data.body === 'string' ? data.body : undefined,
     icon: ICON,

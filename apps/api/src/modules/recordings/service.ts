@@ -3,7 +3,7 @@
  * helpers shared with the devices module and the device sweep.
  */
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { RecordingSession, StartRecordingInput } from '@classpulse/shared';
+import type { RecordingSession, StartRecordingInput } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import {
   deviceCommands,

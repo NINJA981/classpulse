@@ -11,7 +11,7 @@ import {
   UpdateSchoolFeaturesInput,
   UpdateSchoolInput,
   UpdateSchoolLimitsInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticatePlatform } from '../../middleware/platformAuth.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';

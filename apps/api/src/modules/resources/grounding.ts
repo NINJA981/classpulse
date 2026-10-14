@@ -5,7 +5,7 @@
  * (lessons and materials must still be theirs), so a stale id can never leak another teacher's content.
  */
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
-import { DEFAULT_MODEL_SETTINGS, type Language } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS, type Language } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { courses, lessons, modelSettings, teacherMaterials, units, type teachingResources } from '../../db/schema/index.js';
 import type { GenerationContext } from './generators/types.js';

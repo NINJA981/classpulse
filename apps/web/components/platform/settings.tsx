@@ -13,7 +13,7 @@ import {
   type PlatformSettings,
   type RecoveryCodesResponse,
   type SttProvider,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import {
   Button,
   Card,
@@ -63,7 +63,7 @@ function NoticesCard({ settings }: { settings: PlatformSettings }) {
   const preview = {
     banner: banner.enabled && banner.message.trim() ? { message: banner.message, level: banner.level } : null,
     maintenance: maintenance.enabled
-      ? { message: maintenance.message.trim() || 'ClassPulse is undergoing maintenance.', blockLogins: maintenance.blockLogins }
+      ? { message: maintenance.message.trim() || 'ClassIQ is undergoing maintenance.', blockLogins: maintenance.blockLogins }
       : null,
   };
   const submit = (e: FormEvent) => {

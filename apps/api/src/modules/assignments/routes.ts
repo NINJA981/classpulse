@@ -7,7 +7,7 @@ import {
   IdParams,
   ListAssignmentsQuery,
   UpdateAssignmentInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { requireFeature } from '../../middleware/requireFeature.js';

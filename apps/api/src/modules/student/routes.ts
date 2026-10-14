@@ -9,7 +9,7 @@ import {
   SubmitAssignmentInput,
   SubmitQuizAttemptInput,
   UpdateStudentProfileInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { pinLimiter } from '../../middleware/rateLimit.js';
 import { requireFeature } from '../../middleware/requireFeature.js';

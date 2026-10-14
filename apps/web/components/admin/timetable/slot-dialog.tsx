@@ -1,6 +1,6 @@
 'use client';
 import { useState, type FormEvent } from 'react';
-import type { Day, Room, Teacher } from '@classpulse/shared';
+import type { Day, Room, Teacher } from '@classiq/shared';
 import { Button, Dialog, Field, Input, Select } from '@/components/ui';
 import { DAY_LABELS, type DraftSlot } from './types';
 

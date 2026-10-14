@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ListChecks, Sparkles } from 'lucide-react';
-import type { StudentQuiz } from '@classpulse/shared';
+import type { StudentQuiz } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, InlineError } from '@/components/ui';
 import { LanguageToggle, Note } from '../common';
 import { OptionButton, OptionGroup } from './option-button';

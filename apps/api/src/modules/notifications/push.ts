@@ -10,7 +10,7 @@
  */
 import webpush from 'web-push';
 import { eq, sql } from 'drizzle-orm';
-import { isAllowedPushEndpoint, type NotificationDto, type PushPayload } from '@classpulse/shared';
+import { isAllowedPushEndpoint, type NotificationDto, type PushPayload } from '@classiq/shared';
 import { env, pushEnabled } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { pushSubscriptions } from '../../db/schema/index.js';

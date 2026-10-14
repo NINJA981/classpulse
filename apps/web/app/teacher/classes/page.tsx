@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Check, Copy, DoorOpen, Users } from 'lucide-react';
-import type { Section } from '@classpulse/shared';
+import type { Section } from '@classiq/shared';
 import {
   Badge,
   Button,

@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@classpulse/shared';
+import type { ErrorCode } from '@classiq/shared';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   BAD_REQUEST: 400,

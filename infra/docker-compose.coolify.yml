@@ -1,4 +1,4 @@
-# ClassPulse on Coolify (Docker Compose build pack). See docs/agents/deployment.md → "Deploying on Coolify".
+# ClassIQ on Coolify (Docker Compose build pack). See docs/agents/deployment.md → "Deploying on Coolify".
 # Coolify's Traefik terminates TLS for the domain assigned to `router`; nothing else is exposed.
 # Coolify runs compose with the repo root as the project directory, so build contexts are `.`; locally use
 #   docker compose --project-directory . -f infra/docker-compose.coolify.yml ...
@@ -43,7 +43,7 @@ x-worker-env: &worker-env
   DATABASE_URL: postgres://classpulse:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/classpulse
   REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
   JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (>=32 random chars)}
-  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN, e.g. https://classpulse.example.org}
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN, e.g. https://classiq.example.org}
   # Two proxies sit in front of the API: Coolify's Traefik (adds the client address to X-Forwarded-For)
   # and the router (Caddy, which trusts Traefik and appends Traefik's address). Express walks back exactly
   # two hops to find the client, so anything a client writes into X-Forwarded-For itself is ignored. Change
@@ -141,7 +141,7 @@ services:
     logging: *logging
 
   api:
-    image: classpulse-api:latest
+    image: classiq-api:latest
     build: *api-build
     restart: unless-stopped
     # Migrations run before the API starts (idempotent), so there is no one-shot container for Coolify to
@@ -170,7 +170,7 @@ services:
     logging: *logging
 
   worker:
-    image: classpulse-api:latest
+    image: classiq-api:latest
     build: *api-build
     restart: unless-stopped
     command: ['node', 'dist/worker.js']
@@ -198,7 +198,7 @@ services:
   # can reach only the S3 API (:3900); the admin API and RPC listen on the container's loopback.
   # GARAGE_* secrets go to this service and storage-init only, never to api/worker/web.
   storage:
-    image: classpulse-storage:latest
+    image: classiq-storage:latest
     build:
       context: .
       dockerfile: infra/garage/Dockerfile
@@ -232,7 +232,7 @@ services:
   # Garage's admin API and RPC listen on its loopback only, so no other container can reach them; this one
   # shares Garage's network namespace to get at the admin API (Coolify then adds no networks to it).
   storage-init:
-    image: classpulse-storage-init:latest
+    image: classiq-storage-init:latest
     build:
       context: .
       dockerfile: infra/garage/init.Dockerfile
@@ -268,7 +268,7 @@ services:
     logging: *logging
 
   web:
-    image: classpulse-web:latest
+    image: classiq-web:latest
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -286,7 +286,7 @@ services:
     logging: *logging
 
   router:
-    image: classpulse-router:latest
+    image: classiq-router:latest
     build:
       context: .
       dockerfile: infra/router.Dockerfile

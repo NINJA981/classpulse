@@ -7,7 +7,7 @@ import {
   type LessonProgress,
   type LessonSummary,
   type Question,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import type { assignments, lessons, questions } from '../../db/schema/index.js';
 import { iso } from '../../lib/time.js';
 

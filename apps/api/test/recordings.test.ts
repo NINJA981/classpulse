@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RecordingSession } from '@classpulse/shared';
+import type { RecordingSession } from '@classiq/shared';
 import { setInProcessRunner, type LessonJobData } from '../src/jobs/queue.js';
 import { db } from '../src/db/client.js';
 import { deviceCommands, lessons, recordingSessions } from '../src/db/schema/index.js';

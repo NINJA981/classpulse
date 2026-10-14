@@ -9,7 +9,7 @@ import {
   type LessonDetail,
   type QuizDifficulty,
   type QuizGenerationMode,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, Field, InlineError, Input, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/teacher/common';

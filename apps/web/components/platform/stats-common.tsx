@@ -1,5 +1,5 @@
 'use client';
-import { STATS_TIME_ZONE, type PlatformStatsQuery } from '@classpulse/shared';
+import { STATS_TIME_ZONE, type PlatformStatsQuery } from '@classiq/shared';
 
 /** Query keys for the usage & cost statistics. */
 export const statsKeys = {

@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Rocket } from 'lucide-react';
-import type { ExamDetail, ExamResultsVisibility, UpdateExamInput } from '@classpulse/shared';
+import type { ExamDetail, ExamResultsVisibility, UpdateExamInput } from '@classiq/shared';
 import { Button, Card, CardBody, Field, InlineError, Input, Select, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { api } from '@/lib/api';

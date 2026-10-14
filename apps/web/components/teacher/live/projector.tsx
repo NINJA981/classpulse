@@ -84,7 +84,7 @@ export function Projector({ sessionId }: { sessionId: string }) {
             <p className="font-display text-[clamp(4rem,12vw,10rem)] font-black leading-none tracking-[0.12em] tabular-nums">
               {snap.pin}
             </p>
-            <p className="text-2xl text-muted">Open ClassPulse → Live quiz, or scan the code</p>
+            <p className="text-2xl text-muted">Open ClassIQ → Live quiz, or scan the code</p>
             <p className="text-3xl font-bold tabular-nums">
               {state.participantCount} {state.participantCount === 1 ? 'student' : 'students'} joined
             </p>

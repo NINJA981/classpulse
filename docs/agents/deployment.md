@@ -247,11 +247,11 @@ Email is optional. It sends set-password invitations, password-reset links and a
 | Option | `SMTP_HOST` | `SMTP_PORT` | `SMTP_USER` / `SMTP_PASS` | `MAIL_FROM` |
 |---|---|---|---|---|
 | Gmail / Google Workspace | `smtp.gmail.com` | `465` | the sending address and an **App password** (needs 2-Step Verification) | an address that account may send as |
-| GoDaddy mailbox | `smtpout.secureserver.net` | `465` | the mailbox address and its password | `ClassPulse <mailbox@your-domain>` |
+| GoDaddy mailbox | `smtpout.secureserver.net` | `465` | the mailbox address and its password | `ClassIQ <mailbox@your-domain>` |
 
 Send from a domain whose SPF record allows the server you use. The `benxsolutions.in` SPF record allows only GoDaddy's servers. Sending as `@benxsolutions.in` through Gmail would fail SPF and land in spam, or be rejected. Use the GoDaddy mailbox for `@benxsolutions.in`, or send from a Gmail address through Gmail.
 
-**The pilot** sends from the GoDaddy mailbox `admin@benxsolutions.in` through `smtpout.secureserver.net:465` (SSL), with `MAIL_FROM` set to `ClassPulse <admin@benxsolutions.in>`. When the mailbox password changes, update `SMTP_PASS` and redeploy.
+**The pilot** sends from the GoDaddy mailbox `admin@benxsolutions.in` through `smtpout.secureserver.net:465` (SSL), with `MAIL_FROM` set to `ClassIQ <admin@benxsolutions.in>`. When the mailbox password changes, update `SMTP_PASS` and redeploy.
 
 GoDaddy mailboxes cap outgoing mail at roughly 250–300 messages a day (it depends on the plan). A large student import with emailed invitations can exceed that; failed sends stay in the `email` queue and can be retried from the console's Health page. For higher volume, use a sending service such as Amazon SES or Brevo.
 
@@ -284,7 +284,7 @@ Coolify's Traefik terminates TLS. It forwards the domains to the internal `route
 3. **Create the resource:** New resource → Private repository (GitHub App, or a read-only deploy key as the pilot uses) → this repo, branch `main` → build pack **Docker Compose**.
    - Base directory: `/`
    - Compose file: `/infra/docker-compose.coolify.yml`
-4. **Domains:** give the `router` service both domains, comma-separated: `https://classpulse.example.org,https://ops.example.org`. No other service gets a domain.
+4. **Domains:** give the `router` service both domains, comma-separated: `https://classiq.example.org,https://ops.example.org`. No other service gets a domain.
 5. **Environment variables:** enter them in the resource's **Production** section. Values under "Preview Deployments" are not used by the production containers (on the pilot, email stayed off until the SMTP values were moved). Redeploy after any change.
 
    | Variable | Value |

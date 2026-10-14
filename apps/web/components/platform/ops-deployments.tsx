@@ -2,7 +2,7 @@
 import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, RefreshCw, Rocket, RotateCw, Settings2 } from 'lucide-react';
-import type { CoolifyNotConfigured, DeployActionResult, DeployedApp, DeploymentList, DeploymentLogs, DeploymentSummary } from '@classpulse/shared';
+import type { CoolifyNotConfigured, DeployActionResult, DeployedApp, DeploymentList, DeploymentLogs, DeploymentSummary } from '@classiq/shared';
 import {
   Badge,
   Button,
@@ -177,7 +177,7 @@ export function OpsDeploymentsView() {
           <Card>
             <CardHeader
               eyebrow="Current version"
-              title={app.data.name ?? 'ClassPulse'}
+              title={app.data.name ?? 'ClassIQ'}
               actions={
                 <Button variant="ghost" size="sm" aria-label="Refresh status" icon={<RefreshCw className="size-3.5" aria-hidden />} onClick={() => void app.refetch()}>
                   Refresh
@@ -250,7 +250,7 @@ export function OpsDeploymentsView() {
           act.reset();
           setConfirming(null);
         }}
-        title="Redeploy ClassPulse?"
+        title="Redeploy ClassIQ?"
         description="Coolify builds the latest commit and replaces the running containers. Live classes may be interrupted briefly."
         word="REDEPLOY"
         actionLabel="Redeploy now"

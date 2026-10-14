@@ -1,6 +1,6 @@
 /** Admin fleet management (mounted at /api/admin/devices). Institution-scoped. */
 import { Router } from 'express';
-import { CreateEnrollmentTokenInput, IdParams } from '@classpulse/shared';
+import { CreateEnrollmentTokenInput, IdParams } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

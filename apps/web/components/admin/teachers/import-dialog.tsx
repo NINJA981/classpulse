@@ -1,5 +1,5 @@
 'use client';
-import { ImportTeachersInput, type ImportTeachersResult } from '@classpulse/shared';
+import { ImportTeachersInput, type ImportTeachersResult } from '@classiq/shared';
 import { api } from '@/lib/api';
 import { adminKeys } from '../queries';
 import { CsvImportDialog, type CsvImportConfig } from '../csv-import-dialog';
@@ -18,7 +18,7 @@ const TEACHER_IMPORT: CsvImportConfig<'name' | 'email' | 'department', Row> = {
   rowSchema: ImportTeachersInput.shape.rows.element,
   maxRows: 500,
   template: {
-    filename: 'classpulse-teachers-template.csv',
+    filename: 'classiq-teachers-template.csv',
     examples: [
       ['Neha Sharma', 'neha.sharma@example.com', 'Mathematics'],
       ['Arjun Mehta', 'arjun.mehta@example.com', 'Science'],

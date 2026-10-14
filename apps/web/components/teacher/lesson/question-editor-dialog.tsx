@@ -8,7 +8,7 @@ import {
   type Difficulty,
   type Question,
   type QuestionInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Checkbox, Dialog, Field, InlineError, Input, Select, Textarea, useToast } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { optionLetter } from '@/components/teacher/status';

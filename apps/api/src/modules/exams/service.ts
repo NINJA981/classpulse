@@ -19,7 +19,7 @@ import {
   type SessionUser,
   type SetExamQuestionsInput,
   type UpdateExamInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   enrollments,

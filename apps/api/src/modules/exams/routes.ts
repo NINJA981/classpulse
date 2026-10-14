@@ -9,7 +9,7 @@ import {
   IdParams,
   SetExamQuestionsInput,
   UpdateExamInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams, parseQuery } from '../../middleware/validate.js';

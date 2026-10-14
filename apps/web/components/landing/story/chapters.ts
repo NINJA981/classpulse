@@ -16,7 +16,7 @@ export const CHAPTERS = [
   {
     id: 'hero',
     title: 'Every lecture, turned into learning.',
-    body: 'ClassPulse listens to the lesson in Tamil, Hindi or English, mixed the way your teachers really speak. It writes a quiz from what was said and puts it on every student’s phone.',
+    body: 'ClassIQ listens to the lesson in Tamil, Hindi or English, mixed the way your teachers really speak. It writes a quiz from what was said and puts it on every student’s phone.',
   },
   {
     id: 'record',

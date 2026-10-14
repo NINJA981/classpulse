@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 import { GraduationCap } from 'lucide-react';
-import type { StudentSection } from '@classpulse/shared';
+import type { StudentSection } from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 import { formatDate, formatDateTime, formatPct } from '@/lib/format';
 

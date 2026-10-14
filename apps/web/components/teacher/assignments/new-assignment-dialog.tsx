@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Assignment, AssignmentInput, CreateAssignmentInput, LessonSummary, Paginated } from '@classpulse/shared';
+import type { Assignment, AssignmentInput, CreateAssignmentInput, LessonSummary, Paginated } from '@classiq/shared';
 import { Dialog, Field, Select, useToast } from '@/components/ui';
 import { useTeacherSections } from '@/components/teacher/common';
 import { api } from '@/lib/api';

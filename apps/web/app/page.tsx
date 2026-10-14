@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { ROLE_HOME } from '@classpulse/shared';
+import { ROLE_HOME } from '@classiq/shared';
 import { getSession } from '@/lib/server-session';
 
 export default async function Home() {

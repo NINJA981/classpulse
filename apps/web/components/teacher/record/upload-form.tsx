@@ -10,7 +10,7 @@ import {
   type Language,
   type LessonDetail,
   type Section,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, Field, InlineError, Input, Select, useToast } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { AudioFileField, useAudioUpload } from '@/components/teacher/audio-upload';

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { Download, Pause, Play, Search, Trash2 } from 'lucide-react';
-import type { AppLogLine, AppLogPage, LogLevelName } from '@classpulse/shared';
+import type { AppLogLine, AppLogPage, LogLevelName } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, Checkbox, EmptyState, ErrorState, Field, Input, LoadingBlock, PageHeader, Select } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { downloadCsv, opsKeys, useSchoolOptions } from './ops-common';

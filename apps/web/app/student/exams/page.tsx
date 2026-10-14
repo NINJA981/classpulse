@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList } from 'lucide-react';
-import type { StudentExamListItem, StudentExamState } from '@classpulse/shared';
+import type { StudentExamListItem, StudentExamState } from '@classiq/shared';
 import { Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { ExamCard } from '@/components/student/exams/exam-card';
 import { api } from '@/lib/api';

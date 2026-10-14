@@ -1,6 +1,6 @@
 /** TimetableSlot DTO queries shared by the admin timetable module and the teacher studio. */
 import { asc, eq, type SQL } from 'drizzle-orm';
-import type { TimetableSlot } from '@classpulse/shared';
+import type { TimetableSlot } from '@classiq/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { rooms, sections, timetableSlots, users } from '../../db/schema/index.js';
 

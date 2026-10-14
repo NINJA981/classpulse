@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@classpulse/shared'],
+  transpilePackages: ['@classiq/shared'],
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiTarget}/api/:path*` }];
   },

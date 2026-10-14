@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { FileText, ListChecks, NotebookPen, Presentation } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { ResourceOptions, type ResourceDetail, type ResourceStatus, type ResourceType } from '@classpulse/shared';
+import { ResourceOptions, type ResourceDetail, type ResourceStatus, type ResourceType } from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 import { api } from '@/lib/api';
 

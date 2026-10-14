@@ -8,7 +8,7 @@ import {
   type ModelSettings,
   type ModelSettingsInput,
   type UpdateModelSettingsInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { modelSettings } from '../../db/schema/index.js';

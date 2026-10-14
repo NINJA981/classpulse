@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { AlertTriangle, Check, Copy, MailCheck } from 'lucide-react';
 import clsx from 'clsx';
-import type { EmailDelivery } from '@classpulse/shared';
+import type { EmailDelivery } from '@classiq/shared';
 import { Button, Dialog, InlineError, useToast } from '@/components/ui';
 
 /** Copies `value` to the clipboard. Icon-only unless `children` is given. */

@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, ClipboardCheck, Lightbulb, Sparkles, Users } from 'lucide-react';
-import type { LessonAnalytics, RemedialPlan } from '@classpulse/shared';
+import type { LessonAnalytics, RemedialPlan } from '@classiq/shared';
 import {
   Button,
   Card,

@@ -1,6 +1,6 @@
-# ClassPulse
+# ClassIQ
 
-ClassPulse records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones. Teachers also get secure timed exams, assignments with file uploads and AI-suggested grading, and AI teaching tools (lesson plans, worksheets, question papers, presentations) grounded in their own courses and materials. A separate super admin console runs every school on the installation.
+ClassIQ records classroom lectures on a Raspberry Pi. It transcribes them in Indian languages (Sarvam AI), generates bilingual quizzes for the teacher to review (OpenAI), and runs self-paced and live quizzes on students' phones. Teachers also get secure timed exams, assignments with file uploads and AI-suggested grading, and AI teaching tools (lesson plans, worksheets, question papers, presentations) grounded in their own courses and materials. A separate super admin console runs every school on the installation.
 
 **Live:** schools sign in at https://classpulse.benxsolutions.in (`/admin/login`, `/teacher/login`, `/student/login`); the super admin console is at https://ops.benxsolutions.in.
 
@@ -24,7 +24,7 @@ npm install
 npm run dev:infra                         # Postgres 16 + Redis 7 + Garage (S3) in Docker
 cp apps/api/.env.example apps/api/.env    # add SARVAM_API_KEY / OPENAI_API_KEY for real generation
 cp apps/web/.env.example apps/web/.env.local
-npm run build -w @classpulse/shared
+npm run build -w @classiq/shared
 npm run db:migrate
 npm run db:seed                           # demo school + accounts (printed)
 npm run dev                               # api :5000, worker, web :3000

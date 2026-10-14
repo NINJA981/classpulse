@@ -1,7 +1,7 @@
 /** GET /api/insights/sections/:sectionId — Bloom-level and topic mastery per student and for the class. */
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import type { SectionInsights } from '@classpulse/shared';
+import type { SectionInsights } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import { examAnswers, examAttempts, examQuestions, exams, questions } from '../src/db/schema/index.js';
 import { anon, as, createSection, createUser, createWorld } from './helpers.js';

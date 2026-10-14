@@ -47,7 +47,7 @@ if (!env.REDIS_URL) {
 }
 
 server.listen(env.PORT, () => {
-  logger.info({ port: env.PORT, env: env.NODE_ENV }, 'ClassPulse API listening');
+  logger.info({ port: env.PORT, env: env.NODE_ENV }, 'ClassIQ API listening');
 });
 
 let shuttingDown = false;

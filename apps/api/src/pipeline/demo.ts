@@ -5,7 +5,7 @@
  * demoFallback=true, so it can never be mistaken for real lesson content.
  * Timestamps are spread over the REAL audio duration.
  */
-import type { RemedialPlan, TranscriptSegment } from '@classpulse/shared';
+import type { RemedialPlan, TranscriptSegment } from '@classiq/shared';
 import type {
   GenerateInput,
   GenerateQuestionsResult,

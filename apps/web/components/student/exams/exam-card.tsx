@@ -1,6 +1,6 @@
 'use client';
 import { CalendarClock, ListChecks, Lock, Maximize, Timer } from 'lucide-react';
-import type { StudentExamListItem, StudentExamState } from '@classpulse/shared';
+import type { StudentExamListItem, StudentExamState } from '@classiq/shared';
 import { Badge, ButtonLink, Card, type BadgeTone } from '@/components/ui';
 import { useCountdown } from '@/components/student/live/countdown';
 import { formatDateTime, formatDuration } from '@/lib/format';

@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import type { ModelSettings } from '@classpulse/shared';
+import type { ModelSettings } from '@classiq/shared';
 import { Card, ErrorState, LoadingBlock, PageHeader } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys } from '@/components/admin/queries';

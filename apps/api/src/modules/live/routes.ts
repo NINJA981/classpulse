@@ -1,7 +1,7 @@
 /** Live quiz REST (mounted at /api/live-sessions). The realtime protocol lives in sockets/liveQuiz.ts. */
 import { Router } from 'express';
 import { z } from 'zod';
-import { CreateLiveSessionInput, IdParams, LivePin } from '@classpulse/shared';
+import { CreateLiveSessionInput, IdParams, LivePin } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { pinLimiter } from '../../middleware/rateLimit.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

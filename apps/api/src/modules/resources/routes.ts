@@ -3,7 +3,7 @@
  * Generation is queued (aiLimiter); the web app polls GET /:id while the resource is queued/generating.
  */
 import { Router, type Response } from 'express';
-import { GenerateResourceInput, IdParams, ListResourcesQuery, UpdateResourceInput } from '@classpulse/shared';
+import { GenerateResourceInput, IdParams, ListResourcesQuery, UpdateResourceInput } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { aiLimiter } from '../../middleware/rateLimit.js';
 import { requireFeature } from '../../middleware/requireFeature.js';

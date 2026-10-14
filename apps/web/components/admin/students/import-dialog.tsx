@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ImportStudentsInput, type ImportStudentsResult } from '@classpulse/shared';
+import { ImportStudentsInput, type ImportStudentsResult } from '@classiq/shared';
 import { Field, Select } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, useSections } from '../queries';
@@ -20,7 +20,7 @@ const STUDENT_IMPORT: CsvImportConfig<'name' | 'rollNumber' | 'email', Row> = {
   rowSchema: ImportStudentsInput.shape.rows.element,
   maxRows: 2000,
   template: {
-    filename: 'classpulse-students-template.csv',
+    filename: 'classiq-students-template.csv',
     examples: [
       ['Asha Rao', '10B-01', 'asha.rao@example.com'],
       ['Ravi Kumar', '10B-02', ''],

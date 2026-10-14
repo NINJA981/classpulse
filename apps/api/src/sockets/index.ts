@@ -12,7 +12,7 @@
 import type { Server as HttpServer } from 'node:http';
 import { parse as parseCookie } from 'cookie';
 import { Server } from 'socket.io';
-import { SESSION_COOKIE, type Ack, type SessionUser } from '@classpulse/shared';
+import { SESSION_COOKIE, type Ack, type SessionUser } from '@classiq/shared';
 import { allowedOrigins, isProd } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { isOwnOrigin } from '../lib/origins.js';

@@ -15,7 +15,7 @@ import type {
   QuizRequest,
   SessionUser,
   UpdateLessonInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { assignments, lessons, questions, quizAttempts, sections, sectionTeachers } from '../../db/schema/index.js';
 import { badRequest, forbidden, invalidState, notFound } from '../../lib/errors.js';

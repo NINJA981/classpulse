@@ -3,7 +3,7 @@
  * Guards are per route (not router.use) so this router never intercepts the framework's other paths.
  */
 import { Router } from 'express';
-import { IdParams, PublishPaperExamInput } from '@classpulse/shared';
+import { IdParams, PublishPaperExamInput } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { requireFeature } from '../../middleware/requireFeature.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

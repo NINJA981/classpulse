@@ -9,7 +9,7 @@
  * Items are renumbered 1..n across sections.
  */
 import { z } from 'zod';
-import type { WorksheetContent } from '@classpulse/shared';
+import type { WorksheetContent } from '@classiq/shared';
 import { PipelineError } from '../../../pipeline/errors.js';
 import {
   arr,

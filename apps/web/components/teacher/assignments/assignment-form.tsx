@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { MAX_SUBMISSION_FILES, type Assignment, type AssignmentInput, type LatePolicy, type RubricItem } from '@classpulse/shared';
+import { MAX_SUBMISSION_FILES, type Assignment, type AssignmentInput, type LatePolicy, type RubricItem } from '@classiq/shared';
 import { Button, Checkbox, Field, InlineError, Input, Select, Textarea } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { fromLocalInput, toLocalInput } from '@/components/teacher/status';

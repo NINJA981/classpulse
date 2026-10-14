@@ -1,8 +1,8 @@
 {
-  "name": "@classpulse/api",
+  "name": "@classiq/api",
   "version": "1.0.0",
   "private": true,
-  "description": "ClassPulse API: Express 5 + Socket.IO + PostgreSQL (Drizzle) + BullMQ worker",
+  "description": "ClassIQ API: Express 5 + Socket.IO + PostgreSQL (Drizzle) + BullMQ worker",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",
     "@aws-sdk/lib-storage": "3.1150.0",
-    "@classpulse/shared": "*",
+    "@classiq/shared": "*",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.3.12",
     "cookie": "^1.0.2",

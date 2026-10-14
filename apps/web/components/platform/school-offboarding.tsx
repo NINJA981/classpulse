@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Download, Trash2 } from 'lucide-react';
-import type { PlatformSchoolDetail } from '@classpulse/shared';
+import type { PlatformSchoolDetail } from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { downloadFromApi } from '@/lib/download';
@@ -29,7 +29,7 @@ export function SchoolOffboarding({ school }: { school: PlatformSchoolDetail }) 
   const suspended = school.status === 'suspended';
 
   const exportData = useMutation({
-    mutationFn: () => downloadFromApi('POST', `/platform/schools/${school.id}/export`, { fallbackName: `classpulse-school-${school.code}.json` }),
+    mutationFn: () => downloadFromApi('POST', `/platform/schools/${school.id}/export`, { fallbackName: `classiq-school-${school.code}.json` }),
     onSuccess: () => toast(`Export of ${school.name} downloaded`),
   });
 
@@ -59,7 +59,7 @@ export function SchoolOffboarding({ school }: { school: PlatformSchoolDetail }) 
             <p className="mt-1">
               One JSON file with everything this school holds: people (no passwords), classes, lessons with transcripts, quizzes
               and results, exams, assignments (file list only), teaching resources and its audit trail. Give it to the school
-              when it asks for its data or leaves ClassPulse.
+              when it asks for its data or leaves ClassIQ.
             </p>
           </div>
           <Button

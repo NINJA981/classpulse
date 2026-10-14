@@ -6,7 +6,7 @@
  * Licence: PhET simulations are © University of Colorado Boulder, licensed CC-BY 4.0.
  * Attribution shown in the UI: "PhET Interactive Simulations, University of Colorado Boulder, https://phet.colorado.edu".
  */
-import type { Simulation } from '@classpulse/shared';
+import type { Simulation } from '@classiq/shared';
 
 export const PHET_ATTRIBUTION =
   'PhET Interactive Simulations, University of Colorado Boulder (CC-BY 4.0), https://phet.colorado.edu';

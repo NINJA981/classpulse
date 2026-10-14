@@ -2,7 +2,7 @@
 import { Fragment, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Download, Search } from 'lucide-react';
-import type { AuditLogEntry, AuditLogPage } from '@classpulse/shared';
+import type { AuditLogEntry, AuditLogPage } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, EmptyState, ErrorState, Field, Input, LoadingBlock, PageHeader, Select, Table, TBody, TD, TH, THead, TR } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

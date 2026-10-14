@@ -2,7 +2,7 @@
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays } from 'lucide-react';
-import { DAYS, type Day, type TimetableSlot } from '@classpulse/shared';
+import { DAYS, type Day, type TimetableSlot } from '@classiq/shared';
 import { Card, EmptyState, ErrorState, LoadingBlock, PageHeader } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/lib/session-context';

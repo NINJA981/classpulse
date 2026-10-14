@@ -1,4 +1,4 @@
-# Garage object storage (S3 API) for ClassPulse, with infra/garage/garage.toml baked in (Coolify can't
+# Garage object storage (S3 API) for ClassIQ, with infra/garage/garage.toml baked in (Coolify can't
 # bind-mount repo files; same pattern as infra/router.Dockerfile). Build context: the repo root.
 # Base image pinned by digest (multi-arch index: linux/amd64 + linux/arm64 + arm + 386). Garage v2.4.1.
 #

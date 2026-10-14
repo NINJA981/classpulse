@@ -11,7 +11,7 @@
  * fails with a clear message, since content can't be invented.
  */
 import { z } from 'zod';
-import type { PresentationContent } from '@classpulse/shared';
+import type { PresentationContent } from '@classiq/shared';
 import { PipelineError } from '../../../pipeline/errors.js';
 import type { ChatMessage } from '../../../pipeline/llm.js';
 import {

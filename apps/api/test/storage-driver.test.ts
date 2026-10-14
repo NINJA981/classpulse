@@ -9,7 +9,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { DEVICE_CHUNK_MAX_BYTES, SUBMISSION_FILE_MAX_MB } from '@classpulse/shared';
+import { DEVICE_CHUNK_MAX_BYTES, SUBMISSION_FILE_MAX_MB } from '@classiq/shared';
 import { LocalStorage, maxObjectBytes, storage as appStorage, type Storage } from '../src/lib/storage.js';
 import { S3Storage } from '../src/lib/storageS3.js';
 

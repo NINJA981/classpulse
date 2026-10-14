@@ -2,7 +2,7 @@
 import { Suspense, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ROLE_HOME, ROLE_LOGIN, type Role, type SessionResponse } from '@classpulse/shared';
+import { ROLE_HOME, ROLE_LOGIN, type Role, type SessionResponse } from '@classiq/shared';
 import { Button, Field, InlineError, Input } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { LoginNotice } from './platform-notice';
@@ -15,7 +15,7 @@ export const ROLE_LOGIN_COPY: Record<Role, { heading: string; short: string; end
 
 const BLOCKED_MESSAGE = {
   suspended: "Your school's access is paused. Contact support.",
-  maintenance: 'ClassPulse is undergoing maintenance. Please try again later.',
+  maintenance: 'ClassIQ is undergoing maintenance. Please try again later.',
 } as const;
 
 /** Only follow `next` when it stays inside the role's own area. */
@@ -62,7 +62,7 @@ function RoleLoginForm({ role }: { role: Role }) {
 
   return (
     <div className="w-full max-w-md border border-line-strong bg-surface p-6 shadow-hard rounded-card sm:p-8">
-      <p className="eyebrow">ClassPulse</p>
+      <p className="eyebrow">ClassIQ</p>
       <h1 className="font-display text-3xl font-black">{copy.heading}</h1>
       <p className="mt-1 text-sm text-muted">
         {staff ? 'Use the email address your school registered.' : 'Use the roll number your school gave you.'}

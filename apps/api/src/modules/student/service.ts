@@ -15,7 +15,7 @@ import type {
   SubmitAssignmentInput,
   SubmitQuizAttemptInput,
   UpdateStudentProfileInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   assignments,

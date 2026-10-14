@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
-import type { DeviceSystemStats } from '@classpulse/shared';
+import type { DeviceSystemStats } from '@classiq/shared';
 import { deviceCommandStatus, deviceCommandType, deviceStatus, recordingStatus } from './enums.js';
 import { lessons } from './content.js';
 import { institutions, rooms, timestamps, users } from './org.js';

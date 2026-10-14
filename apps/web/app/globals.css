@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   ClassPulse design system
+   ClassIQ design system
    --------------------------------------------------------------------------
    One set of semantic tokens (`--cp-*`) consumed by Tailwind utilities
    (bg-canvas, text-ink, border-line, rounded-card, shadow-card, font-display…).
@@ -140,7 +140,7 @@
 
 /* Landing page (/about): colours taken from an Indian classroom — chalkboard green,
    painted-wall mint, chalk, uniform navy, the teacher's red pen — plus the brand's
-   yellow pulse, which only marks things ClassPulse does. */
+   yellow pulse, which only marks things ClassIQ does. */
 [data-theme='landing'] {
   --cp-board: #22382f;
   --cp-board-2: #2c463b;
@@ -250,7 +250,7 @@ html:has([data-theme='landing']) {
    Bricolage and Inter have no Devanagari or Tamil, so display and running
    text switch to Anek (the language wall's family, loaded with its whole
    weight axis by components/landing/fonts.ts). Anek carries its own Latin,
-   so English words inside a sentence (ClassPulse, WhatsApp, AI) keep one
+   so English words inside a sentence (ClassIQ, WhatsApp, AI) keep one
    voice. Indian scripts need more leading than the English page's 0.92–1.05
    display lines: vowel signs sit above and below the letters. Anything marked
    lang="en" (the wordmark, the app-screen vignettes) and the 3D room's

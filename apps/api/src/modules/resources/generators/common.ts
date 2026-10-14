@@ -5,7 +5,7 @@
  * Nothing is ever defaulted: invalid output after the repair round fails with a PipelineError.
  */
 import type { z } from 'zod';
-import { LANGUAGE_LABELS, type Language } from '@classpulse/shared';
+import { LANGUAGE_LABELS, type Language } from '@classiq/shared';
 import { env } from '../../../config/env.js';
 import type { AiUsageContext } from '../../../lib/aiUsage.js';
 import { PipelineError } from '../../../pipeline/errors.js';

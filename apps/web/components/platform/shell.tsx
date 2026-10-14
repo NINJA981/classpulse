@@ -18,7 +18,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import type { PlatformAdmin } from '@classpulse/shared';
+import type { PlatformAdmin } from '@classiq/shared';
 import { LegalLinks } from '@/components/legal/legal-links';
 import { NotificationBell, NotificationsProvider } from '@/components/notifications';
 import { api } from '@/lib/api';
@@ -65,7 +65,7 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
     <nav aria-label="Platform" className="flex h-full flex-col">
       <div className="border-b border-line px-5 py-5">
         <Link href="/platform" className="font-display text-xl font-black tracking-tight">
-          ClassPulse
+          ClassIQ
         </Link>
         <p className="eyebrow mt-1">Platform console</p>
       </div>
@@ -113,7 +113,7 @@ export function PlatformShell({ admin, children }: { admin: PlatformAdmin; child
           <aside className="hidden border-r border-line bg-surface lg:sticky lg:top-0 lg:z-40 lg:block lg:h-dvh">{sidebar}</aside>
 
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
-            <span className="font-display text-lg font-black">ClassPulse platform</span>
+            <span className="font-display text-lg font-black">ClassIQ platform</span>
             <div className="flex items-center gap-1">
               <NotificationBell />
               <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="p-1.5">

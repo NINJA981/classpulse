@@ -12,7 +12,7 @@ import {
   type LiveSessionInfo,
   type LiveSessionResults,
   type LiveStatus,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { enrollments, lessons, liveAnswers, liveParticipants, liveSessions, questions, users } from '../../db/schema/index.js';
 import { generatePin } from '../../lib/crypto.js';

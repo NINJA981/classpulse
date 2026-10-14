@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
-import type { Section } from '@classpulse/shared';
+import type { Section } from '@classiq/shared';
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Table, TBody, TD, TH, THead, TR } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { useSections } from '@/components/admin/queries';

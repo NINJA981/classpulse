@@ -5,7 +5,7 @@
 import { rm } from 'node:fs/promises';
 import { Router } from 'express';
 import { z } from 'zod';
-import { CourseInput, Id, IdParams, ReorderUnitsInput, UnitInput, UpdateMaterialInput } from '@classpulse/shared';
+import { CourseInput, Id, IdParams, ReorderUnitsInput, UnitInput, UpdateMaterialInput } from '@classiq/shared';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { aiLimiter } from '../../middleware/rateLimit.js';
 import { requireFeature } from '../../middleware/requireFeature.js';

@@ -11,7 +11,7 @@ import {
   isSupportedSttModel,
   type ModelSettings,
   type ModelSettingsInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { Badge, Button, Card, CardBody, CardHeader, Checkbox, Field, InlineError, Input, Select, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, fieldErrorsOf, formLevelError } from '../queries';

@@ -1,4 +1,4 @@
-import type { BloomLevel } from '@classpulse/shared';
+import type { BloomLevel } from '@classiq/shared';
 
 /** Display names for Bloom's taxonomy levels (lesson questions, question papers, insights). */
 export const BLOOM_LABEL: Record<BloomLevel, string> = {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
-import type { Assignment } from '@classpulse/shared';
+import type { Assignment } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import { assignmentReminders, assignments, enrollments, lessons, sectionTeachers, users } from '../src/db/schema/index.js';
 import { processLessonJob } from '../src/jobs/lessonGeneration.js';

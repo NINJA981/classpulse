@@ -1,4 +1,4 @@
-import type { ApiErrorBody } from '@classpulse/shared';
+import type { ApiErrorBody } from '@classiq/shared';
 import { ApiError, isSafeApiPath } from '@/lib/api';
 
 export interface UploadHandle<T> {

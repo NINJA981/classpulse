@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { ResourceContent, ResourceDetail, ResourceType } from '@classpulse/shared';
+import type { ResourceContent, ResourceDetail, ResourceType } from '@classiq/shared';
 import * as lessonPlan from './lesson-plan';
 import * as worksheet from './worksheet';
 import * as questionPaper from './question-paper';

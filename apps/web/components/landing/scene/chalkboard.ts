@@ -283,7 +283,7 @@ export class ChalkboardWriter {
       chalkGrain(ctx, this.w, this.h, 31 + i);
       out.push({ layer: c, x0: line.x, x1: line.x + tw });
       if (line.underline) {
-        // Why: the one yellow chalk stroke on the board — ClassPulse's pulse marking the plan.
+        // Why: the one yellow chalk stroke on the board — ClassIQ's pulse marking the plan.
         const u = makeCanvas(this.w, this.h);
         this.chalkStyle(u.ctx, palette.pulse);
         u.ctx.lineWidth = 10 * s;

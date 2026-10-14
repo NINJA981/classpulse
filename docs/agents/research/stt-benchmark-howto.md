@@ -1,10 +1,10 @@
-# stt-bench — self-hosted STT benchmark for ClassPulse
+# stt-bench — self-hosted STT benchmark for ClassIQ
 
 > Copy of `X:\Projects\stt-bench\README.md`. The benchmark scripts, data and models live in that folder on the owner's machine (outside this repository); the results are in [stt-benchmark-2026-10-12.md](stt-benchmark-2026-10-12.md).
 
 
 Benchmarks open speech-to-text models against Sarvam `saaras:v3` (production) and OpenAI `whisper-1`
-on FLEURS (9 Indic languages + English), NPTEL Indian-English lecture speech and real ClassPulse
+on FLEURS (9 Indic languages + English), NPTEL Indian-English lecture speech and real ClassIQ
 classroom recordings (Tamil–English code-mix). Results and analysis: `REPORT.md`.
 
 ## Layout
@@ -15,7 +15,7 @@ scripts/            all code (the only place code is run from)
   build_fleurs.py   FLEURS test parquet -> 25 seeded utterances/lang (seed 20261012) -> data/fleurs/<lang>/*.wav
   build_nptel.py    NPTEL2020 Indian English (3 remote row groups, 25 utts, <=2 per speaker) -> data/nptel/en
   build_lectures.py 4 local recordings in audio/ -> 10 x 60 s windows (data/lectures/win) + 30 s pieces for Sarvam
-  run_api.py        sarvam | openai  (keys read in-memory from ClassPulse apps/api/.env; 90-min cap per provider)
+  run_api.py        sarvam | openai  (keys read in-memory from ClassIQ apps/api/.env; 90-min cap per provider)
   run_local.py      one local model per process (faster-whisper, transformers whisper/MMS/omniASR/Qwen3-ASR/NVIDIA)
   run_nemo.py       AI4Bharat IndicConformer 600M multilingual via the AI4Bharat NeMo fork (venv-nemo)
   queue.sh          runs several run_local.py models strictly one after another

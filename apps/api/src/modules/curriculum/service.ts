@@ -13,7 +13,7 @@ import type {
   SessionUser,
   Unit,
   UnitInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { z } from 'zod';
 import { db, type DbOrTx } from '../../db/client.js';
 import { courses, sections, units, users } from '../../db/schema/index.js';

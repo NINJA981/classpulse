@@ -128,7 +128,7 @@ describe('student data export (right of access)', () => {
     const seeded = await seedStudentRecords(w);
     const res = await as(w.admin).get(`/api/admin/students/${w.student.id}/export`);
     expect(res.status).toBe(200);
-    expect(res.headers['content-disposition']).toMatch(/^attachment; filename="classpulse-student-/);
+    expect(res.headers['content-disposition']).toMatch(/^attachment; filename="classiq-student-/);
     expect(res.headers['cache-control']).toContain('no-store');
 
     const body = res.body;
@@ -234,7 +234,7 @@ describe('school offboarding (platform console)', () => {
     await db.update(institutions).set({ notes: 'private platform note' }).where(eq(institutions.id, w.institution.id));
     const res = await platform.post(`/api/platform/schools/${w.institution.id}/export`).send({});
     expect(res.status).toBe(200);
-    expect(res.headers['content-disposition']).toMatch(/^attachment; filename="classpulse-school-/);
+    expect(res.headers['content-disposition']).toMatch(/^attachment; filename="classiq-school-/);
     const body = res.body;
     expect(body.format).toBe('classpulse.school-export');
     expect(body.school).toMatchObject({ id: w.institution.id, code: w.institution.code });

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
-import type { Paginated, Section, Student } from '@classpulse/shared';
+import type { Paginated, Section, Student } from '@classiq/shared';
 import { Button, Checkbox, Dialog, Field, InlineError, Input, Skeleton, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys } from '../queries';

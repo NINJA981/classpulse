@@ -1,4 +1,4 @@
-# ClassPulse edge proxy. One origin serves the web app, the API and Socket.IO.
+# ClassIQ edge proxy. One origin serves the web app, the API and Socket.IO.
 # DOMAIN=app.example.org → automatic Let's Encrypt certificates.
 # DOMAIN=localhost       → Caddy's internal CA (local production smoke tests).
 # PLATFORM_HOST=ops.example.org → the super admin console's own address (it is invisible on DOMAIN).

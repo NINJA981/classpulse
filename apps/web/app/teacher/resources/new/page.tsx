@@ -1,7 +1,7 @@
 'use client';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { RESOURCE_TYPES, type ResourceType } from '@classpulse/shared';
+import { RESOURCE_TYPES, type ResourceType } from '@classiq/shared';
 import { LoadingBlock, PageHeader } from '@/components/ui';
 import { NewResourceForm } from '@/components/teacher/resources/new-resource-form';
 

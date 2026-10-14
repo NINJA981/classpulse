@@ -43,11 +43,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @classpulse/shared
+      - run: npm run build -w @classiq/shared
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test -w @classpulse/api
-      - run: npm run build -w @classpulse/web
+      - run: npm test -w @classiq/api
+      - run: npm run build -w @classiq/web
 
   agent:
     runs-on: ubuntu-latest
@@ -100,20 +100,20 @@ jobs:
         with:
           persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - run: docker build -f apps/api/Dockerfile -t classpulse-api:ci .
-      - run: docker build -f apps/web/Dockerfile -t classpulse-web:ci .
-      - run: docker build -f infra/router.Dockerfile -t classpulse-router:ci .
+      - run: docker build -f apps/api/Dockerfile -t classiq-api:ci .
+      - run: docker build -f apps/web/Dockerfile -t classiq-web:ci .
+      - run: docker build -f infra/router.Dockerfile -t classiq-router:ci .
       # Image vulnerabilities (OS packages and node_modules). Blocking only on CRITICAL issues that have a fix;
       # HIGH is reported without failing the build.
       - name: Trivy (report HIGH and CRITICAL)
         run: |
-          for image in classpulse-api:ci classpulse-web:ci classpulse-router:ci; do
+          for image in classiq-api:ci classiq-web:ci classiq-router:ci; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache "$TRIVY_IMAGE" \
               image --scanners vuln --severity HIGH,CRITICAL --no-progress "$image"
           done
       - name: Trivy (gate on fixable CRITICAL)
         run: |
-          for image in classpulse-api:ci classpulse-web:ci classpulse-router:ci; do
+          for image in classiq-api:ci classiq-web:ci classiq-router:ci; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache "$TRIVY_IMAGE" \
               image --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress "$image"
           done

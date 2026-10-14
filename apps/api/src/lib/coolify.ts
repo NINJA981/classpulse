@@ -23,7 +23,7 @@ export function coolifyConfig(): CoolifyConfig | null {
 
 export const COOLIFY_SETUP_INSTRUCTIONS = [
   'In Coolify, open Keys & Tokens → API tokens and create a new token with "read" and "deploy" permissions only.',
-  'Copy the application UUID from the ClassPulse application page URL (…/application/<uuid>).',
+  'Copy the application UUID from the ClassIQ application page URL (…/application/<uuid>).',
   'Set COOLIFY_API_URL (e.g. http://<server>:8000/api/v1), COOLIFY_API_TOKEN and COOLIFY_APP_UUID as secrets on the API service.',
   'Redeploy the API so it picks up the new variables, then reload this page.',
 ];

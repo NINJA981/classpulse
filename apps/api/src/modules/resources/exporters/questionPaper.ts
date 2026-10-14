@@ -4,7 +4,7 @@
  * blueprint (marks by unit × Bloom level) for the teacher.
  */
 import { AlignmentType, Paragraph, TextRun } from 'docx';
-import { BLOOM_LEVELS, QuestionPaperContent, type BloomLevel, type PaperQuestion } from '@classpulse/shared';
+import { BLOOM_LEVELS, QuestionPaperContent, type BloomLevel, type PaperQuestion } from '@classiq/shared';
 import { invalidState } from '../../../lib/errors.js';
 import { heading, numbered, pageBreak, para, table, toDocxBuffer, type Block } from './docx.js';
 import { DOCX_CONTENT_TYPE, safeFilename, type ExportInput, type ExportedFile } from './types.js';

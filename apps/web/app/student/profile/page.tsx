@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Compass, KeyRound } from 'lucide-react';
-import type { SessionResponse, StudentSection, UpdateStudentProfileInput } from '@classpulse/shared';
+import type { SessionResponse, StudentSection, UpdateStudentProfileInput } from '@classiq/shared';
 import {
   Button,
   ButtonLink,

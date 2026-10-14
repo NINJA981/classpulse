@@ -1,6 +1,6 @@
 'use client';
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
-import type { ResourceStatus, ResourceType } from '@classpulse/shared';
+import type { ResourceStatus, ResourceType } from '@classiq/shared';
 import { Card, CardBody } from '@/components/ui';
 import { ProgressBar } from '@/components/teacher/common';
 import { RESOURCE_TYPE_LABEL } from './meta';

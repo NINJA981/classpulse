@@ -3,7 +3,7 @@
  * authenticatePlatform() (the router itself applies no auth, like the other platform sub-routers).
  */
 import { Router } from 'express';
-import { PlatformStatsCsvQuery, PlatformStatsQuery } from '@classpulse/shared';
+import { PlatformStatsCsvQuery, PlatformStatsQuery } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { parseQuery } from '../../middleware/validate.js';
 import * as service from './statsService.js';

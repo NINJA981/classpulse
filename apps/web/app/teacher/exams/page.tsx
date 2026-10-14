@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, Plus } from 'lucide-react';
-import type { ExamSummary } from '@classpulse/shared';
+import type { ExamSummary } from '@classiq/shared';
 import {
   ButtonLink,
   Card,

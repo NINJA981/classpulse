@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, FileText, Sparkles } from 'lucide-react';
-import type { AiGradeSuggestion, Assignment, GradeSubmissionInput, RubricMark, SubmissionDetail } from '@classpulse/shared';
+import type { AiGradeSuggestion, Assignment, GradeSubmissionInput, RubricMark, SubmissionDetail } from '@classiq/shared';
 import { Badge, Button, Dialog, ErrorState, Field, InlineError, Input, LoadingBlock, Textarea, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';

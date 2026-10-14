@@ -4,7 +4,7 @@
  * (ApiError, session redirects) for those calls only. The token lives in
  * sessionStorage, so closing the tab ends the device binding.
  */
-import { EXAM_TOKEN_HEADER, type ApiErrorBody } from '@classpulse/shared';
+import { EXAM_TOKEN_HEADER, type ApiErrorBody } from '@classiq/shared';
 import { ApiError, isSafeApiPath } from '@/lib/api';
 
 const tokenKey = (examId: string) => `classpulse:exam-token:${examId}`;

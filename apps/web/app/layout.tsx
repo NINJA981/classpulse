@@ -10,10 +10,10 @@ const outfit = Outfit({ variable: '--font-outfit', subsets: ['latin'], display: 
 const mono = JetBrains_Mono({ variable: '--font-mono-jb', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: { default: 'ClassPulse', template: '%s · ClassPulse' },
+  title: { default: 'ClassIQ', template: '%s · ClassIQ' },
   description: 'AI-assisted lectures, quizzes and live classroom engagement.',
-  applicationName: 'ClassPulse',
-  appleWebApp: { capable: true, title: 'ClassPulse', statusBarStyle: 'default' },
+  applicationName: 'ClassIQ',
+  appleWebApp: { capable: true, title: 'ClassIQ', statusBarStyle: 'default' },
   icons: {
     icon: [
       { url: '/icons/icon.svg', type: 'image/svg+xml' },

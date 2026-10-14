@@ -1,6 +1,6 @@
 # Data Processing Agreement (template)
 
-> **Draft — needs legal review.** Template prepared by engineering on 12 October 2026 from how ClassPulse actually works. It is **not legal advice** and must be reviewed and completed by counsel before any school signs it. Text in **[brackets]** is to be filled in per school; **TODO** items need the owner's decision.
+> **Draft — needs legal review.** Template prepared by engineering on 12 October 2026 from how ClassIQ actually works. It is **not legal advice** and must be reviewed and completed by counsel before any school signs it. Text in **[brackets]** is to be filled in per school; **TODO** items need the owner's decision.
 
 ---
 
@@ -14,7 +14,7 @@ and
 
 **BenX Solutions**, [legal form and registration number — TODO], [registered address — TODO] (**"BenX"**, the Data Processor)
 
-Effective date: [date]. This agreement forms part of the service agreement dated [date] for ClassPulse (the **"Service Agreement"**).
+Effective date: [date]. This agreement forms part of the service agreement dated [date] for ClassIQ (the **"Service Agreement"**).
 
 ## 1. Definitions
 
@@ -22,7 +22,7 @@ Terms such as *personal data*, *Data Fiduciary*, *Data Processor*, *Data Princip
 
 ## 2. Roles and scope
 
-2.1 The School is the Data Fiduciary and decides the purposes and means of processing. BenX processes personal data only **on the School's documented instructions** (this agreement, the Service Agreement and the School's use of ClassPulse settings), to provide ClassPulse.
+2.1 The School is the Data Fiduciary and decides the purposes and means of processing. BenX processes personal data only **on the School's documented instructions** (this agreement, the Service Agreement and the School's use of ClassIQ settings), to provide ClassIQ.
 
 2.2 The subject matter, nature, purposes, categories of data and Data Principals are described in **Annex A**.
 
@@ -66,7 +66,7 @@ Terms such as *personal data*, *Data Fiduciary*, *Data Processor*, *Data Princip
 
 ## 7. Assistance
 
-7.1 BenX will help the School respond to Data Principal requests. In ClassPulse the School admin can **download a student's data** and **permanently delete a student**. For other requests BenX will help within **[7] working days** (**TODO**).
+7.1 BenX will help the School respond to Data Principal requests. In ClassIQ the School admin can **download a student's data** and **permanently delete a student**. For other requests BenX will help within **[7] working days** (**TODO**).
 
 7.2 BenX will help the School with breach notifications and any Board enquiry.
 
@@ -84,7 +84,7 @@ Terms such as *personal data*, *Data Fiduciary*, *Data Processor*, *Data Princip
 
 9.1 On reasonable request (no more than once a year, unless after a breach), BenX will provide information needed to show compliance with this agreement: for example this agreement's annexes, security summaries and the results of security assessments.
 
-9.2 The School can see its own audit trail in ClassPulse; the platform keeps an audit log of administrative actions for 365 days.
+9.2 The School can see its own audit trail in ClassIQ; the platform keeps an audit log of administrative actions for 365 days.
 
 ## 10. End of the service
 
@@ -115,7 +115,7 @@ Signed for BenX Solutions: ____________________ Name / title: __________ Date: _
 | **Data Principals** | School staff (admins, teachers); students (mostly children under 18); parents and guardians whose contact details are added |
 | **Categories of data** | Account data (name, role, email, roll number, department, class membership); guardian contacts; classroom audio and transcripts; quiz, live-quiz, exam and assignment answers, scores, marks and feedback; exam integrity events; teaching content; device and technical data (IP address, browser, classroom device data); logs and audit entries |
 | **Sensitive data** | Not intended. Audio and free text may incidentally contain anything said or written |
-| **Purposes** | Providing ClassPulse: sign-in, transcription, AI-assisted quiz and teaching material drafting, quizzes, exams, assignments, results, account emails, support, security |
+| **Purposes** | Providing ClassIQ: sign-in, transcription, AI-assisted quiz and teaching material drafting, quizzes, exams, assignments, results, account emails, support, security |
 | **Duration** | The Service Agreement term plus the deletion period in clause 10 |
 
 ## Annex B — Authorised sub-processors

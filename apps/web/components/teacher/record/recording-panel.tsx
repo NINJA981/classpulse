@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, Square, XCircle } from 'lucide-react';
-import type { RecordingSession, RecordingStatus } from '@classpulse/shared';
+import type { RecordingSession, RecordingStatus } from '@classiq/shared';
 import {
   Badge,
   Button,

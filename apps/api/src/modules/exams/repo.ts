@@ -1,6 +1,6 @@
 /** Exam queries and rules shared by the teacher routes, the student routes and the sweep. */
 import { and, asc, desc, eq, gt, inArray, max, sql } from 'drizzle-orm';
-import type { ExamDetail, ExamPoolQuestion, ExamResultsVisibility, ExamSummary } from '@classpulse/shared';
+import type { ExamDetail, ExamPoolQuestion, ExamResultsVisibility, ExamSummary } from '@classiq/shared';
 import { db, type DbOrTx, type Tx } from '../../db/client.js';
 import {
   enrollments,

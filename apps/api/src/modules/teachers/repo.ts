@@ -1,5 +1,5 @@
 import { asc, sql, type SQL } from 'drizzle-orm';
-import type { Teacher } from '@classpulse/shared';
+import type { Teacher } from '@classiq/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { sections, sectionTeachers, users } from '../../db/schema/index.js';
 import { inviteStatusSql } from '../auth/passwordTokens.js';

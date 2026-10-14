@@ -19,7 +19,7 @@ import {
   type SessionUser,
   type UpdateResourceInput,
   type Language,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import type { z } from 'zod';
 import { db } from '../../db/client.js';
 import { courses, lessons, teacherMaterials, teachingResources, units, users } from '../../db/schema/index.js';

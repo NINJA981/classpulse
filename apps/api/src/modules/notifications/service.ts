@@ -14,7 +14,7 @@ import {
   type PushKeyResponse,
   type PushSubscriptionInput,
   type PushUnsubscribeInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { env, pushEnabled } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { notifications, pushSubscriptions } from '../../db/schema/index.js';

@@ -1,5 +1,5 @@
 'use client';
-import { masteryBand, type CompetencyInsightRow } from '@classpulse/shared';
+import { masteryBand, type CompetencyInsightRow } from '@classiq/shared';
 import { Button, Dialog } from '@/components/ui';
 import { formatPct } from '@/lib/format';
 import { BLOOM_LABEL, BLOOM_LEVELS, BandBadge } from './common';

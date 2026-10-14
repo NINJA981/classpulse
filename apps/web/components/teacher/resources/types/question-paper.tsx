@@ -11,7 +11,7 @@ import {
   type Difficulty,
   type PaperQuestion,
   type PublishPaperExamResult,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import {
   Badge,
   Button,

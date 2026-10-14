@@ -4,7 +4,7 @@ import type {
   PlayerResultPayload,
   PublicQuestion,
   QuestionClosedPayload,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 
 export type LivePhase = 'connecting' | 'lobby' | 'question' | 'closed' | 'ended';
 

@@ -12,7 +12,7 @@ import { assertAiAudioAvailable } from '../../lib/aiUsage.js';
 import { enqueueLessonGeneration } from '../../jobs/queue.js';
 import { storage } from '../../lib/storage.js';
 import { AppError, invalidState, notFound } from '../../lib/errors.js';
-import type { LessonSourceType, QuizRequest } from '@classpulse/shared';
+import type { LessonSourceType, QuizRequest } from '@classiq/shared';
 
 export interface AttachAudioInput {
   lessonId: string;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, Clock, Pencil, Trash2, X } from 'lucide-react';
-import type { Question } from '@classpulse/shared';
+import type { Question } from '@classiq/shared';
 import { Badge, Button, Card, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDuration } from '@/lib/format';

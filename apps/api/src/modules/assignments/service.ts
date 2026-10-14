@@ -20,7 +20,7 @@ import type {
   SubmissionTrackerRow,
   TrackerStatus,
   UpdateAssignmentInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   assignmentReminders,

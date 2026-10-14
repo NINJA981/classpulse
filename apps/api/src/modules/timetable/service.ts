@@ -1,6 +1,6 @@
 import { and, count, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { Id, type ReplaceTimetableInput, type TimetableSlot } from '@classpulse/shared';
+import { Id, type ReplaceTimetableInput, type TimetableSlot } from '@classiq/shared';
 import { db, type DbOrTx } from '../../db/client.js';
 import { rooms, sections, timetableSlots, users } from '../../db/schema/index.js';
 import { badRequest, notFound } from '../../lib/errors.js';

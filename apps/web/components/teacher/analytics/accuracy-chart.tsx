@@ -1,6 +1,6 @@
 'use client';
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { MasteryBand, QuestionAnalytics } from '@classpulse/shared';
+import type { MasteryBand, QuestionAnalytics } from '@classiq/shared';
 import { Badge, type BadgeTone } from '@/components/ui';
 
 /** Mastery band presentation; chart fills reference the design tokens (CSS variables), never raw colours. */

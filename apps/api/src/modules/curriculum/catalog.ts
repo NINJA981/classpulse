@@ -7,7 +7,7 @@
  * editions with deleted chapters removed. College entries are generic starter outlines.
  * Importing one creates a course + units for the school; teachers edit freely afterwards.
  */
-import type { CatalogEntry } from '@classpulse/shared';
+import type { CatalogEntry } from '@classiq/shared';
 
 export const CATALOG: readonly CatalogEntry[] = [
   /* ------------------------------------ Class 6 ------------------------------------ */

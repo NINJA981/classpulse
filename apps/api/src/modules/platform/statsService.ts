@@ -23,7 +23,7 @@ import {
   type StatsRanking,
   type StatsSchoolRow,
   type StatsTotals,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import {
   aiUsage,
@@ -631,5 +631,5 @@ export async function statsCsv(query: PlatformStatsCsvQuery): Promise<{ filename
     ];
   }
   const csv = lines.map((cols) => cols.map(csvCell).join(',')).join('\r\n') + '\r\n';
-  return { filename: `classpulse-${query.section}-${from}-to-${to}.csv`, csv };
+  return { filename: `classiq-${query.section}-${from}-to-${to}.csv`, csv };
 }

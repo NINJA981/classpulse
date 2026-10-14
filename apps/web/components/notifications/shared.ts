@@ -1,5 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
-import type { NotificationDto, NotificationListResponse } from '@classpulse/shared';
+import type { NotificationDto, NotificationListResponse } from '@classiq/shared';
 
 /** School users read /api/notifications; super admins /api/platform/notifications (no sockets there: it polls). */
 export type NotificationScope = 'school' | 'platform';

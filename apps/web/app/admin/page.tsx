@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, BookOpen, Cpu, GraduationCap, Rocket, Target, UserRound, Users } from 'lucide-react';
-import type { AdminOverview } from '@classpulse/shared';
+import type { AdminOverview } from '@classiq/shared';
 import {
   ButtonLink,
   Card,

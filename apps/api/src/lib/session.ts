@@ -1,7 +1,7 @@
 import type { CookieOptions, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
-import { SESSION_COOKIE, type Role, type SessionUser } from '@classpulse/shared';
+import { SESSION_COOKIE, type Role, type SessionUser } from '@classiq/shared';
 import { env, isProd } from '../config/env.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema/index.js';

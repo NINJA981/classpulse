@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { BookOpen, Library, Plus } from 'lucide-react';
-import type { Course } from '@classpulse/shared';
+import type { Course } from '@classiq/shared';
 import { Button, Card, EmptyState, ErrorState, Field, Input, LoadingBlock, PageHeader, Select, Table, TBody, TD, TH, THead, TR } from '@/components/ui';
 import { CatalogDialog } from '@/components/teacher/curriculum/catalog-dialog';
 import { CourseDialog } from '@/components/teacher/curriculum/course-dialog';

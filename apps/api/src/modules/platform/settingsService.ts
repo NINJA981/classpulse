@@ -9,7 +9,7 @@ import {
   isSupportedSttModel,
   type PlatformSettings,
   type UpdatePlatformSettingsInput,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { platformSettings } from '../../db/schema/index.js';
 import { AppError } from '../../lib/errors.js';

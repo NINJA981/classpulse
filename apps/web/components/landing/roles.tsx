@@ -3,7 +3,7 @@ import Image from 'next/image';
 import clsx from 'clsx';
 import { Play } from 'lucide-react';
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { ROLES, type Role } from '@classpulse/shared';
+import { ROLES, type Role } from '@classiq/shared';
 import { ROLE_CARDS } from '@/components/auth/role-cards';
 import { SCREENS } from './assets';
 import { useLandingCopy } from './i18n/copy-context';
@@ -213,7 +213,7 @@ function AppShell({ nav, current, children }: { nav: string[]; current: string; 
       <nav className="hidden w-36 shrink-0 flex-col gap-0.5 border-r border-line bg-surface-2 p-3 @lg:flex">
         <span className="mb-3 flex items-center gap-1.5 font-display text-sm font-extrabold">
           <span className="size-2 bg-pulse ring-1 ring-uniform" />
-          ClassPulse
+          ClassIQ
         </span>
         {nav.map((n) => (
           <span

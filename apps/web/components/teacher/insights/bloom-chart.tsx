@@ -1,6 +1,6 @@
 'use client';
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { masteryBand, type SectionInsights } from '@classpulse/shared';
+import { masteryBand, type SectionInsights } from '@classiq/shared';
 import { BAND, BLOOM_LABEL, levelsWithData } from './common';
 
 /** Class accuracy per Bloom level (levels without answers are left out and named below the chart). */

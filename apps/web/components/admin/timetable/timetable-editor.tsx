@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Save, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
-import { DAYS, type Day, type Room, type Section, type Teacher, type TimetableSlot } from '@classpulse/shared';
+import { DAYS, type Day, type Room, type Section, type Teacher, type TimetableSlot } from '@classiq/shared';
 import { Badge, Button, Card, CardBody, InlineError, useToast } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 import { adminKeys } from '../queries';

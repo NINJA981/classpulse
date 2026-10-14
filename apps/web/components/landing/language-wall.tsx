@@ -10,7 +10,7 @@ import type { WallLanguage } from './i18n/types';
 type Tier = 'xl' | 'l' | 'm' | 's';
 
 /**
- * "Learning" in the eleven languages ClassPulse transcribes, in the order the wall is composed. The Indian words are
+ * "Learning" in the eleven languages ClassIQ transcribes, in the order the wall is composed. The Indian words are
  * set in fonts cut to their letters: change one, then re-run components/landing/wall-fonts/subset.py.
  */
 const WORDS: { lang: WallLanguage; word: string; tier: Tier; place: string }[] = [

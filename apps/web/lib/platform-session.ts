@@ -1,6 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import type { PlatformAdmin, PlatformSessionResponse } from '@classpulse/shared';
+import type { PlatformAdmin, PlatformSessionResponse } from '@classiq/shared';
 
 const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://localhost:5000';
 

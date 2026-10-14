@@ -1,6 +1,6 @@
-# ClassPulse architecture
+# ClassIQ architecture
 
-ClassPulse turns classroom lectures into reviewed, bilingual quizzes and live classroom games, and gives teachers secure exams, assignments and AI teaching tools. Many schools share one installation; a separate super admin console (its own host, login and session) runs them all.
+ClassIQ turns classroom lectures into reviewed, bilingual quizzes and live classroom games, and gives teachers secure exams, assignments and AI teaching tools. Many schools share one installation; a separate super admin console (its own host, login and session) runs them all.
 
 ```mermaid
 flowchart LR

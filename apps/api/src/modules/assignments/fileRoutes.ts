@@ -4,7 +4,7 @@
  */
 import { Router } from 'express';
 import { pipeline } from 'node:stream/promises';
-import { IdParams } from '@classpulse/shared';
+import { IdParams } from '@classiq/shared';
 import { notFound } from '../../lib/errors.js';
 import { storage } from '../../lib/storage.js';
 import { authenticate, currentUser } from '../../middleware/auth.js';

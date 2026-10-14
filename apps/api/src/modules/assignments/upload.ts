@@ -10,7 +10,7 @@ import { mkdir, open, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { RequestHandler } from 'express';
 import multer from 'multer';
-import { MAX_SUBMISSION_FILES, SUBMISSION_FILE_MAX_MB, SUBMISSION_FILE_TYPES } from '@classpulse/shared';
+import { MAX_SUBMISSION_FILES, SUBMISSION_FILE_MAX_MB, SUBMISSION_FILE_TYPES } from '@classiq/shared';
 import { AppError } from '../../lib/errors.js';
 import { storage } from '../../lib/storage.js';
 import { assertStorageAvailable } from '../../lib/storageQuota.js';

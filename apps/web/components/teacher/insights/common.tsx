@@ -1,6 +1,6 @@
 'use client';
 import clsx from 'clsx';
-import { BLOOM_LEVELS, masteryBand, type BloomLevel, type MasteryBand } from '@classpulse/shared';
+import { BLOOM_LEVELS, masteryBand, type BloomLevel, type MasteryBand } from '@classiq/shared';
 import { BAND, BandBadge } from '@/components/teacher/analytics/accuracy-chart';
 import { BLOOM_LABEL } from '@/components/teacher/lesson/bloom';
 

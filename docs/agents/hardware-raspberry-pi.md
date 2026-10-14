@@ -58,7 +58,7 @@ To **replace or re-provision** a Pi: revoke the old device in the admin console,
 
 ## Network requirements
 
-- Outbound TCP 443 to the ClassPulse domain, plus DNS and NTP. Accurate time matters for TLS.
+- Outbound TCP 443 to the ClassIQ domain, plus DNS and NTP. Accurate time matters for TLS.
 - Bandwidth: each 60-second chunk is about 1.9 MB, which averages about 32 KB/s while recording. Buffered chunks catch up after an outage.
 - Captive-portal Wi-Fi is **not** supported. Ask campus IT for a device network, or use Ethernet.
 

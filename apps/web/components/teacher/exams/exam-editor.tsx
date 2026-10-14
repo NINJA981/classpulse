@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import clsx from 'clsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check } from 'lucide-react';
-import type { ExamDetail, ExamInput, UpdateExamInput } from '@classpulse/shared';
+import type { ExamDetail, ExamInput, UpdateExamInput } from '@classiq/shared';
 import {
   Button,
   ButtonLink,

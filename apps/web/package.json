@@ -1,8 +1,8 @@
 {
-  "name": "@classpulse/web",
+  "name": "@classiq/web",
   "version": "1.0.0",
   "private": true,
-  "description": "ClassPulse unified web app: /admin, /teacher and /student",
+  "description": "ClassIQ unified web app: /admin, /teacher and /student",
   "type": "module",
   "scripts": {
     "dev": "next dev -p 3000",
@@ -12,7 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@classpulse/shared": "*",
+    "@classiq/shared": "*",
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.1",
     "@react-three/postprocessing": "3.2.0",

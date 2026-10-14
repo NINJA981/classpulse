@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCheck, ListChecks, Lock, Plus } from 'lucide-react';
 import { languageLabel } from '@/lib/format';
-import type { LessonDetail, Question } from '@classpulse/shared';
+import type { LessonDetail, Question } from '@classiq/shared';
 import { Button, Card, CardBody, CardHeader, EmptyState, InlineError, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { QuestionCard } from './question-card';

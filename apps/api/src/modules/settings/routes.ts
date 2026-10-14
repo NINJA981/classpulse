@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { UpdateModelSettingsInput } from '@classpulse/shared';
+import { UpdateModelSettingsInput } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody } from '../../middleware/validate.js';

@@ -7,7 +7,7 @@
  * Redis channel that the API relays. Without Redis (dev), the worker runs
  * inside the API process and the local emitter is used directly.
  */
-import type { ServerToClientEvents } from '@classpulse/shared';
+import type { ServerToClientEvents } from '@classiq/shared';
 import { getRedis, newRedisConnection } from '../lib/redis.js';
 import { logger } from '../lib/logger.js';
 

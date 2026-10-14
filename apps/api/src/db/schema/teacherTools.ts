@@ -5,7 +5,7 @@
  */
 import { sql } from 'drizzle-orm';
 import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import type { ResourceContent, ResourceOptions } from '@classpulse/shared';
+import type { ResourceContent, ResourceOptions } from '@classiq/shared';
 import { institutions, sections, timestamps, users } from './org.js';
 
 export const resourceType = pgEnum('resource_type', ['lesson_plan', 'worksheet', 'question_paper', 'presentation']);

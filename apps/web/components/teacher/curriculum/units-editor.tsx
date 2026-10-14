@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
-import type { CourseDetail, Unit, UnitDraft, UnitInput } from '@classpulse/shared';
+import type { CourseDetail, Unit, UnitDraft, UnitInput } from '@classiq/shared';
 import { Button, ButtonLink, Dialog, EmptyState, Field, InlineError, Input, Textarea, useToast } from '@/components/ui';
 import { ConfirmDialog } from '@/components/teacher/common';
 import { api, errorMessage } from '@/lib/api';

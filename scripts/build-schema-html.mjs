@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Builds docs/agents/database-schema.html: an interactive, self-contained map of the ClassPulse database.
+ * Builds docs/agents/database-schema.html: an interactive, self-contained map of the ClassIQ database.
  *
  * Reads the schema from a live Postgres (the dev database, after `npm run db:migrate`), so it always matches
  * the migrations. Table groups and descriptions come from the HANDBOOK's database section (§11).

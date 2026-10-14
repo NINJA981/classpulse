@@ -1,4 +1,4 @@
-# ClassPulse internal router for Coolify. Coolify's Traefik terminates TLS for the public domain and forwards
+# ClassIQ internal router for Coolify. Coolify's Traefik terminates TLS for the public domain and forwards
 # plain HTTP here; this keeps the same single-origin routing as infra/Caddyfile (web + /api + /socket.io).
 {
 	auto_https off

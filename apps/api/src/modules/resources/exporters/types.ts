@@ -3,7 +3,7 @@
  * Each resource type has ONE downloadable format (Word for lesson plans, worksheets and question papers;
  * PowerPoint for presentations). PDF is the browser print page (/teacher/resources/[id]/print).
  */
-import type { Language, ResourceOptions, ResourceType } from '@classpulse/shared';
+import type { Language, ResourceOptions, ResourceType } from '@classiq/shared';
 
 export const DOCX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 export const PPTX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';

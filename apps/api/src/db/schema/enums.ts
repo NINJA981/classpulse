@@ -1,5 +1,5 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
-import { BLOOM_LEVELS, DAYS, EXAM_EVENT_TYPES, LESSON_STATUSES, LIVE_STATUSES, RECORDING_STATUSES } from '@classpulse/shared';
+import { BLOOM_LEVELS, DAYS, EXAM_EVENT_TYPES, LESSON_STATUSES, LIVE_STATUSES, RECORDING_STATUSES } from '@classiq/shared';
 
 export const userRole = pgEnum('user_role', ['admin', 'teacher', 'student']);
 export const recordStatus = pgEnum('record_status', ['active', 'disabled']);

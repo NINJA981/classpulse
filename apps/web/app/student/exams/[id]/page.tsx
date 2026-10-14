@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList } from 'lucide-react';
-import type { StartExamResponse, StudentExamListItem, StudentExamPaper } from '@classpulse/shared';
+import type { StartExamResponse, StudentExamListItem, StudentExamPaper } from '@classiq/shared';
 import { ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader } from '@/components/ui';
 import { examRequest, getExamToken, isDeviceConflict } from '@/components/student/exams/exam-api';
 import { ExamLobby } from '@/components/student/exams/exam-lobby';

@@ -2,7 +2,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import type { MeResponse } from '@classpulse/shared';
+import type { MeResponse } from '@classiq/shared';
 import { TourProvider } from '@/components/tour';
 import { api } from '@/lib/api';
 import { useSessionUser } from '@/lib/session-context';

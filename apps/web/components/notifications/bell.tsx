@@ -3,7 +3,7 @@ import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 
 import Link from 'next/link';
 import clsx from 'clsx';
 import { AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
-import type { NotificationDto } from '@classpulse/shared';
+import type { NotificationDto } from '@classiq/shared';
 import { Button } from '@/components/ui/button';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useNotifications } from './provider';

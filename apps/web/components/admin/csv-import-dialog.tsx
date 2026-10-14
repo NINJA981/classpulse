@@ -3,7 +3,7 @@ import { useState, type ChangeEvent, type ReactNode } from 'react';
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { Download, FileDown, FileUp } from 'lucide-react';
 import clsx from 'clsx';
-import type { EmailDelivery } from '@classpulse/shared';
+import type { EmailDelivery } from '@classiq/shared';
 import { Badge, Button, Dialog, Field, InlineError, Input, Table, TBody, TD, TH, THead, TR, useToast } from '@/components/ui';
 import { Callout, downloadFile } from './common';
 import { normalizeHeader, parseCsv, readFileAsText, toCsv } from './csv';

@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import type { Room, Section, Teacher } from '@classpulse/shared';
+import type { Room, Section, Teacher } from '@classiq/shared';
 import { ApiError, api } from '@/lib/api';
 
 /** Query keys for the admin console. Every key starts with 'admin'. */

@@ -4,7 +4,7 @@ import { LegalPage, Todo, type LegalSection } from '@/components/legal/legal-pag
 
 export const metadata: Metadata = {
   title: 'Terms of use',
-  description: 'The rules for using ClassPulse, for schools, teachers, students and parents.',
+  description: 'The rules for using ClassIQ, for schools, teachers, students and parents.',
 };
 
 const link = 'font-bold text-ink underline underline-offset-4';
@@ -16,8 +16,8 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          ClassPulse is provided by <strong>BenX Solutions</strong> to schools under a written agreement with each school. These
-          terms explain the rules for everyone who uses ClassPulse through their school: school admins, teachers, students and
+          ClassIQ is provided by <strong>BenX Solutions</strong> to schools under a written agreement with each school. These
+          terms explain the rules for everyone who uses ClassIQ through their school: school admins, teachers, students and
           parents. If these terms and the school’s agreement with us differ, the school’s agreement wins.
         </p>
         <p>
@@ -33,7 +33,7 @@ const sections: LegalSection[] = [
       <ul>
         <li>Your school creates your account. Use only your own account and keep your password private.</li>
         <li>Tell your teacher or school admin straight away if you think someone else has used your account.</li>
-        <li>Students under 18 may use ClassPulse only after their school has obtained a parent’s or guardian’s consent.</li>
+        <li>Students under 18 may use ClassIQ only after their school has obtained a parent’s or guardian’s consent.</li>
         <li>The school can change, disable or delete accounts. When an account is deleted, its data is erased.</li>
       </ul>
     ),
@@ -43,7 +43,7 @@ const sections: LegalSection[] = [
     title: 'Acceptable use',
     body: (
       <>
-        <p>Please use ClassPulse only for learning and teaching at your school. Do not:</p>
+        <p>Please use ClassIQ only for learning and teaching at your school. Do not:</p>
         <ul>
           <li>try to see or change data you are not allowed to, or get around security or exam rules;</li>
           <li>upload anything unlawful, harmful, hateful, sexually explicit, or that bullies or harasses anyone;</li>
@@ -61,7 +61,7 @@ const sections: LegalSection[] = [
     title: 'Quizzes and secure exams',
     body: (
       <p>
-        During a secure exam, ClassPulse records events such as leaving full screen, switching tabs, copy and paste or using a
+        During a secure exam, ClassIQ records events such as leaving full screen, switching tabs, copy and paste or using a
         second device, and shows them to your teacher. These events are signals, not proof: your teacher decides what they mean.
         Exams are timed and marked on the server.
       </p>
@@ -72,7 +72,7 @@ const sections: LegalSection[] = [
     title: 'Classroom recordings',
     body: (
       <p>
-        Teachers may record lessons so ClassPulse can make a transcript and quiz. Recordings are deleted automatically after 30
+        Teachers may record lessons so ClassIQ can make a transcript and quiz. Recordings are deleted automatically after 30
         days. Schools must tell students and parents that lessons may be recorded. Please avoid saying personal details (such as
         phone numbers or health information) during a recorded lesson.
       </p>
@@ -84,7 +84,7 @@ const sections: LegalSection[] = [
     body: (
       <ul>
         <li>
-          ClassPulse uses AI services to transcribe lessons, draft quiz questions and teaching material, and suggest marks for
+          ClassIQ uses AI services to transcribe lessons, draft quiz questions and teaching material, and suggest marks for
           assignments. AI output can be wrong.
         </li>
         <li>Teachers review AI-drafted questions before students see them, and decide every final mark. AI never grades on its own.</li>
@@ -100,7 +100,7 @@ const sections: LegalSection[] = [
     body: (
       <p>
         Content you create or upload (answers, assignments, lesson plans, materials) stays yours or your school’s. You let us
-        store and process it only to provide ClassPulse to your school. Teachers are responsible for having the right to upload
+        store and process it only to provide ClassIQ to your school. Teachers are responsible for having the right to upload
         teaching materials.
       </p>
     ),
@@ -110,7 +110,7 @@ const sections: LegalSection[] = [
     title: 'Availability and changes',
     body: (
       <p>
-        We work to keep ClassPulse available and safe, but it may sometimes be unavailable for maintenance or because of
+        We work to keep ClassIQ available and safe, but it may sometimes be unavailable for maintenance or because of
         problems outside our control. We may improve or change features. We will tell schools in advance about changes that
         affect them significantly.
       </p>
@@ -151,7 +151,7 @@ export default function TermsPage() {
       title="Terms of use"
       effective="12 October 2026"
       sections={sections}
-      intro={<p>These are the rules for using ClassPulse. They are written to be read by students and parents as well as staff.</p>}
+      intro={<p>These are the rules for using ClassIQ. They are written to be read by students and parents as well as staff.</p>}
     />
   );
 }

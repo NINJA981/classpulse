@@ -18,7 +18,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from '@classpulse/shared';
+import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from '@classiq/shared';
 import { emailStatus, recordStatus } from './enums.js';
 import { institutions, timestamps } from './org.js';
 

@@ -16,7 +16,7 @@
  * too (notificationReadLimiter); the list is unlimited but paged (limit ≤ 50). No audit rows (by design).
  */
 import { Router, type Request } from 'express';
-import { IdParams, NotificationListQuery, NotificationPrefs, PushSubscriptionInput, PushUnsubscribeInput } from '@classpulse/shared';
+import { IdParams, NotificationListQuery, NotificationPrefs, PushSubscriptionInput, PushUnsubscribeInput } from '@classiq/shared';
 import { authenticate, currentUser } from '../../middleware/auth.js';
 import { authenticatePlatform, currentPlatformAdmin } from '../../middleware/platformAuth.js';
 import { notificationReadLimiter, notificationSettingsLimiter } from '../../middleware/rateLimit.js';

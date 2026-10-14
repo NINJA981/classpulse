@@ -6,7 +6,7 @@
  * If the timings are still off after the repair, they are rescaled proportionally (recorded in meta).
  */
 import { z } from 'zod';
-import type { LessonPlanContent } from '@classpulse/shared';
+import type { LessonPlanContent } from '@classiq/shared';
 import { PipelineError } from '../../../pipeline/errors.js';
 import {
   arr,

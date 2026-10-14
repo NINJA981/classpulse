@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net';
 import { eq, sql } from 'drizzle-orm';
 import { io as connectClient, type Socket as ClientSocket } from 'socket.io-client';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { DEFAULT_INSTITUTION_FEATURES, type Ack } from '@classpulse/shared';
+import { DEFAULT_INSTITUTION_FEATURES, type Ack } from '@classiq/shared';
 import { createApp } from '../src/app.js';
 import { db } from '../src/db/client.js';
 import { institutions, platformSettings, users } from '../src/db/schema/index.js';

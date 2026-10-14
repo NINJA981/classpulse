@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# ClassPulse API + worker image. Build from the repository root:
-#   docker build -f apps/api/Dockerfile -t classpulse-api .
+# ClassIQ API + worker image. Build from the repository root:
+#   docker build -f apps/api/Dockerfile -t classiq-api .
 # The same image runs the API (default CMD) and the worker (`node dist/worker.js`).
 
 # Base image pinned by tag + digest (multi-arch index: linux/amd64 + linux/arm64); Dependabot (docker)
@@ -11,11 +11,11 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --ignore-scripts --no-audit --no-fund --include-workspace-root -w @classpulse/shared -w @classpulse/api
+RUN npm ci --ignore-scripts --no-audit --no-fund --include-workspace-root -w @classiq/shared -w @classiq/api
 COPY packages/shared packages/shared
 COPY apps/api apps/api
-RUN npm run build -w @classpulse/shared \
- && npm run build -w @classpulse/api \
+RUN npm run build -w @classiq/shared \
+ && npm run build -w @classiq/api \
  && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations
 
 FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS prod-deps
@@ -24,7 +24,7 @@ COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund -w @classpulse/shared -w @classpulse/api \
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund -w @classiq/shared -w @classiq/api \
  && rm -rf node_modules/ffmpeg-static node_modules/ffprobe-static/bin
 
 FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
@@ -36,8 +36,8 @@ ENV NODE_ENV=production \
     PORT=5000
 WORKDIR /app
 COPY --from=prod-deps /repo/node_modules ./node_modules
-COPY --from=build /repo/packages/shared/package.json ./node_modules/@classpulse/shared/package.json
-COPY --from=build /repo/packages/shared/dist ./node_modules/@classpulse/shared/dist
+COPY --from=build /repo/packages/shared/package.json ./node_modules/@classiq/shared/package.json
+COPY --from=build /repo/packages/shared/dist ./node_modules/@classiq/shared/dist
 COPY --from=build /repo/apps/api/package.json ./package.json
 COPY --from=build /repo/apps/api/dist ./dist
 # /data/tmp is TMP_DIR in the compose files (its own volume). Both exist here owned by `node`, so Docker

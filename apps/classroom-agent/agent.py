@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-ClassPulse classroom agent (Raspberry Pi 5 + USB microphone).
+ClassIQ classroom agent (Raspberry Pi 5 + USB microphone).
 
 Records lecture audio when the teacher presses "Start class", buffers it on
-disk in 60-second raw PCM chunks and uploads them to the ClassPulse API with
+disk in 60-second raw PCM chunks and uploads them to the ClassIQ API with
 resumable, checksummed, idempotent uploads. All traffic is outbound HTTPS.
 
 Device contract: packages/shared/src/devices.ts
@@ -263,7 +263,7 @@ class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
             pass
         raise RedirectRefused(
             f"{req.get_method()} {req.full_url}: server answered HTTP {code} redirect to {newurl!r}; refused "
-            "(check server_url: it must be the exact https:// address of ClassPulse)"
+            "(check server_url: it must be the exact https:// address of ClassIQ)"
         )
 
 
@@ -1200,7 +1200,7 @@ class Agent:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="ClassPulse classroom recording agent")
+    parser = argparse.ArgumentParser(description="ClassIQ classroom recording agent")
     parser.add_argument("--config", default=os.environ.get("CLASSPULSE_CONFIG", DEFAULT_CONFIG_PATH))
     parser.add_argument("--version", action="version", version=AGENT_VERSION)
     args = parser.parse_args(list(argv) if argv is not None else None)

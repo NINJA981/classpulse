@@ -3,7 +3,7 @@ import { Fragment, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Download, MonitorPlay } from 'lucide-react';
-import type { ExamResults } from '@classpulse/shared';
+import type { ExamResults } from '@classiq/shared';
 import {
   Button,
   ButtonLink,

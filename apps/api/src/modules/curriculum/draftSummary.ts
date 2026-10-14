@@ -5,7 +5,7 @@
  */
 import { and, desc, eq, isNull, or } from 'drizzle-orm';
 import { z } from 'zod';
-import { DEFAULT_MODEL_SETTINGS, type SessionUser, type UnitDraft } from '@classpulse/shared';
+import { DEFAULT_MODEL_SETTINGS, type SessionUser, type UnitDraft } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { modelSettings, teacherMaterials } from '../../db/schema/index.js';
 import { AppError } from '../../lib/errors.js';

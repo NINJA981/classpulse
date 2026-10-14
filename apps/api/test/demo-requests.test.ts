@@ -5,7 +5,7 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DemoRequestInput } from '@classpulse/shared';
+import { DemoRequestInput } from '@classiq/shared';
 import { setMailerForTests, type MailMessage } from '../src/lib/mailer.js';
 import {
   DEMO_REQUESTS_PER_DAY,
@@ -147,14 +147,14 @@ describe('demo request recipient', () => {
     expect(
       demoRecipient({
         DEMO_REQUEST_TO: 'sales@benx.in',
-        MAIL_FROM: 'ClassPulse <noreply@benx.in>',
+        MAIL_FROM: 'ClassIQ <noreply@benx.in>',
         E2E_MAIL_CAPTURE: false,
       }),
     ).toBe('sales@benx.in');
     expect(
       demoRecipient({
         DEMO_REQUEST_TO: '',
-        MAIL_FROM: 'ClassPulse <noreply@benx.in>',
+        MAIL_FROM: 'ClassIQ <noreply@benx.in>',
         E2E_MAIL_CAPTURE: false,
       }),
     ).toBe('noreply@benx.in');

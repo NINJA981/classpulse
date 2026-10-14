@@ -6,7 +6,7 @@
 import type { RequestHandler } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
-import type { ApiErrorBody } from '@classpulse/shared';
+import type { ApiErrorBody } from '@classiq/shared';
 import { isTest } from '../config/env.js';
 import { getRedis } from '../lib/redis.js';
 

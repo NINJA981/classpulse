@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { io as connectClient, type Socket as ClientSocket } from 'socket.io-client';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Ack, LiveStateSnapshot, PlayerResultPayload, PublicQuestion, HostQuestion, QuestionClosedPayload, LeaderboardEntry, ParticipantInfo } from '@classpulse/shared';
+import type { Ack, LiveStateSnapshot, PlayerResultPayload, PublicQuestion, HostQuestion, QuestionClosedPayload, LeaderboardEntry, ParticipantInfo } from '@classiq/shared';
 import { createApp } from '../src/app.js';
 import { db } from '../src/db/client.js';
 import { enrollments, liveAnswers, liveParticipants, liveSessions } from '../src/db/schema/index.js';

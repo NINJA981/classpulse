@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { Medal } from 'lucide-react';
-import type { LeaderboardEntry } from '@classpulse/shared';
+import type { LeaderboardEntry } from '@classiq/shared';
 
 /** Top N entries, plus the current student's row if they're outside the top N. */
 export function Leaderboard({ entries, meId, top = 5 }: { entries: LeaderboardEntry[]; meId: string; top?: number }) {

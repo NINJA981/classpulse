@@ -4,7 +4,7 @@ import { LegalPage, Todo, type LegalSection } from '@/components/legal/legal-pag
 
 export const metadata: Metadata = {
   title: 'Privacy notice',
-  description: 'How ClassPulse collects, uses, shares, keeps and protects personal data for schools, teachers, students and parents.',
+  description: 'How ClassIQ collects, uses, shares, keeps and protects personal data for schools, teachers, students and parents.',
 };
 
 const EFFECTIVE = '12 October 2026';
@@ -16,7 +16,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          ClassPulse is a classroom platform operated by <strong>BenX Solutions</strong> (“we”, “us”). Schools use it to record
+          ClassIQ is a classroom platform operated by <strong>BenX Solutions</strong> (“we”, “us”). Schools use it to record
           lessons, create quizzes, run exams and assignments, and follow their students’ progress.
         </p>
         <p>
@@ -80,7 +80,7 @@ const sections: LegalSection[] = [
     title: 'Why we use it',
     body: (
       <>
-        <p>Only to provide ClassPulse to the school, which means:</p>
+        <p>Only to provide ClassIQ to the school, which means:</p>
         <ul>
           <li>signing people in and keeping accounts secure;</li>
           <li>turning lesson audio into transcripts and helping teachers create quizzes, summaries and teaching material;</li>
@@ -99,11 +99,11 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          The school is responsible for having a lawful basis for using personal data in ClassPulse, and for giving people the
+          The school is responsible for having a lawful basis for using personal data in ClassIQ, and for giving people the
           notice the DPDP Act requires.
         </p>
         <p>
-          <strong>Students under 18 are children under the DPDP Act.</strong> Before a child uses ClassPulse, the school must
+          <strong>Students under 18 are children under the DPDP Act.</strong> Before a child uses ClassIQ, the school must
           obtain <strong>verifiable consent from a parent or lawful guardian</strong>, and keep a record of it. The school must also
           tell parents that classes may be recorded and transcribed. A parent can withdraw consent by contacting the school; the
           school will then tell us what to stop or delete.
@@ -143,7 +143,7 @@ const sections: LegalSection[] = [
         <p>We use a small number of service providers. Each one receives only what it needs for its task.</p>
         <ul>
           <li>
-            <strong>Oracle Cloud Infrastructure</strong> (Oracle) hosts the ClassPulse servers, database, stored files and backups.
+            <strong>Oracle Cloud Infrastructure</strong> (Oracle) hosts the ClassIQ servers, database, stored files and backups.
             Region: <Todo>confirm the OCI hosting region</Todo>.
           </li>
           <li>
@@ -183,7 +183,7 @@ const sections: LegalSection[] = [
             <strong>Transcripts:</strong> deleted automatically after <strong>365 days</strong> by default.
           </li>
           <li>
-            <strong>Accounts, quizzes, exams, assignments and grades:</strong> kept while the school uses ClassPulse, until the
+            <strong>Accounts, quizzes, exams, assignments and grades:</strong> kept while the school uses ClassIQ, until the
             school deletes them, or until the school’s contract ends.
           </li>
           <li>
@@ -195,7 +195,7 @@ const sections: LegalSection[] = [
           </li>
         </ul>
         <p>
-          When a school leaves ClassPulse, we give the school an export of its data on request and then delete it, including
+          When a school leaves ClassIQ, we give the school an export of its data on request and then delete it, including
           stored files.
         </p>
       </>
@@ -224,7 +224,7 @@ const sections: LegalSection[] = [
         <ul>
           <li>
             <strong>access</strong> a summary of your personal data and how it is used (schools can download a copy of a
-            student’s data from ClassPulse);
+            student’s data from ClassIQ);
           </li>
           <li>
             <strong>correct, complete or update</strong> it;
@@ -304,7 +304,7 @@ export default function PrivacyPage() {
       sections={sections}
       intro={
         <p>
-          This notice explains, in plain language, what personal data ClassPulse handles for schools, teachers, students and
+          This notice explains, in plain language, what personal data ClassIQ handles for schools, teachers, students and
           parents, why, who else sees it, how long it is kept and what rights you have.
         </p>
       }

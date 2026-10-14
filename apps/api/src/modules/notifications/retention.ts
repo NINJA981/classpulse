@@ -4,7 +4,7 @@
  * (MAX_PUSH_FAILURES) or have not delivered anything for PUSH_SUBSCRIPTION_STALE_DAYS are removed too.
  */
 import { and, gte, isNotNull, lt, or, sql } from 'drizzle-orm';
-import { NOTIFICATION_RETENTION_DAYS } from '@classpulse/shared';
+import { NOTIFICATION_RETENTION_DAYS } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { notifications, pushSubscriptions } from '../../db/schema/index.js';
 import { logger } from '../../lib/logger.js';

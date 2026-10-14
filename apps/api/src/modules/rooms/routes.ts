@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { IdParams, RoomInput } from '@classpulse/shared';
+import { IdParams, RoomInput } from '@classiq/shared';
 import { audit } from '../../lib/audit.js';
 import { authenticate, currentUser, requireRole } from '../../middleware/auth.js';
 import { parseBody, parseParams } from '../../middleware/validate.js';

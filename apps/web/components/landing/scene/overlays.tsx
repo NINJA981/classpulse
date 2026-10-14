@@ -244,7 +244,7 @@ export function OverlayLayer({ reg }: { reg: OverlayRegistry }) {
           className="w-[min(84vw,19.5rem)] rounded-[4px] bg-chalk p-4 text-uniform shadow-[0_28px_56px_-22px_rgb(10_20_40/0.6)] ring-1 ring-uniform/10 sm:p-5"
         >
           <p className="text-xs font-medium text-uniform/70">Class 8B, after the photosynthesis quiz</p>
-          {/* Why yellow here: the re-teach plan is ClassPulse acting, the one thing the brand colour marks. */}
+          {/* Why yellow here: the re-teach plan is ClassIQ acting, the one thing the brand colour marks. */}
           <p className="mt-1.5 font-display text-[1.0625rem] leading-snug font-bold">
             <span className="rounded-[2px] bg-pulse px-1 box-decoration-clone">Re-teach tomorrow: {INSIGHT.reteach}</span>
           </p>

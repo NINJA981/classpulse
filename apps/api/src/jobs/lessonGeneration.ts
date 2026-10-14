@@ -17,7 +17,7 @@ import {
   type LessonProgress,
   type LessonStatus,
   type TranscriptSegment,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import { db } from '../db/client.js';
 import { assignments, lessons, modelSettings, questions, type PipelineMeta } from '../db/schema/index.js';
 import { AI_AUDIO_LIMIT_MESSAGE } from '../lib/aiUsage.js';

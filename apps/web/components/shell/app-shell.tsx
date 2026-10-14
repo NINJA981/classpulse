@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { LogOut, Menu, X } from 'lucide-react';
-import { ROLE_LOGIN, type MeResponse, type SessionUser } from '@classpulse/shared';
+import { ROLE_LOGIN, type MeResponse, type SessionUser } from '@classiq/shared';
 import { NoticeBanners } from '@/components/auth/platform-notice';
 import { LegalLinks } from '@/components/legal/legal-links';
 import { NotificationBell, NotificationsProvider } from '@/components/notifications';
@@ -40,7 +40,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
     <nav aria-label="Main" className="flex h-full flex-col">
       <div className="border-b border-line px-5 py-5">
         <Link href={nav.items[0]!.href} className="font-display text-xl font-black tracking-tight">
-          ClassPulse
+          ClassIQ
         </Link>
         <p className="eyebrow mt-1">{nav.title}</p>
       </div>
@@ -93,7 +93,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           <aside className="hidden border-r border-line bg-surface lg:sticky lg:top-0 lg:z-40 lg:block lg:h-dvh">{sidebar}</aside>
 
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden">
-            <span className="font-display text-lg font-black">ClassPulse</span>
+            <span className="font-display text-lg font-black">ClassIQ</span>
             <div className="flex items-center gap-1">
               <NotificationBell />
               <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" data-tour="nav-menu" className="p-1.5">

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QuizAttemptResult, StudentQuiz, SubmitQuizAttemptInput } from '@classpulse/shared';
+import type { QuizAttemptResult, StudentQuiz, SubmitQuizAttemptInput } from '@classiq/shared';
 import { ButtonLink, EmptyState, ErrorState, LoadingBlock, PageHeader, useToast } from '@/components/ui';
 import { QuizIntro, QuizPlayer, type QuizAnswers } from '@/components/student/quiz/quiz-player';
 import { QuizResults } from '@/components/student/quiz/quiz-results';

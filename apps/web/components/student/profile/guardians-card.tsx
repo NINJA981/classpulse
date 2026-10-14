@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Mail, Phone, Plus, Trash2, UsersRound } from 'lucide-react';
-import type { Guardian, GuardianInput } from '@classpulse/shared';
+import type { Guardian, GuardianInput } from '@classiq/shared';
 import {
   Badge,
   Button,

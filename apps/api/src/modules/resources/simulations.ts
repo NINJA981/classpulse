@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { IdParams, SimulationLinkInput, type SessionUser, type Simulation } from '@classpulse/shared';
+import { IdParams, SimulationLinkInput, type SessionUser, type Simulation } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { simulationLinks } from '../../db/schema/index.js';
 import { badRequest, forbidden, notFound } from '../../lib/errors.js';

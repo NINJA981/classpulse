@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square } from 'lucide-react';
-import type { VoicePromptResult } from '@classpulse/shared';
+import type { VoicePromptResult } from '@classiq/shared';
 import { Button, useToast } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 

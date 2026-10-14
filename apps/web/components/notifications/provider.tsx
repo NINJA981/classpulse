@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import type { NotificationDto, NotificationListResponse } from '@classpulse/shared';
+import type { NotificationDto, NotificationListResponse } from '@classiq/shared';
 import { useToast } from '@/components/ui/toast';
 import { ApiError, api } from '@/lib/api';
 import { connectSocket } from '@/lib/socket';

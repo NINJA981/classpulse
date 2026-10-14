@@ -14,7 +14,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import type { AiGradeSuggestion, QuizRequest, RemedialPlan, RubricItem, RubricMark, TranscriptSegment } from '@classpulse/shared';
+import type { AiGradeSuggestion, QuizRequest, RemedialPlan, RubricItem, RubricMark, TranscriptSegment } from '@classiq/shared';
 import {
   assignmentStatus,
   bloomLevel,

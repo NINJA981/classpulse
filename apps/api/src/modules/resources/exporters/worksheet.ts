@@ -1,5 +1,5 @@
 /** Word export for worksheets: student pages, then the answer key on a new page (when the worksheet asks for one). */
-import { WorksheetContent } from '@classpulse/shared';
+import { WorksheetContent } from '@classiq/shared';
 import { invalidState } from '../../../lib/errors.js';
 import { headerBlock, heading, pageBreak, para, toDocxBuffer, type Block } from './docx.js';
 import { DOCX_CONTENT_TYPE, safeFilename, type ExportInput, type ExportedFile } from './types.js';

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DoorOpen, Pencil, Plus, Trash2 } from 'lucide-react';
-import type { Room } from '@classpulse/shared';
+import type { Room } from '@classiq/shared';
 import { Button, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Table, TBody, TD, TH, THead, TR, useToast } from '@/components/ui';
 import { api } from '@/lib/api';
 import { adminKeys, useRooms } from '@/components/admin/queries';

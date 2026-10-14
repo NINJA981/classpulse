@@ -8,7 +8,7 @@ import {
   type StatsCsvSection,
   type StatsGranularity,
   type StatsRanking,
-} from '@classpulse/shared';
+} from '@classiq/shared';
 import {
   Badge,
   Button,

@@ -10,7 +10,7 @@
  *   exam questions have a topic but no Bloom level, so they add to topics and the overall figure only.
  */
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import { BLOOM_LEVELS, type BloomLevel, type CompetencyInsightRow, type SectionInsights, type SessionUser } from '@classpulse/shared';
+import { BLOOM_LEVELS, type BloomLevel, type CompetencyInsightRow, type SectionInsights, type SessionUser } from '@classiq/shared';
 import { db } from '../../db/client.js';
 import { enrollments, lessons, questions, quizAttemptAnswers, quizAttempts, sections, sectionTeachers, users } from '../../db/schema/index.js';
 import { notFound } from '../../lib/errors.js';

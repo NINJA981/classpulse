@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_INSTITUTION_FEATURES, SESSION_COOKIE } from '@classpulse/shared';
+import { DEFAULT_INSTITUTION_FEATURES, SESSION_COOKIE } from '@classiq/shared';
 import { db } from '../src/db/client.js';
 import { institutions, passwordTokens, users } from '../src/db/schema/index.js';
 import { invalidateInstitutionState } from '../src/lib/platformState.js';
@@ -62,7 +62,7 @@ describe('account emails: invitations, set-password links and resets', () => {
       expect(outbox).toHaveLength(1);
       const mail = outbox[0]!;
       expect(mail.to).toBe('neha@school.in');
-      expect(mail.subject).toBe('Welcome to ClassPulse — set your password');
+      expect(mail.subject).toBe('Welcome to ClassIQ — set your password');
       expect(mail.text).toContain(world.institution.name);
       expect(mail.text).toContain('teacher');
       expect(mail.text).toContain('neha@school.in');
@@ -253,7 +253,7 @@ describe('account emails: invitations, set-password links and resets', () => {
       await waitForMail(world.teacher.email!);
       await settle();
       expect(outbox.map((m) => m.to)).toEqual([world.teacher.email]);
-      expect(outbox[0]!.subject).toBe('Reset your ClassPulse password');
+      expect(outbox[0]!.subject).toBe('Reset your ClassIQ password');
 
       const token = tokenFor(world.teacher.email!);
       const preview = await anon().get(`/api/auth/password-token/${token}`);
@@ -299,7 +299,7 @@ describe('account emails: invitations, set-password links and resets', () => {
       const ok = await as(world.admin).post(`/api/admin/students/${world.student.id}/send-reset-link`);
       expect(ok.status).toBe(200);
       expect(ok.body).toEqual({ invite: 'queued' });
-      expect(outbox[0]!.subject).toBe('Reset your ClassPulse password');
+      expect(outbox[0]!.subject).toBe('Reset your ClassIQ password');
 
       const none = await as(world.admin).post(`/api/admin/students/${world.otherStudent.id}/send-invite`);
       expect(none.status).toBe(400);
@@ -442,7 +442,7 @@ describe('account emails: invitations, set-password links and resets', () => {
       const res = await request(testApp).get('/api/test/emails').query({ to: 'CAP@school.in' });
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
-      expect(res.body[0]).toMatchObject({ to: 'cap@school.in', subject: 'Welcome to ClassPulse — set your password' });
+      expect(res.body[0]).toMatchObject({ to: 'cap@school.in', subject: 'Welcome to ClassIQ — set your password' });
       expect(res.body[0].text).toContain('/set-password#token=');
       expect(typeof res.body[0].html).toBe('string');
       expect(typeof res.body[0].at).toBe('string');
