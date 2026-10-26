@@ -4,7 +4,7 @@
 
 # Base image pinned by tag + digest (multi-arch index: linux/amd64 + linux/arm64); Dependabot (docker)
 # proposes updates. Keep every stage on the same reference.
-FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
+FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS build
 WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json tsconfig.base.json ./
@@ -16,7 +16,7 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build -w @classiq/shared && npm run build -w @classiq/web
 
-FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
+FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS runtime
 RUN apk add --no-cache tini
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
