@@ -5,7 +5,7 @@
 
 # Base image pinned by tag + digest (multi-arch index: linux/amd64 + linux/arm64); Dependabot (docker)
 # proposes updates. Keep every stage on the same reference.
-FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
+FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS build
 WORKDIR /repo
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
@@ -18,7 +18,7 @@ RUN npm run build -w @classiq/shared \
  && npm run build -w @classiq/api \
  && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations
 
-FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS prod-deps
+FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS prod-deps
 WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
@@ -27,7 +27,7 @@ COPY apps/web/package.json apps/web/
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund -w @classiq/shared -w @classiq/api \
  && rm -rf node_modules/ffmpeg-static node_modules/ffprobe-static/bin
 
-FROM node:22.23.3-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
+FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS runtime
 RUN apk add --no-cache ffmpeg tini
 ENV NODE_ENV=production \
     FFMPEG_PATH=/usr/bin/ffmpeg \
