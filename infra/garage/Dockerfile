@@ -6,7 +6,7 @@
 # as root; here it runs as uid 10001 instead. The data directories are created in a throwaway stage and copied
 # in with that owner, and Docker copies them (with ownership) into the empty named volumes on first start, so
 # Garage can write its volumes without any capability (compose sets cap_drop: [ALL]).
-FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS dirs
+FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS dirs
 RUN mkdir -p /out/var/lib/garage/meta /out/var/lib/garage/data \
  && chown -R 10001:10001 /out/var/lib/garage \
  && chmod 700 /out/var/lib/garage/meta /out/var/lib/garage/data
