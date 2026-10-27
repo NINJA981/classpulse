@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_HOME, ROLE_LOGIN, type Role, type SessionResponse } from '@classiq/shared';
@@ -30,16 +30,32 @@ function RoleLoginForm({ role }: { role: Role }) {
   const params = useSearchParams();
   const copy = ROLE_LOGIN_COPY[role];
   const staff = role !== 'student';
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [schoolCode, setSchoolCode] = useState('');
-  const [needSchoolCode, setNeedSchoolCode] = useState(false);
+  // A sign-in link can carry the fields: ?rollNumber=&password=&institutionCode= (students) or ?email=&password=.
+  const [identifier, setIdentifier] = useState(() => params.get(staff ? 'email' : 'rollNumber') ?? '');
+  const [password, setPassword] = useState(() => params.get('password') ?? '');
+  const [schoolCode, setSchoolCode] = useState(() => (staff ? '' : (params.get('institutionCode') ?? '').toUpperCase()));
+  const [needSchoolCode, setNeedSchoolCode] = useState(() => schoolCode !== '');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const autoSubmitted = useRef(false);
   const blocked = params.get('blocked');
 
-  async function onSubmit(e: FormEvent) {
+  // A link with both fields signs in straight away. The password leaves the address bar and history first.
+  useEffect(() => {
+    if (autoSubmitted.current || !params.get('password')) return;
+    autoSubmitted.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('password');
+    window.history.replaceState(window.history.state, '', url);
+    if (identifier && password) void signIn();
+  }, []);
+
+  function onSubmit(e: FormEvent) {
     e.preventDefault();
+    void signIn();
+  }
+
+  async function signIn() {
     setPending(true);
     setError(null);
     try {
