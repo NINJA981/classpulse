@@ -36,7 +36,8 @@
 
 # JSON access log without secrets. Cookie, Set-Cookie and Authorization are already redacted by Caddy.
 # Removed here: the long-lived device key, the exam device token, set-password tokens in the query string
-# (?token=) and in /api/auth/password-token/<token>.
+# (?token=) and in /api/auth/password-token/<token>, and passwords in sign-in links (?password=, also in the
+# Referer of the requests the sign-in page makes before it strips the password from the address bar).
 (access_log) {
 	log {
 		output stdout
@@ -45,9 +46,12 @@
 			fields {
 				request>headers>X-Device-Key delete
 				request>headers>X-Exam-Token delete
+				request>headers>Referer delete
 				request>uri multi_regexp {
 					regexp "\?token=[^&#]*" "?token=REDACTED"
 					regexp "&token=[^&#]*" "&token=REDACTED"
+					regexp "\?password=[^&#]*" "?password=REDACTED"
+					regexp "&password=[^&#]*" "&password=REDACTED"
 					regexp "/api/auth/password-token/[^/?#]+" "/api/auth/password-token/REDACTED"
 				}
 			}
