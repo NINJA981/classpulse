@@ -11,7 +11,7 @@ RUN mkdir -p /out/var/lib/garage/meta /out/var/lib/garage/data \
  && chown -R 10001:10001 /out/var/lib/garage \
  && chmod 700 /out/var/lib/garage/meta /out/var/lib/garage/data
 
-FROM dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020
+FROM dxflrs/garage:v2.5.0@sha256:677e5b758e4425a325b811c425c026bf35a4bf42f7ddbaa773de3f4fd779a5a5
 COPY --from=dirs --chown=10001:10001 /out/var/lib/garage /var/lib/garage
 COPY infra/garage/garage.toml /etc/garage.toml
 USER 10001:10001
